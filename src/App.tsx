@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import RoomDetail from "./pages/RoomDetail";
 import Booking from "./pages/Booking";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import InvoicePage from "./pages/InvoicePage";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +25,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/room/:id" element={<RoomDetail />} />
             <Route path="/booking" element={<Booking />} />
+            <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
@@ -31,3 +37,4 @@ const App = () => (
 );
 
 export default App;
+
