@@ -1,1 +1,10 @@
 project_id = "hkrueiyvxkdjgvcpfgmq"
+
+[functions.hotel-chat]
+verify_jwt = false
+
+[functions.create-booking]
+verify_jwt = false
+
+[functions.seed-admin]
+verify_jwt = false

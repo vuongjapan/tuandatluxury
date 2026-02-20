@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import { CalendarIcon, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -17,8 +17,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
+
+const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
+
 const Booking = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
   const { toast } = useToast();
 
@@ -48,15 +52,42 @@ const Booking = () => {
     return total;
   }, [checkIn, checkOut, nightCount, room]);
 
-  const handleSubmit = () => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
     if (!name || !phone || !checkIn || !checkOut) {
       toast({ title: 'Vui lòng điền đầy đủ thông tin', variant: 'destructive' });
       return;
     }
-    toast({
-      title: t('booking.confirm'),
-      description: `${room.name[language]} - ${nightCount} ${t('booking.nights')} - ${formatPrice(totalPrice)}`,
-    });
+    setSubmitting(true);
+    try {
+      const resp = await fetch(BOOKING_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          room_id: roomId,
+          guest_name: name,
+          guest_email: email,
+          guest_phone: phone,
+          guest_notes: notes,
+          check_in: format(checkIn, 'yyyy-MM-dd'),
+          check_out: format(checkOut, 'yyyy-MM-dd'),
+          guests_count: parseInt(guests),
+          total_price_vnd: totalPrice,
+          language,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Lỗi đặt phòng');
+      navigate(`/invoice/${data.booking_code}`);
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -222,8 +253,8 @@ const Booking = () => {
                   </div>
                 </div>
 
-                <Button variant="hero" className="w-full" onClick={handleSubmit}>
-                  {t('booking.confirm')}
+                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? 'Đang xử lý...' : t('booking.confirm')}
                 </Button>
               </div>
             </motion.div>
