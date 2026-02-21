@@ -100,6 +100,48 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_images: {
+        Row: {
+          category: string
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          sort_order: number
+          title_en: string | null
+          title_vi: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          sort_order?: number
+          title_en?: string | null
+          title_vi?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          sort_order?: number
+          title_en?: string | null
+          title_vi?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           booking_id: string
