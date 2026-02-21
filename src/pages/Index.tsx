@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import RoomCard from '@/components/RoomCard';
+import PhotoGallery from '@/components/PhotoGallery';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { rooms } from '@/data/rooms';
@@ -36,6 +37,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Photo Gallery Section */}
+      <PhotoGallery />
 
       {/* About Section */}
       <section id="about" className="py-20 bg-secondary">

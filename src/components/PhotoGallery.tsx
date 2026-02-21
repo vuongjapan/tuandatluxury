@@ -1,0 +1,205 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+
+type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
+
+interface GalleryImage {
+  id: string;
+  category: GalleryCategory;
+  title_vi: string | null;
+  title_en: string | null;
+  description_vi: string | null;
+  description_en: string | null;
+  image_url: string;
+  sort_order: number;
+}
+
+const CATEGORIES: { id: GalleryCategory; vi: string; en: string; ja: string; zh: string; emoji: string }[] = [
+  { id: 'featured', vi: 'Nổi bật', en: 'Featured', ja: '注目', zh: '精选', emoji: '⭐' },
+  { id: 'rooms', vi: 'Hạng phòng', en: 'Rooms', ja: '客室', zh: '房间', emoji: '🛏️' },
+  { id: 'restaurant', vi: 'Nhà hàng & Ẩm thực', en: 'Restaurant & Dining', ja: 'レストラン', zh: '餐厅', emoji: '🍽️' },
+  { id: 'wellness', vi: 'Chăm sóc sức khỏe', en: 'Wellness & Spa', ja: 'ウェルネス', zh: '健康', emoji: '💆' },
+  { id: 'entertainment', vi: 'Vui chơi giải trí', en: 'Entertainment', ja: 'エンタメ', zh: '娱乐', emoji: '🏖️' },
+];
+
+const PhotoGallery = () => {
+  const { language, t } = useLanguage();
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [activeCategory, setActiveCategory] = useState<GalleryCategory>('featured');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
+  const fetchImages = async () => {
+    const { data } = await supabase
+      .from('gallery_images')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    setImages((data as GalleryImage[]) || []);
+    setLoading(false);
+  };
+
+  const filtered = images.filter(img => img.category === activeCategory);
+
+  const getCategoryLabel = (cat: typeof CATEGORIES[0]) => {
+    const map: Record<string, string> = { vi: cat.vi, en: cat.en, ja: cat.ja, zh: cat.zh };
+    return map[language] || cat.en;
+  };
+
+  const getTitle = (img: GalleryImage) => {
+    if (language === 'vi') return img.title_vi || img.title_en || '';
+    return img.title_en || img.title_vi || '';
+  };
+
+  const openLightbox = (index: number) => setLightboxIndex(index);
+  const closeLightbox = () => setLightboxIndex(null);
+  const prevImage = () => setLightboxIndex(i => (i !== null ? (i - 1 + filtered.length) % filtered.length : null));
+  const nextImage = () => setLightboxIndex(i => (i !== null ? (i + 1) % filtered.length : null));
+
+  if (loading) {
+    return (
+      <section id="gallery" className="py-20 bg-secondary">
+        <div className="container mx-auto px-4 text-center">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-muted rounded w-48 mx-auto" />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="aspect-[4/3] bg-muted rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (images.length === 0) return null;
+
+  return (
+    <section id="gallery" className="py-20 bg-secondary">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          className="text-center mb-10"
+        >
+          <h2 className="font-display text-4xl font-bold text-foreground mb-3">{t('nav.gallery')}</h2>
+          <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full" />
+        </motion.div>
+
+        {/* Category tabs */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                activeCategory === cat.id
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border'
+              }`}
+            >
+              <span className="mr-1.5">{cat.emoji}</span>
+              {getCategoryLabel(cat)}
+            </button>
+          ))}
+        </div>
+
+        {/* Gallery grid */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeCategory}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          >
+            {filtered.map((img, i) => (
+              <motion.div
+                key={img.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="group relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer shadow-card hover:shadow-card-hover transition-shadow duration-300"
+                onClick={() => openLightbox(i)}
+              >
+                <img
+                  src={img.image_url}
+                  alt={getTitle(img)}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {getTitle(img) && (
+                  <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    <p className="text-white text-sm font-medium truncate">{getTitle(img)}</p>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
+
+        {filtered.length === 0 && (
+          <p className="text-center text-muted-foreground py-12">Chưa có ảnh trong danh mục này</p>
+        )}
+      </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxIndex !== null && filtered[lightboxIndex] && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+            onClick={closeLightbox}
+          >
+            <button onClick={closeLightbox} className="absolute top-4 right-4 text-white/80 hover:text-white z-10">
+              <X className="h-8 w-8" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); prevImage(); }}
+              className="absolute left-4 text-white/80 hover:text-white z-10"
+            >
+              <ChevronLeft className="h-10 w-10" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); nextImage(); }}
+              className="absolute right-4 text-white/80 hover:text-white z-10"
+            >
+              <ChevronRight className="h-10 w-10" />
+            </button>
+            <motion.img
+              key={lightboxIndex}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              src={filtered[lightboxIndex].image_url}
+              alt={getTitle(filtered[lightboxIndex])}
+              className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            {getTitle(filtered[lightboxIndex]) && (
+              <div className="absolute bottom-6 text-center">
+                <p className="text-white text-lg font-medium">{getTitle(filtered[lightboxIndex])}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+};
+
+export default PhotoGallery;
