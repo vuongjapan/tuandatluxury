@@ -5,11 +5,12 @@ import RoomCard from '@/components/RoomCard';
 import PhotoGallery from '@/components/PhotoGallery';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
-import { rooms } from '@/data/rooms';
+import { useRooms } from '@/hooks/useRooms';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const Index = () => {
   const { t } = useLanguage();
+  const { rooms } = useRooms();
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,7 +39,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Photo Gallery Section */}
       <PhotoGallery />
 
       {/* About Section */}
@@ -53,9 +53,7 @@ const Index = () => {
           >
             <h2 className="font-display text-4xl font-bold text-foreground mb-6">{t('nav.about')}</h2>
             <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-8" />
-            <p className="text-muted-foreground leading-relaxed text-lg">
-              {t('footer.desc')}
-            </p>
+            <p className="text-muted-foreground leading-relaxed text-lg">{t('footer.desc')}</p>
           </motion.div>
         </div>
       </section>
@@ -108,9 +106,7 @@ const Index = () => {
           >
             <h2 className="font-display text-4xl font-bold text-foreground mb-3">{t('nav.offers')}</h2>
             <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-8" />
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              {t('platforms.direct')}
-            </p>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">{t('platforms.direct')}</p>
           </motion.div>
         </div>
       </section>

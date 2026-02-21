@@ -3,17 +3,19 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
-import { getRoomPrice, PEAK_MONTHS } from '@/data/rooms';
+import { getRoomPrice as getDefaultRoomPrice, PEAK_MONTHS } from '@/data/rooms';
 
 interface PriceCalendarProps {
   room: Room;
   onSelectDate?: (date: Date) => void;
   selectedDate?: Date;
+  getRoomPrice?: (room: Room, date: Date) => number;
 }
 
-const PriceCalendar = ({ room, onSelectDate, selectedDate }: PriceCalendarProps) => {
+const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice }: PriceCalendarProps) => {
   const { formatPrice } = useLanguage();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const priceFn = getRoomPrice || getDefaultRoomPrice;
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -31,10 +33,10 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate }: PriceCalendarProps)
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const isPast = date < today;
-      result.push({ date, price: getRoomPrice(room, date), isPast });
+      result.push({ date, price: priceFn(room, date), isPast });
     }
     return result;
-  }, [year, month, room, firstDay, daysInMonth]);
+  }, [year, month, room, firstDay, daysInMonth, priceFn]);
 
   const monthNames = [
     'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
@@ -45,7 +47,6 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate }: PriceCalendarProps)
 
   return (
     <div className="bg-card rounded-xl border border-border p-4">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(new Date(year, month - 1))}>
           <ChevronLeft className="h-4 w-4" />
@@ -65,7 +66,6 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate }: PriceCalendarProps)
         </Button>
       </div>
 
-      {/* Day names */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {dayNames.map((d) => (
           <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1">
@@ -74,7 +74,6 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate }: PriceCalendarProps)
         ))}
       </div>
 
-      {/* Days */}
       <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, i) => {
           if (!cell.date) return <div key={i} />;
@@ -104,7 +103,6 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate }: PriceCalendarProps)
         })}
       </div>
 
-      {/* Legend */}
       <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded bg-accent/20" /> Cuối tuần

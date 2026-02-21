@@ -207,6 +207,41 @@ export type Database = {
         }
         Relationships: []
       }
+      room_price_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          override_date: string
+          price_vnd: number
+          room_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          override_date: string
+          price_vnd: number
+          room_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          override_date?: string
+          price_vnd?: number
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_price_overrides_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           amenities: string[] | null
