@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { AMENITY_ICONS } from '@/data/rooms';
 
 type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'settings';
 
@@ -28,6 +29,8 @@ const GALLERY_CATEGORIES: { id: GalleryCategory; label: string }[] = [
   { id: 'wellness', label: 'Chăm sóc sức khỏe' },
   { id: 'entertainment', label: 'Vui chơi giải trí' },
 ];
+
+const ALL_AMENITIES = Object.keys(AMENITY_ICONS);
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -54,6 +57,14 @@ const AdminDashboard = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [uploadingRoomImage, setUploadingRoomImage] = useState(false);
+
+  // Price overrides
+  const [priceOverrides, setPriceOverrides] = useState<any[]>([]);
+  const [overrideRoom, setOverrideRoom] = useState<string>('');
+  const [overrideDate, setOverrideDate] = useState('');
+  const [overridePrice, setOverridePrice] = useState('');
+  const [overrideNote, setOverrideNote] = useState('');
 
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [galleryCategory, setGalleryCategory] = useState<GalleryCategory>('featured');
@@ -64,6 +75,7 @@ const AdminDashboard = () => {
     checkAuth();
     fetchData();
     fetchGalleryImages();
+    fetchPriceOverrides();
   }, []);
 
   const checkAuth = async () => {
@@ -82,6 +94,11 @@ const AdminDashboard = () => {
     setBookings(b || []);
     setRooms(r || []);
     setLoading(false);
+  };
+
+  const fetchPriceOverrides = async () => {
+    const { data } = await supabase.from('room_price_overrides').select('*').order('override_date');
+    setPriceOverrides(data || []);
   };
 
   const handleSignOut = async () => {
@@ -156,22 +173,87 @@ const AdminDashboard = () => {
     toast({ title: 'Cập nhật thành công' });
   };
 
+  // Room image upload
+  const handleRoomImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingRoom) return;
+    setUploadingRoomImage(true);
+    const ext = file.name.split('.').pop();
+    const path = `rooms/${editingRoom.id}-${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, file);
+    if (uploadError) {
+      toast({ title: 'Lỗi upload ảnh phòng', description: uploadError.message, variant: 'destructive' });
+      setUploadingRoomImage(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+    setEditingRoom({ ...editingRoom, image_url: urlData.publicUrl });
+    toast({ title: 'Đã upload ảnh phòng ✓' });
+    setUploadingRoomImage(false);
+    e.target.value = '';
+  };
+
+  // Toggle amenity
+  const toggleAmenity = (amenity: string) => {
+    if (!editingRoom) return;
+    const current = editingRoom.amenities || [];
+    const updated = current.includes(amenity)
+      ? current.filter((a: string) => a !== amenity)
+      : [...current, amenity];
+    setEditingRoom({ ...editingRoom, amenities: updated });
+  };
+
   const updateRoom = async () => {
     if (!editingRoom) return;
     const { error } = await supabase.from('rooms').update({
       name_vi: editingRoom.name_vi,
       name_en: editingRoom.name_en,
+      name_ja: editingRoom.name_ja,
+      name_zh: editingRoom.name_zh,
       price_vnd: editingRoom.price_vnd,
       capacity: editingRoom.capacity,
+      size_sqm: editingRoom.size_sqm,
       description_vi: editingRoom.description_vi,
+      description_en: editingRoom.description_en,
+      description_ja: editingRoom.description_ja,
+      description_zh: editingRoom.description_zh,
       weekend_multiplier: editingRoom.weekend_multiplier,
       peak_multiplier: editingRoom.peak_multiplier,
       is_active: editingRoom.is_active,
+      amenities: editingRoom.amenities,
+      image_url: editingRoom.image_url,
     }).eq('id', editingRoom.id);
     if (error) { toast({ title: 'Lỗi lưu phòng', variant: 'destructive' }); return; }
     toast({ title: 'Đã lưu thông tin phòng ✓' });
     setEditingRoom(null);
     fetchData();
+  };
+
+  // Price override actions
+  const addPriceOverride = async () => {
+    if (!overrideRoom || !overrideDate || !overridePrice) {
+      toast({ title: 'Vui lòng điền đầy đủ', variant: 'destructive' });
+      return;
+    }
+    const { error } = await supabase.from('room_price_overrides').upsert({
+      room_id: overrideRoom,
+      override_date: overrideDate,
+      price_vnd: parseInt(overridePrice),
+      note: overrideNote || null,
+    }, { onConflict: 'room_id,override_date' });
+    if (error) { toast({ title: 'Lỗi', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'Đã lưu giá thủ công ✓' });
+    setOverrideDate('');
+    setOverridePrice('');
+    setOverrideNote('');
+    fetchPriceOverrides();
+  };
+
+  const deletePriceOverride = async (id: string) => {
+    const { error } = await supabase.from('room_price_overrides').delete().eq('id', id);
+    if (error) { toast({ title: 'Lỗi xóa', variant: 'destructive' }); return; }
+    toast({ title: 'Đã xóa ✓' });
+    fetchPriceOverrides();
   };
 
   // Stats
@@ -240,7 +322,7 @@ const AdminDashboard = () => {
             <h1 className="font-display text-2xl font-bold text-foreground">
               {navItems.find(n => n.id === tab)?.label}
             </h1>
-            <Button variant="outline" size="sm" onClick={fetchData}>
+            <Button variant="outline" size="sm" onClick={() => { fetchData(); fetchPriceOverrides(); }}>
               <RefreshCw className="h-4 w-4 mr-2" /> Làm mới
             </Button>
           </div>
@@ -271,7 +353,6 @@ const AdminDashboard = () => {
                 ))}
               </div>
 
-              {/* Recent bookings */}
               <div className="bg-card rounded-xl border border-border p-5">
                 <h2 className="font-display text-lg font-semibold mb-4">Đặt phòng gần đây</h2>
                 <div className="space-y-3">
@@ -313,9 +394,7 @@ const AdminDashboard = () => {
                           <p className="text-xs text-muted-foreground">{b.guest_phone}</p>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{b.rooms?.name_vi || b.room_id}</td>
-                        <td className="px-4 py-3 text-xs">
-                          {b.check_in} → {b.check_out}
-                        </td>
+                        <td className="px-4 py-3 text-xs">{b.check_in} → {b.check_out}</td>
                         <td className="px-4 py-3 font-semibold text-primary">{b.total_price_vnd?.toLocaleString('vi')}₫</td>
                         <td className="px-4 py-3">
                           <span className={`text-xs px-2 py-1 rounded-full ${statusColors[b.status]}`}>{statusLabels[b.status]}</span>
@@ -343,12 +422,31 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* ROOMS */}
+          {/* ROOMS - Full management */}
           {tab === 'rooms' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Room editing form */}
               {editingRoom && (
                 <div className="bg-card rounded-xl border-2 border-primary p-6">
                   <h3 className="font-display text-lg font-semibold mb-4">Chỉnh sửa: {editingRoom.name_vi}</h3>
+                  
+                  {/* Room image */}
+                  <div className="mb-4">
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Ảnh phòng</label>
+                    <div className="flex items-start gap-4">
+                      {editingRoom.image_url && (
+                        <img src={editingRoom.image_url} alt="" className="w-40 h-28 object-cover rounded-lg border border-border" />
+                      )}
+                      <label className="cursor-pointer">
+                        <input type="file" accept="image/*" className="hidden" onChange={handleRoomImageUpload} disabled={uploadingRoomImage} />
+                        <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                          <Upload className="h-4 w-4" />
+                          {uploadingRoomImage ? 'Đang tải...' : 'Upload ảnh mới'}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Tên phòng (VI)</label>
@@ -359,12 +457,24 @@ const AdminDashboard = () => {
                       <Input value={editingRoom.name_en} onChange={e => setEditingRoom({ ...editingRoom, name_en: e.target.value })} />
                     </div>
                     <div>
+                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Tên phòng (JA)</label>
+                      <Input value={editingRoom.name_ja || ''} onChange={e => setEditingRoom({ ...editingRoom, name_ja: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Tên phòng (ZH)</label>
+                      <Input value={editingRoom.name_zh || ''} onChange={e => setEditingRoom({ ...editingRoom, name_zh: e.target.value })} />
+                    </div>
+                    <div>
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Giá cơ bản (VND/đêm)</label>
                       <Input type="number" value={editingRoom.price_vnd} onChange={e => setEditingRoom({ ...editingRoom, price_vnd: +e.target.value })} />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Sức chứa (người)</label>
                       <Input type="number" value={editingRoom.capacity} onChange={e => setEditingRoom({ ...editingRoom, capacity: +e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Diện tích (m²)</label>
+                      <Input type="number" value={editingRoom.size_sqm} onChange={e => setEditingRoom({ ...editingRoom, size_sqm: +e.target.value })} />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Hệ số cuối tuần</label>
@@ -374,15 +484,55 @@ const AdminDashboard = () => {
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Hệ số cao điểm</label>
                       <Input type="number" step="0.1" value={editingRoom.peak_multiplier} onChange={e => setEditingRoom({ ...editingRoom, peak_multiplier: +e.target.value })} />
                     </div>
-                    <div className="md:col-span-2">
-                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Mô tả (VI)</label>
-                      <Textarea value={editingRoom.description_vi || ''} onChange={e => setEditingRoom({ ...editingRoom, description_vi: e.target.value })} rows={2} />
-                    </div>
                     <div className="flex items-center gap-2">
                       <input type="checkbox" id="is_active" checked={editingRoom.is_active} onChange={e => setEditingRoom({ ...editingRoom, is_active: e.target.checked })} />
                       <label htmlFor="is_active" className="text-sm">Hiển thị phòng</label>
                     </div>
                   </div>
+
+                  {/* Descriptions */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Mô tả (VI)</label>
+                      <Textarea value={editingRoom.description_vi || ''} onChange={e => setEditingRoom({ ...editingRoom, description_vi: e.target.value })} rows={2} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Mô tả (EN)</label>
+                      <Textarea value={editingRoom.description_en || ''} onChange={e => setEditingRoom({ ...editingRoom, description_en: e.target.value })} rows={2} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Mô tả (JA)</label>
+                      <Textarea value={editingRoom.description_ja || ''} onChange={e => setEditingRoom({ ...editingRoom, description_ja: e.target.value })} rows={2} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Mô tả (ZH)</label>
+                      <Textarea value={editingRoom.description_zh || ''} onChange={e => setEditingRoom({ ...editingRoom, description_zh: e.target.value })} rows={2} />
+                    </div>
+                  </div>
+
+                  {/* Amenities */}
+                  <div className="mt-4">
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Tiện nghi</label>
+                    <div className="flex flex-wrap gap-2">
+                      {ALL_AMENITIES.map(amenity => {
+                        const isSelected = (editingRoom.amenities || []).includes(amenity);
+                        return (
+                          <button
+                            key={amenity}
+                            onClick={() => toggleAmenity(amenity)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                              isSelected
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                            }`}
+                          >
+                            {AMENITY_ICONS[amenity]?.label.vi || amenity}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="flex gap-2 mt-4">
                     <Button variant="hero" onClick={updateRoom}><Save className="h-4 w-4 mr-2" />Lưu thay đổi</Button>
                     <Button variant="outline" onClick={() => setEditingRoom(null)}>Hủy</Button>
@@ -390,17 +540,37 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Room cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {rooms.map(room => (
                   <div key={room.id} className="bg-card rounded-xl border border-border p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-display text-lg font-semibold">{room.name_vi}</h3>
-                        <p className="text-xs text-muted-foreground">{room.name_en}</p>
+                    <div className="flex gap-4 mb-3">
+                      {room.image_url && (
+                        <img src={room.image_url} alt="" className="w-24 h-16 object-cover rounded-lg border border-border" />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-display text-lg font-semibold">{room.name_vi}</h3>
+                            <p className="text-xs text-muted-foreground">{room.name_en}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full ${room.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {room.is_active ? 'Đang hiển thị' : 'Ẩn'}
+                          </span>
+                        </div>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${room.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {room.is_active ? 'Đang hiển thị' : 'Ẩn'}
-                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {(room.amenities || []).slice(0, 6).map((a: string) => (
+                        <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                          {AMENITY_ICONS[a]?.label.vi || a}
+                        </span>
+                      ))}
+                      {(room.amenities || []).length > 6 && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                          +{(room.amenities || []).length - 6}
+                        </span>
+                      )}
                     </div>
                     <div className="grid grid-cols-3 gap-3 mb-4 text-center">
                       <div className="bg-secondary rounded-lg p-2">
@@ -422,13 +592,83 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Manual Price Overrides */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="font-display text-lg font-semibold mb-4">
+                  <DollarSign className="h-5 w-5 inline mr-2 text-primary" />
+                  Giá thủ công từng ngày
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Đặt giá riêng cho từng ngày cụ thể. Giá thủ công sẽ ghi đè quy tắc giá linh động (cuối tuần, cao điểm).
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Phòng</label>
+                    <Select value={overrideRoom} onValueChange={setOverrideRoom}>
+                      <SelectTrigger><SelectValue placeholder="Chọn phòng" /></SelectTrigger>
+                      <SelectContent>
+                        {rooms.map(r => (
+                          <SelectItem key={r.id} value={r.id}>{r.name_vi}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Ngày</label>
+                    <Input type="date" value={overrideDate} onChange={e => setOverrideDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Giá (VND)</label>
+                    <Input type="number" value={overridePrice} onChange={e => setOverridePrice(e.target.value)} placeholder="1000000" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Ghi chú</label>
+                    <Input value={overrideNote} onChange={e => setOverrideNote(e.target.value)} placeholder="Lý do..." />
+                  </div>
+                  <div className="flex items-end">
+                    <Button variant="hero" className="w-full" onClick={addPriceOverride}>
+                      <Plus className="h-4 w-4 mr-1" />Thêm
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Overrides list */}
+                {priceOverrides.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-secondary">
+                        <tr>
+                          {['Phòng', 'Ngày', 'Giá (VND)', 'Ghi chú', ''].map(h => (
+                            <th key={h} className="px-3 py-2 text-left font-semibold text-muted-foreground">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {priceOverrides.map((o: any) => (
+                          <tr key={o.id} className="hover:bg-secondary/50">
+                            <td className="px-3 py-2">{rooms.find(r => r.id === o.room_id)?.name_vi || o.room_id}</td>
+                            <td className="px-3 py-2">{o.override_date}</td>
+                            <td className="px-3 py-2 font-semibold text-primary">{o.price_vnd?.toLocaleString('vi')}₫</td>
+                            <td className="px-3 py-2 text-muted-foreground">{o.note || '—'}</td>
+                            <td className="px-3 py-2">
+                              <button onClick={() => deletePriceOverride(o.id)} className="text-destructive hover:text-destructive/80">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* GALLERY */}
           {tab === 'gallery' && (
             <div className="space-y-4">
-              {/* Category filter */}
               <div className="flex flex-wrap gap-2">
                 {GALLERY_CATEGORIES.map(cat => (
                   <button
@@ -445,7 +685,6 @@ const AdminDashboard = () => {
                 ))}
               </div>
 
-              {/* Upload */}
               <div className="bg-card rounded-xl border border-border p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-display text-lg font-semibold">
@@ -460,7 +699,6 @@ const AdminDashboard = () => {
                   </label>
                 </div>
 
-                {/* Edit form */}
                 {editingGalleryImage && (
                   <div className="bg-secondary rounded-xl p-4 mb-4 border-2 border-primary">
                     <h4 className="font-semibold mb-3">Chỉnh sửa ảnh</h4>
@@ -500,7 +738,6 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                {/* Image grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {galleryImages.filter(g => g.category === galleryCategory).map(img => (
                     <div key={img.id} className="group relative rounded-xl overflow-hidden border border-border">

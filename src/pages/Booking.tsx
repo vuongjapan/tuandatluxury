@@ -12,11 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
-import { rooms, getRoomPrice } from '@/data/rooms';
+import { useRooms } from '@/hooks/useRooms';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-
 
 const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
 
@@ -25,8 +24,9 @@ const Booking = () => {
   const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
   const { toast } = useToast();
+  const { rooms, getRoomPriceWithOverrides } = useRooms();
 
-  const preselectedRoom = searchParams.get('room') || rooms[0].id;
+  const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
 
   const [roomId, setRoomId] = useState(preselectedRoom);
   const [checkIn, setCheckIn] = useState<Date>();
@@ -42,15 +42,15 @@ const Booking = () => {
   const nightCount = checkIn && checkOut ? Math.max(differenceInDays(checkOut, checkIn), 1) : 0;
 
   const totalPrice = useMemo(() => {
-    if (!checkIn || !checkOut || nightCount <= 0) return 0;
+    if (!checkIn || !checkOut || nightCount <= 0 || !room) return 0;
     let total = 0;
     const d = new Date(checkIn);
     for (let i = 0; i < nightCount; i++) {
-      total += getRoomPrice(room, d);
+      total += getRoomPriceWithOverrides(room, d);
       d.setDate(d.getDate() + 1);
     }
     return total;
-  }, [checkIn, checkOut, nightCount, room]);
+  }, [checkIn, checkOut, nightCount, room, getRoomPriceWithOverrides]);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -90,6 +90,8 @@ const Booking = () => {
     }
   };
 
+  if (!room) return null;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -104,14 +106,12 @@ const Booking = () => {
           </motion.h1>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: Form */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
               className="lg:col-span-2 space-y-6"
             >
-              {/* Room Selection */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('nav.rooms')}</h2>
                 <Select value={roomId} onValueChange={setRoomId}>
@@ -128,7 +128,6 @@ const Booking = () => {
                 </Select>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Check-in */}
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
                     <Popover>
@@ -143,8 +142,6 @@ const Booking = () => {
                       </PopoverContent>
                     </Popover>
                   </div>
-
-                  {/* Check-out */}
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkout')}</label>
                     <Popover>
@@ -159,8 +156,6 @@ const Booking = () => {
                       </PopoverContent>
                     </Popover>
                   </div>
-
-                  {/* Guests */}
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.guests')}</label>
                     <Select value={guests} onValueChange={setGuests}>
@@ -180,7 +175,6 @@ const Booking = () => {
                 </div>
               </div>
 
-              {/* Guest Info */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('booking.guest_info')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -204,7 +198,6 @@ const Booking = () => {
               </div>
             </motion.div>
 
-            {/* Right: Summary */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -212,14 +205,10 @@ const Booking = () => {
             >
               <div className="bg-card rounded-xl border border-border p-6 sticky top-24 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('booking.summary')}</h2>
-
-                {/* Room Preview */}
                 <div className="rounded-lg overflow-hidden">
                   <img src={room.image} alt={room.name[language]} className="w-full h-40 object-cover" />
                 </div>
                 <h3 className="font-display text-lg font-semibold">{room.name[language]}</h3>
-
-                {/* Details */}
                 <div className="space-y-2 text-sm">
                   {checkIn && (
                     <div className="flex justify-between">
@@ -244,15 +233,12 @@ const Booking = () => {
                     <span className="font-medium">{guests}</span>
                   </div>
                 </div>
-
-                {/* Total */}
                 <div className="border-t border-border pt-4">
                   <div className="flex justify-between items-baseline">
                     <span className="font-display text-lg font-semibold">{t('booking.total')}</span>
                     <span className="text-2xl font-bold text-primary">{totalPrice > 0 ? formatPrice(totalPrice) : '—'}</span>
                   </div>
                 </div>
-
                 <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting}>
                   {submitting ? 'Đang xử lý...' : t('booking.confirm')}
                 </Button>
