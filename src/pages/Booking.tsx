@@ -24,7 +24,7 @@ const Booking = () => {
   const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
   const { toast } = useToast();
-  const { rooms, getRoomPriceWithOverrides } = useRooms();
+  const { rooms, getRoomPrice, isDateAvailable } = useRooms();
 
   const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
 
@@ -41,22 +41,37 @@ const Booking = () => {
 
   const nightCount = checkIn && checkOut ? Math.max(differenceInDays(checkOut, checkIn), 1) : 0;
 
+  // Check all nights are available
+  const allNightsAvailable = useMemo(() => {
+    if (!checkIn || !checkOut || nightCount <= 0 || !room) return true;
+    const d = new Date(checkIn);
+    for (let i = 0; i < nightCount; i++) {
+      if (!isDateAvailable(room.id, d)) return false;
+      d.setDate(d.getDate() + 1);
+    }
+    return true;
+  }, [checkIn, checkOut, nightCount, room, isDateAvailable]);
+
   const totalPrice = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0 || !room) return 0;
     let total = 0;
     const d = new Date(checkIn);
     for (let i = 0; i < nightCount; i++) {
-      total += getRoomPriceWithOverrides(room, d);
+      total += getRoomPrice(room, d);
       d.setDate(d.getDate() + 1);
     }
     return total;
-  }, [checkIn, checkOut, nightCount, room, getRoomPriceWithOverrides]);
+  }, [checkIn, checkOut, nightCount, room, getRoomPrice]);
 
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!name || !phone || !checkIn || !checkOut) {
       toast({ title: 'Vui lòng điền đầy đủ thông tin', variant: 'destructive' });
+      return;
+    }
+    if (!allNightsAvailable) {
+      toast({ title: 'Một số đêm đã đóng bán, vui lòng chọn ngày khác', variant: 'destructive' });
       return;
     }
     setSubmitting(true);
@@ -233,13 +248,18 @@ const Booking = () => {
                     <span className="font-medium">{guests}</span>
                   </div>
                 </div>
+                {!allNightsAvailable && nightCount > 0 && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+                    Một số đêm trong khoảng ngày đã chọn đang đóng bán. Vui lòng chọn ngày khác.
+                  </div>
+                )}
                 <div className="border-t border-border pt-4">
                   <div className="flex justify-between items-baseline">
                     <span className="font-display text-lg font-semibold">{t('booking.total')}</span>
                     <span className="text-2xl font-bold text-primary">{totalPrice > 0 ? formatPrice(totalPrice) : '—'}</span>
                   </div>
                 </div>
-                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting}>
+                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting || !allNightsAvailable}>
                   {submitting ? 'Đang xử lý...' : t('booking.confirm')}
                 </Button>
               </div>

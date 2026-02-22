@@ -207,6 +207,91 @@ export type Database = {
         }
         Relationships: []
       }
+      room_daily_availability: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          room_id: string
+          rooms_available: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          note?: string | null
+          room_id: string
+          rooms_available?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          room_id?: string
+          rooms_available?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_daily_availability_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_monthly_prices: {
+        Row: {
+          created_at: string
+          id: string
+          month: number
+          price_sunday: number
+          price_weekday: number
+          price_weekend: number
+          room_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: number
+          price_sunday?: number
+          price_weekday?: number
+          price_weekend?: number
+          room_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: number
+          price_sunday?: number
+          price_weekday?: number
+          price_weekend?: number
+          room_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_monthly_prices_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_price_overrides: {
         Row: {
           created_at: string
