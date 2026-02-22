@@ -21,7 +21,7 @@ const Header = () => {
     { key: 'nav.booking', href: '/booking' },
     { key: 'nav.about', href: '/#about' },
     { key: 'nav.services', href: '/#services' },
-    { key: 'nav.dining', href: '/#dining' },
+    { key: 'nav.dining', href: '/dining' },
     { key: 'nav.gallery', href: '/#gallery' },
     { key: 'nav.offers', href: '/#offers' },
     { key: 'nav.contact', href: '/#contact' },

@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import InvoicePage from "./pages/InvoicePage";
+import Dining from "./pages/Dining";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/room/:id" element={<RoomDetail />} />
             <Route path="/booking" element={<Booking />} />
+            <Route path="/dining" element={<Dining />} />
             <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />

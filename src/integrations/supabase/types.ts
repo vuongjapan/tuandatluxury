@@ -100,6 +100,110 @@ export type Database = {
         }
         Relationships: []
       }
+      dining_categories: {
+        Row: {
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name_en: string
+          name_vi: string
+          serving_hours: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name_en: string
+          name_vi: string
+          serving_hours?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name_en?: string
+          name_vi?: string
+          serving_hours?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dining_items: {
+        Row: {
+          category_id: string
+          combo_serves: number | null
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_combo: boolean
+          name_en: string
+          name_vi: string
+          price_vnd: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          combo_serves?: number | null
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_combo?: boolean
+          name_en: string
+          name_vi: string
+          price_vnd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          combo_serves?: number | null
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_combo?: boolean
+          name_en?: string
+          name_vi?: string
+          price_vnd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "dining_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gallery_images: {
         Row: {
           category: string
