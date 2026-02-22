@@ -10,7 +10,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, Settings, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
-  FileText, RefreshCw, ImageIcon, Upload
+  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -48,6 +48,8 @@ const statusLabels: Record<string, string> = {
   checked_out: 'Đã trả phòng',
 };
 
+const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -59,12 +61,19 @@ const AdminDashboard = () => {
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [uploadingRoomImage, setUploadingRoomImage] = useState(false);
 
-  // Price overrides
-  const [priceOverrides, setPriceOverrides] = useState<any[]>([]);
-  const [overrideRoom, setOverrideRoom] = useState<string>('');
-  const [overrideDate, setOverrideDate] = useState('');
-  const [overridePrice, setOverridePrice] = useState('');
-  const [overrideNote, setOverrideNote] = useState('');
+  // Monthly prices
+  const [monthlyPrices, setMonthlyPrices] = useState<any[]>([]);
+  const [mpRoom, setMpRoom] = useState('');
+  const [mpYear, setMpYear] = useState(new Date().getFullYear());
+  const [mpMonth, setMpMonth] = useState(new Date().getMonth() + 1);
+  const [mpWeekday, setMpWeekday] = useState('');
+  const [mpWeekend, setMpWeekend] = useState('');
+  const [mpSunday, setMpSunday] = useState('');
+
+  // Daily availability
+  const [dailyAvailability, setDailyAvailability] = useState<any[]>([]);
+  const [daRoom, setDaRoom] = useState('');
+  const [daCalMonth, setDaCalMonth] = useState(new Date());
 
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [galleryCategory, setGalleryCategory] = useState<GalleryCategory>('featured');
@@ -75,7 +84,8 @@ const AdminDashboard = () => {
     checkAuth();
     fetchData();
     fetchGalleryImages();
-    fetchPriceOverrides();
+    fetchMonthlyPrices();
+    fetchDailyAvailability();
   }, []);
 
   const checkAuth = async () => {
@@ -96,9 +106,14 @@ const AdminDashboard = () => {
     setLoading(false);
   };
 
-  const fetchPriceOverrides = async () => {
-    const { data } = await supabase.from('room_price_overrides').select('*').order('override_date');
-    setPriceOverrides(data || []);
+  const fetchMonthlyPrices = async () => {
+    const { data } = await supabase.from('room_monthly_prices').select('*').order('year').order('month');
+    setMonthlyPrices(data || []);
+  };
+
+  const fetchDailyAvailability = async () => {
+    const { data } = await supabase.from('room_daily_availability').select('*').order('date');
+    setDailyAvailability(data || []);
   };
 
   const handleSignOut = async () => {
@@ -193,13 +208,10 @@ const AdminDashboard = () => {
     e.target.value = '';
   };
 
-  // Toggle amenity
   const toggleAmenity = (amenity: string) => {
     if (!editingRoom) return;
     const current = editingRoom.amenities || [];
-    const updated = current.includes(amenity)
-      ? current.filter((a: string) => a !== amenity)
-      : [...current, amenity];
+    const updated = current.includes(amenity) ? current.filter((a: string) => a !== amenity) : [...current, amenity];
     setEditingRoom({ ...editingRoom, amenities: updated });
   };
 
@@ -217,8 +229,6 @@ const AdminDashboard = () => {
       description_en: editingRoom.description_en,
       description_ja: editingRoom.description_ja,
       description_zh: editingRoom.description_zh,
-      weekend_multiplier: editingRoom.weekend_multiplier,
-      peak_multiplier: editingRoom.peak_multiplier,
       is_active: editingRoom.is_active,
       amenities: editingRoom.amenities,
       image_url: editingRoom.image_url,
@@ -229,31 +239,67 @@ const AdminDashboard = () => {
     fetchData();
   };
 
-  // Price override actions
-  const addPriceOverride = async () => {
-    if (!overrideRoom || !overrideDate || !overridePrice) {
-      toast({ title: 'Vui lòng điền đầy đủ', variant: 'destructive' });
+  // Monthly price upsert
+  const saveMonthlyPrice = async () => {
+    if (!mpRoom || !mpWeekday || !mpWeekend || !mpSunday) {
+      toast({ title: 'Vui lòng điền đầy đủ giá', variant: 'destructive' });
       return;
     }
-    const { error } = await supabase.from('room_price_overrides').upsert({
-      room_id: overrideRoom,
-      override_date: overrideDate,
-      price_vnd: parseInt(overridePrice),
-      note: overrideNote || null,
-    }, { onConflict: 'room_id,override_date' });
+    const { error } = await supabase.from('room_monthly_prices').upsert({
+      room_id: mpRoom,
+      year: mpYear,
+      month: mpMonth,
+      price_weekday: parseInt(mpWeekday),
+      price_weekend: parseInt(mpWeekend),
+      price_sunday: parseInt(mpSunday),
+    }, { onConflict: 'room_id,year,month' });
     if (error) { toast({ title: 'Lỗi', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: 'Đã lưu giá thủ công ✓' });
-    setOverrideDate('');
-    setOverridePrice('');
-    setOverrideNote('');
-    fetchPriceOverrides();
+    toast({ title: 'Đã lưu bảng giá tháng ✓' });
+    fetchMonthlyPrices();
   };
 
-  const deletePriceOverride = async (id: string) => {
-    const { error } = await supabase.from('room_price_overrides').delete().eq('id', id);
-    if (error) { toast({ title: 'Lỗi xóa', variant: 'destructive' }); return; }
+  const deleteMonthlyPrice = async (id: string) => {
+    const { error } = await supabase.from('room_monthly_prices').delete().eq('id', id);
+    if (error) { toast({ title: 'Lỗi', variant: 'destructive' }); return; }
     toast({ title: 'Đã xóa ✓' });
-    fetchPriceOverrides();
+    fetchMonthlyPrices();
+  };
+
+  // Load existing price when room/year/month change
+  useEffect(() => {
+    if (!mpRoom) return;
+    const existing = monthlyPrices.find((p: any) => p.room_id === mpRoom && p.year === mpYear && p.month === mpMonth);
+    if (existing) {
+      setMpWeekday(String(existing.price_weekday));
+      setMpWeekend(String(existing.price_weekend));
+      setMpSunday(String(existing.price_sunday));
+    } else {
+      const room = rooms.find((r: any) => r.id === mpRoom);
+      setMpWeekday(room ? String(room.price_vnd) : '');
+      setMpWeekend(room ? String(room.price_vnd) : '');
+      setMpSunday(room ? String(room.price_vnd) : '');
+    }
+  }, [mpRoom, mpYear, mpMonth, monthlyPrices, rooms]);
+
+  // Daily availability toggle
+  const toggleDayAvailability = async (roomId: string, dateStr: string, currentStatus: string | null) => {
+    const nextStatus = currentStatus === null ? 'closed' : currentStatus === 'open' ? 'closed' : currentStatus === 'closed' ? 'limited' : 'open';
+    if (currentStatus === null) {
+      // Insert new
+      await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
+    } else if (nextStatus === 'open') {
+      // Delete record (default is open)
+      const existing = dailyAvailability.find((a: any) => a.room_id === roomId && a.date === dateStr);
+      if (existing) await supabase.from('room_daily_availability').delete().eq('id', existing.id);
+    } else {
+      const existing = dailyAvailability.find((a: any) => a.room_id === roomId && a.date === dateStr);
+      if (existing) {
+        await supabase.from('room_daily_availability').update({ status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 }).eq('id', existing.id);
+      } else {
+        await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
+      }
+    }
+    fetchDailyAvailability();
   };
 
   // Stats
@@ -263,6 +309,13 @@ const AdminDashboard = () => {
   const monthRevenue = bookings
     .filter(b => b.status !== 'cancelled' && new Date(b.created_at).getMonth() === new Date().getMonth())
     .reduce((sum, b) => sum + (b.total_price_vnd || 0), 0);
+
+  // Availability calendar helpers
+  const daYear = daCalMonth.getFullYear();
+  const daMonth = daCalMonth.getMonth();
+  const daDaysInMonth = new Date(daYear, daMonth + 1, 0).getDate();
+  const daFirstDay = new Date(daYear, daMonth, 1).getDay();
+  const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
   const navItems: { id: Tab; icon: any; label: string }[] = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
@@ -304,11 +357,11 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="p-2 border-t border-border space-y-1">
-          <a href="/" target="_blank" className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-secondary transition-all text-sm`}>
+          <a href="/" target="_blank" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-secondary transition-all text-sm">
             <Eye className="h-4 w-4 shrink-0" />
             {sidebarOpen && 'Xem website'}
           </a>
-          <button onClick={handleSignOut} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-all text-sm`}>
+          <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-all text-sm">
             <LogOut className="h-4 w-4 shrink-0" />
             {sidebarOpen && 'Đăng xuất'}
           </button>
@@ -322,7 +375,7 @@ const AdminDashboard = () => {
             <h1 className="font-display text-2xl font-bold text-foreground">
               {navItems.find(n => n.id === tab)?.label}
             </h1>
-            <Button variant="outline" size="sm" onClick={() => { fetchData(); fetchPriceOverrides(); }}>
+            <Button variant="outline" size="sm" onClick={() => { fetchData(); fetchMonthlyPrices(); fetchDailyAvailability(); }}>
               <RefreshCw className="h-4 w-4 mr-2" /> Làm mới
             </Button>
           </div>
@@ -337,13 +390,7 @@ const AdminDashboard = () => {
                   { label: 'Đang ở', value: confirmedCount, icon: CheckCircle, color: 'text-green-600' },
                   { label: 'Doanh thu tháng', value: monthRevenue.toLocaleString('vi') + '₫', icon: TrendingUp, color: 'text-primary' },
                 ].map((stat, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="bg-card rounded-xl border border-border p-5"
-                  >
+                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-card rounded-xl border border-border p-5">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-muted-foreground">{stat.label}</span>
                       <stat.icon className={`h-5 w-5 ${stat.color}`} />
@@ -401,9 +448,7 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-4 py-3">
                           <Select value={b.status} onValueChange={(v) => updateBookingStatus(b.id, v)}>
-                            <SelectTrigger className="h-7 text-xs w-32">
-                              <SelectValue />
-                            </SelectTrigger>
+                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               {Object.entries(statusLabels).map(([k, v]) => (
                                 <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -475,14 +520,6 @@ const AdminDashboard = () => {
                     <div>
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Diện tích (m²)</label>
                       <Input type="number" value={editingRoom.size_sqm} onChange={e => setEditingRoom({ ...editingRoom, size_sqm: +e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Hệ số cuối tuần</label>
-                      <Input type="number" step="0.1" value={editingRoom.weekend_multiplier} onChange={e => setEditingRoom({ ...editingRoom, weekend_multiplier: +e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Hệ số cao điểm</label>
-                      <Input type="number" step="0.1" value={editingRoom.peak_multiplier} onChange={e => setEditingRoom({ ...editingRoom, peak_multiplier: +e.target.value })} />
                     </div>
                     <div className="flex items-center gap-2">
                       <input type="checkbox" id="is_active" checked={editingRoom.is_active} onChange={e => setEditingRoom({ ...editingRoom, is_active: e.target.checked })} />
@@ -566,25 +603,10 @@ const AdminDashboard = () => {
                           {AMENITY_ICONS[a]?.label.vi || a}
                         </span>
                       ))}
-                      {(room.amenities || []).length > 6 && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                          +{(room.amenities || []).length - 6}
-                        </span>
-                      )}
                     </div>
-                    <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-                      <div className="bg-secondary rounded-lg p-2">
-                        <p className="text-xs text-muted-foreground">Giá/đêm</p>
-                        <p className="font-bold text-primary text-sm">{room.price_vnd?.toLocaleString('vi')}₫</p>
-                      </div>
-                      <div className="bg-secondary rounded-lg p-2">
-                        <p className="text-xs text-muted-foreground">Cuối tuần</p>
-                        <p className="font-bold text-sm">x{room.weekend_multiplier}</p>
-                      </div>
-                      <div className="bg-secondary rounded-lg p-2">
-                        <p className="text-xs text-muted-foreground">Cao điểm</p>
-                        <p className="font-bold text-sm">x{room.peak_multiplier}</p>
-                      </div>
+                    <div className="bg-secondary rounded-lg p-2 mb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Giá cơ bản</p>
+                      <p className="font-bold text-primary text-sm">{room.price_vnd?.toLocaleString('vi')}₫/đêm</p>
                     </div>
                     <Button variant="outline" size="sm" className="w-full" onClick={() => setEditingRoom(room)}>
                       <Pencil className="h-4 w-4 mr-2" />Chỉnh sửa
@@ -593,19 +615,20 @@ const AdminDashboard = () => {
                 ))}
               </div>
 
-              {/* Manual Price Overrides */}
+              {/* ===== BẢNG GIÁ THEO THÁNG ===== */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="font-display text-lg font-semibold mb-4">
+                <h3 className="font-display text-lg font-semibold mb-2">
                   <DollarSign className="h-5 w-5 inline mr-2 text-primary" />
-                  Giá thủ công từng ngày
+                  Bảng giá theo tháng
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Đặt giá riêng cho từng ngày cụ thể. Giá thủ công sẽ ghi đè quy tắc giá linh động (cuối tuần, cao điểm).
+                  Thiết lập 3 mức giá cho mỗi tháng: <strong>Ngày thường</strong> (T2→T5), <strong>Cuối tuần</strong> (T6 & T7), <strong>Chủ nhật</strong> (CN).
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
                   <div>
                     <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Phòng</label>
-                    <Select value={overrideRoom} onValueChange={setOverrideRoom}>
+                    <Select value={mpRoom} onValueChange={setMpRoom}>
                       <SelectTrigger><SelectValue placeholder="Chọn phòng" /></SelectTrigger>
                       <SelectContent>
                         {rooms.map(r => (
@@ -615,44 +638,63 @@ const AdminDashboard = () => {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Ngày</label>
-                    <Input type="date" value={overrideDate} onChange={e => setOverrideDate(e.target.value)} />
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Năm</label>
+                    <Select value={String(mpYear)} onValueChange={v => setMpYear(+v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Giá (VND)</label>
-                    <Input type="number" value={overridePrice} onChange={e => setOverridePrice(e.target.value)} placeholder="1000000" />
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Tháng</label>
+                    <Select value={String(mpMonth)} onValueChange={v => setMpMonth(+v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MONTH_NAMES.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Ghi chú</label>
-                    <Input value={overrideNote} onChange={e => setOverrideNote(e.target.value)} placeholder="Lý do..." />
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Ngày thường</label>
+                    <Input type="number" value={mpWeekday} onChange={e => setMpWeekday(e.target.value)} placeholder="VND" />
                   </div>
-                  <div className="flex items-end">
-                    <Button variant="hero" className="w-full" onClick={addPriceOverride}>
-                      <Plus className="h-4 w-4 mr-1" />Thêm
-                    </Button>
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Cuối tuần</label>
+                    <Input type="number" value={mpWeekend} onChange={e => setMpWeekend(e.target.value)} placeholder="VND" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Chủ nhật</label>
+                    <div className="flex gap-2">
+                      <Input type="number" value={mpSunday} onChange={e => setMpSunday(e.target.value)} placeholder="VND" />
+                      <Button variant="hero" onClick={saveMonthlyPrice} className="shrink-0">
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Overrides list */}
-                {priceOverrides.length > 0 && (
+                {/* Existing monthly prices table */}
+                {monthlyPrices.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-secondary">
                         <tr>
-                          {['Phòng', 'Ngày', 'Giá (VND)', 'Ghi chú', ''].map(h => (
+                          {['Phòng', 'Tháng', 'Ngày thường', 'Cuối tuần', 'Chủ nhật', ''].map(h => (
                             <th key={h} className="px-3 py-2 text-left font-semibold text-muted-foreground">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {priceOverrides.map((o: any) => (
-                          <tr key={o.id} className="hover:bg-secondary/50">
-                            <td className="px-3 py-2">{rooms.find(r => r.id === o.room_id)?.name_vi || o.room_id}</td>
-                            <td className="px-3 py-2">{o.override_date}</td>
-                            <td className="px-3 py-2 font-semibold text-primary">{o.price_vnd?.toLocaleString('vi')}₫</td>
-                            <td className="px-3 py-2 text-muted-foreground">{o.note || '—'}</td>
+                        {monthlyPrices.map((p: any) => (
+                          <tr key={p.id} className="hover:bg-secondary/50">
+                            <td className="px-3 py-2">{rooms.find(r => r.id === p.room_id)?.name_vi || p.room_id}</td>
+                            <td className="px-3 py-2">{MONTH_NAMES[p.month - 1]} {p.year}</td>
+                            <td className="px-3 py-2 font-semibold text-primary">{p.price_weekday?.toLocaleString('vi')}₫</td>
+                            <td className="px-3 py-2 font-semibold text-primary">{p.price_weekend?.toLocaleString('vi')}₫</td>
+                            <td className="px-3 py-2 font-semibold text-primary">{p.price_sunday?.toLocaleString('vi')}₫</td>
                             <td className="px-3 py-2">
-                              <button onClick={() => deletePriceOverride(o.id)} className="text-destructive hover:text-destructive/80">
+                              <button onClick={() => deleteMonthlyPrice(p.id)} className="text-destructive hover:text-destructive/80">
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </td>
@@ -661,6 +703,91 @@ const AdminDashboard = () => {
                       </tbody>
                     </table>
                   </div>
+                )}
+              </div>
+
+              {/* ===== TRẠNG THÁI BÁN THEO NGÀY ===== */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="font-display text-lg font-semibold mb-2">
+                  <CalendarRange className="h-5 w-5 inline mr-2 text-primary" />
+                  Trạng thái bán theo ngày
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Click vào ngày để chuyển trạng thái: <strong className="text-green-600">Mở</strong> → <strong className="text-destructive">Đóng</strong> → <strong className="text-yellow-600">Giới hạn</strong> → Mở.
+                </p>
+
+                <div className="flex flex-wrap gap-3 mb-4 items-center">
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Phòng</label>
+                    <Select value={daRoom} onValueChange={setDaRoom}>
+                      <SelectTrigger className="w-48"><SelectValue placeholder="Chọn phòng" /></SelectTrigger>
+                      <SelectContent>
+                        {rooms.map(r => (
+                          <SelectItem key={r.id} value={r.id}>{r.name_vi}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => setDaCalMonth(new Date(daYear, daMonth - 1))}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="font-display text-lg font-semibold min-w-[140px] text-center">
+                      {MONTH_NAMES[daMonth]} {daYear}
+                    </span>
+                    <Button variant="ghost" size="icon" onClick={() => setDaCalMonth(new Date(daYear, daMonth + 1))}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {daRoom && (
+                  <div>
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                      {dayNames.map(d => (
+                        <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1">{d}</div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {Array.from({ length: daFirstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+                      {Array.from({ length: daDaysInMonth }).map((_, i) => {
+                        const d = i + 1;
+                        const dateStr = `${daYear}-${String(daMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const avail = dailyAvailability.find((a: any) => a.room_id === daRoom && a.date === dateStr);
+                        const status = avail?.status || 'open';
+
+                        return (
+                          <button
+                            key={d}
+                            onClick={() => toggleDayAvailability(daRoom, dateStr, avail ? status : null)}
+                            className={`
+                              min-h-[48px] rounded-lg text-center transition-all duration-200 flex flex-col items-center justify-center cursor-pointer border
+                              ${status === 'open' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800 hover:bg-green-100' : ''}
+                              ${status === 'closed' ? 'bg-destructive/10 border-destructive/30 hover:bg-destructive/20' : ''}
+                              ${status === 'limited' ? 'bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700 hover:bg-yellow-100' : ''}
+                            `}
+                          >
+                            <span className="text-sm font-medium text-foreground">{d}</span>
+                            <span className={`text-[9px] font-semibold ${
+                              status === 'open' ? 'text-green-600' : status === 'closed' ? 'text-destructive' : 'text-yellow-600'
+                            }`}>
+                              {status === 'open' ? 'Mở' : status === 'closed' ? 'Đóng' : 'GH'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-100 border border-green-300" /> Mở bán</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/20 border border-destructive/40" /> Đóng bán</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-400" /> Giới hạn</span>
+                    </div>
+                  </div>
+                )}
+
+                {!daRoom && (
+                  <p className="text-center text-muted-foreground py-8">Chọn phòng để quản lý trạng thái bán.</p>
                 )}
               </div>
             </div>

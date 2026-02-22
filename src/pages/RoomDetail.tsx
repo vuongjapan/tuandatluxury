@@ -15,7 +15,7 @@ const RoomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
-  const { rooms, getRoomPriceWithOverrides } = useRooms();
+  const { rooms, getRoomPrice, getAvailability } = useRooms();
   const [selectedDate, setSelectedDate] = useState<Date>();
 
   const room = rooms.find((r) => r.id === id);
@@ -89,7 +89,7 @@ const RoomDetail = () => {
                 </div>
               </div>
 
-              <PriceCalendar room={room} selectedDate={selectedDate} onSelectDate={setSelectedDate} getRoomPrice={getRoomPriceWithOverrides} />
+              <PriceCalendar room={room} selectedDate={selectedDate} onSelectDate={setSelectedDate} getRoomPrice={getRoomPrice} getAvailability={getAvailability} />
 
               <Button variant="hero" className="w-full" onClick={() => navigate(`/booking?room=${room.id}`)}>
                 {t('room.book')}
