@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, Globe } from 'lucide-react';
+import { Menu, X, Phone, Globe, User, LogOut, Crown, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
+import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { language, setLanguage, t, langLabels } = useLanguage();
+  const { user, isAdmin, signOut, loading } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
@@ -77,6 +80,44 @@ const Header = () => {
             <Phone className="h-4 w-4 text-primary" />
             098.661.7939
           </a>
+
+          {/* Auth */}
+          {!loading && (
+            user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline max-w-[100px] truncate text-xs">{user.fullName}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${TIER_COLORS[user.tier]}`}>
+                      {user.tier === 'super_vip' ? '👑' : user.tier === 'vip' ? '⭐' : ''} {TIER_LABELS[user.tier][language]}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-semibold text-foreground">{user.fullName}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Đã đặt: {user.bookingCount} lần</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <Shield className="h-4 w-4 mr-2" /> Quản trị
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => { signOut(); }}>
+                    <LogOut className="h-4 w-4 mr-2" /> Đăng xuất
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate('/member')}>
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Đăng nhập</span>
+              </Button>
+            )
+          )}
 
           {/* CTA */}
           <Button variant="gold" size="sm" onClick={() => navigate('/booking')}>
