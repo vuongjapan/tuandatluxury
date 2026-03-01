@@ -1,8 +1,10 @@
 import { Phone, Mail, MapPin, Facebook, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const Footer = () => {
   const { t } = useLanguage();
+  const { settings } = useSiteSettings();
 
   return (
     <footer id="contact" className="bg-foreground text-background">
@@ -47,20 +49,20 @@ const Footer = () => {
               </p>
               <div className="flex gap-2">
                 <a
-                  href="https://www.booking.com"
+                  href={settings.platform_booking_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs bg-background/10 hover:bg-background/20 px-3 py-1.5 rounded-full transition-colors"
                 >
-                  <ExternalLink className="h-3 w-3" /> Booking.com
+                  <ExternalLink className="h-3 w-3" /> {settings.platform_booking_name}
                 </a>
                 <a
-                  href="https://www.agoda.com"
+                  href={settings.platform_agoda_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs bg-background/10 hover:bg-background/20 px-3 py-1.5 rounded-full transition-colors"
                 >
-                  <ExternalLink className="h-3 w-3" /> Agoda
+                  <ExternalLink className="h-3 w-3" /> {settings.platform_agoda_name}
                 </a>
               </div>
               <p className="text-xs text-primary mt-1">{t('platforms.direct')}</p>
@@ -71,8 +73,9 @@ const Footer = () => {
           <div>
             <h4 className="font-display text-lg font-semibold mb-4">{t('footer.find_us')}</h4>
             <div className="rounded-xl overflow-hidden border border-background/10">
+            {settings.map_embed_url ? (
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3749.123!2d105.9!3d19.75!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDQ1JzAwLjAiTiAxMDXCsDU0JzAwLjAiRQ!5e0!3m2!1sen!2s!4v1"
+                src={settings.map_embed_url}
                 width="100%"
                 height="180"
                 style={{ border: 0 }}
@@ -81,6 +84,9 @@ const Footer = () => {
                 referrerPolicy="no-referrer-when-downgrade"
                 title="Hotel Location"
               />
+            ) : (
+              <div className="w-full h-[180px] bg-background/10 flex items-center justify-center text-xs text-background/50">Chưa cài đặt bản đồ</div>
+            )}
             </div>
           </div>
         </div>
