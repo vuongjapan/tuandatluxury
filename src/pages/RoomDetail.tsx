@@ -9,13 +9,16 @@ import PriceCalendar from '@/components/PriceCalendar';
 import { AMENITY_ICONS } from '@/data/rooms';
 import { useRooms } from '@/hooks/useRooms';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 
 const RoomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
   const { rooms, getRoomPrice, getAvailability } = useRooms();
+  const { settings } = useSiteSettings();
   const [selectedDate, setSelectedDate] = useState<Date>();
 
   const room = rooms.find((r) => r.id === id);
@@ -94,6 +97,24 @@ const RoomDetail = () => {
               <Button variant="hero" className="w-full" onClick={() => navigate(`/booking?room=${room.id}`)}>
                 {t('room.book')}
               </Button>
+
+              {/* Platform booking buttons */}
+              <div className="flex gap-3">
+                {settings.platform_booking_url && (
+                  <a href={settings.platform_booking_url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <Button variant="outline" className="w-full gap-2">
+                      <ExternalLink className="h-4 w-4" /> {settings.platform_booking_name}
+                    </Button>
+                  </a>
+                )}
+                {settings.platform_agoda_url && (
+                  <a href={settings.platform_agoda_url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <Button variant="outline" className="w-full gap-2">
+                      <ExternalLink className="h-4 w-4" /> {settings.platform_agoda_name}
+                    </Button>
+                  </a>
+                )}
+              </div>
             </motion.div>
           </div>
         </div>

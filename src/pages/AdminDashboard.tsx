@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { AMENITY_ICONS } from '@/data/rooms';
 import AdminDining from '@/components/AdminDining';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'settings';
 
@@ -80,6 +81,14 @@ const AdminDashboard = () => {
   const [galleryCategory, setGalleryCategory] = useState<GalleryCategory>('featured');
   const [editingGalleryImage, setEditingGalleryImage] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const { settings, updateSetting } = useSiteSettings();
+  const [localSettings, setLocalSettings] = useState<Record<string, string>>({});
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  useEffect(() => {
+    setLocalSettings({ ...settings });
+  }, [settings]);
 
   useEffect(() => {
     checkAuth();
@@ -977,9 +986,9 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* SETTINGS */}
           {tab === 'settings' && (
-            <div className="space-y-4 max-w-xl">
+            <div className="space-y-6 max-w-2xl">
+              {/* Account info */}
               <div className="bg-card rounded-xl border border-border p-6">
                 <h3 className="font-display text-lg font-semibold mb-4">Thông tin tài khoản Admin</h3>
                 <div className="space-y-2 text-sm">
@@ -997,14 +1006,75 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Map embed */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="font-display text-lg font-semibold mb-4">Cài đặt hệ thống</h3>
-                <p className="text-sm text-muted-foreground">Quản lý toàn bộ nội dung website qua các tab ở trên. Thay đổi giá phòng tại tab "Quản lý phòng".</p>
-                <div className="mt-4 flex gap-2">
-                  <a href="/" target="_blank">
-                    <Button variant="outline" size="sm"><Eye className="h-4 w-4 mr-2" />Xem website</Button>
-                  </a>
+                <h3 className="font-display text-lg font-semibold mb-2">🗺️ Bản đồ khách sạn</h3>
+                <p className="text-xs text-muted-foreground mb-3">Dán link Google Maps Embed vào đây (lấy từ Google Maps → Chia sẻ → Nhúng bản đồ)</p>
+                <Textarea
+                  rows={3}
+                  value={localSettings.map_embed_url || ''}
+                  onChange={e => setLocalSettings(prev => ({ ...prev, map_embed_url: e.target.value }))}
+                  placeholder="https://www.google.com/maps/embed?pb=..."
+                  className="text-xs"
+                />
+                {localSettings.map_embed_url && (
+                  <div className="mt-3 rounded-lg overflow-hidden border border-border">
+                    <iframe src={localSettings.map_embed_url} width="100%" height="150" style={{ border: 0 }} loading="lazy" title="Preview" />
+                  </div>
+                )}
+              </div>
+
+              {/* Platform links */}
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h3 className="font-display text-lg font-semibold mb-2">🌐 Nền tảng đặt phòng quốc tế</h3>
+                <p className="text-xs text-muted-foreground mb-4">Chỉnh sửa link và tên hiển thị cho các nền tảng</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Tên nền tảng 1</label>
+                      <Input value={localSettings.platform_booking_name || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_booking_name: e.target.value }))} placeholder="Booking.com" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Link</label>
+                      <Input value={localSettings.platform_booking_url || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_booking_url: e.target.value }))} placeholder="https://www.booking.com/..." />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Tên nền tảng 2</label>
+                      <Input value={localSettings.platform_agoda_name || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_agoda_name: e.target.value }))} placeholder="Agoda" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Link</label>
+                      <Input value={localSettings.platform_agoda_url || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_agoda_url: e.target.value }))} placeholder="https://www.agoda.com/..." />
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Save button */}
+              <Button
+                disabled={savingSettings}
+                onClick={async () => {
+                  setSavingSettings(true);
+                  const keys = ['map_embed_url', 'platform_booking_url', 'platform_booking_name', 'platform_agoda_url', 'platform_agoda_name'];
+                  for (const key of keys) {
+                    if (localSettings[key] !== settings[key]) {
+                      await updateSetting(key, localSettings[key] || '');
+                    }
+                  }
+                  setSavingSettings(false);
+                  toast({ title: 'Đã lưu cài đặt ✓' });
+                }}
+              >
+                <Save className="h-4 w-4 mr-2" /> {savingSettings ? 'Đang lưu...' : 'Lưu tất cả cài đặt'}
+              </Button>
+
+              <div className="mt-4">
+                <a href="/" target="_blank">
+                  <Button variant="outline" size="sm"><Eye className="h-4 w-4 mr-2" />Xem website</Button>
+                </a>
               </div>
             </div>
           )}
