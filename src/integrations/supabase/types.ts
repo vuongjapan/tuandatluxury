@@ -551,6 +551,140 @@ export type Database = {
         }
         Relationships: []
       }
+      service_bookings: {
+        Row: {
+          booking_date: string
+          booking_time: string | null
+          created_at: string
+          discount_percent: number
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string
+          guests_count: number
+          id: string
+          notes: string | null
+          original_price_vnd: number
+          payment_method: string
+          pickup_location: string | null
+          service_id: string
+          status: string
+          total_price_vnd: number
+          updated_at: string
+          user_id: string | null
+          vehicle_type: string | null
+        }
+        Insert: {
+          booking_date: string
+          booking_time?: string | null
+          created_at?: string
+          discount_percent?: number
+          guest_email?: string | null
+          guest_name: string
+          guest_phone: string
+          guests_count?: number
+          id?: string
+          notes?: string | null
+          original_price_vnd?: number
+          payment_method?: string
+          pickup_location?: string | null
+          service_id: string
+          status?: string
+          total_price_vnd?: number
+          updated_at?: string
+          user_id?: string | null
+          vehicle_type?: string | null
+        }
+        Update: {
+          booking_date?: string
+          booking_time?: string | null
+          created_at?: string
+          discount_percent?: number
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string
+          guests_count?: number
+          id?: string
+          notes?: string | null
+          original_price_vnd?: number
+          payment_method?: string
+          pickup_location?: string | null
+          service_id?: string
+          status?: string
+          total_price_vnd?: number
+          updated_at?: string
+          user_id?: string | null
+          vehicle_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          category: string
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          icon: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_bookable: boolean
+          is_free: boolean
+          name_en: string
+          name_vi: string
+          price_vnd: number
+          schedule: string | null
+          sort_order: number
+          updated_at: string
+          vehicle_types: Json | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          icon?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_bookable?: boolean
+          is_free?: boolean
+          name_en?: string
+          name_vi: string
+          price_vnd?: number
+          schedule?: string | null
+          sort_order?: number
+          updated_at?: string
+          vehicle_types?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          icon?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_bookable?: boolean
+          is_free?: boolean
+          name_en?: string
+          name_vi?: string
+          price_vnd?: number
+          schedule?: string | null
+          sort_order?: number
+          updated_at?: string
+          vehicle_types?: Json | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           key: string
