@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { UtensilsCrossed } from 'lucide-react';
+import { UtensilsCrossed, Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import RoomCard from '@/components/RoomCard';
@@ -9,13 +9,17 @@ import PromotionsSection from '@/components/PromotionsSection';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
+import { useServices } from '@/hooks/useServices';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const Index = () => {
   const { t } = useLanguage();
   const { rooms } = useRooms();
+  const { amenities } = useServices();
   const navigate = useNavigate();
+  const isVi = t('nav.rooms') === 'Hạng phòng';
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,26 +81,39 @@ const Index = () => {
             <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full" />
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[
-              { emoji: '🏖️', title: 'Bể bơi & Biển', desc: 'Bể bơi vô cực và bãi biển riêng' },
-              { emoji: '🍽️', title: 'Nhà hàng', desc: 'Ẩm thực Việt Nam và quốc tế' },
-              { emoji: '💆', title: 'Spa & Wellness', desc: 'Dịch vụ spa cao cấp thư giãn' },
-            ].map((s, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            {amenities.slice(0, 8).map((s, i) => (
               <motion.div
-                key={i}
+                key={s.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
                 viewport={{ once: true }}
-                className="bg-card rounded-xl p-8 text-center shadow-card hover:shadow-card-hover transition-all duration-300 border border-border"
+                className="bg-card rounded-xl p-6 text-center shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 border border-border"
               >
-                <span className="text-4xl mb-4 block">{s.emoji}</span>
-                <h3 className="font-display text-xl font-semibold mb-2">{s.title}</h3>
-                <p className="text-sm text-muted-foreground">{s.desc}</p>
+                <span className="text-4xl mb-3 block">{s.icon}</span>
+                <h3 className="font-display text-sm md:text-base font-semibold mb-1">{isVi ? s.name_vi : s.name_en}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2">{isVi ? s.description_vi : s.description_en}</p>
+                {s.is_free && (
+                  <Badge variant="outline" className="mt-2 text-xs border-primary/30 text-primary">
+                    {isVi ? 'Miễn phí' : 'Free'}
+                  </Badge>
+                )}
               </motion.div>
             ))}
           </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mt-8"
+          >
+            <Button variant="gold" size="lg" onClick={() => navigate('/services')}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              {isVi ? 'Xem tất cả dịch vụ & đặt dịch vụ' : 'View all services & book'}
+            </Button>
+          </motion.div>
         </div>
       </section>
 
