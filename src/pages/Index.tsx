@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import RoomCard from '@/components/RoomCard';
 import PhotoGallery from '@/components/PhotoGallery';
+import PromotionsSection from '@/components/PromotionsSection';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
@@ -138,21 +139,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Offers Section */}
-      <section id="offers" className="py-20 bg-secondary">
-        <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="font-display text-4xl font-bold text-foreground mb-3">{t('nav.offers')}</h2>
-            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-8" />
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">{t('platforms.direct')}</p>
-          </motion.div>
-        </div>
-      </section>
+      {/* Promotions Section */}
+      <PromotionsSection />
 
       <Footer />
       <FloatingButtons />
