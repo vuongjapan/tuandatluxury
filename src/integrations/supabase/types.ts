@@ -311,6 +311,60 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          applies_to_tier: string | null
+          benefits_en: string[]
+          benefits_vi: string[]
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          discount_percent: number | null
+          icon: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sort_order: number
+          title_en: string
+          title_vi: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to_tier?: string | null
+          benefits_en?: string[]
+          benefits_vi?: string[]
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          discount_percent?: number | null
+          icon?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          title_en?: string
+          title_vi: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to_tier?: string | null
+          benefits_en?: string[]
+          benefits_vi?: string[]
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          discount_percent?: number | null
+          icon?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       room_daily_availability: {
         Row: {
           created_at: string

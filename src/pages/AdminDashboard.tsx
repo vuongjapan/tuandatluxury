@@ -10,7 +10,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, Settings, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
-  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed
+  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -18,9 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { AMENITY_ICONS } from '@/data/rooms';
 import AdminDining from '@/components/AdminDining';
+import AdminPromotions from '@/components/AdminPromotions';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'settings';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'settings';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -333,6 +334,7 @@ const AdminDashboard = () => {
     { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
     { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
     { id: 'dining', icon: UtensilsCrossed, label: 'Ẩm thực' },
+    { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'settings', icon: Settings, label: 'Cài đặt' },
@@ -907,6 +909,9 @@ const AdminDashboard = () => {
 
           {/* DINING */}
           {tab === 'dining' && <AdminDining />}
+
+          {/* PROMOTIONS */}
+          {tab === 'promotions' && <AdminPromotions />}
 
           {/* CUSTOMERS */}
           {tab === 'customers' && (
