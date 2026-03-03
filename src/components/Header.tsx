@@ -53,7 +53,7 @@ const Header = () => {
         </nav>
 
         {/* Right side */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
