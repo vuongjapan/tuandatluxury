@@ -10,7 +10,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, Settings, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
-  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles
+  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -22,7 +22,7 @@ import AdminPromotions from '@/components/AdminPromotions';
 import AdminServices from '@/components/AdminServices';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'settings';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'settings' | 'trash';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -54,16 +54,30 @@ const statusLabels: Record<string, string> = {
 
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 
+// Trash localStorage helpers
+const TRASH_KEY = 'tdl_admin_trash';
+interface TrashItem {
+  type: 'booking';
+  data: any;
+  deletedAt: string;
+}
+
+function getTrash(): TrashItem[] {
+  try { return JSON.parse(localStorage.getItem(TRASH_KEY) || '[]'); } catch { return []; }
+}
+function saveTrash(items: TrashItem[]) { localStorage.setItem(TRASH_KEY, JSON.stringify(items)); }
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [tab, setTab] = useState<Tab>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [uploadingRoomImage, setUploadingRoomImage] = useState(false);
+  const [trashItems, setTrashItems] = useState<TrashItem[]>(getTrash());
 
   // Monthly prices
   const [monthlyPrices, setMonthlyPrices] = useState<any[]>([]);
@@ -200,7 +214,6 @@ const AdminDashboard = () => {
     toast({ title: 'Cập nhật thành công' });
   };
 
-  // Room image upload
   const handleRoomImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editingRoom) return;
@@ -251,7 +264,6 @@ const AdminDashboard = () => {
     fetchData();
   };
 
-  // Monthly price upsert
   const saveMonthlyPrice = async () => {
     if (!mpRoom || !mpWeekday || !mpWeekend || !mpSunday) {
       toast({ title: 'Vui lòng điền đầy đủ giá', variant: 'destructive' });
@@ -277,7 +289,6 @@ const AdminDashboard = () => {
     fetchMonthlyPrices();
   };
 
-  // Load existing price when room/year/month change
   useEffect(() => {
     if (!mpRoom) return;
     const existing = monthlyPrices.find((p: any) => p.room_id === mpRoom && p.year === mpYear && p.month === mpMonth);
@@ -293,14 +304,11 @@ const AdminDashboard = () => {
     }
   }, [mpRoom, mpYear, mpMonth, monthlyPrices, rooms]);
 
-  // Daily availability toggle
   const toggleDayAvailability = async (roomId: string, dateStr: string, currentStatus: string | null) => {
     const nextStatus = currentStatus === null ? 'closed' : currentStatus === 'open' ? 'closed' : currentStatus === 'closed' ? 'limited' : 'open';
     if (currentStatus === null) {
-      // Insert new
       await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
     } else if (nextStatus === 'open') {
-      // Delete record (default is open)
       const existing = dailyAvailability.find((a: any) => a.room_id === roomId && a.date === dateStr);
       if (existing) await supabase.from('room_daily_availability').delete().eq('id', existing.id);
     } else {
@@ -312,6 +320,87 @@ const AdminDashboard = () => {
       }
     }
     fetchDailyAvailability();
+  };
+
+  const moveBookingToTrash = async (booking: any) => {
+    if (!confirm('Chuyển đơn đặt phòng này vào thùng rác?')) return;
+    const newTrash = [...trashItems, { type: 'booking' as const, data: booking, deletedAt: new Date().toISOString() }];
+    saveTrash(newTrash);
+    setTrashItems(newTrash);
+    // Cancel in DB
+    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', booking.id);
+    setBookings(prev => prev.filter(b => b.id !== booking.id));
+    toast({ title: 'Đã chuyển vào thùng rác' });
+  };
+
+  const restoreFromTrash = async (index: number) => {
+    const item = trashItems[index];
+    if (item.type === 'booking') {
+      await supabase.from('bookings').update({ status: 'pending' }).eq('id', item.data.id);
+      fetchData();
+    }
+    const newTrash = trashItems.filter((_, i) => i !== index);
+    saveTrash(newTrash);
+    setTrashItems(newTrash);
+    toast({ title: 'Đã khôi phục' });
+  };
+
+  const permanentDelete = (index: number) => {
+    if (!confirm('Xóa vĩnh viễn? Không thể hoàn tác!')) return;
+    const newTrash = trashItems.filter((_, i) => i !== index);
+    saveTrash(newTrash);
+    setTrashItems(newTrash);
+    toast({ title: 'Đã xóa vĩnh viễn' });
+  };
+
+  const handleBackup = async () => {
+    const [{ data: b }, { data: r }, { data: g }, { data: mp }, { data: da }, { data: s }, { data: ss }] = await Promise.all([
+      supabase.from('bookings').select('*'),
+      supabase.from('rooms').select('*'),
+      supabase.from('gallery_images').select('*'),
+      supabase.from('room_monthly_prices').select('*'),
+      supabase.from('room_daily_availability').select('*'),
+      supabase.from('services').select('*'),
+      supabase.from('site_settings').select('*'),
+    ]);
+    const backup = { exportedAt: new Date().toISOString(), bookings: b, rooms: r, gallery_images: g, room_monthly_prices: mp, room_daily_availability: da, services: s, site_settings: ss };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tuandat-backup-${format(new Date(), 'yyyyMMdd-HHmm')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Đã xuất backup thành công ✓' });
+  };
+
+  const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (!data.exportedAt) throw new Error('File không hợp lệ');
+        if (!confirm(`Khôi phục dữ liệu từ backup ${data.exportedAt}?\nDữ liệu hiện tại sẽ được ghi đè.`)) return;
+
+        // Restore site_settings
+        if (data.site_settings?.length) {
+          for (const s of data.site_settings) {
+            await supabase.from('site_settings').upsert(s as any, { onConflict: 'key' } as any);
+          }
+        }
+        toast({ title: 'Đã khôi phục dữ liệu ✓', description: `Backup từ ${data.exportedAt}` });
+        fetchData();
+        fetchGalleryImages();
+        fetchMonthlyPrices();
+        fetchDailyAvailability();
+      } catch (err: any) {
+        toast({ title: 'Lỗi khôi phục', description: err.message, variant: 'destructive' });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   // Stats
@@ -339,34 +428,46 @@ const AdminDashboard = () => {
     { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
+    { id: 'trash', icon: Archive, label: 'Thùng rác' },
     { id: 'settings', icon: Settings, label: 'Cài đặt' },
   ];
 
   return (
-    <div className="min-h-screen bg-secondary flex">
+    <div className="min-h-screen bg-secondary flex relative">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 bg-card border-r border-border flex flex-col`}>
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50 
+        w-64 bg-card border-r border-border flex flex-col 
+        transform transition-transform duration-300 
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-16'}
+      `}>
         <div className="p-4 border-b border-border flex items-center justify-between">
-          {sidebarOpen && (
-            <div>
-              <p className="font-display text-sm font-bold text-foreground">Tuấn Đạt Luxury</p>
-              <p className="text-xs text-muted-foreground">Quản trị hệ thống</p>
-            </div>
-          )}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 rounded hover:bg-secondary transition-colors">
+          <div className={`${sidebarOpen ? '' : 'hidden lg:hidden'}`}>
+            <p className="font-display text-sm font-bold text-foreground">Tuấn Đạt Luxury</p>
+            <p className="text-xs text-muted-foreground">Quản trị hệ thống</p>
+          </div>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 rounded hover:bg-secondary transition-colors hidden lg:block">
             {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+          <button onClick={() => setSidebarOpen(false)} className="p-1 rounded hover:bg-secondary transition-colors lg:hidden">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <nav className="flex-1 p-2 space-y-1">
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => { setTab(item.id); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${tab === item.id ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              {sidebarOpen && <span className="text-sm">{item.label}</span>}
+              <span className={`text-sm ${sidebarOpen ? '' : 'hidden lg:hidden'}`}>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -384,47 +485,51 @@ const AdminDashboard = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="font-display text-2xl font-bold text-foreground">
+      <main className="flex-1 overflow-auto min-w-0">
+        <div className="p-3 sm:p-6">
+          <div className="flex items-center justify-between mb-6 gap-2">
+            {/* Mobile menu button */}
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-card border border-border">
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="font-display text-lg sm:text-2xl font-bold text-foreground truncate">
               {navItems.find(n => n.id === tab)?.label}
             </h1>
-            <Button variant="outline" size="sm" onClick={() => { fetchData(); fetchMonthlyPrices(); fetchDailyAvailability(); }}>
-              <RefreshCw className="h-4 w-4 mr-2" /> Làm mới
+            <Button variant="outline" size="sm" onClick={() => { fetchData(); fetchMonthlyPrices(); fetchDailyAvailability(); }} className="shrink-0">
+              <RefreshCw className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Làm mới</span>
             </Button>
           </div>
 
           {/* DASHBOARD */}
           {tab === 'dashboard' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[
                   { label: 'Tổng đặt phòng', value: bookings.length, icon: CalendarRange, color: 'text-blue-600' },
                   { label: 'Chờ xác nhận', value: pendingCount, icon: Clock, color: 'text-yellow-600' },
                   { label: 'Đang ở', value: confirmedCount, icon: CheckCircle, color: 'text-green-600' },
                   { label: 'Doanh thu tháng', value: monthRevenue.toLocaleString('vi') + '₫', icon: TrendingUp, color: 'text-primary' },
                 ].map((stat, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-card rounded-xl border border-border p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-muted-foreground">{stat.label}</span>
-                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-card rounded-xl border border-border p-4 sm:p-5">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <span className="text-xs sm:text-sm text-muted-foreground">{stat.label}</span>
+                      <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
                     </div>
-                    <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                    <p className={`text-lg sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
                   </motion.div>
                 ))}
               </div>
 
-              <div className="bg-card rounded-xl border border-border p-5">
+              <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
                 <h2 className="font-display text-lg font-semibold mb-4">Đặt phòng gần đây</h2>
                 <div className="space-y-3">
                   {bookings.slice(0, 5).map(b => (
-                    <div key={b.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                      <div>
-                        <p className="font-medium text-sm">{b.guest_name}</p>
-                        <p className="text-xs text-muted-foreground">{b.rooms?.name_vi} · {b.guest_phone}</p>
+                    <div key={b.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{b.guest_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{b.rooms?.name_vi} · {b.guest_phone}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-primary">{b.total_price_vnd?.toLocaleString('vi')}₫</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[b.status]}`}>{statusLabels[b.status]}</span>
                       </div>
@@ -439,37 +544,42 @@ const AdminDashboard = () => {
           {tab === 'bookings' && (
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[700px]">
                   <thead className="bg-secondary">
                     <tr>
                       {['Mã đặt', 'Khách hàng', 'Phòng', 'Nhận - Trả', 'Tổng tiền', 'Trạng thái', 'Thao tác'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left font-semibold text-muted-foreground">{h}</th>
+                        <th key={h} className="px-3 sm:px-4 py-3 text-left font-semibold text-muted-foreground text-xs sm:text-sm">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {bookings.map(b => (
                       <tr key={b.id} className="hover:bg-secondary/50 transition-colors">
-                        <td className="px-4 py-3 font-mono text-xs font-bold text-primary">{b.booking_code}</td>
-                        <td className="px-4 py-3">
-                          <p className="font-medium">{b.guest_name}</p>
+                        <td className="px-3 sm:px-4 py-3 font-mono text-xs font-bold text-primary">{b.booking_code}</td>
+                        <td className="px-3 sm:px-4 py-3">
+                          <p className="font-medium text-xs sm:text-sm">{b.guest_name}</p>
                           <p className="text-xs text-muted-foreground">{b.guest_phone}</p>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">{b.rooms?.name_vi || b.room_id}</td>
-                        <td className="px-4 py-3 text-xs">{b.check_in} → {b.check_out}</td>
-                        <td className="px-4 py-3 font-semibold text-primary">{b.total_price_vnd?.toLocaleString('vi')}₫</td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 sm:px-4 py-3 text-muted-foreground text-xs sm:text-sm">{b.rooms?.name_vi || b.room_id}</td>
+                        <td className="px-3 sm:px-4 py-3 text-xs">{b.check_in} → {b.check_out}</td>
+                        <td className="px-3 sm:px-4 py-3 font-semibold text-primary text-xs sm:text-sm">{b.total_price_vnd?.toLocaleString('vi')}₫</td>
+                        <td className="px-3 sm:px-4 py-3">
                           <span className={`text-xs px-2 py-1 rounded-full ${statusColors[b.status]}`}>{statusLabels[b.status]}</span>
                         </td>
-                        <td className="px-4 py-3">
-                          <Select value={b.status} onValueChange={(v) => updateBookingStatus(b.id, v)}>
-                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(statusLabels).map(([k, v]) => (
-                                <SelectItem key={k} value={k}>{v}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <td className="px-3 sm:px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            <Select value={b.status} onValueChange={(v) => updateBookingStatus(b.id, v)}>
+                              <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(statusLabels).map(([k, v]) => (
+                                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <button onClick={() => moveBookingToTrash(b)} className="p-1 rounded hover:bg-destructive/10 text-destructive" title="Chuyển vào thùng rác">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -485,17 +595,20 @@ const AdminDashboard = () => {
           {/* ROOMS - Full management */}
           {tab === 'rooms' && (
             <div className="space-y-6">
-              {/* Room editing form */}
               {editingRoom && (
-                <div className="bg-card rounded-xl border-2 border-primary p-6">
+                <div className="bg-card rounded-xl border-2 border-primary p-4 sm:p-6">
                   <h3 className="font-display text-lg font-semibold mb-4">Chỉnh sửa: {editingRoom.name_vi}</h3>
                   
-                  {/* Room image */}
                   <div className="mb-4">
                     <label className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Ảnh phòng</label>
-                    <div className="flex items-start gap-4">
+                    <div className="flex flex-col sm:flex-row items-start gap-4">
                       {editingRoom.image_url && (
-                        <img src={editingRoom.image_url} alt="" className="w-40 h-28 object-cover rounded-lg border border-border" />
+                        <img
+                          src={editingRoom.image_url}
+                          alt=""
+                          className="w-full sm:w-40 h-28 object-cover rounded-lg border border-border"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                        />
                       )}
                       <label className="cursor-pointer">
                         <input type="file" accept="image/*" className="hidden" onChange={handleRoomImageUpload} disabled={uploadingRoomImage} />
@@ -507,7 +620,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Tên phòng (VI)</label>
                       <Input value={editingRoom.name_vi} onChange={e => setEditingRoom({ ...editingRoom, name_vi: e.target.value })} />
@@ -542,8 +655,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Descriptions */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div>
                       <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Mô tả (VI)</label>
                       <Textarea value={editingRoom.description_vi || ''} onChange={e => setEditingRoom({ ...editingRoom, description_vi: e.target.value })} rows={2} />
@@ -562,7 +674,6 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Amenities */}
                   <div className="mt-4">
                     <label className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Tiện nghi</label>
                     <div className="flex flex-wrap gap-2">
@@ -585,41 +696,45 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <Button variant="hero" onClick={updateRoom}><Save className="h-4 w-4 mr-2" />Lưu thay đổi</Button>
                     <Button variant="outline" onClick={() => setEditingRoom(null)}>Hủy</Button>
                   </div>
                 </div>
               )}
 
-              {/* Room cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {rooms.map(room => (
-                  <div key={room.id} className="bg-card rounded-xl border border-border p-5">
-                    <div className="flex gap-4 mb-3">
+                  <div key={room.id} className="bg-card rounded-xl border border-border p-4 sm:p-5">
+                    <div className="flex gap-3 sm:gap-4 mb-3">
                       {room.image_url && (
-                        <img src={room.image_url} alt="" className="w-24 h-16 object-cover rounded-lg border border-border" />
+                        <img
+                          src={room.image_url}
+                          alt=""
+                          className="w-20 sm:w-24 h-14 sm:h-16 object-cover rounded-lg border border-border"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                        />
                       )}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-display text-lg font-semibold">{room.name_vi}</h3>
-                            <p className="text-xs text-muted-foreground">{room.name_en}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-display text-base sm:text-lg font-semibold truncate">{room.name_vi}</h3>
+                            <p className="text-xs text-muted-foreground truncate">{room.name_en}</p>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full ${room.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {room.is_active ? 'Đang hiển thị' : 'Ẩn'}
+                          <span className={`text-xs px-2 py-1 rounded-full shrink-0 ${room.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {room.is_active ? 'Hiện' : 'Ẩn'}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1 mb-3">
-                      {(room.amenities || []).slice(0, 6).map((a: string) => (
+                      {(room.amenities || []).slice(0, 4).map((a: string) => (
                         <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
                           {AMENITY_ICONS[a]?.label.vi || a}
                         </span>
                       ))}
                     </div>
-                    <div className="bg-secondary rounded-lg p-2 mb-4 text-center">
+                    <div className="bg-secondary rounded-lg p-2 mb-3 text-center">
                       <p className="text-xs text-muted-foreground">Giá cơ bản</p>
                       <p className="font-bold text-primary text-sm">{room.price_vnd?.toLocaleString('vi')}₫/đêm</p>
                     </div>
@@ -630,17 +745,17 @@ const AdminDashboard = () => {
                 ))}
               </div>
 
-              {/* ===== BẢNG GIÁ THEO THÁNG ===== */}
-              <div className="bg-card rounded-xl border border-border p-6">
+              {/* Monthly prices */}
+              <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-2">
                   <DollarSign className="h-5 w-5 inline mr-2 text-primary" />
                   Bảng giá theo tháng
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Thiết lập 3 mức giá cho mỗi tháng: <strong>Ngày thường</strong> (T2→T5), <strong>Cuối tuần</strong> (T6 & T7), <strong>Chủ nhật</strong> (CN).
+                  Thiết lập 3 mức giá: <strong>Ngày thường</strong> (T2→T5), <strong>Cuối tuần</strong> (T6 & T7), <strong>Chủ nhật</strong> (CN).
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                   <div>
                     <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Phòng</label>
                     <Select value={mpRoom} onValueChange={setMpRoom}>
@@ -689,25 +804,24 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Existing monthly prices table */}
                 {monthlyPrices.length > 0 && (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[500px]">
                       <thead className="bg-secondary">
                         <tr>
                           {['Phòng', 'Tháng', 'Ngày thường', 'Cuối tuần', 'Chủ nhật', ''].map(h => (
-                            <th key={h} className="px-3 py-2 text-left font-semibold text-muted-foreground">{h}</th>
+                            <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {monthlyPrices.map((p: any) => (
                           <tr key={p.id} className="hover:bg-secondary/50">
-                            <td className="px-3 py-2">{rooms.find(r => r.id === p.room_id)?.name_vi || p.room_id}</td>
-                            <td className="px-3 py-2">{MONTH_NAMES[p.month - 1]} {p.year}</td>
-                            <td className="px-3 py-2 font-semibold text-primary">{p.price_weekday?.toLocaleString('vi')}₫</td>
-                            <td className="px-3 py-2 font-semibold text-primary">{p.price_weekend?.toLocaleString('vi')}₫</td>
-                            <td className="px-3 py-2 font-semibold text-primary">{p.price_sunday?.toLocaleString('vi')}₫</td>
+                            <td className="px-3 py-2 text-xs sm:text-sm">{rooms.find(r => r.id === p.room_id)?.name_vi || p.room_id}</td>
+                            <td className="px-3 py-2 text-xs sm:text-sm">{MONTH_NAMES[p.month - 1]} {p.year}</td>
+                            <td className="px-3 py-2 font-semibold text-primary text-xs sm:text-sm">{p.price_weekday?.toLocaleString('vi')}₫</td>
+                            <td className="px-3 py-2 font-semibold text-primary text-xs sm:text-sm">{p.price_weekend?.toLocaleString('vi')}₫</td>
+                            <td className="px-3 py-2 font-semibold text-primary text-xs sm:text-sm">{p.price_sunday?.toLocaleString('vi')}₫</td>
                             <td className="px-3 py-2">
                               <button onClick={() => deleteMonthlyPrice(p.id)} className="text-destructive hover:text-destructive/80">
                                 <Trash2 className="h-4 w-4" />
@@ -721,21 +835,21 @@ const AdminDashboard = () => {
                 )}
               </div>
 
-              {/* ===== TRẠNG THÁI BÁN THEO NGÀY ===== */}
-              <div className="bg-card rounded-xl border border-border p-6">
+              {/* Daily availability */}
+              <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-2">
                   <CalendarRange className="h-5 w-5 inline mr-2 text-primary" />
                   Trạng thái bán theo ngày
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Click vào ngày để chuyển trạng thái: <strong className="text-green-600">Mở</strong> → <strong className="text-destructive">Đóng</strong> → <strong className="text-yellow-600">Giới hạn</strong> → Mở.
+                  Click vào ngày để chuyển: <strong className="text-green-600">Mở</strong> → <strong className="text-destructive">Đóng</strong> → <strong className="text-yellow-600">Giới hạn</strong> → Mở.
                 </p>
 
                 <div className="flex flex-wrap gap-3 mb-4 items-center">
                   <div>
                     <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Phòng</label>
                     <Select value={daRoom} onValueChange={setDaRoom}>
-                      <SelectTrigger className="w-48"><SelectValue placeholder="Chọn phòng" /></SelectTrigger>
+                      <SelectTrigger className="w-40 sm:w-48"><SelectValue placeholder="Chọn phòng" /></SelectTrigger>
                       <SelectContent>
                         {rooms.map(r => (
                           <SelectItem key={r.id} value={r.id}>{r.name_vi}</SelectItem>
@@ -747,7 +861,7 @@ const AdminDashboard = () => {
                     <Button variant="ghost" size="icon" onClick={() => setDaCalMonth(new Date(daYear, daMonth - 1))}>
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="font-display text-lg font-semibold min-w-[140px] text-center">
+                    <span className="font-display text-base sm:text-lg font-semibold min-w-[120px] sm:min-w-[140px] text-center">
                       {MONTH_NAMES[daMonth]} {daYear}
                     </span>
                     <Button variant="ghost" size="icon" onClick={() => setDaCalMonth(new Date(daYear, daMonth + 1))}>
@@ -776,14 +890,14 @@ const AdminDashboard = () => {
                             key={d}
                             onClick={() => toggleDayAvailability(daRoom, dateStr, avail ? status : null)}
                             className={`
-                              min-h-[48px] rounded-lg text-center transition-all duration-200 flex flex-col items-center justify-center cursor-pointer border
+                              min-h-[40px] sm:min-h-[48px] rounded-lg text-center transition-all duration-200 flex flex-col items-center justify-center cursor-pointer border
                               ${status === 'open' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800 hover:bg-green-100' : ''}
                               ${status === 'closed' ? 'bg-destructive/10 border-destructive/30 hover:bg-destructive/20' : ''}
                               ${status === 'limited' ? 'bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700 hover:bg-yellow-100' : ''}
                             `}
                           >
-                            <span className="text-sm font-medium text-foreground">{d}</span>
-                            <span className={`text-[9px] font-semibold ${
+                            <span className="text-xs sm:text-sm font-medium text-foreground">{d}</span>
+                            <span className={`text-[8px] sm:text-[9px] font-semibold ${
                               status === 'open' ? 'text-green-600' : status === 'closed' ? 'text-destructive' : 'text-yellow-600'
                             }`}>
                               {status === 'open' ? 'Mở' : status === 'closed' ? 'Đóng' : 'GH'}
@@ -793,7 +907,7 @@ const AdminDashboard = () => {
                       })}
                     </div>
 
-                    <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap gap-3 sm:gap-4 mt-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-100 border border-green-300" /> Mở bán</span>
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/20 border border-destructive/40" /> Đóng bán</span>
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-400" /> Giới hạn</span>
@@ -816,7 +930,7 @@ const AdminDashboard = () => {
                   <button
                     key={cat.id}
                     onClick={() => setGalleryCategory(cat.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
                       galleryCategory === cat.id
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-card text-muted-foreground hover:bg-accent border border-border'
@@ -827,14 +941,14 @@ const AdminDashboard = () => {
                 ))}
               </div>
 
-              <div className="bg-card rounded-xl border border-border p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-lg font-semibold">
+              <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
+                <div className="flex items-center justify-between mb-4 gap-2">
+                  <h3 className="font-display text-base sm:text-lg font-semibold truncate">
                     {GALLERY_CATEGORIES.find(c => c.id === galleryCategory)?.label}
                   </h3>
-                  <label className="cursor-pointer">
+                  <label className="cursor-pointer shrink-0">
                     <input type="file" accept="image/*" className="hidden" onChange={handleGalleryUpload} disabled={uploadingImage} />
-                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                    <span className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs sm:text-sm font-medium hover:bg-primary/90 transition-colors">
                       <Upload className="h-4 w-4" />
                       {uploadingImage ? 'Đang tải...' : 'Thêm ảnh'}
                     </span>
@@ -844,7 +958,7 @@ const AdminDashboard = () => {
                 {editingGalleryImage && (
                   <div className="bg-secondary rounded-xl p-4 mb-4 border-2 border-primary">
                     <h4 className="font-semibold mb-3">Chỉnh sửa ảnh</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Tiêu đề (VI)</label>
                         <Input value={editingGalleryImage.title_vi || ''} onChange={e => setEditingGalleryImage({ ...editingGalleryImage, title_vi: e.target.value })} />
@@ -880,10 +994,15 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {galleryImages.filter(g => g.category === galleryCategory).map(img => (
                     <div key={img.id} className="group relative rounded-xl overflow-hidden border border-border">
-                      <img src={img.image_url} alt={img.title_vi || ''} className="w-full aspect-[4/3] object-cover" />
+                      <img
+                        src={img.image_url}
+                        alt={img.title_vi || ''}
+                        className="w-full aspect-[4/3] object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                      />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         <button onClick={() => setEditingGalleryImage(img)} className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors">
                           <Pencil className="h-4 w-4 text-white" />
@@ -903,30 +1022,25 @@ const AdminDashboard = () => {
                 </div>
 
                 {galleryImages.filter(g => g.category === galleryCategory).length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">Chưa có ảnh trong danh mục này. Nhấn "Thêm ảnh" để bắt đầu.</p>
+                  <p className="text-center text-muted-foreground py-8">Chưa có ảnh trong danh mục này.</p>
                 )}
               </div>
             </div>
           )}
 
-          {/* DINING */}
           {tab === 'dining' && <AdminDining />}
-
-          {/* PROMOTIONS */}
           {tab === 'promotions' && <AdminPromotions />}
-
-          {/* SERVICES */}
           {tab === 'services' && <AdminServices />}
 
           {/* CUSTOMERS */}
           {tab === 'customers' && (
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[600px]">
                   <thead className="bg-secondary">
                     <tr>
-                      {['Họ tên', 'Điện thoại', 'Email', 'Số lần đặt', 'Tổng chi tiêu', 'Lần đặt gần nhất'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left font-semibold text-muted-foreground">{h}</th>
+                      {['Họ tên', 'Điện thoại', 'Email', 'Số lần đặt', 'Tổng chi tiêu', 'Gần nhất'].map(h => (
+                        <th key={h} className="px-3 sm:px-4 py-3 text-left font-semibold text-muted-foreground text-xs sm:text-sm">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -940,12 +1054,12 @@ const AdminDashboard = () => {
                       return acc;
                     }, {})).map((c: any, i) => (
                       <tr key={i} className="hover:bg-secondary/50">
-                        <td className="px-4 py-3 font-medium">{c.name}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{c.phone}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{c.email || '—'}</td>
-                        <td className="px-4 py-3 text-center font-semibold">{c.count}</td>
-                        <td className="px-4 py-3 font-semibold text-primary">{c.total.toLocaleString('vi')}₫</td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(c.last), 'dd/MM/yyyy', { locale: vi })}</td>
+                        <td className="px-3 sm:px-4 py-3 font-medium text-xs sm:text-sm">{c.name}</td>
+                        <td className="px-3 sm:px-4 py-3 text-muted-foreground text-xs sm:text-sm">{c.phone}</td>
+                        <td className="px-3 sm:px-4 py-3 text-muted-foreground text-xs sm:text-sm">{c.email || '—'}</td>
+                        <td className="px-3 sm:px-4 py-3 text-center font-semibold">{c.count}</td>
+                        <td className="px-3 sm:px-4 py-3 font-semibold text-primary text-xs sm:text-sm">{c.total.toLocaleString('vi')}₫</td>
+                        <td className="px-3 sm:px-4 py-3 text-xs text-muted-foreground">{format(new Date(c.last), 'dd/MM/yyyy', { locale: vi })}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -957,23 +1071,23 @@ const AdminDashboard = () => {
           {/* REVENUE */}
           {tab === 'revenue' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { label: 'Tổng doanh thu', value: totalRevenue, icon: DollarSign },
                   { label: 'Tháng này', value: monthRevenue, icon: TrendingUp },
                   { label: 'TB/đặt phòng', value: bookings.length ? Math.round(totalRevenue / bookings.length) : 0, icon: BarChart3 },
                 ].map((s, i) => (
-                  <div key={i} className="bg-card rounded-xl border border-border p-6">
+                  <div key={i} className="bg-card rounded-xl border border-border p-5 sm:p-6">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-muted-foreground">{s.label}</span>
                       <s.icon className="h-5 w-5 text-primary" />
                     </div>
-                    <p className="text-2xl font-bold text-primary">{s.value.toLocaleString('vi')}₫</p>
+                    <p className="text-xl sm:text-2xl font-bold text-primary">{s.value.toLocaleString('vi')}₫</p>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-card rounded-xl border border-border p-6">
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4">Chi tiết doanh thu theo phòng</h3>
                 {rooms.map(room => {
                   const roomBookings = bookings.filter(b => b.room_id === room.id && b.status !== 'cancelled');
@@ -996,10 +1110,47 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {/* TRASH */}
+          {tab === 'trash' && (
+            <div className="space-y-4">
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Archive className="h-5 w-5 text-muted-foreground" />
+                  Thùng rác ({trashItems.length})
+                </h3>
+                {trashItems.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Thùng rác trống</p>
+                ) : (
+                  <div className="space-y-3">
+                    {trashItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 bg-secondary rounded-lg gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{item.type === 'booking' ? '🏨 Đặt phòng' : item.type}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {item.data.guest_name} · {item.data.booking_code} · {item.data.guest_phone}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Xóa lúc: {format(new Date(item.deletedAt), 'dd/MM/yyyy HH:mm', { locale: vi })}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button variant="outline" size="sm" onClick={() => restoreFromTrash(idx)}>
+                            <RotateCcw className="h-3.5 w-3.5 mr-1" />Khôi phục
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => permanentDelete(idx)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />Xóa hẳn
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* SETTINGS */}
           {tab === 'settings' && (
             <div className="space-y-6 max-w-2xl">
-              {/* Account info */}
-              <div className="bg-card rounded-xl border border-border p-6">
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4">Thông tin tài khoản Admin</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between py-2 border-b border-border">
@@ -1018,9 +1169,9 @@ const AdminDashboard = () => {
               </div>
 
               {/* Map embed */}
-              <div className="bg-card rounded-xl border border-border p-6">
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-2">🗺️ Bản đồ khách sạn</h3>
-                <p className="text-xs text-muted-foreground mb-3">Dán link Google Maps Embed vào đây (lấy từ Google Maps → Chia sẻ → Nhúng bản đồ)</p>
+                <p className="text-xs text-muted-foreground mb-3">Dán link Google Maps Embed vào đây</p>
                 <Textarea
                   rows={3}
                   value={localSettings.map_embed_url || ''}
@@ -1036,11 +1187,11 @@ const AdminDashboard = () => {
               </div>
 
               {/* Platform links */}
-              <div className="bg-card rounded-xl border border-border p-6">
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-2">🌐 Nền tảng đặt phòng quốc tế</h3>
                 <p className="text-xs text-muted-foreground mb-4">Chỉnh sửa link và tên hiển thị cho các nền tảng</p>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium text-muted-foreground">Tên nền tảng 1</label>
                       <Input value={localSettings.platform_booking_name || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_booking_name: e.target.value }))} placeholder="Booking.com" />
@@ -1050,7 +1201,7 @@ const AdminDashboard = () => {
                       <Input value={localSettings.platform_booking_url || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_booking_url: e.target.value }))} placeholder="https://www.booking.com/..." />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium text-muted-foreground">Tên nền tảng 2</label>
                       <Input value={localSettings.platform_agoda_name || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_agoda_name: e.target.value }))} placeholder="Agoda" />
@@ -1063,7 +1214,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Save button */}
+              {/* Save settings */}
               <Button
                 disabled={savingSettings}
                 onClick={async () => {
@@ -1081,7 +1232,24 @@ const AdminDashboard = () => {
                 <Save className="h-4 w-4 mr-2" /> {savingSettings ? 'Đang lưu...' : 'Lưu tất cả cài đặt'}
               </Button>
 
-              <div className="mt-4">
+              {/* Backup/Restore */}
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-2">💾 Sao lưu & Khôi phục</h3>
+                <p className="text-xs text-muted-foreground mb-4">Xuất toàn bộ dữ liệu ra file JSON hoặc khôi phục từ file backup</p>
+                <div className="flex flex-wrap gap-3">
+                  <Button variant="outline" onClick={handleBackup}>
+                    <Download className="h-4 w-4 mr-2" /> Xuất Backup (JSON)
+                  </Button>
+                  <label className="cursor-pointer">
+                    <input type="file" accept=".json" className="hidden" onChange={handleRestore} />
+                    <span className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                      <UploadCloud className="h-4 w-4" /> Khôi phục từ file
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
                 <a href="/" target="_blank">
                   <Button variant="outline" size="sm"><Eye className="h-4 w-4 mr-2" />Xem website</Button>
                 </a>
