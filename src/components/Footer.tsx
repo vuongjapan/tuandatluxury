@@ -44,28 +44,28 @@ const Footer = () => {
 
             {/* 3 Clear Buttons: Google Maps, Booking, Agoda */}
             <div className="mt-6 flex flex-col gap-2">
-              <a
-                href={settings.google_maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors"
-              >
-                <Map className="h-3.5 w-3.5 text-primary" /> Xem vị trí trên Google Maps
-              </a>
+              
+
+
+
+
+
+
+              
               <a
                 href={settings.platform_booking_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors"
-              >
+                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors">
+                
                 <ExternalLink className="h-3.5 w-3.5 text-primary" /> Đặt phòng trên {settings.platform_booking_name}
               </a>
               <a
                 href={settings.platform_agoda_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors"
-              >
+                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors">
+                
                 <ExternalLink className="h-3.5 w-3.5 text-primary" /> Đặt phòng trên {settings.platform_agoda_name}
               </a>
               <p className="text-xs text-primary mt-1">{t('platforms.direct')}</p>
@@ -76,7 +76,7 @@ const Footer = () => {
           <div>
             <h4 className="font-display text-lg font-semibold mb-4">{t('footer.find_us')}</h4>
             <div className="rounded-xl overflow-hidden border border-background/10">
-            {settings.map_embed_url ? (
+            {settings.map_embed_url ?
               <iframe
                 src={settings.map_embed_url}
                 width="100%"
@@ -85,19 +85,19 @@ const Footer = () => {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Hotel Location"
-              />
-            ) : (
+                title="Hotel Location" /> :
+
+
               <a
                 href={settings.google_maps_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full h-[180px] bg-background/10 flex flex-col items-center justify-center text-xs text-background/50 hover:text-primary transition-colors gap-2"
-              >
+                className="w-full h-[180px] bg-background/10 flex flex-col items-center justify-center text-xs text-background/50 hover:text-primary transition-colors gap-2">
+                
                 <Map className="h-8 w-8" />
                 <span>Xem trên Google Maps</span>
               </a>
-            )}
+              }
             </div>
           </div>
         </div>
@@ -107,8 +107,8 @@ const Footer = () => {
           © {new Date().getFullYear()} Tuấn Đạt Luxury. All rights reserved.
         </div>
       </div>
-    </footer>
-  );
+    </footer>);
+
 };
 
 export default Footer;
