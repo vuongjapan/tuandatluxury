@@ -145,9 +145,9 @@ const Header = () => {
                 {t(item.key)}
               </a>
           )}
-            <a href="tel:0986617939" className="px-4 py-3 text-sm font-semibold text-primary flex items-center gap-2">
-              <Phone className="h-4 w-4" /> 098.661.7939
-            </a>
+            
+
+          
           </nav>
         </div>
       }
