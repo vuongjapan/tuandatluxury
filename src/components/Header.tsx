@@ -9,8 +9,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  DropdownMenuTrigger } from
+'@/components/ui/dropdown-menu';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,16 +19,16 @@ const Header = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { key: 'nav.overview', href: '/#overview' },
-    { key: 'nav.rooms', href: '/#rooms' },
-    { key: 'nav.booking', href: '/booking' },
-    { key: 'nav.about', href: '/#about' },
-    { key: 'nav.services', href: '/#services' },
-    { key: 'nav.dining', href: '/dining' },
-    { key: 'nav.gallery', href: '/#gallery' },
-    { key: 'nav.offers', href: '/#offers' },
-    { key: 'nav.contact', href: '/#contact' },
-  ];
+  { key: 'nav.overview', href: '/#overview' },
+  { key: 'nav.rooms', href: '/#rooms' },
+  { key: 'nav.booking', href: '/booking' },
+  { key: 'nav.about', href: '/#about' },
+  { key: 'nav.services', href: '/#services' },
+  { key: 'nav.dining', href: '/dining' },
+  { key: 'nav.gallery', href: '/#gallery' },
+  { key: 'nav.offers', href: '/#offers' },
+  { key: 'nav.contact', href: '/#contact' }];
+
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
@@ -41,15 +41,15 @@ const Header = () => {
 
         {/* Desktop Nav */}
         <nav className="hidden xl:flex items-center gap-1">
-          {navItems.map((item) => (
-            <a
-              key={item.key}
-              href={item.href}
-              className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-md hover:bg-secondary"
-            >
+          {navItems.map((item) =>
+          <a
+            key={item.key}
+            href={item.href}
+            className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-md hover:bg-secondary">
+            
               {t(item.key)}
             </a>
-          ))}
+          )}
         </nav>
 
         {/* Right side */}
@@ -63,28 +63,28 @@ const Header = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {(Object.keys(langLabels) as Language[]).map((lang) => (
-                <DropdownMenuItem
-                  key={lang}
-                  onClick={() => setLanguage(lang)}
-                  className={lang === language ? 'bg-secondary font-semibold' : ''}
-                >
+              {(Object.keys(langLabels) as Language[]).map((lang) =>
+              <DropdownMenuItem
+                key={lang}
+                onClick={() => setLanguage(lang)}
+                className={lang === language ? 'bg-secondary font-semibold' : ''}>
+                
                   {langLabels[lang]}
                 </DropdownMenuItem>
-              ))}
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
           {/* Hotline */}
-          <a href="tel:0986617939" className="hidden md:flex items-center gap-1 text-sm font-semibold text-foreground">
-            <Phone className="h-4 w-4 text-primary" />
-            098.661.7939
-          </a>
+          
+
+
+          
 
           {/* Auth */}
           {!loading && (
-            user ? (
-              <DropdownMenu>
+          user ?
+          <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <User className="h-4 w-4" />
@@ -101,23 +101,23 @@ const Header = () => {
                     <p className="text-xs text-muted-foreground mt-1">Đã đặt: {user.bookingCount} lần</p>
                   </div>
                   <DropdownMenuSeparator />
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                  {isAdmin &&
+              <DropdownMenuItem onClick={() => navigate('/admin')}>
                       <Shield className="h-4 w-4 mr-2" /> Quản trị
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={() => { signOut(); }}>
+              }
+                  <DropdownMenuItem onClick={() => {signOut();}}>
                     <LogOut className="h-4 w-4 mr-2" /> Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate('/member')}>
+              </DropdownMenu> :
+
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate('/member')}>
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline text-xs">Đăng nhập</span>
-              </Button>
-            )
-          )}
+              </Button>)
+
+          }
 
           {/* CTA */}
           <Button variant="gold" size="sm" onClick={() => navigate('/booking')}>
@@ -132,27 +132,27 @@ const Header = () => {
       </div>
 
       {/* Mobile Menu */}
-      {mobileOpen && (
-        <div className="xl:hidden bg-card border-t border-border animate-fade-in">
+      {mobileOpen &&
+      <div className="xl:hidden bg-card border-t border-border animate-fade-in">
           <nav className="container mx-auto py-4 px-4 flex flex-col gap-1">
-            {navItems.map((item) => (
-              <a
-                key={item.key}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors"
-              >
+            {navItems.map((item) =>
+          <a
+            key={item.key}
+            href={item.href}
+            onClick={() => setMobileOpen(false)}
+            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+            
                 {t(item.key)}
               </a>
-            ))}
+          )}
             <a href="tel:0986617939" className="px-4 py-3 text-sm font-semibold text-primary flex items-center gap-2">
               <Phone className="h-4 w-4" /> 098.661.7939
             </a>
           </nav>
         </div>
-      )}
-    </header>
-  );
+      }
+    </header>);
+
 };
 
 export default Header;
