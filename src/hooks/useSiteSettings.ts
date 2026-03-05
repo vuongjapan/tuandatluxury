@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface SiteSettings {
   map_embed_url: string;
+  google_maps_url: string;
   platform_booking_url: string;
   platform_booking_name: string;
   platform_agoda_url: string;
@@ -12,9 +13,10 @@ export interface SiteSettings {
 
 const DEFAULTS: SiteSettings = {
   map_embed_url: '',
-  platform_booking_url: 'https://www.booking.com',
+  google_maps_url: 'https://maps.app.goo.gl/pBbcvrqXQQT4PVfn6',
+  platform_booking_url: 'https://www.booking.com/Share-fQj3dBe',
   platform_booking_name: 'Booking.com',
-  platform_agoda_url: 'https://www.agoda.com',
+  platform_agoda_url: 'https://www.agoda.com/vi-vn/tuan-dat-luxury-flc-sam-son/hotel/sam-son-vn.html?cid=1844104&ds=xB8wClEMQP3qTg7f',
   platform_agoda_name: 'Agoda',
 };
 

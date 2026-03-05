@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Facebook, ExternalLink } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, ExternalLink, Map } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
@@ -34,7 +34,7 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Col 3: Address */}
+          {/* Col 3: Address + Platforms */}
           <div>
             <h4 className="font-display text-lg font-semibold mb-4">{t('footer.address')}</h4>
             <div className="flex items-start gap-2 text-sm text-background/80">
@@ -42,29 +42,32 @@ const Footer = () => {
               <span>LK29-20 FLC Sầm Sơn,<br />Thanh Hóa, Việt Nam</span>
             </div>
 
-            {/* International Platforms */}
-            <div className="mt-6">
-              <p className="text-xs font-semibold text-background/60 uppercase tracking-wider mb-2">
-                {t('platforms.title')}
-              </p>
-              <div className="flex gap-2">
-                <a
-                  href={settings.platform_booking_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs bg-background/10 hover:bg-background/20 px-3 py-1.5 rounded-full transition-colors"
-                >
-                  <ExternalLink className="h-3 w-3" /> {settings.platform_booking_name}
-                </a>
-                <a
-                  href={settings.platform_agoda_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs bg-background/10 hover:bg-background/20 px-3 py-1.5 rounded-full transition-colors"
-                >
-                  <ExternalLink className="h-3 w-3" /> {settings.platform_agoda_name}
-                </a>
-              </div>
+            {/* 3 Clear Buttons: Google Maps, Booking, Agoda */}
+            <div className="mt-6 flex flex-col gap-2">
+              <a
+                href={settings.google_maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors"
+              >
+                <Map className="h-3.5 w-3.5 text-primary" /> Xem vị trí trên Google Maps
+              </a>
+              <a
+                href={settings.platform_booking_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-primary" /> Đặt phòng trên {settings.platform_booking_name}
+              </a>
+              <a
+                href={settings.platform_agoda_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-primary" /> Đặt phòng trên {settings.platform_agoda_name}
+              </a>
               <p className="text-xs text-primary mt-1">{t('platforms.direct')}</p>
             </div>
           </div>
@@ -85,7 +88,15 @@ const Footer = () => {
                 title="Hotel Location"
               />
             ) : (
-              <div className="w-full h-[180px] bg-background/10 flex items-center justify-center text-xs text-background/50">Chưa cài đặt bản đồ</div>
+              <a
+                href={settings.google_maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-[180px] bg-background/10 flex flex-col items-center justify-center text-xs text-background/50 hover:text-primary transition-colors gap-2"
+              >
+                <Map className="h-8 w-8" />
+                <span>Xem trên Google Maps</span>
+              </a>
             )}
             </div>
           </div>

@@ -1186,6 +1186,17 @@ const AdminDashboard = () => {
                 )}
               </div>
 
+              {/* Google Maps URL */}
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-2">📍 Link Google Maps</h3>
+                <p className="text-xs text-muted-foreground mb-3">Link Google Maps chia sẻ vị trí khách sạn</p>
+                <Input
+                  value={localSettings.google_maps_url || ''}
+                  onChange={e => setLocalSettings(prev => ({ ...prev, google_maps_url: e.target.value }))}
+                  placeholder="https://maps.app.goo.gl/..."
+                />
+              </div>
+
               {/* Platform links */}
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-2">🌐 Nền tảng đặt phòng quốc tế</h3>
@@ -1197,7 +1208,7 @@ const AdminDashboard = () => {
                       <Input value={localSettings.platform_booking_name || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_booking_name: e.target.value }))} placeholder="Booking.com" />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground">Link</label>
+                      <label className="text-xs font-medium text-muted-foreground">Link Booking.com</label>
                       <Input value={localSettings.platform_booking_url || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_booking_url: e.target.value }))} placeholder="https://www.booking.com/..." />
                     </div>
                   </div>
@@ -1207,7 +1218,7 @@ const AdminDashboard = () => {
                       <Input value={localSettings.platform_agoda_name || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_agoda_name: e.target.value }))} placeholder="Agoda" />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground">Link</label>
+                      <label className="text-xs font-medium text-muted-foreground">Link Agoda</label>
                       <Input value={localSettings.platform_agoda_url || ''} onChange={e => setLocalSettings(prev => ({ ...prev, platform_agoda_url: e.target.value }))} placeholder="https://www.agoda.com/..." />
                     </div>
                   </div>
@@ -1219,7 +1230,7 @@ const AdminDashboard = () => {
                 disabled={savingSettings}
                 onClick={async () => {
                   setSavingSettings(true);
-                  const keys = ['map_embed_url', 'platform_booking_url', 'platform_booking_name', 'platform_agoda_url', 'platform_agoda_name'];
+                  const keys = ['map_embed_url', 'google_maps_url', 'platform_booking_url', 'platform_booking_name', 'platform_agoda_url', 'platform_agoda_name'];
                   for (const key of keys) {
                     if (localSettings[key] !== settings[key]) {
                       await updateSetting(key, localSettings[key] || '');
