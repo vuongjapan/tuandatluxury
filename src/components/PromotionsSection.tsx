@@ -91,6 +91,7 @@ const PromotionsSection = () => {
                       src={promo.image_url}
                       alt={isVi ? promo.title_vi : promo.title_en}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                     />
                     <div className="absolute inset-0 h-40 bg-gradient-to-t from-card/80 to-transparent" />
                   </div>

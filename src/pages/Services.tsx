@@ -152,7 +152,7 @@ const Services = () => {
               >
                 {s.image_url && (
                   <div className="absolute inset-0 opacity-10 group-hover:opacity-15 transition-opacity">
-                    <img src={s.image_url} alt="" className="w-full h-full object-cover" />
+                    <img src={s.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
                   </div>
                 )}
                 <div className="relative z-10">
@@ -203,7 +203,7 @@ const Services = () => {
                 {/* Card image area */}
                 <div className="h-40 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center relative overflow-hidden">
                   {s.image_url ? (
-                    <img src={s.image_url} alt={s.name_vi} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={s.image_url} alt={s.name_vi} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
                   ) : (
                     <span className="text-6xl">{s.icon}</span>
                   )}

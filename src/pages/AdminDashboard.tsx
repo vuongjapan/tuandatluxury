@@ -442,20 +442,19 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50 
-        w-64 bg-card border-r border-border flex flex-col 
-        transform transition-transform duration-300 
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-16'}
+        bg-card border-r border-border flex flex-col 
+        transform transition-all duration-300 
+        ${sidebarOpen 
+          ? 'translate-x-0 w-64' 
+          : '-translate-x-full lg:translate-x-0 lg:w-16 w-64'}
       `}>
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <div className={`${sidebarOpen ? '' : 'hidden lg:hidden'}`}>
-            <p className="font-display text-sm font-bold text-foreground">Tuấn Đạt Luxury</p>
-            <p className="text-xs text-muted-foreground">Quản trị hệ thống</p>
+          <div className={`overflow-hidden transition-all ${sidebarOpen ? 'w-auto' : 'lg:w-0 lg:hidden'}`}>
+            <p className="font-display text-sm font-bold text-foreground whitespace-nowrap">Tuấn Đạt Luxury</p>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">Quản trị hệ thống</p>
           </div>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 rounded hover:bg-secondary transition-colors hidden lg:block">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 rounded hover:bg-secondary transition-colors shrink-0">
             {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
-          <button onClick={() => setSidebarOpen(false)} className="p-1 rounded hover:bg-secondary transition-colors lg:hidden">
-            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -463,23 +462,24 @@ const AdminDashboard = () => {
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => { setTab(item.id); setSidebarOpen(false); }}
+              onClick={() => { setTab(item.id); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+              title={item.label}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${tab === item.id ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span className={`text-sm ${sidebarOpen ? '' : 'hidden lg:hidden'}`}>{item.label}</span>
+              <span className={`text-sm whitespace-nowrap overflow-hidden transition-all ${sidebarOpen ? 'opacity-100 w-auto' : 'lg:opacity-0 lg:w-0 lg:hidden'}`}>{item.label}</span>
             </button>
           ))}
         </nav>
 
         <div className="p-2 border-t border-border space-y-1">
-          <a href="/" target="_blank" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-secondary transition-all text-sm">
+          <a href="/" target="_blank" title="Xem website" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-secondary transition-all text-sm">
             <Eye className="h-4 w-4 shrink-0" />
-            {sidebarOpen && 'Xem website'}
+            <span className={`whitespace-nowrap overflow-hidden transition-all ${sidebarOpen ? 'opacity-100 w-auto' : 'lg:opacity-0 lg:w-0 lg:hidden'}`}>Xem website</span>
           </a>
-          <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-all text-sm">
+          <button onClick={handleSignOut} title="Đăng xuất" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-destructive hover:bg-destructive/10 transition-all text-sm">
             <LogOut className="h-4 w-4 shrink-0" />
-            {sidebarOpen && 'Đăng xuất'}
+            <span className={`whitespace-nowrap overflow-hidden transition-all ${sidebarOpen ? 'opacity-100 w-auto' : 'lg:opacity-0 lg:w-0 lg:hidden'}`}>Đăng xuất</span>
           </button>
         </div>
       </aside>
@@ -488,11 +488,11 @@ const AdminDashboard = () => {
       <main className="flex-1 overflow-auto min-w-0">
         <div className="p-3 sm:p-6">
           <div className="flex items-center justify-between mb-6 gap-2">
-            {/* Mobile menu button */}
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-card border border-border">
+            {/* Mobile menu button - always visible on mobile */}
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-card border border-border shrink-0">
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="font-display text-lg sm:text-2xl font-bold text-foreground truncate">
+            <h1 className="font-display text-lg sm:text-2xl font-bold text-foreground truncate flex-1">
               {navItems.find(n => n.id === tab)?.label}
             </h1>
             <Button variant="outline" size="sm" onClick={() => { fetchData(); fetchMonthlyPrices(); fetchDailyAvailability(); }} className="shrink-0">
