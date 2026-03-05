@@ -138,6 +138,7 @@ const PhotoGallery = () => {
                   alt={getTitle(img)}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   loading="lazy"
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 {getTitle(img) && (
@@ -189,6 +190,7 @@ const PhotoGallery = () => {
               alt={getTitle(filtered[lightboxIndex])}
               className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
             />
             {getTitle(filtered[lightboxIndex]) && (
               <div className="absolute bottom-6 text-center">
