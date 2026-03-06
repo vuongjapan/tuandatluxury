@@ -108,20 +108,21 @@ const AdminDashboard = () => {
     setLocalSettings({ ...settings });
   }, [settings]);
 
+  // Auth guard using AuthContext - no race condition
   useEffect(() => {
-    checkAuth();
+    if (authLoading) return;
+    if (!authUser || !isAdmin) {
+      navigate('/admin/login');
+    }
+  }, [authLoading, authUser, isAdmin, navigate]);
+
+  useEffect(() => {
+    if (authLoading || !authUser || !isAdmin) return;
     fetchData();
     fetchGalleryImages();
     fetchMonthlyPrices();
     fetchDailyAvailability();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate('/admin/login'); return; }
-    const { data: role } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle();
-    if (!role) { navigate('/admin/login'); }
-  };
+  }, [authLoading, authUser, isAdmin]);
 
   const fetchData = async () => {
     setLoading(true);
