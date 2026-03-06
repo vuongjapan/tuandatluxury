@@ -146,9 +146,21 @@ const AdminDashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authSignOut();
     navigate('/admin/login');
   };
+
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   const fetchGalleryImages = async () => {
     const { data } = await supabase.from('gallery_images').select('*').order('sort_order');

@@ -132,7 +132,7 @@ const FloatingButtons = () => {
       </div>
 
       {/* Right side - AI Chatbot */}
-      <div className="fixed right-4 bottom-4 z-40">
+      <div className="fixed right-4 bottom-20 sm:bottom-4 z-40">
         <AnimatePresence>
           {chatOpen && (
             <motion.div
