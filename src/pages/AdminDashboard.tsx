@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,6 +71,7 @@ function saveTrash(items: TrashItem[]) { localStorage.setItem(TRASH_KEY, JSON.st
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user: authUser, isAdmin, loading: authLoading, signOut: authSignOut } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -106,20 +108,21 @@ const AdminDashboard = () => {
     setLocalSettings({ ...settings });
   }, [settings]);
 
+  // Auth guard using AuthContext - no race condition
   useEffect(() => {
-    checkAuth();
+    if (authLoading) return;
+    if (!authUser || !isAdmin) {
+      navigate('/admin/login');
+    }
+  }, [authLoading, authUser, isAdmin, navigate]);
+
+  useEffect(() => {
+    if (authLoading || !authUser || !isAdmin) return;
     fetchData();
     fetchGalleryImages();
     fetchMonthlyPrices();
     fetchDailyAvailability();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate('/admin/login'); return; }
-    const { data: role } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle();
-    if (!role) { navigate('/admin/login'); }
-  };
+  }, [authLoading, authUser, isAdmin]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -143,9 +146,12 @@ const AdminDashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authSignOut();
     navigate('/admin/login');
   };
+
+
+
 
   const fetchGalleryImages = async () => {
     const { data } = await supabase.from('gallery_images').select('*').order('sort_order');
@@ -431,6 +437,17 @@ const AdminDashboard = () => {
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
     { id: 'settings', icon: Settings, label: 'Cài đặt' },
   ];
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary flex relative">
