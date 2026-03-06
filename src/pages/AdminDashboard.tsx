@@ -71,6 +71,7 @@ function saveTrash(items: TrashItem[]) { localStorage.setItem(TRASH_KEY, JSON.st
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user: authUser, isAdmin, loading: authLoading, signOut: authSignOut } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
