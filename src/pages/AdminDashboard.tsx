@@ -11,7 +11,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
-  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive
+  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive, MapPin
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
