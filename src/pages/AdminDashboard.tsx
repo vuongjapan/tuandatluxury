@@ -1138,6 +1138,54 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {/* MAP */}
+          {tab === 'map' && (
+            <div className="space-y-4">
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Quản lý bản đồ
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Dán mã nhúng Google Maps (iframe) vào ô bên dưới. Bản đồ sẽ hiển thị trên trang chủ và liên hệ.
+                </p>
+                <Textarea
+                  value={mapEmbedCode}
+                  onChange={e => setMapEmbedCode(e.target.value)}
+                  placeholder='<iframe src="https://www.google.com/maps/embed?..." width="600" height="450" ...></iframe>'
+                  rows={5}
+                  className="font-mono text-xs"
+                />
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  <Button variant="gold" onClick={saveMapEmbed} disabled={mapSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {mapSaving ? 'Đang lưu...' : 'Lưu bản đồ'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setMapPreview(!mapPreview)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    {mapPreview ? 'Ẩn xem trước' : 'Xem trước'}
+                  </Button>
+                </div>
+              </div>
+
+              {mapPreview && (
+                <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                  <h4 className="font-display text-base font-semibold mb-3">Xem trước bản đồ</h4>
+                  {mapEmbedCode ? (
+                    <div
+                      className="rounded-lg overflow-hidden border border-border w-full aspect-video [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
+                      dangerouslySetInnerHTML={{ __html: mapEmbedCode }}
+                    />
+                  ) : (
+                    <div className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center text-sm text-muted-foreground">
+                      Chưa có mã nhúng bản đồ
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* TRASH */}
           {tab === 'trash' && (
             <div className="space-y-4">
