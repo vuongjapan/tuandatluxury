@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface SiteSettings {
   map_embed_url: string;
+  map_embed_code: string;
   google_maps_url: string;
   platform_booking_url: string;
   platform_booking_name: string;
@@ -13,6 +14,7 @@ export interface SiteSettings {
 
 const DEFAULTS: SiteSettings = {
   map_embed_url: '',
+  map_embed_code: '',
   google_maps_url: 'https://maps.app.goo.gl/pBbcvrqXQQT4PVfn6',
   platform_booking_url: 'https://www.booking.com/Share-fQj3dBe',
   platform_booking_name: 'Booking.com',

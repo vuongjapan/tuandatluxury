@@ -6,6 +6,7 @@ import HeroSection from '@/components/HeroSection';
 import RoomCard from '@/components/RoomCard';
 import PhotoGallery from '@/components/PhotoGallery';
 import PromotionsSection from '@/components/PromotionsSection';
+import MapSection from '@/components/MapSection';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
@@ -158,6 +159,8 @@ const Index = () => {
 
       {/* Promotions Section */}
       <PromotionsSection />
+
+      <MapSection />
 
       <Footer />
       <FloatingButtons />

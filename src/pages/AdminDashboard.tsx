@@ -11,7 +11,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
-  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive
+  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive, MapPin
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -21,9 +21,10 @@ import { AMENITY_ICONS } from '@/data/rooms';
 import AdminDining from '@/components/AdminDining';
 import AdminPromotions from '@/components/AdminPromotions';
 import AdminServices from '@/components/AdminServices';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'trash';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -100,6 +101,23 @@ const AdminDashboard = () => {
   const [editingGalleryImage, setEditingGalleryImage] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Map management
+  const { settings: siteSettings, updateSetting } = useSiteSettings();
+  const [mapEmbedCode, setMapEmbedCode] = useState('');
+  const [mapSaving, setMapSaving] = useState(false);
+  const [mapPreview, setMapPreview] = useState(false);
+
+  useEffect(() => {
+    setMapEmbedCode(siteSettings.map_embed_code || '');
+  }, [siteSettings.map_embed_code]);
+
+  const saveMapEmbed = async () => {
+    setMapSaving(true);
+    const err = await updateSetting('map_embed_code', mapEmbedCode);
+    setMapSaving(false);
+    if (err) { toast({ title: 'Lỗi lưu bản đồ', variant: 'destructive' }); return; }
+    toast({ title: 'Đã lưu bản đồ ✓' });
+  };
 
   // Auth guard using AuthContext - no race condition
   useEffect(() => {
@@ -427,6 +445,7 @@ const AdminDashboard = () => {
     { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
+    { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
   ];
 
@@ -1116,6 +1135,54 @@ const AdminDashboard = () => {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* MAP */}
+          {tab === 'map' && (
+            <div className="space-y-4">
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Quản lý bản đồ
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Dán mã nhúng Google Maps (iframe) vào ô bên dưới. Bản đồ sẽ hiển thị trên trang chủ và liên hệ.
+                </p>
+                <Textarea
+                  value={mapEmbedCode}
+                  onChange={e => setMapEmbedCode(e.target.value)}
+                  placeholder='<iframe src="https://www.google.com/maps/embed?..." width="600" height="450" ...></iframe>'
+                  rows={5}
+                  className="font-mono text-xs"
+                />
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  <Button variant="gold" onClick={saveMapEmbed} disabled={mapSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {mapSaving ? 'Đang lưu...' : 'Lưu bản đồ'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setMapPreview(!mapPreview)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    {mapPreview ? 'Ẩn xem trước' : 'Xem trước'}
+                  </Button>
+                </div>
+              </div>
+
+              {mapPreview && (
+                <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                  <h4 className="font-display text-base font-semibold mb-3">Xem trước bản đồ</h4>
+                  {mapEmbedCode ? (
+                    <div
+                      className="rounded-lg overflow-hidden border border-border w-full aspect-video [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
+                      dangerouslySetInnerHTML={{ __html: mapEmbedCode }}
+                    />
+                  ) : (
+                    <div className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center text-sm text-muted-foreground">
+                      Chưa có mã nhúng bản đồ
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
