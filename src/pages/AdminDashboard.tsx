@@ -100,13 +100,6 @@ const AdminDashboard = () => {
   const [editingGalleryImage, setEditingGalleryImage] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const { settings, updateSetting } = useSiteSettings();
-  const [localSettings, setLocalSettings] = useState<Record<string, string>>({});
-  const [savingSettings, setSavingSettings] = useState(false);
-
-  useEffect(() => {
-    setLocalSettings({ ...settings });
-  }, [settings]);
 
   // Auth guard using AuthContext - no race condition
   useEffect(() => {
