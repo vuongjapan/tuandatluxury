@@ -101,6 +101,23 @@ const AdminDashboard = () => {
   const [editingGalleryImage, setEditingGalleryImage] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Map management
+  const { settings: siteSettings, updateSetting } = useSiteSettings();
+  const [mapEmbedCode, setMapEmbedCode] = useState('');
+  const [mapSaving, setMapSaving] = useState(false);
+  const [mapPreview, setMapPreview] = useState(false);
+
+  useEffect(() => {
+    setMapEmbedCode(siteSettings.map_embed_code || '');
+  }, [siteSettings.map_embed_code]);
+
+  const saveMapEmbed = async () => {
+    setMapSaving(true);
+    const err = await updateSetting('map_embed_code', mapEmbedCode);
+    setMapSaving(false);
+    if (err) { toast({ title: 'Lỗi lưu bản đồ', variant: 'destructive' }); return; }
+    toast({ title: 'Đã lưu bản đồ ✓' });
+  };
 
   // Auth guard using AuthContext - no race condition
   useEffect(() => {
