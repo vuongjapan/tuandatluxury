@@ -160,6 +160,8 @@ const Index = () => {
       {/* Promotions Section */}
       <PromotionsSection />
 
+      <MapSection />
+
       <Footer />
       <FloatingButtons />
     </div>
