@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
-  LogOut, Menu, X, Settings, DollarSign, TrendingUp, Clock,
+  LogOut, Menu, X, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
   FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive
 } from 'lucide-react';
