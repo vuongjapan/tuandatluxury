@@ -21,7 +21,7 @@ import { AMENITY_ICONS } from '@/data/rooms';
 import AdminDining from '@/components/AdminDining';
 import AdminPromotions from '@/components/AdminPromotions';
 import AdminServices from '@/components/AdminServices';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+
 
 type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'settings' | 'trash';
 
