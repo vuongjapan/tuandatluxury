@@ -427,6 +427,7 @@ const AdminDashboard = () => {
     { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
+    { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
   ];
 
