@@ -428,7 +428,6 @@ const AdminDashboard = () => {
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
-    { id: 'settings', icon: Settings, label: 'Cài đặt' },
   ];
 
   if (authLoading) {
