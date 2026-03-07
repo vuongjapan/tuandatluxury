@@ -23,7 +23,7 @@ import AdminPromotions from '@/components/AdminPromotions';
 import AdminServices from '@/components/AdminServices';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'settings' | 'trash';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'trash';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
