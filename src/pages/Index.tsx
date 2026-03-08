@@ -1,12 +1,10 @@
+import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, Sparkles } from 'lucide-react';
-import { useDining } from '@/hooks/useDining';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import RoomCard from '@/components/RoomCard';
-import PhotoGallery from '@/components/PhotoGallery';
-import PromotionsSection from '@/components/PromotionsSection';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
@@ -15,11 +13,23 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
+// Lazy load heavy below-fold components
+const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
+const PromotionsSection = lazy(() => import('@/components/PromotionsSection'));
+
+const SectionFallback = () => (
+  <div className="py-20 flex items-center justify-center">
+    <div className="animate-pulse h-8 bg-muted rounded w-48" />
+  </div>
+);
+
+// Separate component to avoid loading dining data until section is visible
+const DiningSection = lazy(() => import('@/components/DiningHomeSection'));
+
 const Index = () => {
   const { t } = useLanguage();
   const { rooms } = useRooms();
   const { amenities } = useServices();
-  const { categories: diningCategories } = useDining();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
 
@@ -50,7 +60,9 @@ const Index = () => {
         </div>
       </section>
 
-      <PhotoGallery />
+      <Suspense fallback={<SectionFallback />}>
+        <PhotoGallery />
+      </Suspense>
 
       {/* About Section */}
       <section id="about" className="py-20 bg-secondary">
@@ -119,66 +131,15 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Dining Section */}
-      <section id="dining" className="py-20 bg-secondary">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="font-display text-4xl font-bold text-foreground mb-3">{t('nav.dining')}</h2>
-            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full" />
-          </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl mx-auto mb-10">
-            {diningCategories.filter(c => c.is_active).map((cat, i) => (
-              <motion.div
-                key={cat.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                viewport={{ once: true }}
-                onClick={() => navigate('/dining')}
-                className="cursor-pointer group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 border border-border"
-              >
-                {cat.image_url && (
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img
-                      src={cat.image_url}
-                      alt={cat.name_vi}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-                <div className="p-3 text-center">
-                  <h3 className="font-display text-sm font-semibold text-foreground line-clamp-2">
-                    {isVi ? cat.name_vi : (cat.name_en || cat.name_vi)}
-                  </h3>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <Button variant="gold" size="lg" onClick={() => navigate('/dining')}>
-              <UtensilsCrossed className="h-4 w-4 mr-2" />
-              {isVi ? 'Xem thực đơn' : 'View Menu'}
-            </Button>
-          </motion.div>
-        </div>
-      </section>
+      {/* Dining Section - lazy loaded */}
+      <Suspense fallback={<SectionFallback />}>
+        <DiningSection />
+      </Suspense>
 
       {/* Promotions Section */}
-      <PromotionsSection />
+      <Suspense fallback={<SectionFallback />}>
+        <PromotionsSection />
+      </Suspense>
 
       <Footer />
       <FloatingButtons />

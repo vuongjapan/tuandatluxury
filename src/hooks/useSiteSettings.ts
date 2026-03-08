@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SiteSettings {
@@ -26,27 +26,36 @@ const DEFAULTS: SiteSettings = {
   platform_agoda_name: 'Agoda',
 };
 
+async function fetchSiteSettings(): Promise<SiteSettings> {
+  const { data } = await supabase.from('site_settings').select('key, value') as { data: { key: string; value: string }[] | null };
+  const mapped = { ...DEFAULTS };
+  if (data) {
+    data.forEach(row => { mapped[row.key] = row.value; });
+  }
+  return mapped;
+}
+
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULTS);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchSettings = async () => {
-    const { data } = await supabase.from('site_settings').select('key, value') as { data: { key: string; value: string }[] | null };
-    if (data) {
-      const mapped = { ...DEFAULTS };
-      data.forEach(row => { mapped[row.key] = row.value; });
-      setSettings(mapped);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchSettings(); }, []);
+  const { data: settings = DEFAULTS, isLoading: loading } = useQuery({
+    queryKey: ['site-settings'],
+    queryFn: fetchSiteSettings,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   const updateSetting = async (key: string, value: string) => {
     const { error } = await supabase.from('site_settings').upsert({ key, value, updated_at: new Date().toISOString() } as any, { onConflict: 'key' } as any);
-    if (!error) setSettings(prev => ({ ...prev, [key]: value }));
+    if (!error) {
+      queryClient.setQueryData(['site-settings'], (prev: SiteSettings | undefined) => ({
+        ...(prev || DEFAULTS),
+        [key]: value,
+      }));
+    }
     return error;
   };
 
-  return { settings, loading, updateSetting, refetch: fetchSettings };
+  const refetch = () => queryClient.invalidateQueries({ queryKey: ['site-settings'] });
+
+  return { settings, loading, updateSetting, refetch };
 }
