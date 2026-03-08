@@ -1,7 +1,7 @@
 import { Phone, Mail, MapPin, Facebook, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import MapSection from '@/components/MapSection';
+import FooterMap from '@/components/FooterMap';
 
 const Footer = () => {
   const { t } = useLanguage();
