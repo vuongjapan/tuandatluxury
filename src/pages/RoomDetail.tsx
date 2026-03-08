@@ -114,6 +114,11 @@ const RoomDetail = () => {
                     <ExternalLink className="h-4 w-4" /> Traveloka
                   </a>
                 </Button>
+                <Button variant="outline" className="flex-1 gap-2" asChild>
+                  <a href="https://vn.trip.com/hotels/sam-son-hotel-detail-79078975/tuan-dat-luxury-hotel-flc/" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Trip.com
+                  </a>
+                </Button>
               </div>
 
             </motion.div>
