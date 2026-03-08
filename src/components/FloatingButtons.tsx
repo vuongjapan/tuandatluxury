@@ -50,6 +50,7 @@ const FloatingButtons = () => {
     sessionId.current = getOrCreateSession();
   };
 
+  const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     const userMsg = { role: 'user', content: input.trim() };
     const newMessages = [...messages, userMsg];
