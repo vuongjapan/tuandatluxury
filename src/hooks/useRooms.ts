@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Room } from '@/data/rooms';
 import { rooms as staticRooms } from '@/data/rooms';
@@ -68,36 +69,42 @@ function getNightType(date: Date): 'weekday' | 'weekend' | 'sunday' {
   return 'weekday';
 }
 
-export function useRooms() {
-  const [dbRooms, setDbRooms] = useState<DBRoom[]>([]);
-  const [monthlyPrices, setMonthlyPrices] = useState<MonthlyPrice[]>([]);
-  const [dailyAvailability, setDailyAvailability] = useState<DailyAvailability[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchRooms = async () => {
-    setLoading(true);
-    const [{ data: roomsData }, { data: mpData }, { data: daData }] = await Promise.all([
-      supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
-      supabase.from('room_monthly_prices').select('*'),
-      supabase.from('room_daily_availability').select('*'),
-    ]);
-    setDbRooms((roomsData as DBRoom[]) || []);
-    setMonthlyPrices((mpData as MonthlyPrice[]) || []);
-    setDailyAvailability((daData as DailyAvailability[]) || []);
-    setLoading(false);
+async function fetchRoomsData() {
+  const [{ data: roomsData }, { data: mpData }, { data: daData }] = await Promise.all([
+    supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
+    supabase.from('room_monthly_prices').select('*'),
+    supabase.from('room_daily_availability').select('*'),
+  ]);
+  return {
+    dbRooms: (roomsData as DBRoom[]) || [],
+    monthlyPrices: (mpData as MonthlyPrice[]) || [],
+    dailyAvailability: (daData as DailyAvailability[]) || [],
   };
+}
 
-  useEffect(() => { fetchRooms(); }, []);
+export function useRooms() {
+  const { data, isLoading: loading, refetch } = useQuery({
+    queryKey: ['rooms-data'],
+    queryFn: fetchRoomsData,
+    staleTime: 0, // Always refetch on mount - no stale cache
+    gcTime: 2 * 60 * 1000, // Keep in cache for 2 min but always revalidate
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: 'always', // Always refetch on component mount
+  });
+
+  const dbRooms = data?.dbRooms || [];
+  const monthlyPrices = data?.monthlyPrices || [];
+  const dailyAvailability = data?.dailyAvailability || [];
 
   const rooms: Room[] = useMemo(() => {
-    if (dbRooms.length === 0) return staticRooms;
+    if (dbRooms.length === 0 && loading) return []; // Don't show static fallback while loading
+    if (dbRooms.length === 0) return staticRooms; // Only fallback if DB truly empty
     return dbRooms.map(db => {
       const fallback = staticRooms.find(s => s.id === db.id);
       return dbRoomToRoom(db, fallback);
     });
-  }, [dbRooms]);
+  }, [dbRooms, loading]);
 
-  // Get price for a room on a specific date using monthly price table
   const getRoomPrice = useCallback((room: Room, date: Date): number => {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
@@ -110,25 +117,22 @@ export function useRooms() {
       return mp.price_sunday;
     }
 
-    // Fallback: base price from room
     return room.priceVND;
   }, [monthlyPrices]);
 
-  // Get availability status for a room on a specific date
   const getAvailability = useCallback((roomId: string, date: Date): DailyAvailability | null => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     return dailyAvailability.find(a => a.room_id === roomId && a.date === dateStr) || null;
   }, [dailyAvailability]);
 
-  // Check if a date is available for booking (default: open if no record)
   const isDateAvailable = useCallback((roomId: string, date: Date): boolean => {
     const avail = getAvailability(roomId, date);
-    if (!avail) return true; // default open
+    if (!avail) return true;
     return avail.status === 'open' || (avail.status === 'limited' && avail.rooms_available > 0);
   }, [getAvailability]);
 
   return {
-    rooms, loading, fetchRooms,
+    rooms, loading, fetchRooms: refetch,
     getRoomPrice, getAvailability, isDateAvailable,
     monthlyPrices, dailyAvailability,
   };
