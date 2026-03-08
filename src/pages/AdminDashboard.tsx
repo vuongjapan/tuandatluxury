@@ -291,9 +291,9 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file || !editingRoom) return;
     setUploadingRoomImage(true);
-    const ext = file.name.split('.').pop();
-    const path = `rooms/${editingRoom.id}-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+    const path = `rooms/${editingRoom.id}-${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
     if (uploadError) {
       toast({ title: 'Lỗi upload ảnh phòng', description: uploadError.message, variant: 'destructive' });
       setUploadingRoomImage(false);
