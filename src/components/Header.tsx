@@ -17,6 +17,7 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { language, setLanguage, t, langLabels } = useLanguage();
   const { user, isAdmin, signOut, loading } = useAuth();
+  const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
   const navItems = [
