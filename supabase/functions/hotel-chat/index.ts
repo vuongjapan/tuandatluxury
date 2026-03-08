@@ -109,6 +109,12 @@ serve(async (req) => {
       });
     }
 
+    // Add greeting hint for first message in conversation
+    const isFirstMessage = messages.length === 1;
+    const greetingHint = isFirstMessage 
+      ? `\n\n[GỢI Ý LỜI CHÀO - dùng 1 trong các mẫu sau hoặc sáng tạo tương tự, KHÔNG lặp lại máy móc]:\n${GREETINGS_POOL[Math.floor(Math.random() * GREETINGS_POOL.length)]}`
+      : "";
+
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
@@ -120,10 +126,11 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: SYSTEM_PROMPT + greetingHint },
             ...messages,
           ],
           stream: true,
+          temperature: 0.9,
         }),
       }
     );
