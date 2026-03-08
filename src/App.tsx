@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,17 +7,35 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
-import MemberAuth from "./pages/MemberAuth";
-import RoomDetail from "./pages/RoomDetail";
-import Booking from "./pages/Booking";
-import NotFound from "./pages/NotFound";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import InvoicePage from "./pages/InvoicePage";
-import Dining from "./pages/Dining";
-import Services from "./pages/Services";
 
-const queryClient = new QueryClient();
+// Lazy load all non-homepage routes
+const MemberAuth = lazy(() => import("./pages/MemberAuth"));
+const RoomDetail = lazy(() => import("./pages/RoomDetail"));
+const Booking = lazy(() => import("./pages/Booking"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const InvoicePage = lazy(() => import("./pages/InvoicePage"));
+const Dining = lazy(() => import("./pages/Dining"));
+const Services = lazy(() => import("./pages/Services"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000, // 2 min
+      retry: 1,
+    },
+  },
+});
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="text-center">
+      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+      <p className="text-sm text-muted-foreground">Đang tải...</p>
+    </div>
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -26,18 +45,20 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/room/:id" element={<RoomDetail />} />
-              <Route path="/booking" element={<Booking />} />
-              <Route path="/dining" element={<Dining />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
-              <Route path="/member" element={<MemberAuth />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/room/:id" element={<RoomDetail />} />
+                <Route path="/booking" element={<Booking />} />
+                <Route path="/dining" element={<Dining />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
+                <Route path="/member" element={<MemberAuth />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
@@ -46,4 +67,3 @@ const App = () => (
 );
 
 export default App;
-
