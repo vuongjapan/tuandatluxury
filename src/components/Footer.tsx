@@ -44,6 +44,13 @@ const Footer = () => {
             </div>
 
             <div className="mt-6 flex flex-col gap-2">
+              <a
+                href="https://www.booking.com/hotel/vn/tuan-dat-luxury-flc-sam-son-sam-son.vi.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors">
+                <ExternalLink className="h-3.5 w-3.5 text-primary" /> Đặt phòng trên Booking.com
+              </a>
               <p className="text-xs text-primary mt-1">{t('platforms.direct')}</p>
             </div>
           </div>
