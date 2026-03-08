@@ -43,7 +43,13 @@ const FloatingButtons = () => {
     }
   }, [messages]);
 
-  const handleSend = async () => {
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem(MESSAGES_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    sessionId.current = getOrCreateSession();
+  };
+
     if (!input.trim() || isLoading) return;
     const userMsg = { role: 'user', content: input.trim() };
     const newMessages = [...messages, userMsg];
