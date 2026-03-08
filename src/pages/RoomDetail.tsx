@@ -98,11 +98,11 @@ const RoomDetail = () => {
                 {t('room.book')}
               </Button>
 
-              <a href="https://www.booking.com/hotel/vn/tuan-dat-luxury-flc-sam-son-sam-son.vi.html" target="_blank" rel="noopener noreferrer" className="w-full">
-                <Button variant="outline" className="w-full gap-2">
+              <Button variant="outline" className="w-full gap-2" asChild>
+                <a href="https://www.booking.com/hotel/vn/tuan-dat-luxury-flc-sam-son-sam-son.vi.html" target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4" /> Đặt phòng trên Booking.com
-                </Button>
-              </a>
+                </a>
+              </Button>
 
             </motion.div>
           </div>
