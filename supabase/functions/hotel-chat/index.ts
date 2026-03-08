@@ -109,6 +109,49 @@ serve(async (req) => {
       });
     }
 
+    // Load previous conversation history from DB for memory context
+    let memoryContext = "";
+    if (session_id) {
+      const { data: pastMessages } = await supabase
+        .from("chat_messages")
+        .select("role, content, created_at")
+        .eq("session_id", session_id)
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      if (pastMessages && pastMessages.length > messages.length) {
+        // Extract guest info from past conversations
+        const allContent = pastMessages
+          .filter((m: any) => m.role === "user")
+          .map((m: any) => m.content)
+          .join(" ");
+
+        // Build memory summary
+        const namePatterns = allContent.match(/(?:tên|name|tôi là|em là|anh|chị)\s+([A-ZÀ-Ỹa-zà-ỹ]+(?:\s+[A-ZÀ-Ỹa-zà-ỹ]+){0,3})/gi);
+        const phonePatterns = allContent.match(/(?:0\d{9,10}|\+84\d{9,10})/g);
+        
+        const memories: string[] = [];
+        if (namePatterns) memories.push(`Khách có thể tên: ${namePatterns.join(", ")}`);
+        if (phonePatterns) memories.push(`SĐT khách: ${phonePatterns.join(", ")}`);
+        
+        // Include summary of past conversation topics
+        const pastSummary = pastMessages
+          .slice(0, -messages.length || undefined)
+          .slice(-20) // last 20 messages from previous conversations
+          .map((m: any) => `${m.role === "user" ? "Khách" : "Lan Anh"}: ${m.content.slice(0, 150)}`)
+          .join("\n");
+
+        if (memories.length > 0 || pastSummary) {
+          memoryContext = `\n\n═══ TRÍ NHỚ - LỊCH SỬ TRÒ CHUYỆN TRƯỚC ═══
+${memories.length > 0 ? "THÔNG TIN KHÁCH ĐÃ BIẾT:\n" + memories.join("\n") : ""}
+${pastSummary ? "\nCÁC CUỘC TRÒ CHUYỆN GẦN ĐÂY:\n" + pastSummary : ""}
+
+CHỈ DẪN: Sử dụng thông tin trên để cá nhân hóa cuộc trò chuyện. Nếu biết tên khách, hãy gọi tên thân mật. Nếu khách đã hỏi về phòng/dịch vụ trước đó, hãy hỏi thăm tiến triển. Ví dụ: "Anh/chị [tên] ơi, lần trước mình hỏi về phòng Deluxe đó, anh/chị quyết định chưa ạ? 😊"
+═══════════════════════════════════════════`;
+        }
+      }
+    }
+
     // Add greeting hint for first message in conversation
     const isFirstMessage = messages.length === 1;
     const greetingHint = isFirstMessage 
@@ -126,7 +169,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT + greetingHint },
+            { role: "system", content: SYSTEM_PROMPT + memoryContext + greetingHint },
             ...messages,
           ],
           stream: true,

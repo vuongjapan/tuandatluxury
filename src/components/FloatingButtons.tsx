@@ -6,14 +6,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
 const SESSION_KEY = 'tdl_chat_session';
+const MESSAGES_KEY = 'tdl_chat_messages';
 
 const getOrCreateSession = () => {
-  let id = sessionStorage.getItem(SESSION_KEY);
+  let id = localStorage.getItem(SESSION_KEY);
   if (!id) {
-    id = 'sess-' + Math.random().toString(36).slice(2);
-    sessionStorage.setItem(SESSION_KEY, id);
+    id = 'sess-' + Math.random().toString(36).slice(2) + '-' + Date.now();
+    localStorage.setItem(SESSION_KEY, id);
   }
   return id;
+};
+
+const loadCachedMessages = (): { role: string; content: string }[] => {
+  try {
+    const raw = localStorage.getItem(MESSAGES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hotel-chat`;
@@ -21,7 +29,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hotel-chat`;
 const FloatingButtons = () => {
   const { t } = useLanguage();
   const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>(loadCachedMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -29,6 +37,10 @@ const FloatingButtons = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Persist messages to localStorage (keep last 50)
+    if (messages.length > 0) {
+      localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages.slice(-50)));
+    }
   }, [messages]);
 
   const handleSend = async () => {
