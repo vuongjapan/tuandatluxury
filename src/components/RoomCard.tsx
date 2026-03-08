@@ -46,12 +46,15 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
 
           {/* Amenities */}
           <div className="flex flex-wrap gap-3 mb-4">
-            {room.amenities.slice(0, 5).map((a) => (
-              <span key={a} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                {AMENITY_ICON_MAP[a] || null}
-                {a}
-              </span>
-            ))}
+            {room.amenities.slice(0, 5).map((a) => {
+              const amenity = AMENITY_ICONS[a];
+              const label = amenity ? amenity.label[language] || amenity.label['vi'] : a;
+              return (
+                <span key={a} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                  {label}
+                </span>
+              );
+            })}
           </div>
 
           {/* Capacity & Size */}
