@@ -98,11 +98,18 @@ const RoomDetail = () => {
                 {t('room.book')}
               </Button>
 
-              <Button variant="outline" className="w-full gap-2" asChild>
-                <a href="https://www.booking.com/hotel/vn/tuan-dat-luxury-flc-sam-son-sam-son.vi.html" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4" /> Đặt phòng trên Booking.com
-                </a>
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 gap-2" asChild>
+                  <a href="https://www.booking.com/hotel/vn/tuan-dat-luxury-flc-sam-son-sam-son.vi.html" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Booking.com
+                  </a>
+                </Button>
+                <Button variant="outline" className="flex-1 gap-2" asChild>
+                  <a href="https://www.agoda.com/vi-vn/tuan-dat-luxury-hotel-flc/hotel/thanh-hoa-sam-son-beach-vn.html?cid=1844104&ds=eOSBCifZS4w0QBRo" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Agoda
+                  </a>
+                </Button>
+              </div>
 
             </motion.div>
           </div>
