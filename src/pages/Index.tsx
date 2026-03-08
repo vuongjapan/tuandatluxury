@@ -19,6 +19,7 @@ const Index = () => {
   const { t } = useLanguage();
   const { rooms } = useRooms();
   const { amenities } = useServices();
+  const { categories: diningCategories } = useDining();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
 
