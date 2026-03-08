@@ -209,20 +209,6 @@ const FloatingButtons = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Quick suggestions */}
-              {messages.length === 0 && (
-                <div className="px-3 pb-2 flex gap-1 flex-wrap">
-                  {['🌊 Thời tiết biển', '🛏️ Xem phòng', '🧭 Phong thủy', '💰 Bảng giá'].map(s => (
-                    <button
-                      key={s}
-                      onClick={() => { setInput(s); }}
-                      className="text-xs bg-secondary hover:bg-primary/10 border border-border rounded-full px-2 py-1 transition-colors"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {/* Input */}
               <div className="border-t border-border p-3 flex gap-2">
