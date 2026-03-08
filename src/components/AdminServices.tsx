@@ -104,9 +104,9 @@ const AdminServices = () => {
     const file = e.target.files?.[0];
     if (!file || !editing) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `services/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('gallery').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
+    const path = `services/${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('gallery').upload(path, compressed);
     if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
     const { data } = supabase.storage.from('gallery').getPublicUrl(path);
     setEditing({ ...editing, image_url: data.publicUrl });

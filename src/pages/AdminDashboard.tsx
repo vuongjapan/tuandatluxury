@@ -1224,9 +1224,9 @@ const AdminDashboard = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         setUploadingRoomImage(true);
-                        const ext = file.name.split('.').pop();
-                        const path = `header-logo-${Date.now()}.${ext}`;
-                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true });
+                        const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
+                        const path = `header-logo-${Date.now()}.jpg`;
+                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
                         if (upErr) {
                           toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
                           setUploadingRoomImage(false);
