@@ -1,16 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Maximize2, Wifi, Snowflake, Tv, Waves } from 'lucide-react';
+import { Users, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
-
-const AMENITY_ICON_MAP: Record<string, React.ReactNode> = {
-  wifi: <Wifi className="h-4 w-4" />,
-  ac: <Snowflake className="h-4 w-4" />,
-  tv: <Tv className="h-4 w-4" />,
-  ocean_view: <Waves className="h-4 w-4" />,
-};
+import { AMENITY_ICONS } from '@/data/rooms';
 
 interface RoomCardProps {
   room: Room;
@@ -52,12 +46,15 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
 
           {/* Amenities */}
           <div className="flex flex-wrap gap-3 mb-4">
-            {room.amenities.slice(0, 5).map((a) => (
-              <span key={a} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                {AMENITY_ICON_MAP[a] || null}
-                {a}
-              </span>
-            ))}
+            {room.amenities.slice(0, 5).map((a) => {
+              const amenity = AMENITY_ICONS[a];
+              const label = amenity ? amenity.label[language] || amenity.label['vi'] : a;
+              return (
+                <span key={a} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                  {label}
+                </span>
+              );
+            })}
           </div>
 
           {/* Capacity & Size */}
