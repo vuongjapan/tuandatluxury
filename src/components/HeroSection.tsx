@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import heroImage from '@/assets/hero-hotel.jpg';
-import BookingSearch from './BookingSearch';
 
 const HeroSection = () => {
   const { t } = useLanguage();
@@ -33,16 +32,6 @@ const HeroSection = () => {
           <Button variant="hero" size="lg" onClick={() => navigate('/booking')}>
             {t('hero.book_now')}
           </Button>
-        </motion.div>
-
-        {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="mt-12"
-        >
-          <BookingSearch />
         </motion.div>
       </div>
     </section>
