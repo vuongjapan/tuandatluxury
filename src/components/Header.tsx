@@ -37,8 +37,14 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <span className="font-display text-xl font-bold text-gold-gradient">Tuấn Đạt</span>
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Luxury</span>
+          {settings.header_logo_url ? (
+            <img src={settings.header_logo_url} alt="Tuấn Đạt Luxury" className="h-10 w-auto object-contain" />
+          ) : (
+            <>
+              <span className="font-display text-xl font-bold text-gold-gradient">Tuấn Đạt</span>
+              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Luxury</span>
+            </>
+          )}
         </Link>
 
         {/* Desktop Nav */}
