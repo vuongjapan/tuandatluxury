@@ -51,6 +51,13 @@ const Footer = () => {
                 className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors">
                 <ExternalLink className="h-3.5 w-3.5 text-primary" /> Đặt phòng trên Booking.com
               </a>
+              <a
+                href="https://www.agoda.com/vi-vn/tuan-dat-luxury-hotel-flc/hotel/thanh-hoa-sam-son-beach-vn.html?cid=1844104&ds=eOSBCifZS4w0QBRo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs bg-background/10 hover:bg-background/20 px-4 py-2 rounded-full transition-colors">
+                <ExternalLink className="h-3.5 w-3.5 text-primary" /> Đặt phòng trên Agoda
+              </a>
               <p className="text-xs text-primary mt-1">{t('platforms.direct')}</p>
             </div>
           </div>
