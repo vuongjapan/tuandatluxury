@@ -90,8 +90,7 @@ const Header = () => {
           
 
           {/* Auth */}
-          {!loading && (
-          user ?
+          {!loading && user && (
           <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5">
@@ -118,14 +117,8 @@ const Header = () => {
                     <LogOut className="h-4 w-4 mr-2" /> Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu> :
-
-          <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate('/member')}>
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs">Đăng nhập</span>
-              </Button>)
-
-          }
+              </DropdownMenu>
+          )}
 
           {/* CTA */}
           <Button variant="gold" size="sm" onClick={() => navigate('/booking')}>
