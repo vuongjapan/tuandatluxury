@@ -98,23 +98,6 @@ const RoomDetail = () => {
                 {t('room.book')}
               </Button>
 
-              {/* Platform booking buttons */}
-              <div className="flex gap-3">
-                {settings.platform_booking_url && (
-                  <a href={settings.platform_booking_url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button variant="outline" className="w-full gap-2">
-                      <ExternalLink className="h-4 w-4" /> {settings.platform_booking_name}
-                    </Button>
-                  </a>
-                )}
-                {settings.platform_agoda_url && (
-                  <a href={settings.platform_agoda_url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button variant="outline" className="w-full gap-2">
-                      <ExternalLink className="h-4 w-4" /> {settings.platform_agoda_name}
-                    </Button>
-                  </a>
-                )}
-              </div>
             </motion.div>
           </div>
         </div>
