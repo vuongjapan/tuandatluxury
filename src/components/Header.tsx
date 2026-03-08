@@ -4,6 +4,7 @@ import { Menu, X, Phone, Globe, User, LogOut, Crown, Shield } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import {
   DropdownMenu,
   DropdownMenuContent,
