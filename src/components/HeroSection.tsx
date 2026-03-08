@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import heroImage from '@/assets/hero-hotel.jpg';
-import BookingSearch from './BookingSearch';
 
 const HeroSection = () => {
   const { t } = useLanguage();
