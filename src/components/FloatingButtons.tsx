@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Facebook, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Facebook, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,6 +42,13 @@ const FloatingButtons = () => {
       localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages.slice(-50)));
     }
   }, [messages]);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem(MESSAGES_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    sessionId.current = getOrCreateSession();
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -162,9 +169,16 @@ const FloatingButtons = () => {
                     <p className="text-xs text-primary-foreground/70">Tuấn Đạt Luxury · Online</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setChatOpen(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {messages.length > 0 && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/10" onClick={handleClearChat} title="Xóa lịch sử chat">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setChatOpen(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               {/* Messages */}
