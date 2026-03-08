@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, Sparkles } from 'lucide-react';
+import { useDining } from '@/hooks/useDining';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import RoomCard from '@/components/RoomCard';
@@ -18,6 +19,7 @@ const Index = () => {
   const { t } = useLanguage();
   const { rooms } = useRooms();
   const { amenities } = useServices();
+  const { categories: diningCategories } = useDining();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
 
@@ -118,39 +120,58 @@ const Index = () => {
       </section>
 
       {/* Dining Section */}
-      <section id="dining" className="py-20 bg-background">
+      <section id="dining" className="py-20 bg-secondary">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="text-center max-w-2xl mx-auto"
+            className="text-center mb-12"
           >
             <h2 className="font-display text-4xl font-bold text-foreground mb-3">{t('nav.dining')}</h2>
-            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-6" />
-            <p className="text-muted-foreground text-lg mb-8">
-              {t('nav.dining') === 'Ẩm thực'
-                ? 'Hải sản tươi sống, buffet sáng đa dạng, combo nhóm và dịch vụ phòng tiện lợi'
-                : 'Fresh seafood, diverse breakfast buffet, group combos and convenient room service'}
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {['🦐 Hải sản tươi sống', '👨‍👩‍👧‍👦 Món gia đình', '🎉 COMBO đoàn', '🍳 Buffet sáng', '🛎️ Room Service'].map((item, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.08 }}
-                  viewport={{ once: true }}
-                  className="px-4 py-2 bg-card rounded-full border border-border text-sm font-medium shadow-card"
-                >
-                  {item}
-                </motion.span>
-              ))}
-            </div>
+            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full" />
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl mx-auto mb-10">
+            {diningCategories.filter(c => c.is_active).map((cat, i) => (
+              <motion.div
+                key={cat.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                viewport={{ once: true }}
+                onClick={() => navigate('/dining')}
+                className="cursor-pointer group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 border border-border"
+              >
+                {cat.image_url && (
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img
+                      src={cat.image_url}
+                      alt={cat.name_vi}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div className="p-3 text-center">
+                  <h3 className="font-display text-sm font-semibold text-foreground line-clamp-2">
+                    {isVi ? cat.name_vi : (cat.name_en || cat.name_vi)}
+                  </h3>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
             <Button variant="gold" size="lg" onClick={() => navigate('/dining')}>
               <UtensilsCrossed className="h-4 w-4 mr-2" />
-              {t('nav.dining') === 'Ẩm thực' ? 'Xem thực đơn' : 'View Menu'}
+              {isVi ? 'Xem thực đơn' : 'View Menu'}
             </Button>
           </motion.div>
         </div>
