@@ -33,16 +33,6 @@ const HeroSection = () => {
             {t('hero.book_now')}
           </Button>
         </motion.div>
-
-        {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="mt-12"
-        >
-          <BookingSearch />
-        </motion.div>
       </div>
     </section>
   );
