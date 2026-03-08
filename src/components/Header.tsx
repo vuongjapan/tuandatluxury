@@ -120,11 +120,6 @@ const Header = () => {
               </DropdownMenu>
           )}
 
-          {/* CTA */}
-          <Button variant="gold" size="sm" onClick={() => navigate('/booking')}>
-            {t('hero.book_now')}
-          </Button>
-
           {/* Mobile toggle */}
           <Button variant="ghost" size="icon" className="xl:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
