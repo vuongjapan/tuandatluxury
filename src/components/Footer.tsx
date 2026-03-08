@@ -73,6 +73,13 @@ const Footer = () => {
             </div>
           </div>
 
+          {/* Col 4: Map */}
+          <div>
+            <h4 className="font-display text-lg font-semibold mb-4">{t('footer.find_us')}</h4>
+            <div className="rounded-xl overflow-hidden border border-background/10 bg-background/5 aspect-video flex items-center justify-center">
+              <MapSection />
+            </div>
+          </div>
         </div>
 
         {/* Bottom */}
