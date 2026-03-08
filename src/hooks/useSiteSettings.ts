@@ -17,6 +17,7 @@ export interface SiteSettings {
 
 const DEFAULTS: SiteSettings = {
   header_logo_url: '',
+  chatbot_avatar_url: '',
   hero_image_url: '',
   map_embed_url: '',
   map_embed_code: '',
