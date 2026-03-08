@@ -1,16 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Maximize2, Wifi, Snowflake, Tv, Waves } from 'lucide-react';
+import { Users, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
-
-const AMENITY_ICON_MAP: Record<string, React.ReactNode> = {
-  wifi: <Wifi className="h-4 w-4" />,
-  ac: <Snowflake className="h-4 w-4" />,
-  tv: <Tv className="h-4 w-4" />,
-  ocean_view: <Waves className="h-4 w-4" />,
-};
+import { AMENITY_ICONS } from '@/data/rooms';
 
 interface RoomCardProps {
   room: Room;
