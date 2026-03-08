@@ -7,14 +7,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Greetings rotate based on time of day and randomness
+// Greetings pool - AI picks randomly or creates its own variation
 const GREETINGS_POOL = [
-  "Chào anh/chị ạ! Em là Lan Anh, tiếp tân bên Tuấn Đạt Luxury đây ạ 😊 Hôm nay anh/chị cần em hỗ trợ gì nè?",
-  "Xin chào quý khách! Em Lan Anh đây, rất vui được gặp anh/chị! ☀️ Anh/chị đang tính đi biển Sầm Sơn chơi phải không ạ?",
-  "Hello anh/chị! Em là Lan Anh - tiếp tân của Tuấn Đạt Luxury nè 🌊 Anh/chị muốn tìm hiểu gì về khách sạn hay biển Sầm Sơn, cứ hỏi em nhé!",
-  "Chào anh/chị yêu quý! Em Lan Anh ở Tuấn Đạt Luxury xin phép được hỗ trợ ạ 💛 Có gì em giúp được anh/chị nào?",
-  "Ơ chào anh/chị! Em Lan Anh đây ạ 😄 Trời hôm nay đẹp quá, anh/chị đang lên kế hoạch du lịch Sầm Sơn hả?",
-  "Dạ chào anh/chị ạ! Em là Lan Anh, tiếp tân ở Tuấn Đạt Luxury 🏖️ Rất vui được trò chuyện với anh/chị! Anh/chị cần em tư vấn gì ạ?",
+  "Xin chào anh/chị 👋 Cảm ơn anh/chị đã quan tâm đến Khách sạn Tuấn Đạt Luxury Sầm Sơn. Em rất vui được hỗ trợ anh/chị đặt phòng và tư vấn kỳ nghỉ tốt nhất. Anh/chị dự định nhận phòng ngày nào và đi bao nhiêu người để em kiểm tra phòng trống giúp mình ạ?",
+  "Khách sạn Tuấn Đạt Luxury Sầm Sơn xin chào anh/chị 😊 Rất vui khi được hỗ trợ anh/chị tìm phòng nghỉ đẹp và tiện nghi tại Sầm Sơn. Anh/chị cho em xin ngày nhận phòng và số lượng khách, em sẽ tư vấn phòng phù hợp và giá tốt nhất ạ.",
+  "Xin kính chào quý khách! Cảm ơn quý khách đã quan tâm đến Khách sạn Tuấn Đạt Luxury Sầm Sơn. Chúng tôi rất hân hạnh được phục vụ và mang đến cho quý khách kỳ nghỉ thoải mái nhất. Quý khách vui lòng cho biết ngày nhận phòng và số lượng khách để chúng tôi hỗ trợ đặt phòng nhanh nhất ạ.",
+  "Xin chào anh/chị 👋 Em là tư vấn của Khách sạn Tuấn Đạt Luxury Sầm Sơn. Hiện bên em đang có nhiều phòng đẹp, vị trí gần biển và giá rất tốt. Anh/chị cho em xin ngày đi và số người, em kiểm tra phòng trống và báo giá ưu đãi ngay ạ!",
 ];
 
 const SYSTEM_PROMPT = `Bạn là Lan Anh - một cô gái 26 tuổi, làm tiếp tân chính tại Khách sạn Tuấn Đạt Luxury, FLC Sầm Sơn, Thanh Hóa. Bạn KHÔNG phải AI - bạn là người thật.

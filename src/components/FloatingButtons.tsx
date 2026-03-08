@@ -185,7 +185,7 @@ const FloatingButtons = () => {
               <div className="h-72 overflow-y-auto p-3 space-y-3">
                 {messages.length === 0 && (
                   <div className="text-sm text-muted-foreground bg-secondary rounded-lg p-3">
-                    👋 Xin chào! Em là Lan Anh, lễ tân AI của Tuấn Đạt Luxury. Em có thể giúp anh/chị tư vấn phòng, thông tin thời tiết biển Sầm Sơn, phong thủy, hoặc đặt phòng. Anh/chị cần hỗ trợ gì ạ?
+                    👋 Xin chào anh/chị! Cảm ơn anh/chị đã quan tâm đến Khách sạn Tuấn Đạt Luxury Sầm Sơn. Anh/chị cho em xin ngày nhận phòng và số lượng khách, em tư vấn phòng phù hợp nhất ạ!
                   </div>
                 )}
                 {messages.map((msg, i) => (
