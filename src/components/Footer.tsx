@@ -1,6 +1,7 @@
 import { Phone, Mail, MapPin, Facebook, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import FooterMap from '@/components/FooterMap';
 
 const Footer = () => {
   const { t } = useLanguage();
@@ -72,6 +73,11 @@ const Footer = () => {
             </div>
           </div>
 
+          {/* Col 4: Map */}
+          <div>
+            <h4 className="font-display text-lg font-semibold mb-4">{t('footer.find_us')}</h4>
+            <FooterMap />
+          </div>
         </div>
 
         {/* Bottom */}
