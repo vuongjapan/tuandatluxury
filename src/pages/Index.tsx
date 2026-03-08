@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, Sparkles } from 'lucide-react';
+import { useDining } from '@/hooks/useDining';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import RoomCard from '@/components/RoomCard';
