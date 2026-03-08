@@ -37,6 +37,10 @@ const FloatingButtons = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Persist messages to localStorage (keep last 50)
+    if (messages.length > 0) {
+      localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages.slice(-50)));
+    }
   }, [messages]);
 
   const handleSend = async () => {
