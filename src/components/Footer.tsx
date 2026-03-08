@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Facebook, ExternalLink, Map } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
