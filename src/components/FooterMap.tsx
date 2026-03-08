@@ -13,11 +13,11 @@ const FooterMap = () => {
       <div className="rounded-lg overflow-hidden border border-background/10 bg-background/5">
         {embedCode ? (
           <div
-            className="w-full aspect-square [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
+            className="w-full aspect-video [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
             dangerouslySetInnerHTML={{ __html: embedCode }}
           />
         ) : (
-          <div className="w-full aspect-square bg-background/5 flex items-center justify-center">
+          <div className="w-full aspect-video bg-background/5 flex items-center justify-center">
             <div className="text-center text-background/40">
               <MapPin className="h-8 w-8 mx-auto mb-2" />
               <p className="text-xs">Map loading...</p>
