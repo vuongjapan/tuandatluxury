@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { compressImage } from '@/lib/compressImage';
 import { usePromotions, Promotion } from '@/hooks/usePromotions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -52,9 +53,9 @@ const AdminPromotions = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `promotions/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('gallery').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
+    const path = `promotions/${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('gallery').upload(path, compressed);
     if (error) {
       toast({ title: 'Lỗi upload', description: error.message, variant: 'destructive' });
       setUploading(false);

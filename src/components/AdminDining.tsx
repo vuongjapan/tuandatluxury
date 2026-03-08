@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { compressImage } from '@/lib/compressImage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,9 +71,9 @@ const AdminDining = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `categories/${catId}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('dining').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
+    const path = `categories/${catId}-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('dining').upload(path, compressed);
     if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from('dining').getPublicUrl(path);
     await supabase.from('dining_categories').update({ image_url: urlData.publicUrl }).eq('id', catId);
@@ -87,9 +88,9 @@ const AdminDining = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `items/${itemId}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('dining').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
+    const path = `items/${itemId}-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('dining').upload(path, compressed);
     if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from('dining').getPublicUrl(path);
     await supabase.from('dining_items').update({ image_url: urlData.publicUrl }).eq('id', itemId);

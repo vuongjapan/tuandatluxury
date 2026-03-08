@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { compressImage } from '@/lib/compressImage';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -190,9 +191,9 @@ const AdminDashboard = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         setUploadingRoomImage(true);
-                        const ext = file.name.split('.').pop();
-                        const path = `hero-image-${Date.now()}.${ext}`;
-                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true });
+                        const compressed = await compressImage(file, { maxWidth: 1920, quality: 0.75 });
+                        const path = `hero-image-${Date.now()}.jpg`;
+                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
                         if (upErr) {
                           toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
                           setUploadingRoomImage(false);
@@ -228,9 +229,9 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
-    const ext = file.name.split('.').pop();
-    const path = `${galleryCategory}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+    const path = `${galleryCategory}/${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
     if (uploadError) {
       toast({ title: 'Lỗi upload ảnh', description: uploadError.message, variant: 'destructive' });
       setUploadingImage(false);
@@ -290,9 +291,9 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file || !editingRoom) return;
     setUploadingRoomImage(true);
-    const ext = file.name.split('.').pop();
-    const path = `rooms/${editingRoom.id}-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+    const path = `rooms/${editingRoom.id}-${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
     if (uploadError) {
       toast({ title: 'Lỗi upload ảnh phòng', description: uploadError.message, variant: 'destructive' });
       setUploadingRoomImage(false);
@@ -1223,9 +1224,9 @@ const AdminDashboard = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         setUploadingRoomImage(true);
-                        const ext = file.name.split('.').pop();
-                        const path = `header-logo-${Date.now()}.${ext}`;
-                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true });
+                        const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
+                        const path = `header-logo-${Date.now()}.jpg`;
+                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
                         if (upErr) {
                           toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
                           setUploadingRoomImage(false);
