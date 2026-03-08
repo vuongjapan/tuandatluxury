@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SiteSettings {
+  header_logo_url: string;
   map_embed_url: string;
   map_embed_code: string;
   google_maps_url: string;
@@ -13,6 +14,7 @@ export interface SiteSettings {
 }
 
 const DEFAULTS: SiteSettings = {
+  header_logo_url: '',
   map_embed_url: '',
   map_embed_code: '',
   google_maps_url: 'https://maps.app.goo.gl/pBbcvrqXQQT4PVfn6',

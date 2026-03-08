@@ -1138,9 +1138,65 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* MAP */}
+          {/* MAP & HEADER */}
           {tab === 'map' && (
             <div className="space-y-4">
+              {/* Header Logo Management */}
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                  Logo thanh công cụ
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upload ảnh logo hiển thị trên thanh header. Nên dùng ảnh PNG trong suốt, kích thước tối ưu 200×50px.
+                </p>
+                {siteSettings.header_logo_url && (
+                  <div className="mb-4 p-4 bg-secondary rounded-lg flex items-center gap-4">
+                    <img src={siteSettings.header_logo_url} alt="Current logo" className="h-12 w-auto object-contain" />
+                    <span className="text-xs text-muted-foreground">Logo hiện tại</span>
+                  </div>
+                )}
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" className="relative" disabled={uploadingRoomImage}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploadingRoomImage ? 'Đang tải...' : 'Upload logo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploadingRoomImage(true);
+                        const ext = file.name.split('.').pop();
+                        const path = `header-logo-${Date.now()}.${ext}`;
+                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true });
+                        if (upErr) {
+                          toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
+                          setUploadingRoomImage(false);
+                          return;
+                        }
+                        const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                        const err = await updateSetting('header_logo_url', urlData.publicUrl);
+                        setUploadingRoomImage(false);
+                        if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
+                        toast({ title: 'Đã cập nhật logo ✓' });
+                      }}
+                    />
+                  </Button>
+                  {siteSettings.header_logo_url && (
+                    <Button variant="outline" onClick={async () => {
+                      const err = await updateSetting('header_logo_url', '');
+                      if (!err) toast({ title: 'Đã xóa logo, hiển thị tên mặc định ✓' });
+                    }}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Xóa logo
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Map Embed Management */}
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-primary" />

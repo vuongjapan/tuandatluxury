@@ -4,6 +4,7 @@ import { Menu, X, Phone, Globe, User, LogOut, Crown, Shield } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { language, setLanguage, t, langLabels } = useLanguage();
   const { user, isAdmin, signOut, loading } = useAuth();
+  const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
   const navItems = [
@@ -35,8 +37,14 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <span className="font-display text-xl font-bold text-gold-gradient">Tuấn Đạt</span>
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Luxury</span>
+          {settings.header_logo_url ? (
+            <img src={settings.header_logo_url} alt="Tuấn Đạt Luxury" className="h-10 w-auto object-contain" />
+          ) : (
+            <>
+              <span className="font-display text-xl font-bold text-gold-gradient">Tuấn Đạt</span>
+              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Luxury</span>
+            </>
+          )}
         </Link>
 
         {/* Desktop Nav */}
