@@ -28,6 +28,7 @@ const loadCachedMessages = (): { role: string; content: string }[] => {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hotel-chat`;
 
 const FloatingButtons = () => {
+  const { settings } = useSiteSettings();
   const { t } = useLanguage();
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(loadCachedMessages);
