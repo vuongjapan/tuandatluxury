@@ -229,9 +229,9 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
-    const ext = file.name.split('.').pop();
-    const path = `${galleryCategory}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, file);
+    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+    const path = `${galleryCategory}/${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
     if (uploadError) {
       toast({ title: 'Lỗi upload ảnh', description: uploadError.message, variant: 'destructive' });
       setUploadingImage(false);
