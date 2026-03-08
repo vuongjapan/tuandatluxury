@@ -16,6 +16,7 @@ export interface SiteSettings {
 
 const DEFAULTS: SiteSettings = {
   header_logo_url: '',
+  hero_image_url: '',
   map_embed_url: '',
   map_embed_code: '',
   google_maps_url: 'https://maps.app.goo.gl/pBbcvrqXQQT4PVfn6',
