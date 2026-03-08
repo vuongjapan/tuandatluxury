@@ -2,11 +2,15 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import heroImage from '@/assets/hero-hotel.jpg';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
+import heroImageFallback from '@/assets/hero-hotel.jpg';
 
 const HeroSection = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { settings } = useSiteSettings();
+
+  const heroImage = settings.hero_image_url || heroImageFallback;
 
   return (
     <section id="overview" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
