@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const SESSION_KEY = 'tdl_chat_session';
 const MESSAGES_KEY = 'tdl_chat_messages';
