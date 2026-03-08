@@ -1252,7 +1252,59 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Map Embed Management */}
+              {/* Chatbot Avatar */}
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  💬 Ảnh đại diện Chatbot Lan Anh
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upload ảnh đại diện cho lễ tân Lan Anh trong chatbot. Nên dùng ảnh vuông, kích thước tối ưu 200×200px.
+                </p>
+                {siteSettings.chatbot_avatar_url && (
+                  <div className="mb-4 p-4 bg-secondary rounded-lg flex items-center gap-4">
+                    <img src={siteSettings.chatbot_avatar_url} alt="Chatbot avatar" className="h-16 w-16 rounded-full object-cover" />
+                    <span className="text-xs text-muted-foreground">Avatar hiện tại</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="outline" className="relative">
+                    📷 Chọn ảnh
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploadingRoomImage(true);
+                        const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
+                        const path = `chatbot-avatar-${Date.now()}.jpg`;
+                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                        if (upErr) {
+                          toast({ title: 'Lỗi upload: ' + upErr.message, variant: 'destructive' });
+                          setUploadingRoomImage(false);
+                          return;
+                        }
+                        const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                        const err = await updateSetting('chatbot_avatar_url', urlData.publicUrl);
+                        setUploadingRoomImage(false);
+                        if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
+                        toast({ title: 'Đã cập nhật avatar chatbot ✓' });
+                      }}
+                    />
+                  </Button>
+                  {siteSettings.chatbot_avatar_url && (
+                    <Button variant="outline" onClick={async () => {
+                      const err = await updateSetting('chatbot_avatar_url', '');
+                      if (!err) toast({ title: 'Đã xóa avatar, hiển thị emoji mặc định ✓' });
+                    }}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Xóa avatar
+                    </Button>
+                  )}
+                </div>
+              </div>
+
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-primary" />

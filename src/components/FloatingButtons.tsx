@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const SESSION_KEY = 'tdl_chat_session';
 const MESSAGES_KEY = 'tdl_chat_messages';
@@ -27,6 +28,7 @@ const loadCachedMessages = (): { role: string; content: string }[] => {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hotel-chat`;
 
 const FloatingButtons = () => {
+  const { settings } = useSiteSettings();
   const { t } = useLanguage();
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(loadCachedMessages);
@@ -163,9 +165,13 @@ const FloatingButtons = () => {
               {/* Chat Header */}
               <div className="bg-gold-gradient p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm">👩</div>
+                  {settings.chatbot_avatar_url ? (
+                    <img src={settings.chatbot_avatar_url} alt="Lan Anh" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm">👩</div>
+                  )}
                   <div>
-                    <p className="font-display text-sm font-semibold text-primary-foreground">Lan Anh - Lễ tân AI</p>
+                    <p className="font-display text-sm font-semibold text-primary-foreground">Lễ tân Lan Anh</p>
                     <p className="text-xs text-primary-foreground/70">Tuấn Đạt Luxury · Online</p>
                   </div>
                 </div>
