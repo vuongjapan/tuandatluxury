@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Facebook, ExternalLink, Map } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
@@ -72,34 +72,6 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Col 4: Map */}
-          <div>
-            <h4 className="font-display text-lg font-semibold mb-4">{t('footer.find_us')}</h4>
-            <div className="rounded-xl overflow-hidden border border-background/10">
-            {settings.map_embed_url ?
-              <iframe
-                src={settings.map_embed_url}
-                width="100%"
-                height="180"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Hotel Location" /> :
-
-
-              <a
-                href={settings.google_maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-[180px] bg-background/10 flex flex-col items-center justify-center text-xs text-background/50 hover:text-primary transition-colors gap-2">
-                
-                <Map className="h-8 w-8" />
-                <span>Xem trên Google Maps</span>
-              </a>
-              }
-            </div>
-          </div>
         </div>
 
         {/* Bottom */}
