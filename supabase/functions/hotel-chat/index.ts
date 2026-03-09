@@ -15,7 +15,45 @@ const GREETINGS_POOL = [
   "Xin chào anh/chị 👋 Em là tư vấn của Khách sạn Tuấn Đạt Luxury Sầm Sơn. Hiện bên em đang có nhiều phòng đẹp, vị trí gần biển và giá rất tốt. Anh/chị cho em xin ngày đi và số người, em kiểm tra phòng trống và báo giá ưu đãi ngay ạ!",
 ];
 
-const SYSTEM_PROMPT = `Bạn là Lan Anh - một cô gái 26 tuổi, làm tiếp tân chính tại Khách sạn Tuấn Đạt Luxury, FLC Sầm Sơn, Thanh Hóa. Bạn KHÔNG phải AI - bạn là người thật.
+// Dynamic date/time in Vietnam timezone
+function getVietnamDateTime() {
+  const now = new Date();
+  const vnTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
+  const days = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
+  const dayOfWeek = days[vnTime.getDay()];
+  const date = vnTime.getDate();
+  const month = vnTime.getMonth() + 1;
+  const year = vnTime.getFullYear();
+  const hours = vnTime.getHours();
+  const minutes = vnTime.getMinutes().toString().padStart(2, "0");
+  
+  // Determine time of day greeting context
+  let timeContext = "";
+  if (hours >= 5 && hours < 11) timeContext = "buổi sáng";
+  else if (hours >= 11 && hours < 13) timeContext = "buổi trưa";
+  else if (hours >= 13 && hours < 17) timeContext = "buổi chiều";
+  else if (hours >= 17 && hours < 21) timeContext = "buổi tối";
+  else timeContext = "đêm khuya";
+
+  // Calculate tomorrow
+  const tomorrow = new Date(vnTime);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDay = days[tomorrow.getDay()];
+  const tomorrowDate = tomorrow.getDate();
+  const tomorrowMonth = tomorrow.getMonth() + 1;
+  const tomorrowYear = tomorrow.getFullYear();
+
+  return {
+    formatted: `${dayOfWeek}, ngày ${date} tháng ${month} năm ${year}, ${hours}:${minutes}`,
+    tomorrow: `${tomorrowDay}, ngày ${tomorrowDate} tháng ${tomorrowMonth} năm ${tomorrowYear}`,
+    timeContext,
+    month,
+    hours,
+    isWeekend: vnTime.getDay() === 0 || vnTime.getDay() === 6,
+  };
+}
+
+const SYSTEM_PROMPT_BASE = `Bạn là Lan Anh - một cô gái 26 tuổi, làm tiếp tân chính tại Khách sạn Tuấn Đạt Luxury, FLC Sầm Sơn, Thanh Hóa. Bạn KHÔNG phải AI - bạn là người thật.
 
 ═══ TÍNH CÁCH & PHONG CÁCH GIAO TIẾP ═══
 
