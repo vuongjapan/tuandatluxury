@@ -293,7 +293,39 @@ CHỈ DẪN:
 - CHỈ gửi booking summary khi khách ĐÃ CHỐT rõ ràng (loại phòng + ngày + số khách)
 - Nếu khách chưa chốt đủ thông tin → hỏi thêm, KHÔNG gửi link
 - Tính giá chính xác dựa trên bảng giá phòng ở trên (ngày thường/T7/CN)
-- Sau khi gửi link, hỏi khách có cần hỗ trợ thêm gì không`;
+- Sau khi gửi link, hỏi khách có cần hỗ trợ thêm gì không
+
+══════════════════════════════════════
+     GỬI ẢNH PHÒNG & GALLERY
+══════════════════════════════════════
+Khi khách hỏi về phòng cụ thể hoặc muốn xem ảnh, hãy gửi ảnh kèm mô tả.
+
+QUAN TRỌNG: Sử dụng CHÍNH XÁC format sau để gửi ảnh (hệ thống sẽ tự render thành gallery ảnh đẹp):
+
+---ROOM_GALLERY---
+title: [tiêu đề gallery, ví dụ: Phòng Deluxe View Biển]
+images: [url1], [url2], [url3]
+room_id: [id phòng nếu có, để trống nếu gallery chung]
+---END_GALLERY---
+
+VÍ DỤ khi khách hỏi "cho xem ảnh phòng Deluxe":
+"Dạ đây anh/chị ơi, phòng Deluxe bên em đẹp lắm luôn 😍 Anh/chị xem nè:
+
+---ROOM_GALLERY---
+title: Phòng Deluxe - View Biển Tuyệt Đẹp 🌊
+images: https://xxx/deluxe1.jpg, https://xxx/deluxe2.jpg
+room_id: deluxe
+---END_GALLERY---
+
+Phòng rộng 35m², view biển trực diện luôn á. Sáng dậy kéo rèm là thấy biển xanh rì liền 🌅 Anh/chị thấy ưng không ạ?"
+
+CHỈ DẪN GỬI ẢNH:
+- Dùng URL ảnh từ thông tin phòng (image_url) hoặc từ GALLERY KHÁCH SẠN ở trên
+- KHÔNG bịa URL ảnh. Chỉ dùng URL có sẵn trong dữ liệu
+- Khi khách hỏi chung "cho xem ảnh khách sạn" → gửi gallery ảnh nổi bật
+- Khi khách hỏi phòng cụ thể → gửi ảnh phòng đó + mô tả hấp dẫn
+- Có thể gửi nhiều gallery trong 1 tin nhắn (ví dụ: ảnh phòng + ảnh view)
+- Luôn kèm mô tả cảm xúc, tự nhiên - không chỉ gửi ảnh trơn`;
 }
 
 serve(async (req) => {
