@@ -58,12 +58,14 @@ const DiningHomeSection = () => {
               className="cursor-pointer group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 border border-border"
             >
               {cat.image_url && (
-                <div className="aspect-[4/3] overflow-hidden">
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
                   <img
                     src={cat.image_url}
                     alt={cat.name_vi}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
+                    decoding="async"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                   />
                 </div>
               )}
