@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
 import { AMENITY_ICONS } from '@/data/rooms';
+import { optimizeImageUrl } from '@/lib/optimizeImage';
 
 interface RoomCardProps {
   room: Room;
@@ -14,6 +15,9 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
   const { language, t, formatPrice } = useLanguage();
   const navigate = useNavigate();
 
+  // Optimize: smaller image for mobile, larger for desktop
+  const imgSrc = optimizeImageUrl(room.image, { width: 640, quality: 70 });
+
   return (
     <div
       className="group bg-card rounded-xl border border-border shadow-card hover:shadow-card-hover transition-shadow duration-300 overflow-hidden flex flex-col md:flex-row"
@@ -21,7 +25,7 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
       {/* Image */}
       <div className="relative w-full md:w-80 h-48 sm:h-56 md:h-auto shrink-0 overflow-hidden">
         <img
-          src={room.image}
+          src={imgSrc}
           alt={room.name[language]}
           className="w-full h-full object-cover"
           loading={index < 2 ? "eager" : "lazy"}
