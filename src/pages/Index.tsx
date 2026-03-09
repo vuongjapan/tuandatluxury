@@ -83,10 +83,60 @@ const Index = () => {
       {/* About Section */}
       <section id="about" className="py-12 sm:py-20 bg-secondary">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-6">{t('nav.about')}</h2>
-            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-8" />
-            <p className="text-muted-foreground leading-relaxed text-base sm:text-lg">{t('footer.desc')}</p>
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              {isVi ? 'Giới thiệu khách sạn' : 'About Our Hotel'}
+            </h2>
+            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-6" />
+            <p className="text-primary font-display text-lg sm:text-xl font-semibold mb-6">
+              {isVi
+                ? '✦ Điểm đến nghỉ dưỡng lý tưởng tại FLC Sầm Sơn ✦'
+                : '✦ Your Ideal Resort Destination at FLC Sầm Sơn ✦'}
+            </p>
+            <p className="text-muted-foreground leading-relaxed text-sm sm:text-base mb-6">
+              {isVi
+                ? 'Tọa lạc tại vị trí đắc địa trong khu nghỉ dưỡng FLC Sầm Sơn, Khách sạn Tuấn Đạt Luxury mang đến trải nghiệm lưu trú đẳng cấp với thiết kế hiện đại, tiện nghi sang trọng và dịch vụ tận tâm. Chỉ vài bước chân đến bãi biển, khách sạn là lựa chọn hoàn hảo cho kỳ nghỉ gia đình, du lịch nhóm hay nghỉ dưỡng lãng mạn.'
+                : 'Located in a prime position within the prestigious FLC Sầm Sơn resort complex, Tuấn Đạt Luxury Hotel offers an upscale stay experience with modern design, premium amenities and attentive service. Just steps from the beach, the hotel is the perfect choice for family vacations, group trips or romantic getaways.'}
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mt-8">
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl block mb-2">🏊</span>
+                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
+                  {isVi ? 'Hồ bơi vô cực' : 'Infinity Pool'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Mở quanh năm' : 'Open year-round'}</p>
+              </div>
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl block mb-2">🍽️</span>
+                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
+                  {isVi ? 'Nhà hàng' : 'Restaurant'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Buffet sáng miễn phí' : 'Free breakfast buffet'}</p>
+              </div>
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl block mb-2">🏖️</span>
+                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
+                  {isVi ? 'Giáp biển' : 'Beachfront'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Đưa đón miễn phí' : 'Free shuttle'}</p>
+              </div>
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl block mb-2">🛎️</span>
+                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
+                  {isVi ? 'Dịch vụ 24/7' : '24/7 Service'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Lễ tân & phòng' : 'Reception & room'}</p>
+              </div>
+            </div>
+
+            <div className="mt-8 p-4 sm:p-6 bg-card rounded-xl border border-border shadow-card">
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                {isVi
+                  ? '📍 Địa chỉ: LK29-20, Khu nghỉ dưỡng FLC Sầm Sơn, Thanh Hóa, Việt Nam • 📞 Hotline: 098.661.7939 • ✉️ Email: tuandatluxury@gmail.com'
+                  : '📍 Address: LK29-20, FLC Sầm Sơn Resort, Thanh Hóa, Vietnam • 📞 Hotline: 098.661.7939 • ✉️ Email: tuandatluxury@gmail.com'}
+              </p>
+            </div>
           </div>
         </div>
       </section>
