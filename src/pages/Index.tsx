@@ -1,9 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import SpotlightSection from '@/components/SpotlightSection';
+import BookingSearch from '@/components/BookingSearch';
 import RoomCard from '@/components/RoomCard';
 import Footer from '@/components/Footer';
 import { useRooms } from '@/hooks/useRooms';
@@ -52,15 +54,18 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      {/* Hero - fullscreen */}
       <HeroSection />
 
-      {/* Spotlight Section - like Imperial's "In The Spotlight" */}
-      <div className="pt-16 sm:pt-20">
-        <SpotlightSection />
-      </div>
+      {/* Booking Search - standalone section below hero */}
+      <BookingSearch />
+
+      {/* Spotlight */}
+      <SpotlightSection />
 
       {/* Rooms Section */}
-      <section id="rooms" className="py-16 sm:py-24 bg-background">
+      <section id="rooms" className="py-16 sm:py-24 bg-secondary">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10 sm:mb-14">
             <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
