@@ -42,7 +42,7 @@ const FooterMap = () => {
       </div>
       <div className="flex gap-2">
         <a
-          href={GOOGLE_MAPS_LINK}
+          href={mapsLink}
           target="_blank"
           rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-1.5 text-xs bg-background/10 hover:bg-background/20 px-3 py-2 rounded-full transition-colors text-background/80 hover:text-primary"
