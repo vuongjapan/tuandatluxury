@@ -19,9 +19,13 @@ const FooterMap = () => {
     <div className="space-y-2">
       <div className="rounded-lg overflow-hidden border border-background/10 bg-background/5">
         {embedCode ? (
-          <div
-            className="w-full h-[180px] [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
-            dangerouslySetInnerHTML={{ __html: embedCode }}
+          <iframe
+            src={extractIframeSrc(embedCode)}
+            className="w-full h-[180px] border-0"
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Google Maps"
           />
         ) : (
           <a
