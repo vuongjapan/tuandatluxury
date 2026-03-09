@@ -55,7 +55,7 @@ const Index = () => {
       <HeroSection />
 
       {/* Spotlight Section - like Imperial's "In The Spotlight" */}
-      <div className="pt-12 sm:pt-14">
+      <div className="pt-16 sm:pt-20">
         <SpotlightSection />
       </div>
 
