@@ -234,19 +234,20 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
-    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
-    const path = `${galleryCategory}/${Date.now()}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
-    if (uploadError) {
-      toast({ title: 'Lỗi upload ảnh', description: uploadError.message, variant: 'destructive' });
-      setUploadingImage(false);
-      return;
-    }
-    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-    const { error: insertError } = await supabase.from('gallery_images').insert({
-      category: galleryCategory,
-      image_url: urlData.publicUrl,
-      title_vi: '',
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+      const path = `${galleryCategory}/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
+      if (uploadError) {
+        toast({ title: 'Lỗi upload ảnh', description: uploadError.message, variant: 'destructive' });
+        setUploadingImage(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+      const { error: insertError } = await supabase.from('gallery_images').insert({
+        category: galleryCategory,
+        image_url: urlData.publicUrl,
+        title_vi: '',
       title_en: '',
       sort_order: galleryImages.filter(g => g.category === galleryCategory).length,
     });
