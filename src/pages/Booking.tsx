@@ -27,10 +27,12 @@ const Booking = () => {
   const { rooms, getRoomPrice, isDateAvailable } = useRooms();
 
   const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
+  const preCheckin = searchParams.get('checkin');
+  const preCheckout = searchParams.get('checkout');
 
   const [roomId, setRoomId] = useState(preselectedRoom);
-  const [checkIn, setCheckIn] = useState<Date>();
-  const [checkOut, setCheckOut] = useState<Date>();
+  const [checkIn, setCheckIn] = useState<Date | undefined>(preCheckin ? new Date(preCheckin + 'T00:00:00') : undefined);
+  const [checkOut, setCheckOut] = useState<Date | undefined>(preCheckout ? new Date(preCheckout + 'T00:00:00') : undefined);
   const [guests, setGuests] = useState(searchParams.get('guests') || '2');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
