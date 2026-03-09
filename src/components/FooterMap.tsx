@@ -30,7 +30,7 @@ const FooterMap = () => {
           />
         ) : (
           <a
-            href={GOOGLE_MAPS_LINK}
+            href={mapsLink}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full h-[180px] flex flex-col items-center justify-center text-background/40 hover:text-primary transition-colors"
