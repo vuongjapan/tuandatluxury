@@ -5,34 +5,50 @@ const spotlights = [
   {
     titleVi: 'Phòng nghỉ đẳng cấp',
     titleEn: 'Exceptional Rooms',
-    descVi: 'Thiết kế hiện đại, tiện nghi sang trọng với view biển và núi tuyệt đẹp tại FLC Sầm Sơn.',
-    descEn: 'Modern design, premium amenities with stunning sea and mountain views at FLC Sầm Sơn.',
+    descVi: '6 tầng với hơn 19 phòng nghỉ thiết kế hiện đại, đầy đủ điều hòa, TV, minibar, ban công. View biển và khu nghỉ dưỡng FLC 5 sao.',
+    descEn: '6 floors with 19+ modern rooms equipped with AC, TV, minibar, balcony. Sea view and FLC 5-star resort grounds.',
     icon: '🏨',
     href: '/#rooms',
   },
   {
-    titleVi: 'Ẩm thực tinh hoa',
-    titleEn: 'Taste The World',
-    descVi: 'Buffet sáng phong phú, đặc sản địa phương và các món ăn quốc tế do đầu bếp chuyên nghiệp chế biến.',
-    descEn: 'Rich breakfast buffet, local specialties and international cuisine prepared by professional chefs.',
+    titleVi: 'Nhà hàng & Rooftop Bar',
+    titleEn: 'Restaurant & Rooftop Bar',
+    descVi: '2 nhà hàng (tầng 1 & 2) phục vụ hải sản tươi sống Sầm Sơn, món Việt và quốc tế. Bar-Coffee sân thượng tầng 6 ngắm biển.',
+    descEn: '2 restaurants (floors 1 & 2) serving fresh Sầm Sơn seafood, Vietnamese & international cuisine. Rooftop bar on floor 6 with sea views.',
     icon: '🍽️',
     href: '/dining',
   },
   {
-    titleVi: 'Hồ bơi & Biển',
-    titleEn: 'Pool & Beach',
-    descVi: 'Tận hưởng hồ bơi vô cực trong khuôn viên và bãi biển Sầm Sơn chỉ vài bước chân.',
-    descEn: 'Enjoy the infinity pool on-site and Sầm Sơn beach just steps away.',
+    titleVi: 'Hồ bơi vô cực & Biển',
+    titleEn: 'Infinity Pool & Beach',
+    descVi: 'Bể bơi vô cực miễn phí view biển trong khuôn viên FLC. Bãi biển Sầm Sơn chỉ cách 50m, đưa đón xe điện miễn phí.',
+    descEn: 'Free infinity pool with sea view inside FLC resort. Sầm Sơn beach just 50m away, free electric shuttle.',
     icon: '🏖️',
     href: '/#services',
   },
   {
-    titleVi: 'Dịch vụ tận tâm',
-    titleEn: 'Attentive Service',
-    descVi: 'Đội ngũ nhân viên chuyên nghiệp phục vụ 24/7, sẵn sàng đáp ứng mọi yêu cầu của quý khách.',
-    descEn: 'Professional staff available 24/7, ready to fulfill every guest request.',
-    icon: '🛎️',
+    titleVi: 'Karaoke & Giải trí',
+    titleEn: 'Karaoke & Entertainment',
+    descVi: 'Hệ thống karaoke miễn phí với sân khấu ánh sáng. Xe đạp đôi miễn phí dạo quanh khu FLC, phòng xông hơi, gym.',
+    descEn: 'Free karaoke with stage lighting. Free tandem bikes to explore FLC resort, sauna, gym.',
+    icon: '🎤',
     href: '/#services',
+  },
+  {
+    titleVi: 'Tham quan FLC 5 sao',
+    titleEn: 'FLC 5-Star Resort Access',
+    descVi: 'Miễn phí vé tham quan toàn bộ khu nghỉ dưỡng FLC Sầm Sơn 5 sao: công viên, sân golf, khu vui chơi cho trẻ em.',
+    descEn: 'Free access to the entire FLC Sầm Sơn 5-star resort: parks, golf course, kids playground.',
+    icon: '⛳',
+    href: '/#about',
+  },
+  {
+    titleVi: 'Điểm tham quan lân cận',
+    titleEn: 'Nearby Attractions',
+    descVi: 'Gần Quảng trường biển, công viên nước, đền Độc Cước, hòn Trống Mái, chợ Cột Đỏ — chỉ vài phút di chuyển.',
+    descEn: 'Near Sea Square, water park, Độc Cước Temple, Trống Mái rock, Cột Đỏ market — just minutes away.',
+    icon: '🗺️',
+    href: '/#contact',
   },
 ];
 
@@ -54,7 +70,7 @@ const SpotlightSection = () => {
           <div className="w-20 h-[2px] bg-primary mx-auto" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
           {spotlights.map((item, idx) => (
             <a
               key={idx}
@@ -65,12 +81,12 @@ const SpotlightSection = () => {
                   navigate(item.href);
                 }
               }}
-              className="group bg-card rounded-xl p-6 sm:p-8 text-center border border-border shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              className="group bg-card rounded-xl p-6 text-center border border-border shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 cursor-pointer"
             >
               <span className="text-4xl sm:text-5xl block mb-4 group-hover:scale-110 transition-transform duration-300">
                 {item.icon}
               </span>
-              <h3 className="font-display text-lg sm:text-xl font-semibold text-foreground mb-3">
+              <h3 className="font-display text-base sm:text-lg font-semibold text-foreground mb-2">
                 {isVi ? item.titleVi : item.titleEn}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">

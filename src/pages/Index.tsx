@@ -96,51 +96,120 @@ const Index = () => {
       <section id="about" className="py-16 sm:py-24 bg-secondary">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
               {/* Text side */}
               <div>
                 <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
                   {isVi ? 'Về chúng tôi' : 'About Us'}
                 </p>
                 <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-                  {isVi ? 'Tuấn Đạt Luxury Hotel' : 'Tuấn Đạt Luxury Hotel'}
+                  Tuấn Đạt Luxury Hotel
                 </h2>
                 <div className="w-16 h-[2px] bg-primary mb-6" />
                 <p className="text-primary font-display text-base sm:text-lg font-semibold mb-4">
                   {isVi
-                    ? '✦ Điểm đến nghỉ dưỡng lý tưởng tại FLC Sầm Sơn ✦'
-                    : '✦ Your Ideal Resort Destination at FLC Sầm Sơn ✦'}
+                    ? '✦ Nghỉ dưỡng đẳng cấp trong khu FLC Sầm Sơn 5 sao ✦'
+                    : '✦ Premium Stay inside FLC Sầm Sơn 5-Star Resort ✦'}
+                </p>
+                <p className="text-muted-foreground leading-relaxed text-sm sm:text-base mb-4">
+                  {isVi
+                    ? 'Tọa lạc trong khu nghỉ dưỡng cao cấp 5 sao FLC Sầm Sơn — khu nghỉ dưỡng đầu tiên của miền Bắc và Bắc Trung Bộ. Khách sạn Tuấn Đạt Luxury gồm 6 tầng với hơn 19 phòng nghỉ sang trọng, chỉ cách bãi biển 50m. Mỗi phòng đều được trang bị điều hòa, TV màn hình phẳng, minibar, tủ lạnh, máy sấy tóc, ban công riêng và thiết bị vệ sinh cao cấp.'
+                    : 'Located inside the prestigious FLC Sầm Sơn — the first 5-star resort in Northern and North-Central Vietnam. Tuấn Đạt Luxury Hotel features 6 floors with 19+ luxury rooms, just 50m from the beach. Each room is equipped with AC, flat-screen TV, minibar, fridge, hair dryer, private balcony and premium bathroom fixtures.'}
                 </p>
                 <p className="text-muted-foreground leading-relaxed text-sm sm:text-base mb-6">
                   {isVi
-                    ? 'Tọa lạc tại vị trí đắc địa trong khu nghỉ dưỡng FLC Sầm Sơn, Khách sạn Tuấn Đạt Luxury mang đến trải nghiệm lưu trú đẳng cấp với thiết kế hiện đại, tiện nghi sang trọng và dịch vụ tận tâm. Chỉ vài bước chân đến bãi biển, khách sạn là lựa chọn hoàn hảo cho kỳ nghỉ gia đình, du lịch nhóm hay nghỉ dưỡng lãng mạn.'
-                    : 'Located in a prime position within the prestigious FLC Sầm Sơn resort complex, Tuấn Đạt Luxury Hotel offers an upscale stay experience with modern design, premium amenities and attentive service. Just steps from the beach, the hotel is the perfect choice for family vacations, group trips or romantic getaways.'}
+                    ? 'Khách sạn có 2 nhà hàng tại tầng 1 & 2 phục vụ hải sản tươi sống Sầm Sơn và ẩm thực Việt-Quốc tế. Sân thượng tầng 6 là khu Bar-Coffee với không gian sôi động, ngắm cảnh biển thơ mộng. Check-in: 14:00 | Check-out: 12:00.'
+                    : 'The hotel features 2 restaurants on floors 1 & 2 serving fresh Sầm Sơn seafood and Vietnamese-International cuisine. The 6th floor rooftop houses a vibrant Bar-Coffee area with romantic sea views. Check-in: 14:00 | Check-out: 12:00.'}
                 </p>
+
+                {/* Free amenities list */}
+                <div className="p-4 sm:p-5 bg-card rounded-xl border border-border mb-4">
+                  <h4 className="font-display text-sm font-semibold text-foreground mb-3">
+                    {isVi ? '🎁 Miễn phí khi nghỉ tại khách sạn:' : '🎁 Complimentary for all guests:'}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {(isVi ? [
+                      '🏊 Bể bơi vô cực view biển',
+                      '🚲 Xe đạp đôi dạo FLC',
+                      '🎤 Karaoke sân khấu ánh sáng',
+                      '🎫 Tham quan toàn khu FLC 5 sao',
+                      '📶 Wifi Internet 24/7',
+                      '🚐 Xe điện đưa đón bãi biển',
+                      '💧 2 chai nước + trà, cafe/ngày',
+                      '🅿️ Bãi đỗ xe an ninh 24/7',
+                    ] : [
+                      '🏊 Infinity pool with sea view',
+                      '🚲 Tandem bikes around FLC',
+                      '🎤 Karaoke with stage lighting',
+                      '🎫 Full FLC 5-star resort access',
+                      '📶 24/7 WiFi Internet',
+                      '🚐 Free beach electric shuttle',
+                      '💧 2 water bottles + tea, coffee/day',
+                      '🅿️ 24/7 secure parking',
+                    ]).map((item, idx) => (
+                      <p key={idx} className="text-xs sm:text-sm text-muted-foreground">{item}</p>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="p-4 bg-card rounded-xl border border-border">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     📍 LK29-20, FLC Sầm Sơn, Thanh Hóa<br />
-                    📞 098.661.7939<br />
+                    📞 098.661.7939 • 091.693.0969<br />
                     ✉️ tuandatluxury@gmail.com
                   </p>
                 </div>
               </div>
 
-              {/* Stats / features side */}
-              <div className="grid grid-cols-2 gap-4 sm:gap-6">
-                {[
-                  { icon: '🏊', titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Mở quanh năm', descEn: 'Open year-round' },
-                  { icon: '🍽️', titleVi: 'Nhà hàng', titleEn: 'Restaurant', descVi: 'Buffet sáng miễn phí', descEn: 'Free breakfast buffet' },
-                  { icon: '🏖️', titleVi: 'Giáp biển', titleEn: 'Beachfront', descVi: 'Đưa đón miễn phí', descEn: 'Free shuttle' },
-                  { icon: '🛎️', titleVi: 'Dịch vụ 24/7', titleEn: '24/7 Service', descVi: 'Lễ tân & phòng', descEn: 'Reception & room' },
-                ].map((item, idx) => (
-                  <div key={idx} className="bg-card rounded-xl p-5 sm:p-6 text-center border border-border shadow-card">
-                    <span className="text-3xl sm:text-4xl block mb-3">{item.icon}</span>
-                    <p className="font-display text-sm sm:text-base font-semibold text-foreground">
-                      {isVi ? item.titleVi : item.titleEn}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">{isVi ? item.descVi : item.descEn}</p>
+              {/* Right side - features + nearby */}
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { icon: '🏊', titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view' },
+                    { icon: '🍽️', titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international' },
+                    { icon: '🍸', titleVi: 'Rooftop Bar', titleEn: 'Rooftop Bar', descVi: 'Tầng 6, ngắm biển', descEn: 'Floor 6, sea view' },
+                    { icon: '🛎️', titleVi: 'Lễ tân 24/7', titleEn: '24/7 Reception', descVi: 'Dịch vụ phòng', descEn: 'Room service' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="bg-card rounded-xl p-4 sm:p-5 text-center border border-border shadow-card">
+                      <span className="text-3xl sm:text-4xl block mb-2">{item.icon}</span>
+                      <p className="font-display text-sm font-semibold text-foreground">
+                        {isVi ? item.titleVi : item.titleEn}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{isVi ? item.descVi : item.descEn}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Nearby attractions */}
+                <div className="bg-card rounded-xl p-5 border border-border shadow-card">
+                  <h4 className="font-display text-sm font-semibold text-foreground mb-3">
+                    {isVi ? '📍 Điểm tham quan lân cận' : '📍 Nearby Attractions'}
+                  </h4>
+                  <div className="space-y-2">
+                    {(isVi ? [
+                      { name: 'Bãi biển Sầm Sơn', dist: '50m' },
+                      { name: 'Quảng trường biển', dist: '2 phút xe' },
+                      { name: 'Công viên nước', dist: '5 phút xe' },
+                      { name: 'Đền Độc Cước', dist: '10 phút xe' },
+                      { name: 'Hòn Trống Mái', dist: '12 phút xe' },
+                      { name: 'Chợ Cột Đỏ', dist: '8 phút xe' },
+                      { name: 'Sân Golf FLC', dist: '3 phút xe' },
+                    ] : [
+                      { name: 'Sầm Sơn Beach', dist: '50m' },
+                      { name: 'Sea Square', dist: '2 min drive' },
+                      { name: 'Water Park', dist: '5 min drive' },
+                      { name: 'Độc Cước Temple', dist: '10 min drive' },
+                      { name: 'Trống Mái Rock', dist: '12 min drive' },
+                      { name: 'Cột Đỏ Market', dist: '8 min drive' },
+                      { name: 'FLC Golf Course', dist: '3 min drive' },
+                    ]).map((place, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{place.name}</span>
+                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{place.dist}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>
