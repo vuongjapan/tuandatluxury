@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Facebook, Loader2, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { MessageCircle, X, Send, Facebook, Loader2, Trash2, CalendarDays, Users, Moon, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useNavigate } from 'react-router-dom';
 
 const SESSION_KEY = 'tdl_chat_session';
 const MESSAGES_KEY = 'tdl_chat_messages';
