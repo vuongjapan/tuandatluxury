@@ -9,7 +9,7 @@ const Footer = () => {
   return (
     <footer id="contact" className="bg-foreground text-background">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Col 1: Hotel Info */}
           <div>
             <h3 className="font-display text-2xl font-bold text-gold-gradient mb-4">Tuấn Đạt Luxury</h3>
