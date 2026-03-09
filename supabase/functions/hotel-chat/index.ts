@@ -293,7 +293,39 @@ CHỈ DẪN:
 - CHỈ gửi booking summary khi khách ĐÃ CHỐT rõ ràng (loại phòng + ngày + số khách)
 - Nếu khách chưa chốt đủ thông tin → hỏi thêm, KHÔNG gửi link
 - Tính giá chính xác dựa trên bảng giá phòng ở trên (ngày thường/T7/CN)
-- Sau khi gửi link, hỏi khách có cần hỗ trợ thêm gì không`;
+- Sau khi gửi link, hỏi khách có cần hỗ trợ thêm gì không
+
+══════════════════════════════════════
+     GỬI ẢNH PHÒNG & GALLERY
+══════════════════════════════════════
+Khi khách hỏi về phòng cụ thể hoặc muốn xem ảnh, hãy gửi ảnh kèm mô tả.
+
+QUAN TRỌNG: Sử dụng CHÍNH XÁC format sau để gửi ảnh (hệ thống sẽ tự render thành gallery ảnh đẹp):
+
+---ROOM_GALLERY---
+title: [tiêu đề gallery, ví dụ: Phòng Deluxe View Biển]
+images: [url1], [url2], [url3]
+room_id: [id phòng nếu có, để trống nếu gallery chung]
+---END_GALLERY---
+
+VÍ DỤ khi khách hỏi "cho xem ảnh phòng Deluxe":
+"Dạ đây anh/chị ơi, phòng Deluxe bên em đẹp lắm luôn 😍 Anh/chị xem nè:
+
+---ROOM_GALLERY---
+title: Phòng Deluxe - View Biển Tuyệt Đẹp 🌊
+images: https://xxx/deluxe1.jpg, https://xxx/deluxe2.jpg
+room_id: deluxe
+---END_GALLERY---
+
+Phòng rộng 35m², view biển trực diện luôn á. Sáng dậy kéo rèm là thấy biển xanh rì liền 🌅 Anh/chị thấy ưng không ạ?"
+
+CHỈ DẪN GỬI ẢNH:
+- Dùng URL ảnh từ thông tin phòng (image_url) hoặc từ GALLERY KHÁCH SẠN ở trên
+- KHÔNG bịa URL ảnh. Chỉ dùng URL có sẵn trong dữ liệu
+- Khi khách hỏi chung "cho xem ảnh khách sạn" → gửi gallery ảnh nổi bật
+- Khi khách hỏi phòng cụ thể → gửi ảnh phòng đó + mô tả hấp dẫn
+- Có thể gửi nhiều gallery trong 1 tin nhắn (ví dụ: ảnh phòng + ảnh view)
+- Luôn kèm mô tả cảm xúc, tự nhiên - không chỉ gửi ảnh trơn`;
 }
 
 serve(async (req) => {
@@ -320,16 +352,23 @@ serve(async (req) => {
       });
     }
 
-    // Fetch real room data for accurate pricing
-    const { data: rooms } = await supabase
-      .from("rooms")
-      .select("id, name_vi, name_en, price_vnd, capacity, size_sqm, amenities, description_vi")
-      .eq("is_active", true);
+    // Fetch real room data for accurate pricing + images
+    const [{ data: rooms }, { data: galleryImages }] = await Promise.all([
+      supabase
+        .from("rooms")
+        .select("id, name_vi, name_en, price_vnd, capacity, size_sqm, amenities, description_vi, image_url")
+        .eq("is_active", true),
+      supabase
+        .from("gallery_images")
+        .select("image_url, title_vi, category")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .limit(50),
+    ]);
 
     const dt = getVietnamDateTime();
     let roomsInfo = "Không có dữ liệu phòng.";
     if (rooms && rooms.length > 0) {
-      // Fetch monthly prices for current month
       const { data: monthlyPrices } = await supabase
         .from("room_monthly_prices")
         .select("room_id, price_weekday, price_weekend, price_sunday")
@@ -343,11 +382,27 @@ serve(async (req) => {
         const weekdayPrice = mp?.price_weekday || r.price_vnd;
         const weekendPrice = mp?.price_weekend || Math.round(r.price_vnd * 1.3);
         const sundayPrice = mp?.price_sunday || weekendPrice;
-        return `• ${r.name_vi} (${r.name_en}): ${r.size_sqm}m², ${r.capacity} khách
+        return `• ${r.name_vi} (${r.name_en}) [room_id: ${r.id}]: ${r.size_sqm}m², ${r.capacity} khách
   Giá ngày thường: ${weekdayPrice.toLocaleString()}đ | T7: ${weekendPrice.toLocaleString()}đ | CN: ${sundayPrice.toLocaleString()}đ
+  Ảnh phòng: ${r.image_url || "không có"}
   ${r.description_vi || ""}
   Tiện nghi: ${(r.amenities || []).join(", ")}`;
       }).join("\n");
+    }
+
+    // Build gallery info for the prompt
+    let galleryInfo = "";
+    if (galleryImages && galleryImages.length > 0) {
+      const byCategory = new Map<string, any[]>();
+      galleryImages.forEach((img: any) => {
+        const cat = img.category || "general";
+        if (!byCategory.has(cat)) byCategory.set(cat, []);
+        byCategory.get(cat)!.push(img);
+      });
+      galleryInfo = "\n\nẢNH GALLERY KHÁCH SẠN (dùng khi khách muốn xem ảnh):\n";
+      byCategory.forEach((imgs, cat) => {
+        galleryInfo += `[${cat}]: ${imgs.slice(0, 5).map((i: any) => i.image_url).join(", ")}\n`;
+      });
     }
 
     // Load conversation memory
@@ -389,7 +444,7 @@ ${pastSummary ? "\nCuộc trò chuyện trước:\n" + pastSummary : ""}
       }
     }
 
-    const systemPrompt = buildSystemPrompt(dt, roomsInfo) + memoryContext;
+    const systemPrompt = buildSystemPrompt(dt, roomsInfo) + galleryInfo + memoryContext;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

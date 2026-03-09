@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageCircle, X, Send, Facebook, Loader2, Trash2, CalendarDays, Users, Moon, CreditCard } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { MessageCircle, X, Send, Facebook, Loader2, Trash2, CalendarDays, Users, Moon, CreditCard, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,23 +39,51 @@ interface BookingSummary {
   total_price: string;
 }
 
-function parseBookingSummary(content: string): { text: string; booking: BookingSummary | null } {
-  const regex = /---BOOKING_SUMMARY---([\s\S]*?)---END_BOOKING---/;
-  const match = content.match(regex);
-  if (!match) return { text: content, booking: null };
+interface RoomGallery {
+  title: string;
+  images: string[];
+  room_id: string;
+}
 
-  const text = content.replace(regex, '').trim();
-  const lines = match[1].trim().split('\n');
-  const booking: Record<string, string> = {};
-  lines.forEach(line => {
-    const [key, ...vals] = line.split(':');
-    if (key && vals.length) booking[key.trim()] = vals.join(':').trim();
-  });
+function parseSpecialBlocks(content: string): { text: string; booking: BookingSummary | null; galleries: RoomGallery[] } {
+  let text = content;
+  
+  // Parse booking
+  const bookingRegex = /---BOOKING_SUMMARY---([\s\S]*?)---END_BOOKING---/g;
+  let booking: BookingSummary | null = null;
+  const bookingMatch = content.match(bookingRegex);
+  if (bookingMatch) {
+    text = text.replace(bookingRegex, '').trim();
+    const inner = bookingMatch[0].replace(/---BOOKING_SUMMARY---|---END_BOOKING---/g, '').trim();
+    const fields: Record<string, string> = {};
+    inner.split('\n').forEach(line => {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx > 0) fields[line.slice(0, colonIdx).trim()] = line.slice(colonIdx + 1).trim();
+    });
+    if (fields.room_id) booking = fields as unknown as BookingSummary;
+  }
 
-  return {
-    text,
-    booking: booking.room_id ? booking as unknown as BookingSummary : null,
-  };
+  // Parse galleries
+  const galleryRegex = /---ROOM_GALLERY---([\s\S]*?)---END_GALLERY---/g;
+  const galleries: RoomGallery[] = [];
+  let gMatch;
+  while ((gMatch = galleryRegex.exec(content)) !== null) {
+    text = text.replace(gMatch[0], '').trim();
+    const fields: Record<string, string> = {};
+    gMatch[1].trim().split('\n').forEach(line => {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx > 0) fields[line.slice(0, colonIdx).trim()] = line.slice(colonIdx + 1).trim();
+    });
+    if (fields.images) {
+      galleries.push({
+        title: fields.title || 'Ảnh khách sạn',
+        images: fields.images.split(',').map(u => u.trim()).filter(Boolean),
+        room_id: fields.room_id || '',
+      });
+    }
+  }
+
+  return { text, booking, galleries };
 }
 
 function formatVND(n: string | number) {
@@ -66,6 +94,92 @@ function formatDateVN(d: string) {
   const [y, m, day] = d.split('-');
   return `${day}/${m}/${y}`;
 }
+
+const ImageGalleryCard = ({ gallery, onViewRoom }: { gallery: RoomGallery; onViewRoom?: (id: string) => void }) => {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
+  const imgs = gallery.images;
+
+  if (!imgs.length) return null;
+
+  return (
+    <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
+      <div className="relative">
+        <img
+          src={imgs[currentIdx]}
+          alt={gallery.title}
+          className="w-full h-36 object-cover cursor-pointer"
+          onClick={() => setFullscreen(true)}
+          loading="lazy"
+        />
+        {imgs.length > 1 && (
+          <>
+            <button
+              onClick={() => setCurrentIdx(i => (i - 1 + imgs.length) % imgs.length)}
+              className="absolute left-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center"
+            >
+              <ChevronLeft className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => setCurrentIdx(i => (i + 1) % imgs.length)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center"
+            >
+              <ChevronRight className="h-3 w-3" />
+            </button>
+            <div className="absolute bottom-1 right-1 bg-background/80 text-[10px] px-1.5 py-0.5 rounded text-foreground">
+              {currentIdx + 1}/{imgs.length}
+            </div>
+          </>
+        )}
+      </div>
+      <div className="p-2 flex items-center justify-between">
+        <p className="text-xs font-medium truncate">{gallery.title}</p>
+        {gallery.room_id && onViewRoom && (
+          <button
+            onClick={() => onViewRoom(gallery.room_id)}
+            className="text-[10px] text-primary flex items-center gap-0.5 hover:underline shrink-0"
+          >
+            Xem chi tiết <ExternalLink className="h-2.5 w-2.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Fullscreen lightbox */}
+      <AnimatePresence>
+        {fullscreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-background/95 flex items-center justify-center"
+            onClick={() => setFullscreen(false)}
+          >
+            <img src={imgs[currentIdx]} alt="" className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg" />
+            <button onClick={() => setFullscreen(false)} className="absolute top-4 right-4">
+              <X className="h-6 w-6 text-foreground" />
+            </button>
+            {imgs.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrentIdx(i => (i - 1 + imgs.length) % imgs.length); }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card flex items-center justify-center"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrentIdx(i => (i + 1) % imgs.length); }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card flex items-center justify-center"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const FloatingButtons = () => {
   const { settings } = useSiteSettings();
@@ -244,7 +358,7 @@ const FloatingButtons = () => {
                     );
                   }
 
-                  const { text, booking } = parseBookingSummary(msg.content || '...');
+                  const { text, booking, galleries } = parseSpecialBlocks(msg.content || '...');
 
                   return (
                     <div key={i} className="text-sm rounded-lg p-3 bg-secondary text-foreground mr-8">
@@ -253,6 +367,16 @@ const FloatingButtons = () => {
                           <ReactMarkdown>{text}</ReactMarkdown>
                         </div>
                       )}
+                      {galleries.map((g, gi) => (
+                        <ImageGalleryCard
+                          key={gi}
+                          gallery={g}
+                          onViewRoom={g.room_id ? (id) => {
+                            setChatOpen(false);
+                            navigate(`/rooms/${id}`);
+                          } : undefined}
+                        />
+                      ))}
                       {booking && (
                         <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
                           <p className="font-semibold text-primary text-sm">📋 Tóm tắt đặt phòng</p>
