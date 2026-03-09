@@ -18,6 +18,7 @@ const PromotionsSection = lazy(() => import('@/components/PromotionsSection'));
 const MapSection = lazy(() => import('@/components/MapSection'));
 const DiningSection = lazy(() => import('@/components/DiningHomeSection'));
 const FloatingButtons = lazy(() => import('@/components/FloatingButtons'));
+const TestimonialsSection = lazy(() => import('@/components/TestimonialsSection'));
 
 const SectionFallback = () => (
   <div className="py-12 flex items-center justify-center">
@@ -192,6 +193,10 @@ const Index = () => {
 
       <Suspense fallback={<SectionFallback />}>
         <PromotionsSection />
+      </Suspense>
+
+      <Suspense fallback={<SectionFallback />}>
+        <TestimonialsSection />
       </Suspense>
 
       <Suspense fallback={<SectionFallback />}>
