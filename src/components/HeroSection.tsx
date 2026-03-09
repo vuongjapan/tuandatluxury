@@ -14,7 +14,7 @@ const HeroSection = () => {
   const heroImage = settings.hero_image_url || heroImageFallback;
 
   return (
-    <section id="overview" className="relative min-h-[65vh] sm:min-h-[90vh] flex flex-col justify-center overflow-hidden">
+    <section id="overview" className="relative min-h-[70vh] sm:min-h-[92vh] flex flex-col justify-center overflow-hidden pt-24 sm:pt-28">
       <div className="absolute inset-0">
         <img
           src={heroImage}
