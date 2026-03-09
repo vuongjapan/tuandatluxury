@@ -14,6 +14,7 @@ function extractIframeSrc(html: string): string {
 const FooterMap = () => {
   const { settings } = useSiteSettings();
   const embedCode = settings.map_embed_code || '';
+  const mapsLink = settings.google_maps_url || FALLBACK_MAPS_LINK;
 
   return (
     <div className="space-y-2">
