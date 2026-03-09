@@ -68,7 +68,7 @@ function formatDateVN(d: string) {
 }
 
 const FloatingButtons = () => {
-  const navigate = useNavigate();
+  const { settings } = useSiteSettings();
   const { t } = useLanguage();
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(loadCachedMessages);
