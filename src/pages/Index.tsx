@@ -65,17 +65,27 @@ const Index = () => {
       <SpotlightSection />
 
       {/* Rooms Section */}
-      <section id="rooms" className="py-16 sm:py-24 bg-secondary">
+      <section id="rooms" className="py-20 sm:py-28 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-10 sm:mb-14">
-            <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12 sm:mb-16"
+          >
+            <p className="text-primary font-display text-xs sm:text-sm tracking-[0.35em] uppercase mb-3">
               {isVi ? 'Hạng phòng' : 'Accommodation'}
             </p>
-            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-5">
               {isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
             </h2>
-            <div className="w-20 h-[2px] bg-primary mx-auto" />
-          </div>
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-primary/70" />
+              <div className="w-2 h-2 rounded-full bg-primary/70" />
+              <div className="w-16 h-[1px] bg-gradient-to-l from-transparent to-primary/70" />
+            </div>
+          </motion.div>
 
           <div className="space-y-6">
             {roomsLoading && rooms.length === 0 ? (
