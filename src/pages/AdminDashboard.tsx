@@ -1314,6 +1314,10 @@ const AdminDashboard = () => {
                           const err = await updateSetting('chatbot_avatar_url', urlData.publicUrl);
                           if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
                           toast({ title: 'Đã cập nhật avatar chatbot ✓' });
+                        } catch (err: any) {
+                          toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
+                        }
+                        setUploadingRoomImage(false);
                       }}
                     />
                   </Button>
