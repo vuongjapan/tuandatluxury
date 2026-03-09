@@ -19,14 +19,30 @@ const DiningSection = lazy(() => import('@/components/DiningHomeSection'));
 const FloatingButtons = lazy(() => import('@/components/FloatingButtons'));
 
 const SectionFallback = () => (
-  <div className="py-20 flex items-center justify-center">
+  <div className="py-12 flex items-center justify-center">
     <div className="animate-pulse h-8 bg-muted rounded w-48" />
+  </div>
+);
+
+const RoomSkeleton = () => (
+  <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col md:flex-row animate-pulse">
+    <div className="w-full md:w-80 h-48 sm:h-56 bg-muted shrink-0" />
+    <div className="flex-1 p-4 sm:p-6 space-y-3">
+      <div className="h-6 bg-muted rounded w-2/3" />
+      <div className="h-4 bg-muted rounded w-full" />
+      <div className="h-4 bg-muted rounded w-3/4" />
+      <div className="flex gap-2 mt-4">
+        <div className="h-6 bg-muted rounded-full w-16" />
+        <div className="h-6 bg-muted rounded-full w-16" />
+        <div className="h-6 bg-muted rounded-full w-16" />
+      </div>
+    </div>
   </div>
 );
 
 const Index = () => {
   const { t } = useLanguage();
-  const { rooms } = useRooms();
+  const { rooms, loading: roomsLoading } = useRooms();
   const { amenities } = useServices();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
@@ -45,9 +61,17 @@ const Index = () => {
           </div>
 
           <div className="space-y-6">
-            {rooms.map((room, i) => (
-              <RoomCard key={room.id} room={room} index={i} />
-            ))}
+            {roomsLoading && rooms.length === 0 ? (
+              <>
+                <RoomSkeleton />
+                <RoomSkeleton />
+                <RoomSkeleton />
+              </>
+            ) : (
+              rooms.map((room, i) => (
+                <RoomCard key={room.id} room={room} index={i} />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -79,7 +103,7 @@ const Index = () => {
             {amenities.slice(0, 8).map((s) => (
               <div
                 key={s.id}
-                className="bg-card rounded-xl p-4 sm:p-6 text-center shadow-card hover:shadow-card-hover transition-shadow duration-300 border border-border"
+                className="bg-card rounded-xl p-4 sm:p-6 text-center shadow-card transition-shadow duration-300 border border-border"
               >
                 <span className="text-3xl sm:text-4xl mb-3 block">{s.icon}</span>
                 <h3 className="font-display text-xs sm:text-base font-semibold mb-1">{isVi ? s.name_vi : s.name_en}</h3>
@@ -102,17 +126,14 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Dining Section - lazy loaded */}
       <Suspense fallback={<SectionFallback />}>
         <DiningSection />
       </Suspense>
 
-      {/* Promotions Section */}
       <Suspense fallback={<SectionFallback />}>
         <PromotionsSection />
       </Suspense>
 
-      {/* Map Section */}
       <Suspense fallback={<SectionFallback />}>
         <MapSection />
       </Suspense>
