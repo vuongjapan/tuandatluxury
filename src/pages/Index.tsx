@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 // Lazy load heavy below-fold components
 const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
 const PromotionsSection = lazy(() => import('@/components/PromotionsSection'));
+const MapSection = lazy(() => import('@/components/MapSection'));
 
 const SectionFallback = () => (
   <div className="py-20 flex items-center justify-center">
@@ -139,6 +140,11 @@ const Index = () => {
       {/* Promotions Section */}
       <Suspense fallback={<SectionFallback />}>
         <PromotionsSection />
+      </Suspense>
+
+      {/* Map Section */}
+      <Suspense fallback={<SectionFallback />}>
+        <MapSection />
       </Suspense>
 
       <Footer />
