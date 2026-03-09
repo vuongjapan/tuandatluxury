@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
+import SpotlightSection from '@/components/SpotlightSection';
 import RoomCard from '@/components/RoomCard';
 import Footer from '@/components/Footer';
 import { useRooms } from '@/hooks/useRooms';
@@ -52,12 +53,22 @@ const Index = () => {
       <Header />
       <HeroSection />
 
+      {/* Spotlight Section - like Imperial's "In The Spotlight" */}
+      <div className="pt-12 sm:pt-14">
+        <SpotlightSection />
+      </div>
+
       {/* Rooms Section */}
-      <section id="rooms" className="py-12 sm:py-20 bg-background">
+      <section id="rooms" className="py-16 sm:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">{t('nav.rooms')}</h2>
-            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full" />
+          <div className="text-center mb-10 sm:mb-14">
+            <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
+              {isVi ? 'Hạng phòng' : 'Accommodation'}
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+              {isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
+            </h2>
+            <div className="w-20 h-[2px] bg-primary mx-auto" />
           </div>
 
           <div className="space-y-6">
@@ -80,80 +91,79 @@ const Index = () => {
         <PhotoGallery />
       </Suspense>
 
-      {/* About Section */}
-      <section id="about" className="py-12 sm:py-20 bg-secondary">
+      {/* About Section - side-by-side layout */}
+      <section id="about" className="py-16 sm:py-24 bg-secondary">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              {isVi ? 'Giới thiệu khách sạn' : 'About Our Hotel'}
-            </h2>
-            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-6" />
-            <p className="text-primary font-display text-lg sm:text-xl font-semibold mb-6">
-              {isVi
-                ? '✦ Điểm đến nghỉ dưỡng lý tưởng tại FLC Sầm Sơn ✦'
-                : '✦ Your Ideal Resort Destination at FLC Sầm Sơn ✦'}
-            </p>
-            <p className="text-muted-foreground leading-relaxed text-sm sm:text-base mb-6">
-              {isVi
-                ? 'Tọa lạc tại vị trí đắc địa trong khu nghỉ dưỡng FLC Sầm Sơn, Khách sạn Tuấn Đạt Luxury mang đến trải nghiệm lưu trú đẳng cấp với thiết kế hiện đại, tiện nghi sang trọng và dịch vụ tận tâm. Chỉ vài bước chân đến bãi biển, khách sạn là lựa chọn hoàn hảo cho kỳ nghỉ gia đình, du lịch nhóm hay nghỉ dưỡng lãng mạn.'
-                : 'Located in a prime position within the prestigious FLC Sầm Sơn resort complex, Tuấn Đạt Luxury Hotel offers an upscale stay experience with modern design, premium amenities and attentive service. Just steps from the beach, the hotel is the perfect choice for family vacations, group trips or romantic getaways.'}
-            </p>
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+              {/* Text side */}
+              <div>
+                <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
+                  {isVi ? 'Về chúng tôi' : 'About Us'}
+                </p>
+                <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                  {isVi ? 'Tuấn Đạt Luxury Hotel' : 'Tuấn Đạt Luxury Hotel'}
+                </h2>
+                <div className="w-16 h-[2px] bg-primary mb-6" />
+                <p className="text-primary font-display text-base sm:text-lg font-semibold mb-4">
+                  {isVi
+                    ? '✦ Điểm đến nghỉ dưỡng lý tưởng tại FLC Sầm Sơn ✦'
+                    : '✦ Your Ideal Resort Destination at FLC Sầm Sơn ✦'}
+                </p>
+                <p className="text-muted-foreground leading-relaxed text-sm sm:text-base mb-6">
+                  {isVi
+                    ? 'Tọa lạc tại vị trí đắc địa trong khu nghỉ dưỡng FLC Sầm Sơn, Khách sạn Tuấn Đạt Luxury mang đến trải nghiệm lưu trú đẳng cấp với thiết kế hiện đại, tiện nghi sang trọng và dịch vụ tận tâm. Chỉ vài bước chân đến bãi biển, khách sạn là lựa chọn hoàn hảo cho kỳ nghỉ gia đình, du lịch nhóm hay nghỉ dưỡng lãng mạn.'
+                    : 'Located in a prime position within the prestigious FLC Sầm Sơn resort complex, Tuấn Đạt Luxury Hotel offers an upscale stay experience with modern design, premium amenities and attentive service. Just steps from the beach, the hotel is the perfect choice for family vacations, group trips or romantic getaways.'}
+                </p>
+                <div className="p-4 bg-card rounded-xl border border-border">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    📍 LK29-20, FLC Sầm Sơn, Thanh Hóa<br />
+                    📞 098.661.7939<br />
+                    ✉️ tuandatluxury@gmail.com
+                  </p>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mt-8">
-              <div className="text-center">
-                <span className="text-3xl sm:text-4xl block mb-2">🏊</span>
-                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
-                  {isVi ? 'Hồ bơi vô cực' : 'Infinity Pool'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Mở quanh năm' : 'Open year-round'}</p>
+              {/* Stats / features side */}
+              <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                {[
+                  { icon: '🏊', titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Mở quanh năm', descEn: 'Open year-round' },
+                  { icon: '🍽️', titleVi: 'Nhà hàng', titleEn: 'Restaurant', descVi: 'Buffet sáng miễn phí', descEn: 'Free breakfast buffet' },
+                  { icon: '🏖️', titleVi: 'Giáp biển', titleEn: 'Beachfront', descVi: 'Đưa đón miễn phí', descEn: 'Free shuttle' },
+                  { icon: '🛎️', titleVi: 'Dịch vụ 24/7', titleEn: '24/7 Service', descVi: 'Lễ tân & phòng', descEn: 'Reception & room' },
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-card rounded-xl p-5 sm:p-6 text-center border border-border shadow-card">
+                    <span className="text-3xl sm:text-4xl block mb-3">{item.icon}</span>
+                    <p className="font-display text-sm sm:text-base font-semibold text-foreground">
+                      {isVi ? item.titleVi : item.titleEn}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{isVi ? item.descVi : item.descEn}</p>
+                  </div>
+                ))}
               </div>
-              <div className="text-center">
-                <span className="text-3xl sm:text-4xl block mb-2">🍽️</span>
-                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
-                  {isVi ? 'Nhà hàng' : 'Restaurant'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Buffet sáng miễn phí' : 'Free breakfast buffet'}</p>
-              </div>
-              <div className="text-center">
-                <span className="text-3xl sm:text-4xl block mb-2">🏖️</span>
-                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
-                  {isVi ? 'Giáp biển' : 'Beachfront'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Đưa đón miễn phí' : 'Free shuttle'}</p>
-              </div>
-              <div className="text-center">
-                <span className="text-3xl sm:text-4xl block mb-2">🛎️</span>
-                <p className="font-display text-sm sm:text-base font-semibold text-foreground">
-                  {isVi ? 'Dịch vụ 24/7' : '24/7 Service'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Lễ tân & phòng' : 'Reception & room'}</p>
-              </div>
-            </div>
-
-            <div className="mt-8 p-4 sm:p-6 bg-card rounded-xl border border-border shadow-card">
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                {isVi
-                  ? '📍 Địa chỉ: LK29-20, Khu nghỉ dưỡng FLC Sầm Sơn, Thanh Hóa, Việt Nam • 📞 Hotline: 098.661.7939 • ✉️ Email: tuandatluxury@gmail.com'
-                  : '📍 Address: LK29-20, FLC Sầm Sơn Resort, Thanh Hóa, Vietnam • 📞 Hotline: 098.661.7939 • ✉️ Email: tuandatluxury@gmail.com'}
-              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-12 sm:py-20 bg-background">
+      <section id="services" className="py-16 sm:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">{t('nav.services')}</h2>
-            <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full" />
+          <div className="text-center mb-10 sm:mb-14">
+            <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
+              {isVi ? 'Tiện ích' : 'Facilities'}
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+              {t('nav.services')}
+            </h2>
+            <div className="w-20 h-[2px] bg-primary mx-auto" />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
             {amenities.slice(0, 8).map((s) => (
               <div
                 key={s.id}
-                className="bg-card rounded-xl p-4 sm:p-6 text-center shadow-card transition-shadow duration-300 border border-border"
+                className="bg-card rounded-xl p-4 sm:p-6 text-center shadow-card hover:shadow-card-hover transition-shadow duration-300 border border-border"
               >
                 <span className="text-3xl sm:text-4xl mb-3 block">{s.icon}</span>
                 <h3 className="font-display text-xs sm:text-base font-semibold mb-1">{isVi ? s.name_vi : s.name_en}</h3>
