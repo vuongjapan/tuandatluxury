@@ -51,7 +51,7 @@ const FooterMap = () => {
           Bản đồ
         </a>
         <a
-          href={DIRECTIONS_LINK}
+          href={FALLBACK_DIRECTIONS_LINK}
           target="_blank"
           rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-1.5 text-xs bg-primary/20 hover:bg-primary/30 px-3 py-2 rounded-full transition-colors text-primary"
