@@ -1241,19 +1241,23 @@ const AdminDashboard = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         setUploadingRoomImage(true);
-                        const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
-                        const path = `header-logo-${Date.now()}.jpg`;
-                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
-                        if (upErr) {
-                          toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
-                          setUploadingRoomImage(false);
-                          return;
+                        try {
+                          const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
+                          const path = `header-logo-${Date.now()}.jpg`;
+                          const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                          if (upErr) {
+                            toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
+                            setUploadingRoomImage(false);
+                            return;
+                          }
+                          const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                          const err = await updateSetting('header_logo_url', urlData.publicUrl);
+                          if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
+                          toast({ title: 'Đã cập nhật logo ✓' });
+                        } catch (err: any) {
+                          toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
                         }
-                        const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
-                        const err = await updateSetting('header_logo_url', urlData.publicUrl);
                         setUploadingRoomImage(false);
-                        if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
-                        toast({ title: 'Đã cập nhật logo ✓' });
                       }}
                     />
                   </Button>
