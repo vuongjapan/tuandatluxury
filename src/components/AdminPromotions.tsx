@@ -53,17 +53,21 @@ const AdminPromotions = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
-    const path = `promotions/${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('gallery').upload(path, compressed);
-    if (error) {
-      toast({ title: 'Lỗi upload', description: error.message, variant: 'destructive' });
-      setUploading(false);
-      return;
+    try {
+      const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
+      const path = `promotions/${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from('gallery').upload(path, compressed);
+      if (error) {
+        toast({ title: 'Lỗi upload', description: error.message, variant: 'destructive' });
+        setUploading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+      setEditing(prev => prev ? { ...prev, image_url: urlData.publicUrl } : prev);
+      toast({ title: 'Đã upload ảnh ✓' });
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
     }
-    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-    setEditing(prev => prev ? { ...prev, image_url: urlData.publicUrl } : prev);
-    toast({ title: 'Đã upload ảnh ✓' });
     setUploading(false);
     e.target.value = '';
   };
