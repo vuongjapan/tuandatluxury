@@ -4,6 +4,12 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const GOOGLE_MAPS_LINK = 'https://www.google.com/maps/place/Kh%C3%A1ch+s%E1%BA%A1n+Tu%E1%BA%A5n+%C4%90%E1%BA%A1t+Luxury+S%E1%BA%A7m+S%C6%A1n';
 const DIRECTIONS_LINK = 'https://www.google.com/maps/dir/?api=1&destination=Khách+sạn+Tuấn+Đạt+Luxury+Sầm+Sơn';
+const DEFAULT_MAP_SRC = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3608.2167792564705!2d105.91047087504556!3d19.759731681590715!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3136515bf8afa3fd%3A0x5a29458949901908!2zS2jDoWNoIHPhuqFuIFR14bqlbiDEkOG6oXQgTHV4dXJ5IFPhuqdtIFPGoW4!5e1!3m2!1svi!2sjp!4v1772983874554!5m2!1svi!2sjp';
+
+function extractIframeSrc(html: string): string {
+  const match = html.match(/src=["']([^"']+)["']/);
+  return match ? match[1] : DEFAULT_MAP_SRC;
+}
 
 const FooterMap = () => {
   const { settings } = useSiteSettings();
