@@ -1,9 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import SpotlightSection from '@/components/SpotlightSection';
+import BookingSearch from '@/components/BookingSearch';
 import RoomCard from '@/components/RoomCard';
 import Footer from '@/components/Footer';
 import { useRooms } from '@/hooks/useRooms';
@@ -52,25 +54,38 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      {/* Hero - fullscreen */}
       <HeroSection />
 
-      {/* Spotlight Section - like Imperial's "In The Spotlight" */}
-      <div className="pt-16 sm:pt-20">
-        <SpotlightSection />
-      </div>
+      {/* Booking Search - standalone section below hero */}
+      <BookingSearch />
+
+      {/* Spotlight */}
+      <SpotlightSection />
 
       {/* Rooms Section */}
-      <section id="rooms" className="py-16 sm:py-24 bg-background">
+      <section id="rooms" className="py-20 sm:py-28 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-10 sm:mb-14">
-            <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12 sm:mb-16"
+          >
+            <p className="text-primary font-display text-xs sm:text-sm tracking-[0.35em] uppercase mb-3">
               {isVi ? 'Hạng phòng' : 'Accommodation'}
             </p>
-            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-5">
               {isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
             </h2>
-            <div className="w-20 h-[2px] bg-primary mx-auto" />
-          </div>
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-primary/70" />
+              <div className="w-2 h-2 rounded-full bg-primary/70" />
+              <div className="w-16 h-[1px] bg-gradient-to-l from-transparent to-primary/70" />
+            </div>
+          </motion.div>
 
           <div className="space-y-6">
             {roomsLoading && rooms.length === 0 ? (
@@ -92,20 +107,29 @@ const Index = () => {
         <PhotoGallery />
       </Suspense>
 
-      {/* About Section - side-by-side layout */}
-      <section id="about" className="py-16 sm:py-24 bg-secondary">
+      {/* About Section */}
+      <section id="about" className="py-20 sm:py-28 bg-secondary relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
               {/* Text side */}
-              <div>
-                <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <p className="text-primary font-display text-xs sm:text-sm tracking-[0.35em] uppercase mb-3">
                   {isVi ? 'Về chúng tôi' : 'About Us'}
                 </p>
                 <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
                   Tuấn Đạt Luxury Hotel
                 </h2>
-                <div className="w-16 h-[2px] bg-primary mb-6" />
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-[1px] bg-primary/70" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/70" />
+                </div>
                 <p className="text-primary font-display text-base sm:text-lg font-semibold mb-4">
                   {isVi
                     ? '✦ Nghỉ dưỡng đẳng cấp trong khu FLC Sầm Sơn 5 sao ✦'
@@ -159,10 +183,16 @@ const Index = () => {
                     ✉️ tuandatluxury@gmail.com
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Right side - features + nearby */}
-              <div className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { icon: '🏊', titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view' },
@@ -210,7 +240,7 @@ const Index = () => {
                     ))}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>

@@ -1,56 +1,71 @@
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const spotlights = [
   {
     titleVi: 'Phòng nghỉ đẳng cấp',
     titleEn: 'Exceptional Rooms',
-    descVi: '6 tầng với hơn 19 phòng nghỉ thiết kế hiện đại, đầy đủ điều hòa, TV, minibar, ban công. View biển và khu nghỉ dưỡng FLC 5 sao.',
-    descEn: '6 floors with 19+ modern rooms equipped with AC, TV, minibar, balcony. Sea view and FLC 5-star resort grounds.',
+    descVi: '6 tầng với hơn 19 phòng nghỉ thiết kế hiện đại, đầy đủ điều hòa, TV, minibar, ban công view biển.',
+    descEn: '6 floors with 19+ modern rooms: AC, TV, minibar, private balcony with sea & resort views.',
     icon: '🏨',
     href: '/#rooms',
+    highlight: true,
   },
   {
     titleVi: 'Nhà hàng & Rooftop Bar',
     titleEn: 'Restaurant & Rooftop Bar',
-    descVi: '2 nhà hàng (tầng 1 & 2) phục vụ hải sản tươi sống Sầm Sơn, món Việt và quốc tế. Bar-Coffee sân thượng tầng 6 ngắm biển.',
-    descEn: '2 restaurants (floors 1 & 2) serving fresh Sầm Sơn seafood, Vietnamese & international cuisine. Rooftop bar on floor 6 with sea views.',
+    descVi: '2 nhà hàng (tầng 1 & 2) phục vụ hải sản tươi sống Sầm Sơn. Bar sân thượng tầng 6 ngắm biển.',
+    descEn: 'Two restaurants serving fresh Sầm Sơn seafood. Rooftop bar on floor 6 with panoramic views.',
     icon: '🍽️',
     href: '/dining',
   },
   {
-    titleVi: 'Hồ bơi vô cực & Biển',
+    titleVi: 'Hồ bơi vô cực & Bãi biển',
     titleEn: 'Infinity Pool & Beach',
-    descVi: 'Bể bơi vô cực miễn phí view biển trong khuôn viên FLC. Bãi biển Sầm Sơn chỉ cách 50m, đưa đón xe điện miễn phí.',
-    descEn: 'Free infinity pool with sea view inside FLC resort. Sầm Sơn beach just 50m away, free electric shuttle.',
+    descVi: 'Bể bơi vô cực miễn phí view biển trong FLC. Bãi biển chỉ cách 50m với xe điện đưa đón.',
+    descEn: 'Free infinity pool with sea view. Beach just 50m away with complimentary electric shuttle.',
     icon: '🏖️',
     href: '/#services',
   },
   {
     titleVi: 'Karaoke & Giải trí',
-    titleEn: 'Karaoke & Entertainment',
-    descVi: 'Hệ thống karaoke miễn phí với sân khấu ánh sáng. Xe đạp đôi miễn phí dạo quanh khu FLC, phòng xông hơi, gym.',
-    descEn: 'Free karaoke with stage lighting. Free tandem bikes to explore FLC resort, sauna, gym.',
+    titleEn: 'Entertainment',
+    descVi: 'Karaoke miễn phí với sân khấu ánh sáng, xe đạp đôi, phòng xông hơi, gym trong FLC.',
+    descEn: 'Free karaoke with stage lighting, tandem bikes, sauna, and gym access inside FLC resort.',
     icon: '🎤',
     href: '/#services',
   },
   {
-    titleVi: 'Tham quan FLC 5 sao',
-    titleEn: 'FLC 5-Star Resort Access',
-    descVi: 'Miễn phí vé tham quan toàn bộ khu nghỉ dưỡng FLC Sầm Sơn 5 sao: công viên, sân golf, khu vui chơi cho trẻ em.',
-    descEn: 'Free access to the entire FLC Sầm Sơn 5-star resort: parks, golf course, kids playground.',
+    titleVi: 'FLC 5 sao Resort',
+    titleEn: 'FLC 5-Star Access',
+    descVi: 'Miễn phí tham quan khu nghỉ dưỡng FLC 5 sao: công viên, sân golf, kids playground.',
+    descEn: 'Free access to FLC 5-star resort: parks, golf course, kids playground & more.',
     icon: '⛳',
     href: '/#about',
+    highlight: true,
   },
   {
-    titleVi: 'Điểm tham quan lân cận',
+    titleVi: 'Điểm đến lân cận',
     titleEn: 'Nearby Attractions',
-    descVi: 'Gần Quảng trường biển, công viên nước, đền Độc Cước, hòn Trống Mái, chợ Cột Đỏ — chỉ vài phút di chuyển.',
-    descEn: 'Near Sea Square, water park, Độc Cước Temple, Trống Mái rock, Cột Đỏ market — just minutes away.',
+    descVi: 'Gần Quảng trường biển, công viên nước, đền Độc Cước, hòn Trống Mái chỉ vài phút.',
+    descEn: 'Near Sea Square, water park, Độc Cước Temple, Trống Mái rock — minutes away.',
     icon: '🗺️',
     href: '/#contact',
   },
 ];
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
 
 const SpotlightSection = () => {
   const { t } = useLanguage();
@@ -58,22 +73,45 @@ const SpotlightSection = () => {
   const isVi = t('nav.rooms') === 'Hạng phòng';
 
   return (
-    <section className="py-16 sm:py-24 bg-secondary">
+    <section className="py-20 sm:py-28 bg-secondary relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10 sm:mb-14">
-          <p className="text-primary font-display text-sm tracking-[0.25em] uppercase mb-2">
+        {/* Section header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-14 sm:mb-18"
+        >
+          <p className="text-primary font-display text-xs sm:text-sm tracking-[0.35em] uppercase mb-3">
             {isVi ? 'Điểm nhấn' : 'In The Spotlight'}
           </p>
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-5">
             {isVi ? 'Trải nghiệm đặc biệt' : 'Special Experiences'}
           </h2>
-          <div className="w-20 h-[2px] bg-primary mx-auto" />
-        </div>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-primary/70" />
+            <div className="w-2 h-2 rounded-full bg-primary/70" />
+            <div className="w-16 h-[1px] bg-gradient-to-l from-transparent to-primary/70" />
+          </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+        {/* Cards grid */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 max-w-6xl mx-auto"
+        >
           {spotlights.map((item, idx) => (
-            <a
+            <motion.a
               key={idx}
+              variants={cardVariants}
               href={item.href}
               onClick={(e) => {
                 if (item.href.startsWith('/') && !item.href.startsWith('/#')) {
@@ -81,20 +119,42 @@ const SpotlightSection = () => {
                   navigate(item.href);
                 }
               }}
-              className="group bg-card rounded-xl p-6 text-center border border-border shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              className={`
+                group relative bg-card rounded-2xl p-6 sm:p-7 text-center
+                border shadow-card hover:shadow-card-hover transition-all duration-300
+                hover:-translate-y-1 cursor-pointer overflow-hidden
+                ${item.highlight
+                  ? 'border-primary/30 bg-gradient-to-br from-card to-primary/5'
+                  : 'border-border'}
+              `}
             >
+              {/* Highlight badge */}
+              {item.highlight && (
+                <div className="absolute top-3 right-3 px-2 py-0.5 bg-primary/15 rounded text-[10px] text-primary font-semibold tracking-wider uppercase">
+                  {isVi ? 'Nổi bật' : 'Featured'}
+                </div>
+              )}
+
+              {/* Icon with animation */}
               <span className="text-4xl sm:text-5xl block mb-4 group-hover:scale-110 transition-transform duration-300">
                 {item.icon}
               </span>
-              <h3 className="font-display text-base sm:text-lg font-semibold text-foreground mb-2">
+
+              {/* Title */}
+              <h3 className="font-display text-base sm:text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
                 {isVi ? item.titleVi : item.titleEn}
               </h3>
+
+              {/* Description */}
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {isVi ? item.descVi : item.descEn}
               </p>
-            </a>
+
+              {/* Hover underline */}
+              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-primary/0 via-primary to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </motion.a>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
