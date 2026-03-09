@@ -22,6 +22,7 @@ import { AMENITY_ICONS } from '@/data/rooms';
 import AdminDining from '@/components/AdminDining';
 import AdminPromotions from '@/components/AdminPromotions';
 import AdminServices from '@/components/AdminServices';
+import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 
@@ -1008,7 +1009,13 @@ const AdminDashboard = () => {
 
           {/* GALLERY */}
           {tab === 'gallery' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Image Optimizer Tool */}
+              <div className="bg-card border border-border rounded-xl p-4">
+                <AdminImageOptimizer />
+              </div>
+
+              <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {GALLERY_CATEGORIES.map(cat => (
                   <button
@@ -1108,6 +1115,7 @@ const AdminDashboard = () => {
                 {galleryImages.filter(g => g.category === galleryCategory).length === 0 && (
                   <p className="text-center text-muted-foreground py-8">Chưa có ảnh trong danh mục này.</p>
                 )}
+              </div>
               </div>
             </div>
           )}
