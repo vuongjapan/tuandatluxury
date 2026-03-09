@@ -121,6 +121,26 @@ GỢI Ý THEO NHÓM KHÁCH:
 - Luôn kết thúc bằng câu hỏi mở hoặc gợi ý tiếp để giữ cuộc trò chuyện
 - Mỗi lần chào phải KHÁC NHAU, sáng tạo, không lặp lại máy móc`;
 
+function buildSystemPrompt() {
+  const dt = getVietnamDateTime();
+  
+  const dateContext = `\n\n═══ THỜI GIAN HIỆN TẠI (TỰ ĐỘNG CẬP NHẬT) ═══
+BÂY GIỜ: ${dt.formatted} (giờ Việt Nam)
+NGÀY MAI: ${dt.tomorrow}
+THỜI ĐIỂM: ${dt.timeContext}
+${dt.isWeekend ? "⚠️ CUỐI TUẦN - giá phòng +30%" : "Ngày thường - giá phòng chuẩn"}
+
+HƯỚNG DẪN SỬ DỤNG THỜI GIAN:
+- Khi khách hỏi "hôm nay", "ngày mai", "tuần này" → dùng thông tin trên để tính toán chính xác
+- Khi khách hỏi đặt phòng → tự tính số đêm, ngày check-in/check-out dựa trên ngày hiện tại
+- Khi khách hỏi thời tiết → dựa vào tháng ${dt.month} để tư vấn chính xác
+- Gợi ý phù hợp thời điểm: ${dt.timeContext === "đêm khuya" ? "nhắc khách nghỉ sớm, mai tư vấn tiếp" : dt.timeContext === "buổi sáng" ? "gợi ý đi biển buổi sáng" : dt.timeContext === "buổi chiều" ? "gợi ý tắm biển chiều" : "chào phù hợp thời điểm"}
+- Nếu khách nói "cuối tuần này", "thứ 7 này" → tính ngày chính xác từ ngày hiện tại
+═══════════════════════════════════════════`;
+
+  return SYSTEM_PROMPT_BASE + dateContext;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
