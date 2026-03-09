@@ -28,8 +28,47 @@ const loadCachedMessages = (): { role: string; content: string }[] => {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hotel-chat`;
 
+interface BookingSummary {
+  room_id: string;
+  room_name: string;
+  checkin: string;
+  checkout: string;
+  guests: string;
+  nights: string;
+  price_per_night: string;
+  total_price: string;
+}
+
+function parseBookingSummary(content: string): { text: string; booking: BookingSummary | null } {
+  const regex = /---BOOKING_SUMMARY---([\s\S]*?)---END_BOOKING---/;
+  const match = content.match(regex);
+  if (!match) return { text: content, booking: null };
+
+  const text = content.replace(regex, '').trim();
+  const lines = match[1].trim().split('\n');
+  const booking: Record<string, string> = {};
+  lines.forEach(line => {
+    const [key, ...vals] = line.split(':');
+    if (key && vals.length) booking[key.trim()] = vals.join(':').trim();
+  });
+
+  return {
+    text,
+    booking: booking.room_id ? booking as unknown as BookingSummary : null,
+  };
+}
+
+function formatVND(n: string | number) {
+  return Number(n).toLocaleString('vi-VN') + 'đ';
+}
+
+function formatDateVN(d: string) {
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
 const FloatingButtons = () => {
-  const { settings } = useSiteSettings();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(loadCachedMessages);
