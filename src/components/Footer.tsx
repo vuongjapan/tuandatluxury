@@ -1,7 +1,6 @@
 import { Phone, Mail, MapPin, Facebook, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import FooterMap from '@/components/FooterMap';
 
 const Footer = () => {
   const { t } = useLanguage();
@@ -10,7 +9,7 @@ const Footer = () => {
   return (
     <footer id="contact" className="bg-foreground text-background">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Col 1: Hotel Info */}
           <div>
             <h3 className="font-display text-2xl font-bold text-gold-gradient mb-4">Tuấn Đạt Luxury</h3>
@@ -76,11 +75,6 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Col 4: Map */}
-          <div>
-            <h4 className="font-display text-lg font-semibold mb-4">{t('footer.find_us')}</h4>
-            <FooterMap />
-          </div>
         </div>
 
         {/* Bottom */}
