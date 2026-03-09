@@ -320,16 +320,23 @@ serve(async (req) => {
       });
     }
 
-    // Fetch real room data for accurate pricing
-    const { data: rooms } = await supabase
-      .from("rooms")
-      .select("id, name_vi, name_en, price_vnd, capacity, size_sqm, amenities, description_vi")
-      .eq("is_active", true);
+    // Fetch real room data for accurate pricing + images
+    const [{ data: rooms }, { data: galleryImages }] = await Promise.all([
+      supabase
+        .from("rooms")
+        .select("id, name_vi, name_en, price_vnd, capacity, size_sqm, amenities, description_vi, image_url")
+        .eq("is_active", true),
+      supabase
+        .from("gallery_images")
+        .select("image_url, title_vi, category")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .limit(50),
+    ]);
 
     const dt = getVietnamDateTime();
     let roomsInfo = "Không có dữ liệu phòng.";
     if (rooms && rooms.length > 0) {
-      // Fetch monthly prices for current month
       const { data: monthlyPrices } = await supabase
         .from("room_monthly_prices")
         .select("room_id, price_weekday, price_weekend, price_sunday")
@@ -343,11 +350,27 @@ serve(async (req) => {
         const weekdayPrice = mp?.price_weekday || r.price_vnd;
         const weekendPrice = mp?.price_weekend || Math.round(r.price_vnd * 1.3);
         const sundayPrice = mp?.price_sunday || weekendPrice;
-        return `• ${r.name_vi} (${r.name_en}): ${r.size_sqm}m², ${r.capacity} khách
+        return `• ${r.name_vi} (${r.name_en}) [room_id: ${r.id}]: ${r.size_sqm}m², ${r.capacity} khách
   Giá ngày thường: ${weekdayPrice.toLocaleString()}đ | T7: ${weekendPrice.toLocaleString()}đ | CN: ${sundayPrice.toLocaleString()}đ
+  Ảnh phòng: ${r.image_url || "không có"}
   ${r.description_vi || ""}
   Tiện nghi: ${(r.amenities || []).join(", ")}`;
       }).join("\n");
+    }
+
+    // Build gallery info for the prompt
+    let galleryInfo = "";
+    if (galleryImages && galleryImages.length > 0) {
+      const byCategory = new Map<string, any[]>();
+      galleryImages.forEach((img: any) => {
+        const cat = img.category || "general";
+        if (!byCategory.has(cat)) byCategory.set(cat, []);
+        byCategory.get(cat)!.push(img);
+      });
+      galleryInfo = "\n\nẢNH GALLERY KHÁCH SẠN (dùng khi khách muốn xem ảnh):\n";
+      byCategory.forEach((imgs, cat) => {
+        galleryInfo += `[${cat}]: ${imgs.slice(0, 5).map((i: any) => i.image_url).join(", ")}\n`;
+      });
     }
 
     // Load conversation memory
