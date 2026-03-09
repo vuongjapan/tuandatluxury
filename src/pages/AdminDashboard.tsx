@@ -297,17 +297,21 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file || !editingRoom) return;
     setUploadingRoomImage(true);
-    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
-    const path = `rooms/${editingRoom.id}-${Date.now()}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
-    if (uploadError) {
-      toast({ title: 'Lỗi upload ảnh phòng', description: uploadError.message, variant: 'destructive' });
-      setUploadingRoomImage(false);
-      return;
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+      const path = `rooms/${editingRoom.id}-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
+      if (uploadError) {
+        toast({ title: 'Lỗi upload ảnh phòng', description: uploadError.message, variant: 'destructive' });
+        setUploadingRoomImage(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+      setEditingRoom({ ...editingRoom, image_url: urlData.publicUrl });
+      toast({ title: 'Đã upload ảnh phòng ✓' });
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
     }
-    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-    setEditingRoom({ ...editingRoom, image_url: urlData.publicUrl });
-    toast({ title: 'Đã upload ảnh phòng ✓' });
     setUploadingRoomImage(false);
     e.target.value = '';
   };
