@@ -1116,6 +1116,7 @@ const AdminDashboard = () => {
                   <p className="text-center text-muted-foreground py-8">Chưa có ảnh trong danh mục này.</p>
                 )}
               </div>
+              </div>
             </div>
           )}
 
