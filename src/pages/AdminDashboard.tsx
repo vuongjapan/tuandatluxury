@@ -251,11 +251,14 @@ const AdminDashboard = () => {
       title_en: '',
       sort_order: galleryImages.filter(g => g.category === galleryCategory).length,
     });
-    if (insertError) {
-      toast({ title: 'Lỗi lưu ảnh', variant: 'destructive' });
-    } else {
-      toast({ title: 'Đã thêm ảnh ✓' });
-      fetchGalleryImages();
+      if (insertError) {
+        toast({ title: 'Lỗi lưu ảnh', variant: 'destructive' });
+      } else {
+        toast({ title: 'Đã thêm ảnh ✓' });
+        fetchGalleryImages();
+      }
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
     }
     setUploadingImage(false);
     e.target.value = '';
