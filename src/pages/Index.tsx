@@ -183,10 +183,16 @@ const Index = () => {
                     ✉️ tuandatluxury@gmail.com
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Right side - features + nearby */}
-              <div className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { icon: '🏊', titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view' },
