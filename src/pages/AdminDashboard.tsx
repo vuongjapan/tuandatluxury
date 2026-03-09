@@ -1009,7 +1009,13 @@ const AdminDashboard = () => {
 
           {/* GALLERY */}
           {tab === 'gallery' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Image Optimizer Tool */}
+              <div className="bg-card border border-border rounded-xl p-4">
+                <AdminImageOptimizer />
+              </div>
+
+              <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {GALLERY_CATEGORIES.map(cat => (
                   <button
