@@ -142,6 +142,11 @@ const Index = () => {
         <PromotionsSection />
       </Suspense>
 
+      {/* Map Section */}
+      <Suspense fallback={<SectionFallback />}>
+        <MapSection />
+      </Suspense>
+
       <Footer />
       <FloatingButtons />
     </div>
