@@ -192,19 +192,23 @@ const AdminDashboard = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         setUploadingRoomImage(true);
-                        const compressed = await compressImage(file, { maxWidth: 1920, quality: 0.75 });
-                        const path = `hero-image-${Date.now()}.jpg`;
-                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
-                        if (upErr) {
-                          toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
-                          setUploadingRoomImage(false);
-                          return;
+                        try {
+                          const compressed = await compressImage(file, { maxWidth: 1920, quality: 0.75 });
+                          const path = `hero-image-${Date.now()}.jpg`;
+                          const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                          if (upErr) {
+                            toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
+                            setUploadingRoomImage(false);
+                            return;
+                          }
+                          const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                          const err = await updateSetting('hero_image_url', urlData.publicUrl);
+                          if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); }
+                          else { toast({ title: 'Đã cập nhật ảnh đầu trang ✓' }); }
+                        } catch (err: any) {
+                          toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
                         }
-                        const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
-                        const err = await updateSetting('hero_image_url', urlData.publicUrl);
                         setUploadingRoomImage(false);
-                        if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
-                        toast({ title: 'Đã cập nhật ảnh đầu trang ✓' });
                       }}
                     />
                   </Button>
@@ -230,27 +234,31 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
-    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
-    const path = `${galleryCategory}/${Date.now()}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
-    if (uploadError) {
-      toast({ title: 'Lỗi upload ảnh', description: uploadError.message, variant: 'destructive' });
-      setUploadingImage(false);
-      return;
-    }
-    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-    const { error: insertError } = await supabase.from('gallery_images').insert({
-      category: galleryCategory,
-      image_url: urlData.publicUrl,
-      title_vi: '',
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+      const path = `${galleryCategory}/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
+      if (uploadError) {
+        toast({ title: 'Lỗi upload ảnh', description: uploadError.message, variant: 'destructive' });
+        setUploadingImage(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+      const { error: insertError } = await supabase.from('gallery_images').insert({
+        category: galleryCategory,
+        image_url: urlData.publicUrl,
+        title_vi: '',
       title_en: '',
       sort_order: galleryImages.filter(g => g.category === galleryCategory).length,
     });
-    if (insertError) {
-      toast({ title: 'Lỗi lưu ảnh', variant: 'destructive' });
-    } else {
-      toast({ title: 'Đã thêm ảnh ✓' });
-      fetchGalleryImages();
+      if (insertError) {
+        toast({ title: 'Lỗi lưu ảnh', variant: 'destructive' });
+      } else {
+        toast({ title: 'Đã thêm ảnh ✓' });
+        fetchGalleryImages();
+      }
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
     }
     setUploadingImage(false);
     e.target.value = '';
@@ -292,17 +300,21 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file || !editingRoom) return;
     setUploadingRoomImage(true);
-    const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
-    const path = `rooms/${editingRoom.id}-${Date.now()}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
-    if (uploadError) {
-      toast({ title: 'Lỗi upload ảnh phòng', description: uploadError.message, variant: 'destructive' });
-      setUploadingRoomImage(false);
-      return;
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.7 });
+      const path = `rooms/${editingRoom.id}-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
+      if (uploadError) {
+        toast({ title: 'Lỗi upload ảnh phòng', description: uploadError.message, variant: 'destructive' });
+        setUploadingRoomImage(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+      setEditingRoom({ ...editingRoom, image_url: urlData.publicUrl });
+      toast({ title: 'Đã upload ảnh phòng ✓' });
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
     }
-    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-    setEditingRoom({ ...editingRoom, image_url: urlData.publicUrl });
-    toast({ title: 'Đã upload ảnh phòng ✓' });
     setUploadingRoomImage(false);
     e.target.value = '';
   };
@@ -1232,19 +1244,23 @@ const AdminDashboard = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         setUploadingRoomImage(true);
-                        const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
-                        const path = `header-logo-${Date.now()}.jpg`;
-                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
-                        if (upErr) {
-                          toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
-                          setUploadingRoomImage(false);
-                          return;
+                        try {
+                          const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
+                          const path = `header-logo-${Date.now()}.jpg`;
+                          const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                          if (upErr) {
+                            toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
+                            setUploadingRoomImage(false);
+                            return;
+                          }
+                          const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                          const err = await updateSetting('header_logo_url', urlData.publicUrl);
+                          if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
+                          toast({ title: 'Đã cập nhật logo ✓' });
+                        } catch (err: any) {
+                          toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
                         }
-                        const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
-                        const err = await updateSetting('header_logo_url', urlData.publicUrl);
                         setUploadingRoomImage(false);
-                        if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
-                        toast({ title: 'Đã cập nhật logo ✓' });
                       }}
                     />
                   </Button>
@@ -1285,19 +1301,23 @@ const AdminDashboard = () => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         setUploadingRoomImage(true);
-                        const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
-                        const path = `chatbot-avatar-${Date.now()}.jpg`;
-                        const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
-                        if (upErr) {
-                          toast({ title: 'Lỗi upload: ' + upErr.message, variant: 'destructive' });
-                          setUploadingRoomImage(false);
-                          return;
+                        try {
+                          const compressed = await compressImage(file, { maxWidth: 400, quality: 0.8 });
+                          const path = `chatbot-avatar-${Date.now()}.jpg`;
+                          const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                          if (upErr) {
+                            toast({ title: 'Lỗi upload: ' + upErr.message, variant: 'destructive' });
+                            setUploadingRoomImage(false);
+                            return;
+                          }
+                          const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                          const err = await updateSetting('chatbot_avatar_url', urlData.publicUrl);
+                          if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
+                          toast({ title: 'Đã cập nhật avatar chatbot ✓' });
+                        } catch (err: any) {
+                          toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
                         }
-                        const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
-                        const err = await updateSetting('chatbot_avatar_url', urlData.publicUrl);
                         setUploadingRoomImage(false);
-                        if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); return; }
-                        toast({ title: 'Đã cập nhật avatar chatbot ✓' });
                       }}
                     />
                   </Button>

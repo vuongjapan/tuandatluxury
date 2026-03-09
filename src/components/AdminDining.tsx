@@ -71,14 +71,18 @@ const AdminDining = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
-    const path = `categories/${catId}-${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('dining').upload(path, compressed);
-    if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('dining').getPublicUrl(path);
-    await supabase.from('dining_categories').update({ image_url: urlData.publicUrl }).eq('id', catId);
-    toast({ title: 'Đã cập nhật ảnh ✓' });
-    fetchAll();
+    try {
+      const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
+      const path = `categories/${catId}-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from('dining').upload(path, compressed);
+      if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
+      const { data: urlData } = supabase.storage.from('dining').getPublicUrl(path);
+      await supabase.from('dining_categories').update({ image_url: urlData.publicUrl }).eq('id', catId);
+      toast({ title: 'Đã cập nhật ảnh ✓' });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
+    }
     setUploading(false);
     e.target.value = '';
   };
@@ -88,15 +92,19 @@ const AdminDining = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
-    const path = `items/${itemId}-${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('dining').upload(path, compressed);
-    if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('dining').getPublicUrl(path);
-    await supabase.from('dining_items').update({ image_url: urlData.publicUrl }).eq('id', itemId);
-    toast({ title: 'Đã cập nhật ảnh món ✓' });
-    if (editingItem?.id === itemId) setEditingItem({ ...editingItem, image_url: urlData.publicUrl });
-    fetchAll();
+    try {
+      const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
+      const path = `items/${itemId}-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from('dining').upload(path, compressed);
+      if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
+      const { data: urlData } = supabase.storage.from('dining').getPublicUrl(path);
+      await supabase.from('dining_items').update({ image_url: urlData.publicUrl }).eq('id', itemId);
+      toast({ title: 'Đã cập nhật ảnh món ✓' });
+      if (editingItem?.id === itemId) setEditingItem({ ...editingItem, image_url: urlData.publicUrl });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
+    }
     setUploading(false);
     e.target.value = '';
   };
