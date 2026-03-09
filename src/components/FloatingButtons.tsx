@@ -234,18 +234,65 @@ const FloatingButtons = () => {
                     👋 Xin chào anh/chị! Cảm ơn anh/chị đã quan tâm đến Khách sạn Tuấn Đạt Luxury Sầm Sơn. Anh/chị cho em xin ngày nhận phòng và số lượng khách, em tư vấn phòng phù hợp nhất ạ!
                   </div>
                 )}
-                {messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`text-sm rounded-lg p-3 ${msg.role === 'user' ? 'bg-primary/10 text-foreground ml-8' : 'bg-secondary text-foreground mr-8'}`}
-                  >
-                    {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm max-w-none text-foreground [&_p]:mb-1 [&_ul]:mb-1 [&_li]:mb-0.5">
-                        <ReactMarkdown>{msg.content || '...'}</ReactMarkdown>
+                {messages.map((msg, i) => {
+                  if (msg.role === 'user') {
+                    return (
+                      <div key={i} className="text-sm rounded-lg p-3 bg-primary/10 text-foreground ml-8">
+                        {msg.content}
                       </div>
-                    ) : msg.content}
-                  </div>
-                ))}
+                    );
+                  }
+
+                  const { text, booking } = parseBookingSummary(msg.content || '...');
+
+                  return (
+                    <div key={i} className="text-sm rounded-lg p-3 bg-secondary text-foreground mr-8">
+                      {text && (
+                        <div className="prose prose-sm max-w-none text-foreground [&_p]:mb-1 [&_ul]:mb-1 [&_li]:mb-0.5">
+                          <ReactMarkdown>{text}</ReactMarkdown>
+                        </div>
+                      )}
+                      {booking && (
+                        <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                          <p className="font-semibold text-primary text-sm">📋 Tóm tắt đặt phòng</p>
+                          <div className="grid grid-cols-2 gap-1.5 text-xs">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <CalendarDays className="h-3 w-3" /> Nhận phòng
+                            </div>
+                            <div className="font-medium">{formatDateVN(booking.checkin)}</div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <CalendarDays className="h-3 w-3" /> Trả phòng
+                            </div>
+                            <div className="font-medium">{formatDateVN(booking.checkout)}</div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Moon className="h-3 w-3" /> Số đêm
+                            </div>
+                            <div className="font-medium">{booking.nights} đêm</div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Users className="h-3 w-3" /> Số khách
+                            </div>
+                            <div className="font-medium">{booking.guests} người</div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <CreditCard className="h-3 w-3" /> Tổng tiền
+                            </div>
+                            <div className="font-semibold text-primary">{formatVND(booking.total_price)}</div>
+                          </div>
+                          <Button
+                            variant="gold"
+                            size="sm"
+                            className="w-full mt-1 text-xs"
+                            onClick={() => {
+                              setChatOpen(false);
+                              navigate(`/booking?room=${booking.room_id}&checkin=${booking.checkin}&checkout=${booking.checkout}&guests=${booking.guests}`);
+                            }}
+                          >
+                            🏨 Đặt phòng {booking.room_name} ngay
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 {isLoading && messages[messages.length - 1]?.role === 'user' && (
                   <div className="bg-secondary rounded-lg p-3 mr-8 flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin text-primary" />
