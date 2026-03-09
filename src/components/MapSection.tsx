@@ -6,6 +6,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const GOOGLE_MAPS_LINK = 'https://maps.google.com/?q=Khách+sạn+Tuấn+Đạt+Luxury+Sầm+Sơn';
 
+const DEFAULT_MAP_SRC = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3608.2167792564705!2d105.91047087504556!3d19.759731681590715!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3136515bf8afa3fd%3A0x5a29458949901908!2zS2jDoWNoIHPhuqFuIFR14bqlbiDEkOG6oXQgTHV4dXJ5IFPhuqdtIFPGoW4!5e1!3m2!1svi!2sjp!4v1772983874554!5m2!1svi!2sjp';
+
+function extractIframeSrc(html: string): string {
+  const match = html.match(/src=["']([^"']+)["']/);
+  return match ? match[1] : DEFAULT_MAP_SRC;
+}
+
 const MapSection = () => {
   const { settings, loading } = useSiteSettings();
   const { t } = useLanguage();
@@ -42,9 +49,13 @@ const MapSection = () => {
         >
           <div className="rounded-2xl overflow-hidden border border-border shadow-card bg-card">
             {embedCode ? (
-              <div
-                className="w-full aspect-video [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
-                dangerouslySetInnerHTML={{ __html: embedCode }}
+              <iframe
+                src={extractIframeSrc(embedCode)}
+                className="w-full aspect-video border-0"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Google Maps - Khách sạn Tuấn Đạt Luxury"
               />
             ) : (
               <div className="w-full aspect-video bg-muted flex items-center justify-center">
