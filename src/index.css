@@ -136,4 +136,13 @@
   .shadow-card-hover {
     box-shadow: var(--shadow-card-hover);
   }
+
+  /* Section heading subtitle style */
+  .section-subtitle {
+    @apply text-primary font-display text-sm tracking-[0.25em] uppercase mb-2;
+  }
+
+  .section-divider {
+    @apply w-20 h-[2px] bg-primary mx-auto;
+  }
 }
