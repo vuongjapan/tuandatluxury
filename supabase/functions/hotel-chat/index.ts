@@ -412,7 +412,7 @@ ${pastSummary ? "\nCuộc trò chuyện trước:\n" + pastSummary : ""}
       }
     }
 
-    const systemPrompt = buildSystemPrompt(dt, roomsInfo) + memoryContext;
+    const systemPrompt = buildSystemPrompt(dt, roomsInfo) + galleryInfo + memoryContext;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
