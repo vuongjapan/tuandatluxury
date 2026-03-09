@@ -358,7 +358,7 @@ const FloatingButtons = () => {
                     );
                   }
 
-                  const { text, booking } = parseBookingSummary(msg.content || '...');
+                  const { text, booking, galleries } = parseSpecialBlocks(msg.content || '...');
 
                   return (
                     <div key={i} className="text-sm rounded-lg p-3 bg-secondary text-foreground mr-8">
@@ -367,6 +367,16 @@ const FloatingButtons = () => {
                           <ReactMarkdown>{text}</ReactMarkdown>
                         </div>
                       )}
+                      {galleries.map((g, gi) => (
+                        <ImageGalleryCard
+                          key={gi}
+                          gallery={g}
+                          onViewRoom={g.room_id ? (id) => {
+                            setChatOpen(false);
+                            navigate(`/rooms/${id}`);
+                          } : undefined}
+                        />
+                      ))}
                       {booking && (
                         <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
                           <p className="font-semibold text-primary text-sm">📋 Tóm tắt đặt phòng</p>
