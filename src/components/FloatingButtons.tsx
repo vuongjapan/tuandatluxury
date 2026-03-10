@@ -326,7 +326,7 @@ const FloatingButtons = () => {
                     <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm">👩</div>
                   )}
                   <div>
-                    <p className="font-display text-sm font-semibold text-primary-foreground">Lễ tân Lan Anh</p>
+                    <p className="font-display text-sm font-semibold text-primary-foreground">Lễ tân Linh</p>
                     <p className="text-xs text-primary-foreground/70">Tuấn Đạt Luxury · Online</p>
                   </div>
                 </div>
