@@ -321,12 +321,12 @@ const FloatingButtons = () => {
               <div className="bg-gold-gradient p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {settings.chatbot_avatar_url ? (
-                    <img src={settings.chatbot_avatar_url} alt="Lan Anh" className="w-8 h-8 rounded-full object-cover" />
+                    <img src={settings.chatbot_avatar_url} alt="Linh" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm">👩</div>
                   )}
                   <div>
-                    <p className="font-display text-sm font-semibold text-primary-foreground">Lễ tân Lan Anh</p>
+                    <p className="font-display text-sm font-semibold text-primary-foreground">Lễ tân Linh</p>
                     <p className="text-xs text-primary-foreground/70">Tuấn Đạt Luxury · Online</p>
                   </div>
                 </div>
@@ -421,7 +421,7 @@ const FloatingButtons = () => {
                 {isLoading && messages[messages.length - 1]?.role === 'user' && (
                   <div className="bg-secondary rounded-lg p-3 mr-8 flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">Lan Anh đang trả lời...</span>
+                    <span className="text-xs text-muted-foreground">Linh đang trả lời...</span>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
@@ -434,7 +434,7 @@ const FloatingButtons = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder="Nhắn tin với Lan Anh..."
+                  placeholder="Nhắn tin với Linh..."
                   className="flex-1 text-sm bg-secondary rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   disabled={isLoading}
                 />
