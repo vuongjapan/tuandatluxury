@@ -321,7 +321,7 @@ const FloatingButtons = () => {
               <div className="bg-gold-gradient p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {settings.chatbot_avatar_url ? (
-                    <img src={settings.chatbot_avatar_url} alt="Lan Anh" className="w-8 h-8 rounded-full object-cover" />
+                    <img src={settings.chatbot_avatar_url} alt="Linh" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm">👩</div>
                   )}
