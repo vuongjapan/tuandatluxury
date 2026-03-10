@@ -421,7 +421,7 @@ const FloatingButtons = () => {
                 {isLoading && messages[messages.length - 1]?.role === 'user' && (
                   <div className="bg-secondary rounded-lg p-3 mr-8 flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">Lan Anh đang trả lời...</span>
+                    <span className="text-xs text-muted-foreground">Linh đang trả lời...</span>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
