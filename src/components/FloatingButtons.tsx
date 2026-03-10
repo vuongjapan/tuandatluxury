@@ -434,7 +434,7 @@ const FloatingButtons = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder="Nhắn tin với Lan Anh..."
+                  placeholder="Nhắn tin với Linh..."
                   className="flex-1 text-sm bg-secondary rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   disabled={isLoading}
                 />

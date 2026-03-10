@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { CheckCircle, Download, Home, Calendar, Users, Phone, Mail, FileText } from 'lucide-react';
+import { CheckCircle, Download, Home, Phone, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -21,7 +21,7 @@ const InvoicePage = () => {
         .select('*, rooms(name_vi, name_en)')
         .eq('booking_code', bookingCode)
         .maybeSingle();
-      
+
       if (b) {
         setBooking(b);
         const { data: inv } = await supabase
@@ -60,7 +60,7 @@ const InvoicePage = () => {
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
       <div className="max-w-2xl mx-auto">
-        {/* Success banner (not printed) */}
+        {/* Success banner */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -80,112 +80,32 @@ const InvoicePage = () => {
           transition={{ delay: 0.1 }}
           className="bg-white rounded-2xl shadow-card-hover border border-border overflow-hidden print:shadow-none print:border-none"
         >
-          {/* Invoice header */}
+          {/* Header */}
           <div className="bg-gold-gradient p-6 text-primary-foreground">
-            <div className="flex items-start justify-between">
-              <div>
-                <h1 className="font-display text-2xl font-bold">TUẤN ĐẠT LUXURY</h1>
-                <p className="text-primary-foreground/80 text-sm mt-1">LK29-20 FLC Sầm Sơn, Thanh Hóa</p>
-                <p className="text-primary-foreground/80 text-sm">Hotline: 098.661.7939</p>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-2 justify-end mb-1">
-                  <FileText className="h-4 w-4" />
-                  <span className="font-semibold text-sm">HÓA ĐƠN ĐẶT PHÒNG</span>
-                </div>
-                <p className="text-sm opacity-80">{invoice?.invoice_number || 'INV-' + booking.booking_code}</p>
-                <p className="text-xs opacity-70 mt-1">{format(new Date(booking.created_at), 'dd/MM/yyyy HH:mm', { locale: vi })}</p>
-              </div>
+            <p className="text-center text-lg mb-1">📋</p>
+            <h1 className="font-display text-xl font-bold text-center tracking-wide">PHIẾU XÁC NHẬN ĐẶT PHÒNG</h1>
+            <p className="text-center text-sm text-primary-foreground/80 mt-0.5">BOOKING CONFIRMATION</p>
+
+            <div className="mt-4 text-sm space-y-1 text-primary-foreground/90">
+              <p><strong>Khách sạn:</strong> Tuấn Đạt Luxury</p>
+              <p><strong>Địa chỉ:</strong> FLC Sầm Sơn, Thanh Hóa, Việt Nam</p>
+              <p><strong>Hotline:</strong> 098.441.8811 | 098.661.7939</p>
+              <p><strong>Email:</strong> tuandatluxury@gmail.com</p>
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
-            {/* Booking code */}
+          <div className="p-6 space-y-5 text-sm">
+            {/* Mã đặt phòng */}
             <div className="bg-secondary rounded-xl p-4 text-center">
               <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Mã đặt phòng</p>
               <p className="font-display text-3xl font-bold text-primary tracking-widest">{booking.booking_code}</p>
               <p className="text-xs text-muted-foreground mt-1">Lưu mã này để tra cứu đặt phòng</p>
             </div>
 
-            {/* Guest info */}
-            <div>
-              <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-3">Thông tin khách</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 text-sm">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span className="font-medium">{booking.guest_name}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-primary" />
-                  <span>{booking.guest_phone}</span>
-                </div>
-                {booking.guest_email && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Mail className="h-4 w-4 text-primary" />
-                    <span>{booking.guest_email}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Stay info */}
-            <div>
-              <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-3">Chi tiết lưu trú</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-secondary rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Nhận phòng</p>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="font-semibold text-sm">{format(new Date(booking.check_in), 'dd/MM/yyyy')}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Sau 14:00</p>
-                </div>
-                <div className="bg-secondary rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Trả phòng</p>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="font-semibold text-sm">{format(new Date(booking.check_out), 'dd/MM/yyyy')}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Trước 12:00</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Price table */}
-            <div>
-              <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-3">Chi tiết thanh toán</h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2 text-muted-foreground font-medium">Hạng phòng</th>
-                    <th className="text-center py-2 text-muted-foreground font-medium">Số đêm</th>
-                    <th className="text-right py-2 text-muted-foreground font-medium">Đơn giá</th>
-                    <th className="text-right py-2 text-muted-foreground font-medium">Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-border">
-                    <td className="py-3 font-medium">{booking.rooms?.name_vi || booking.room_id}</td>
-                    <td className="py-3 text-center">{nights}</td>
-                    <td className="py-3 text-right">{pricePerNight.toLocaleString('vi')}₫</td>
-                    <td className="py-3 text-right font-semibold">{booking.total_price_vnd.toLocaleString('vi')}₫</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={3} className="py-4 text-right font-semibold">TỔNG CỘNG</td>
-                    <td className="py-4 text-right">
-                      <span className="text-xl font-bold text-primary">{booking.total_price_vnd.toLocaleString('vi')}₫</span>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            {/* Status */}
-            <div className="flex items-center justify-between p-4 bg-secondary rounded-xl">
-              <span className="text-sm font-semibold text-muted-foreground">Trạng thái</span>
-              <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+            {/* Trạng thái */}
+            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
+              <span className="font-semibold text-muted-foreground">Trạng thái</span>
+              <span className={`font-bold px-3 py-1 rounded-full text-xs ${
                 booking.status === 'confirmed' ? 'bg-chart-2/20 text-chart-2' :
                 booking.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
                 'bg-chart-4/20 text-chart-4'
@@ -195,23 +115,113 @@ const InvoicePage = () => {
               </span>
             </div>
 
-            {/* Notes */}
+            {/* Thông tin khách */}
+            <div>
+              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Thông tin khách</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Họ tên:</span>
+                  <span className="font-medium">{booking.guest_name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Số điện thoại:</span>
+                  <span className="font-medium flex items-center gap-1"><Phone className="h-3.5 w-3.5 text-primary" />{booking.guest_phone}</span>
+                </div>
+                {booking.guest_email && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="font-medium flex items-center gap-1"><Mail className="h-3.5 w-3.5 text-primary" />{booking.guest_email}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Thông tin đặt phòng */}
+            <div>
+              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Thông tin đặt phòng</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Loại phòng:</span>
+                  <span className="font-medium">{booking.rooms?.name_vi || booking.room_id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Số khách:</span>
+                  <span className="font-medium">{booking.guests_count} người</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ngày nhận phòng (Check-in):</span>
+                  <span className="font-medium">{format(new Date(booking.check_in), 'dd/MM/yyyy')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ngày trả phòng (Check-out):</span>
+                  <span className="font-medium">{format(new Date(booking.check_out), 'dd/MM/yyyy')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tổng số đêm:</span>
+                  <span className="font-medium">{nights} đêm</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Chi phí */}
+            <div>
+              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Chi phí</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Giá phòng / đêm:</span>
+                  <span className="font-medium">{pricePerNight.toLocaleString('vi')}₫</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tổng tiền:</span>
+                  <span className="font-bold text-primary text-base">{booking.total_price_vnd.toLocaleString('vi')}₫</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Đã đặt cọc:</span>
+                  <span className="font-medium">0₫</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Còn lại khi nhận phòng:</span>
+                  <span className="font-bold text-primary">{booking.total_price_vnd.toLocaleString('vi')}₫</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Ghi chú */}
             {booking.guest_notes && (
-              <div className="p-3 bg-secondary rounded-lg text-sm">
-                <p className="font-semibold text-muted-foreground mb-1">Ghi chú:</p>
-                <p>{booking.guest_notes}</p>
+              <div>
+                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Ghi chú</h3>
+                <p className="text-foreground bg-secondary rounded-lg p-3">{booking.guest_notes}</p>
               </div>
             )}
 
-            {/* Footer note */}
-            <p className="text-xs text-muted-foreground text-center border-t border-border pt-4">
-              Cảm ơn quý khách đã tin tưởng Tuấn Đạt Luxury Hotel!<br />
-              Mọi thắc mắc xin liên hệ hotline: 098.661.7939
-            </p>
+            {/* Lưu ý cuối */}
+            <div className="border-t border-border pt-4 space-y-3 text-xs text-muted-foreground">
+              <p>⏰ <strong>Khách sạn sẽ giữ phòng đến 18:00 ngày nhận phòng.</strong><br />
+                Nếu có thay đổi hoặc hủy phòng, vui lòng liên hệ trước để được hỗ trợ.</p>
+
+              <p className="text-center">
+                Xin chân thành cảm ơn Quý khách đã lựa chọn <strong className="text-primary">Tuấn Đạt Luxury</strong>.<br />
+                Chúc Quý khách có kỳ nghỉ tuyệt vời!
+              </p>
+
+              <div className="text-center pt-2 border-t border-border">
+                <p className="font-semibold text-foreground">Trân trọng,</p>
+                <p className="font-semibold text-foreground">Bộ phận lễ tân – Tuấn Đạt Luxury</p>
+                <p>📞 098.441.8811 | 098.661.7939</p>
+                <p>📧 tuandatluxury@gmail.com</p>
+              </div>
+            </div>
+
+            {/* Số hóa đơn */}
+            {invoice && (
+              <p className="text-xs text-muted-foreground text-center">
+                Số phiếu: {invoice.invoice_number} · Ngày: {format(new Date(booking.created_at), 'dd/MM/yyyy HH:mm', { locale: vi })}
+              </p>
+            )}
           </div>
         </motion.div>
 
-        {/* Action buttons (not printed) */}
+        {/* Action buttons */}
         <div className="mt-4 flex gap-3 print:hidden">
           <Button variant="outline" className="flex-1" onClick={() => navigate('/')}>
             <Home className="h-4 w-4 mr-2" />Về trang chủ
