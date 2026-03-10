@@ -431,7 +431,7 @@ serve(async (req) => {
         const pastSummary = pastMessages
           .slice(0, -messages.length || undefined)
           .slice(-20)
-          .map((m: any) => `${m.role === "user" ? "Khách" : "Lan Anh"}: ${m.content.slice(0, 150)}`)
+          .map((m: any) => `${m.role === "user" ? "Khách" : "Linh"}: ${m.content.slice(0, 150)}`)
           .join("\n");
 
         if (memories.length > 0 || pastSummary) {
