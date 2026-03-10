@@ -1279,7 +1279,7 @@ const AdminDashboard = () => {
               {/* Chatbot Avatar */}
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                  💬 Ảnh đại diện Chatbot Lan Anh
+                  💬 Ảnh đại diện Chatbot Linh
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Upload ảnh đại diện cho lễ tân Lan Anh trong chatbot. Nên dùng ảnh vuông, kích thước tối ưu 200×200px.
