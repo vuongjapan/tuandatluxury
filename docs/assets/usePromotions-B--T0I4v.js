@@ -1,0 +1,1 @@
+import{r as o,D as c}from"./index-GPGVEPja.js";const u=()=>{const[e,r]=o.useState([]),[a,t]=o.useState(!0),s=async()=>{t(!0);const{data:n}=await c.from("promotions").select("*").order("sort_order");r(n||[]),t(!1)};return o.useEffect(()=>{s()},[]),{promotions:e,loading:a,refetch:s}};export{u};
