@@ -69,7 +69,7 @@ const Footer = () => {
               <a href="tel:0986617939" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">098.661.7939-098.360.5768-036.9845422
                 <Phone className="h-4 w-4 text-primary shrink-0" /> 098.661.7939
               </a>
-              <a href="mailto:tuandatluxury@gmail.com" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">tuandatluxuryflc36hotel@gmail.com
+              <a className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors" href="mailto:tuandatluxuryflc36hotel@gmail.com">tuandatluxuryflc36hotel@gmail.com
                 <Mail className="h-4 w-4 text-primary shrink-0" /> tuandatluxury@gmail.com
               </a>
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">
