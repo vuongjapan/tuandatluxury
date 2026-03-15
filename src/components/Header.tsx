@@ -37,8 +37,8 @@ const Header = () => {
       <div className="bg-foreground text-background/80 hidden sm:block">
         <div className="container mx-auto flex items-center justify-between h-8 px-4 text-xs">
           <div className="flex items-center gap-4">
-            <a href="tel:0986617939" className="flex items-center gap-1 hover:text-primary transition-colors">098.661.7939-098.360.7568-036.984.5422
-              <Phone className="h-3 w-3" /> 098.661.7939
+            <a href="tel:0986617939" className="flex items-center gap-1 hover:text-primary transition-colors">098.360.7568-036.984.5422
+098.661.7939<Phone className="h-3 w-3" /> 098.661.7939
             </a>
             <span className="text-background/40">|</span>
             <span>tuandatluxuryflc36hotel@gmail.com</span>
