@@ -110,7 +110,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom */}
-        <div className="mt-12 pt-6 border-t border-background/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="mt-12 pt-6 border-t border-background/10 flex-col sm:flex-row gap-3 flex items-start justify-between">
           <p className="text-xs text-background/40">
             © {new Date().getFullYear()} Tuấn Đạt Luxury Hotel. All rights reserved.
           </p>
