@@ -89,8 +89,8 @@ const InvoicePage = () => {
             <div className="mt-4 text-sm space-y-1 text-primary-foreground/90">
               <p><strong>Khách sạn:</strong> Tuấn Đạt Luxury</p>
               <p><strong>Địa chỉ:</strong> FLC Sầm Sơn, Thanh Hóa, Việt Nam</p>
-              <p><strong>Hotline:</strong> 098.441.8811 | 098.661.7939</p>
-              <p><strong>Email:</strong> tuandatluxury@gmail.com</p>
+              <p><strong>Hotline:</strong> 098.360.7568 | 036.984.5422 | 098.661.7939</p>
+              <p><strong>Email:</strong> tuandatluxuryflc36hotel@gmail.com</p>
             </div>
           </div>
 
@@ -112,6 +112,17 @@ const InvoicePage = () => {
               }`}>
                 {booking.status === 'confirmed' ? '✓ Đã xác nhận' :
                  booking.status === 'cancelled' ? '✗ Đã hủy' : '⏳ Chờ xác nhận'}
+              </span>
+            </div>
+
+            {/* Trạng thái thanh toán */}
+            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
+              <span className="font-semibold text-muted-foreground">Thanh toán</span>
+              <span className={`font-bold px-3 py-1 rounded-full text-xs ${
+                invoice?.status === 'paid' ? 'bg-chart-2/20 text-chart-2' :
+                'bg-amber-100 text-amber-700'
+              }`}>
+                {invoice?.status === 'paid' ? '✓ Đã thanh toán' : '⏳ Chưa thanh toán'}
               </span>
             </div>
 
@@ -207,8 +218,8 @@ const InvoicePage = () => {
               <div className="text-center pt-2 border-t border-border">
                 <p className="font-semibold text-foreground">Trân trọng,</p>
                 <p className="font-semibold text-foreground">Bộ phận lễ tân – Tuấn Đạt Luxury</p>
-                <p>📞 098.441.8811 | 098.661.7939</p>
-                <p>📧 tuandatluxury@gmail.com</p>
+                <p>📞 098.360.7568 | 036.984.5422 | 098.661.7939</p>
+                <p>📧 tuandatluxuryflc36hotel@gmail.com</p>
               </div>
             </div>
 
