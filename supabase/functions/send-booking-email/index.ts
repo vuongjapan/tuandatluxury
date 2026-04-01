@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6.9.12";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,14 +34,11 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
   );
   const pricePerNight = nights > 0 ? Math.round(booking.total_price_vnd / nights) : 0;
 
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="vi">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f5f5f0;font-family:'Segoe UI',Arial,sans-serif;">
 <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
-
-  <!-- Header -->
   <div style="background:linear-gradient(135deg,#8B6914,#C49B2A,#8B6914);padding:28px 24px;text-align:center;color:#fff;">
     <div style="font-size:16px;margin-bottom:4px;">📋</div>
     <h1 style="margin:0;font-size:20px;font-weight:700;letter-spacing:1px;">PHIẾU XÁC NHẬN ĐẶT PHÒNG</h1>
@@ -53,30 +50,22 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
       <p style="margin:2px 0;"><strong>Email:</strong> ${HOTEL_EMAIL_DISPLAY}</p>
     </div>
   </div>
-
   <div style="padding:24px;">
-    <!-- Booking code -->
     <div style="background:#f8f6f0;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
       <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Mã đặt phòng</p>
       <p style="margin:0;font-size:28px;font-weight:700;color:#8B6914;letter-spacing:3px;">${booking.booking_code}</p>
       <p style="margin:4px 0 0;font-size:11px;color:#999;">Lưu mã này để tra cứu đặt phòng</p>
     </div>
-
-    <!-- Status -->
-    <div style="display:flex;justify-content:space-between;align-items:center;background:#f8f6f0;border-radius:10px;padding:12px 16px;margin-bottom:20px;">
+    <div style="background:#f8f6f0;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-weight:600;color:#888;font-size:13px;">Trạng thái thanh toán</span>
       <span style="background:#FEF3C7;color:#D97706;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">⏳ Chưa thanh toán</span>
     </div>
-
-    <!-- Guest info -->
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Thông tin khách</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Họ tên:</td><td style="font-weight:500;">${booking.guest_name}</td></tr>
       <tr><td style="color:#888;">Số điện thoại:</td><td style="font-weight:500;">📞 ${booking.guest_phone}</td></tr>
       ${booking.guest_email ? `<tr><td style="color:#888;">Email:</td><td style="font-weight:500;">📧 ${booking.guest_email}</td></tr>` : ""}
     </table>
-
-    <!-- Booking info -->
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Thông tin đặt phòng</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Loại phòng:</td><td style="font-weight:500;">${roomName}</td></tr>
@@ -85,8 +74,6 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
       <tr><td style="color:#888;">Ngày trả phòng:</td><td style="font-weight:500;">${checkOut}</td></tr>
       <tr><td style="color:#888;">Tổng số đêm:</td><td style="font-weight:500;">${nights} đêm</td></tr>
     </table>
-
-    <!-- Cost -->
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Chi phí</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Giá phòng / đêm:</td><td style="font-weight:500;">${formatPrice(pricePerNight)}</td></tr>
@@ -94,13 +81,10 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
       <tr><td style="color:#888;">Đã đặt cọc:</td><td style="font-weight:500;">0₫</td></tr>
       <tr><td style="color:#888;">Còn lại khi nhận phòng:</td><td style="font-weight:700;color:#8B6914;">${formatPrice(booking.total_price_vnd)}</td></tr>
     </table>
-
     ${booking.guest_notes ? `
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Ghi chú</h3>
     <p style="background:#f8f6f0;border-radius:8px;padding:12px;font-size:13px;margin:0;">${booking.guest_notes}</p>
     ` : ""}
-
-    <!-- Footer notes -->
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
       <p>⏰ <strong style="color:#666;">Khách sạn sẽ giữ phòng đến 18:00 ngày nhận phòng.</strong><br>
       Nếu có thay đổi hoặc hủy phòng, vui lòng liên hệ trước để được hỗ trợ.</p>
@@ -115,11 +99,7 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
         <p style="margin:2px 0;">📧 ${HOTEL_EMAIL_DISPLAY}</p>
       </div>
     </div>
-
-    <!-- Invoice number -->
-    <p style="text-align:center;font-size:11px;color:#bbb;margin-top:16px;">
-      Số phiếu: ${invoiceNumber}
-    </p>
+    <p style="text-align:center;font-size:11px;color:#bbb;margin-top:16px;">Số phiếu: ${invoiceNumber}</p>
   </div>
 </div>
 </body>
@@ -141,51 +121,44 @@ serve(async (req) => {
 
     const invoiceHtml = buildInvoiceHtml(booking, room_name, invoice_number);
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: SMTP_HOST,
-        port: SMTP_PORT,
-        tls: true,
-        auth: {
-          username: SMTP_EMAIL,
-          password: smtpPassword,
-        },
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: false,
+      auth: {
+        user: SMTP_EMAIL,
+        pass: smtpPassword,
       },
     });
 
     // Send to guest if email provided
     if (booking.guest_email) {
-      await client.send({
-        from: `${HOTEL_NAME} <${SMTP_EMAIL}>`,
+      await transporter.sendMail({
+        from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
         to: booking.guest_email,
         subject: `Xác nhận đơn đặt phòng – ${HOTEL_NAME} [${booking.booking_code}]`,
-        content: "auto",
         html: invoiceHtml,
       });
       console.log("Guest email sent to:", booking.guest_email);
     }
 
-    // Build admin email with extra header
+    // Admin email with alert header
     const adminHtml = `
-<div style="max-width:600px;margin:0 auto;padding:16px;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:0;font-family:'Segoe UI',Arial,sans-serif;">
   <div style="background:#DC2626;color:#fff;padding:16px 20px;border-radius:10px 10px 0 0;text-align:center;">
     <h2 style="margin:0;font-size:18px;">🔔 Có đơn đặt phòng mới – ${HOTEL_NAME}</h2>
     <p style="margin:4px 0 0;font-size:13px;opacity:0.9;">Đơn hàng từ website · Chưa thanh toán</p>
   </div>
-  ${invoiceHtml.split('<body')[1]?.split('</body>')[0] || invoiceHtml}
+  ${invoiceHtml}
 </div>`;
 
-    // Send to admin
-    await client.send({
-      from: `${HOTEL_NAME} <${SMTP_EMAIL}>`,
+    await transporter.sendMail({
+      from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
       to: ADMIN_EMAIL,
       subject: `🔔 Đơn đặt phòng mới từ website [${booking.booking_code}] - ${booking.guest_name}`,
-      content: "auto",
       html: adminHtml,
     });
     console.log("Admin email sent to:", ADMIN_EMAIL);
-
-    await client.close();
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
