@@ -115,6 +115,17 @@ const InvoicePage = () => {
               </span>
             </div>
 
+            {/* Trạng thái thanh toán */}
+            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
+              <span className="font-semibold text-muted-foreground">Thanh toán</span>
+              <span className={`font-bold px-3 py-1 rounded-full text-xs ${
+                invoice?.status === 'paid' ? 'bg-chart-2/20 text-chart-2' :
+                'bg-amber-100 text-amber-700'
+              }`}>
+                {invoice?.status === 'paid' ? '✓ Đã thanh toán' : '⏳ Chưa thanh toán'}
+              </span>
+            </div>
+
             {/* Thông tin khách */}
             <div>
               <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Thông tin khách</h3>
