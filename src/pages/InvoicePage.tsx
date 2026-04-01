@@ -218,8 +218,8 @@ const InvoicePage = () => {
               <div className="text-center pt-2 border-t border-border">
                 <p className="font-semibold text-foreground">Trân trọng,</p>
                 <p className="font-semibold text-foreground">Bộ phận lễ tân – Tuấn Đạt Luxury</p>
-                <p>📞 098.441.8811 | 098.661.7939</p>
-                <p>📧 tuandatluxury@gmail.com</p>
+                <p>📞 098.360.7568 | 036.984.5422 | 098.661.7939</p>
+                <p>📧 tuandatluxuryflc36hotel@gmail.com</p>
               </div>
             </div>
 

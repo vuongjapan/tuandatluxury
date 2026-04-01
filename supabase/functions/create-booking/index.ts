@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -23,10 +24,9 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Insert booking
     const { data: booking, error: bookingError } = await supabase
@@ -55,12 +55,39 @@ serve(async (req) => {
       .insert({
         booking_id: booking.id,
         total_vnd: total_price_vnd || 0,
-        status: "issued",
+        status: "unpaid",
       })
       .select()
       .single();
 
     if (invoiceError) console.error("Invoice error:", invoiceError);
+
+    // Get room name for email
+    const { data: room } = await supabase
+      .from("rooms")
+      .select("name_vi")
+      .eq("id", room_id)
+      .single();
+
+    // Send booking emails (fire and forget)
+    try {
+      const emailUrl = `${supabaseUrl}/functions/v1/send-booking-email`;
+      await fetch(emailUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        },
+        body: JSON.stringify({
+          booking,
+          room_name: room?.name_vi || room_id,
+          invoice_number: invoice?.invoice_number || booking.booking_code,
+        }),
+      });
+      console.log("Email function called successfully");
+    } catch (emailErr) {
+      console.error("Email send error (non-blocking):", emailErr);
+    }
 
     return new Response(
       JSON.stringify({ 
