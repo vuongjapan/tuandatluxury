@@ -297,7 +297,7 @@ const FloatingButtons = () => {
           <span className="text-lg">💬</span>
         </a>
         <a
-          href="https://m.me/tuan.dat.luxury"
+          href="https://m.me/KhachSanTuanDatLuxuryFLC"
           target="_blank"
           rel="noopener noreferrer"
           className="w-12 h-12 rounded-full bg-[#0084FF] shadow-card-hover flex items-center justify-center hover:brightness-110 transition-all duration-300"
