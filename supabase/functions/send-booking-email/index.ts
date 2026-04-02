@@ -33,6 +33,8 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
   const pricePerNight = nights > 0 ? Math.round(booking.total_price_vnd / nights) : 0;
+  const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
+  const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
 
   return `<!DOCTYPE html>
 <html lang="vi">
@@ -56,9 +58,8 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
       <p style="margin:0;font-size:28px;font-weight:700;color:#8B6914;letter-spacing:3px;">${booking.booking_code}</p>
       <p style="margin:4px 0 0;font-size:11px;color:#999;">Lưu mã này để tra cứu đặt phòng</p>
     </div>
-    <div style="background:#f8f6f0;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-weight:600;color:#888;font-size:13px;">Trạng thái thanh toán</span>
-      <span style="background:#FEF3C7;color:#D97706;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">⏳ Chưa thanh toán</span>
+    <div style="background:#FEF3C7;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;">
+      <span style="color:#D97706;font-weight:700;font-size:14px;">⏳ CHƯA THANH TOÁN</span>
     </div>
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Thông tin khách</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
@@ -78,13 +79,20 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Giá phòng / đêm:</td><td style="font-weight:500;">${formatPrice(pricePerNight)}</td></tr>
       <tr><td style="color:#888;">Tổng tiền:</td><td style="font-weight:700;color:#8B6914;font-size:15px;">${formatPrice(booking.total_price_vnd)}</td></tr>
-      <tr><td style="color:#888;">Đã đặt cọc:</td><td style="font-weight:500;">0₫</td></tr>
-      <tr><td style="color:#888;">Còn lại khi nhận phòng:</td><td style="font-weight:700;color:#8B6914;">${formatPrice(booking.total_price_vnd)}</td></tr>
+      <tr><td style="color:#888;">Tiền cọc (50%):</td><td style="font-weight:700;color:#D97706;">${formatPrice(depositAmount)}</td></tr>
+      <tr><td style="color:#888;">Còn lại khi nhận phòng:</td><td style="font-weight:700;color:#8B6914;">${formatPrice(remainingAmount)}</td></tr>
     </table>
     ${booking.guest_notes ? `
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Ghi chú</h3>
     <p style="background:#f8f6f0;border-radius:8px;padding:12px;font-size:13px;margin:0;">${booking.guest_notes}</p>
     ` : ""}
+    <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;text-align:center;">
+      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#92400E;">💳 THANH TOÁN ĐẶT CỌC</p>
+      <p style="margin:0 0 4px;font-size:12px;color:#92400E;">Nội dung chuyển khoản:</p>
+      <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#8B6914;letter-spacing:2px;">${booking.booking_code}</p>
+      <p style="margin:0 0 4px;font-size:12px;color:#92400E;">Số tiền cần chuyển:</p>
+      <p style="margin:0;font-size:20px;font-weight:700;color:#DC2626;">${formatPrice(depositAmount)}</p>
+    </div>
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
       <p>⏰ <strong style="color:#666;">Khách sạn sẽ giữ phòng đến 18:00 ngày nhận phòng.</strong><br>
       Nếu có thay đổi hoặc hủy phòng, vui lòng liên hệ trước để được hỗ trợ.</p>
@@ -136,13 +144,13 @@ serve(async (req) => {
       await transporter.sendMail({
         from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
         to: booking.guest_email,
-        subject: `Xác nhận đơn đặt phòng – ${HOTEL_NAME} [${booking.booking_code}]`,
+        subject: `Hóa đơn ${booking.booking_code} - Chưa thanh toán`,
         html: invoiceHtml,
       });
       console.log("Guest email sent to:", booking.guest_email);
     }
 
-    // Admin email with alert header
+    // Admin email
     const adminHtml = `
 <div style="max-width:600px;margin:0 auto;padding:0;font-family:'Segoe UI',Arial,sans-serif;">
   <div style="background:#DC2626;color:#fff;padding:16px 20px;border-radius:10px 10px 0 0;text-align:center;">
