@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Download, Home, Phone, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import sepayQR from '@/assets/sepay-qr.png';
 
 const InvoicePage = () => {
   const { bookingCode } = useParams();
@@ -14,27 +15,49 @@ const InvoicePage = () => {
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchBooking = useCallback(async () => {
+    const { data: b } = await supabase
+      .from('bookings')
+      .select('*, rooms(name_vi, name_en)')
+      .eq('booking_code', bookingCode)
+      .maybeSingle();
+
+    if (b) {
+      setBooking(b);
+      const { data: inv } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('booking_id', b.id)
+        .maybeSingle();
+      setInvoice(inv);
+    }
+    setLoading(false);
+  }, [bookingCode]);
+
   useEffect(() => {
-    const fetchBooking = async () => {
+    fetchBooking();
+  }, [fetchBooking]);
+
+  // Poll payment status every 5 seconds
+  useEffect(() => {
+    if (!booking || booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID') return;
+
+    const interval = setInterval(async () => {
       const { data: b } = await supabase
         .from('bookings')
-        .select('*, rooms(name_vi, name_en)')
+        .select('payment_status, status')
         .eq('booking_code', bookingCode)
         .maybeSingle();
 
-      if (b) {
-        setBooking(b);
-        const { data: inv } = await supabase
-          .from('invoices')
-          .select('*')
-          .eq('booking_id', b.id)
-          .maybeSingle();
-        setInvoice(inv);
+      if (b && (b.payment_status === 'DEPOSIT_PAID' || b.payment_status === 'PAID')) {
+        // Refresh full data
+        fetchBooking();
+        clearInterval(interval);
       }
-      setLoading(false);
-    };
-    fetchBooking();
-  }, [bookingCode]);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [booking?.payment_status, bookingCode, fetchBooking]);
 
   const handlePrint = () => window.print();
 
@@ -56,6 +79,9 @@ const InvoicePage = () => {
 
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
   const pricePerNight = nights > 0 ? Math.round(booking.total_price_vnd / nights) : 0;
+  const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
+  const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
+  const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -119,10 +145,10 @@ const InvoicePage = () => {
             <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
               <span className="font-semibold text-muted-foreground">Thanh toán</span>
               <span className={`font-bold px-3 py-1 rounded-full text-xs ${
-                invoice?.status === 'paid' ? 'bg-chart-2/20 text-chart-2' :
+                isDepositPaid ? 'bg-chart-2/20 text-chart-2' :
                 'bg-amber-100 text-amber-700'
               }`}>
-                {invoice?.status === 'paid' ? '✓ Đã thanh toán' : '⏳ Chưa thanh toán'}
+                {isDepositPaid ? '✅ Đã cọc 50%' : '⏳ Chưa thanh toán'}
               </span>
             </div>
 
@@ -187,15 +213,66 @@ const InvoicePage = () => {
                   <span className="font-bold text-primary text-base">{booking.total_price_vnd.toLocaleString('vi')}₫</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Đã đặt cọc:</span>
-                  <span className="font-medium">0₫</span>
+                  <span className="text-muted-foreground">Tiền cọc (50%):</span>
+                  <span className={`font-bold ${isDepositPaid ? 'text-chart-2' : 'text-amber-600'}`}>
+                    {depositAmount.toLocaleString('vi')}₫
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Đã thanh toán:</span>
+                  <span className={`font-medium ${isDepositPaid ? 'text-chart-2' : ''}`}>
+                    {isDepositPaid ? depositAmount.toLocaleString('vi') + '₫' : '0₫'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Còn lại khi nhận phòng:</span>
-                  <span className="font-bold text-primary">{booking.total_price_vnd.toLocaleString('vi')}₫</span>
+                  <span className="font-bold text-primary">
+                    {isDepositPaid ? remainingAmount.toLocaleString('vi') : booking.total_price_vnd.toLocaleString('vi')}₫
+                  </span>
                 </div>
               </div>
             </div>
+
+            {/* QR Payment section - only show if not paid */}
+            {!isDepositPaid && (
+              <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
+                <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 THANH TOÁN ĐẶT CỌC</h3>
+                
+                <div className="flex justify-center mb-4">
+                  <img src={sepayQR} alt="QR Thanh toán SePay" className="w-52 h-52 rounded-lg shadow-md" />
+                </div>
+
+                <div className="text-center space-y-3">
+                  <div>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">Nội dung chuyển khoản:</p>
+                    <p className="font-display text-xl font-bold text-primary tracking-widest mt-1">{booking.booking_code}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">Số tiền cần chuyển:</p>
+                    <p className="text-2xl font-bold text-destructive mt-1">{depositAmount.toLocaleString('vi')}₫</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-amber-700 text-center mt-3">
+                  ⚡ Sau khi chuyển khoản, trạng thái sẽ tự động cập nhật trong vài giây
+                </p>
+              </div>
+            )}
+
+            {/* Deposit paid confirmation */}
+            {isDepositPaid && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-chart-2/10 border border-chart-2/30 rounded-xl p-4 text-center"
+              >
+                <CheckCircle className="h-8 w-8 text-chart-2 mx-auto mb-2" />
+                <p className="font-bold text-chart-2 text-lg">Đã cọc 50% thành công!</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Số tiền còn lại {remainingAmount.toLocaleString('vi')}₫ thanh toán khi nhận phòng
+                </p>
+              </motion.div>
+            )}
 
             {/* Ghi chú */}
             {booking.guest_notes && (

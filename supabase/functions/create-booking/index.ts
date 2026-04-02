@@ -28,7 +28,11 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Insert booking
+    const totalPrice = total_price_vnd || 0;
+    const depositAmount = Math.round(totalPrice * 0.5);
+    const remainingAmount = totalPrice - depositAmount;
+
+    // Insert booking with deposit info
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -40,7 +44,10 @@ serve(async (req) => {
         check_in,
         check_out,
         guests_count: guests_count || 2,
-        total_price_vnd: total_price_vnd || 0,
+        total_price_vnd: totalPrice,
+        deposit_amount: depositAmount,
+        remaining_amount: remainingAmount,
+        payment_status: "PENDING",
         status: "pending",
         language: language || "vi",
       })
@@ -49,12 +56,15 @@ serve(async (req) => {
 
     if (bookingError) throw bookingError;
 
-    // Create invoice
+    // Create invoice with deposit info
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .insert({
         booking_id: booking.id,
-        total_vnd: total_price_vnd || 0,
+        total_vnd: totalPrice,
+        deposit_amount: depositAmount,
+        remaining_amount: remainingAmount,
+        payment_status: "PENDING",
         status: "unpaid",
       })
       .select()

@@ -20,6 +20,7 @@ export type Database = {
           check_in: string
           check_out: string
           created_at: string
+          deposit_amount: number
           guest_email: string | null
           guest_name: string
           guest_notes: string | null
@@ -27,6 +28,8 @@ export type Database = {
           guests_count: number
           id: string
           language: string | null
+          payment_status: string
+          remaining_amount: number
           room_id: string
           status: string
           total_price_vnd: number
@@ -37,6 +40,7 @@ export type Database = {
           check_in: string
           check_out: string
           created_at?: string
+          deposit_amount?: number
           guest_email?: string | null
           guest_name: string
           guest_notes?: string | null
@@ -44,6 +48,8 @@ export type Database = {
           guests_count?: number
           id?: string
           language?: string | null
+          payment_status?: string
+          remaining_amount?: number
           room_id: string
           status?: string
           total_price_vnd?: number
@@ -54,6 +60,7 @@ export type Database = {
           check_in?: string
           check_out?: string
           created_at?: string
+          deposit_amount?: number
           guest_email?: string | null
           guest_name?: string
           guest_notes?: string | null
@@ -61,6 +68,8 @@ export type Database = {
           guests_count?: number
           id?: string
           language?: string | null
+          payment_status?: string
+          remaining_amount?: number
           room_id?: string
           status?: string
           total_price_vnd?: number
@@ -249,25 +258,34 @@ export type Database = {
       invoices: {
         Row: {
           booking_id: string
+          deposit_amount: number
           id: string
           invoice_number: string
           issued_at: string
+          payment_status: string
+          remaining_amount: number
           status: string | null
           total_vnd: number
         }
         Insert: {
           booking_id: string
+          deposit_amount?: number
           id?: string
           invoice_number?: string
           issued_at?: string
+          payment_status?: string
+          remaining_amount?: number
           status?: string | null
           total_vnd?: number
         }
         Update: {
           booking_id?: string
+          deposit_amount?: number
           id?: string
           invoice_number?: string
           issued_at?: string
+          payment_status?: string
+          remaining_amount?: number
           status?: string | null
           total_vnd?: number
         }
@@ -721,6 +739,39 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          matched_booking_code: string | null
+          processed: boolean
+          source: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          matched_booking_code?: string | null
+          processed?: boolean
+          source?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          matched_booking_code?: string | null
+          processed?: boolean
+          source?: string
+          transaction_id?: string | null
         }
         Relationships: []
       }
