@@ -179,7 +179,7 @@ const Index = () => {
                 <div className="p-4 bg-card rounded-xl border border-border">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     📍 LK29-20, FLC Sầm Sơn, Thanh Hóa<br />
-                    📞 098.360.7568 • 036.984.5422 • 098.661.7939<br />
+                    📞 098.360.5768 • 036.984.5422 • 098.661.7939<br />
                     ✉️ tuandatluxuryflc36hotel@gmail.com
                   </p>
                 </div>

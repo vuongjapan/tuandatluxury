@@ -78,7 +78,7 @@ const Footer = () => {
               <a className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors" href="mailto:tuandatluxuryflc36hotel@gmail.com">
                 <Mail className="h-4 w-4 text-primary shrink-0" /> tuandatluxuryflc36hotel@gmail.com
               </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">
+              <a href="https://www.facebook.com/KhachSanTuanDatLuxuryFLC" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">
                 <Facebook className="h-4 w-4 text-primary shrink-0" /> Facebook
               </a>
               <div className="flex items-start gap-2 text-sm text-background/70">

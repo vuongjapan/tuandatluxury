@@ -37,8 +37,8 @@ const Header = () => {
       <div className="bg-foreground text-background/80 hidden sm:block">
         <div className="container mx-auto flex items-center justify-between h-8 px-4 text-xs">
           <div className="flex items-center gap-4">
-            <a href="tel:0983607568" className="flex items-center gap-1 hover:text-primary transition-colors">
-              <Phone className="h-3 w-3" /> 098.360.7568
+            <a href="tel:0983605768" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <Phone className="h-3 w-3" /> 098.360.5768
             </a>
             <span className="text-background/40">|</span>
             <a href="tel:0369845422" className="flex items-center gap-1 hover:text-primary transition-colors">036.984.5422</a>
