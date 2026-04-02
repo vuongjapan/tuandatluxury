@@ -66,8 +66,8 @@ const Footer = () => {
           <div>
             <h4 className="font-display text-base font-semibold mb-4 text-primary">{t('footer.contact')}</h4>
             <div className="space-y-3">
-              <a href="tel:0983607568" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">
-                <Phone className="h-4 w-4 text-primary shrink-0" /> 098.360.7568
+              <a href="tel:0983605768" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">
+                <Phone className="h-4 w-4 text-primary shrink-0" /> 098.360.5768
               </a>
               <a href="tel:0369845422" className="flex items-center gap-2 text-sm text-background/70 hover:text-primary transition-colors">
                 <Phone className="h-4 w-4 text-primary shrink-0" /> 036.984.5422
