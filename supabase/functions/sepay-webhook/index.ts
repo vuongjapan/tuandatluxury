@@ -21,9 +21,17 @@ const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 function normalizeBookingCode(desc: string): string | null {
   if (!desc) return null;
   const cleaned = desc.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  const match = cleaned.match(/TDLH(\d+)/);
-  if (!match) return null;
-  return "TDLH-" + match[1].padStart(5, "0");
+  // Match new format TDLH2026AXXXXX
+  const matchNew = cleaned.match(/TDLH2026A(\d+)/);
+  if (matchNew) {
+    return "TDLH2026A" + matchNew[1].padStart(5, "0");
+  }
+  // Fallback: old format TDLH-XXXXX
+  const matchOld = cleaned.match(/TDLH(\d+)/);
+  if (matchOld) {
+    return "TDLH-" + matchOld[1].padStart(5, "0");
+  }
+  return null;
 }
 
 function formatDate(dateStr: string): string {
@@ -41,7 +49,8 @@ function buildDepositConfirmHtml(booking: any, roomName: string, invoiceNumber: 
   const nights = Math.ceil(
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
-  const pricePerNight = nights > 0 ? Math.round(booking.total_price_vnd / nights) : 0;
+  const roomQty = booking.room_quantity || 1;
+  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
 
   return `<!DOCTYPE html>
 <html lang="vi">
@@ -76,6 +85,7 @@ function buildDepositConfirmHtml(booking: any, roomName: string, invoiceNumber: 
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Thông tin đặt phòng</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Loại phòng:</td><td style="font-weight:500;">${roomName}</td></tr>
+      <tr><td style="color:#888;">Số phòng:</td><td style="font-weight:500;">${roomQty}</td></tr>
       <tr><td style="color:#888;">Số khách:</td><td style="font-weight:500;">${booking.guests_count} người</td></tr>
       <tr><td style="color:#888;">Ngày nhận phòng:</td><td style="font-weight:500;">${checkIn}</td></tr>
       <tr><td style="color:#888;">Ngày trả phòng:</td><td style="font-weight:500;">${checkOut}</td></tr>
@@ -84,6 +94,7 @@ function buildDepositConfirmHtml(booking: any, roomName: string, invoiceNumber: 
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Chi phí</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Giá phòng / đêm:</td><td style="font-weight:500;">${formatPrice(pricePerNight)}</td></tr>
+      ${roomQty > 1 ? `<tr><td style="color:#888;">Số phòng × Số đêm:</td><td style="font-weight:500;">${roomQty} × ${nights}</td></tr>` : ""}
       <tr><td style="color:#888;">Tổng tiền:</td><td style="font-weight:700;color:#8B6914;font-size:15px;">${formatPrice(booking.total_price_vnd)}</td></tr>
       <tr><td style="color:#888;">Đã đặt cọc (50%):</td><td style="font-weight:700;color:#059669;">${formatPrice(booking.deposit_amount)}</td></tr>
       <tr><td style="color:#888;">Còn lại khi nhận phòng:</td><td style="font-weight:700;color:#8B6914;">${formatPrice(booking.remaining_amount)}</td></tr>

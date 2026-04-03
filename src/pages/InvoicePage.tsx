@@ -94,7 +94,8 @@ const InvoicePage = () => {
   );
 
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
-  const pricePerNight = nights > 0 ? Math.round(booking.total_price_vnd / nights) : 0;
+  const roomQty = booking.room_quantity || 1;
+  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
@@ -201,6 +202,10 @@ const InvoicePage = () => {
                   <span className="font-medium">{booking.rooms?.name_vi || booking.room_id}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Số phòng:</span>
+                  <span className="font-medium">{roomQty}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Số khách:</span>
                   <span className="font-medium">{booking.guests_count} người</span>
                 </div>
@@ -227,6 +232,12 @@ const InvoicePage = () => {
                   <span className="text-muted-foreground">Giá phòng / đêm:</span>
                   <span className="font-medium">{pricePerNight.toLocaleString('vi')}₫</span>
                 </div>
+                {roomQty > 1 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Số phòng × Số đêm:</span>
+                    <span className="font-medium">{roomQty} × {nights}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tổng tiền:</span>
                   <span className="font-bold text-primary text-base">{booking.total_price_vnd.toLocaleString('vi')}₫</span>

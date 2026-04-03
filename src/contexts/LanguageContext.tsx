@@ -62,6 +62,8 @@ const translations: Record<string, Record<Language, string>> = {
   'booking.total': { vi: 'Tổng cộng', en: 'Total', ja: '合計', zh: '总计' },
   'booking.confirm': { vi: 'Xác nhận đặt phòng', en: 'Confirm Booking', ja: '予約確認', zh: '确认预订' },
   'booking.nights': { vi: 'đêm', en: 'nights', ja: '泊', zh: '晚' },
+  'booking.rooms_count': { vi: 'Số phòng', en: 'Rooms', ja: '部屋数', zh: '房间数量' },
+  'booking.processing': { vi: 'Đang xử lý...', en: 'Processing...', ja: '処理中...', zh: '处理中...' },
   'footer.hotel_info': { vi: 'Thông tin khách sạn', en: 'Hotel Information', ja: 'ホテル情報', zh: '酒店信息' },
   'footer.contact': { vi: 'Liên hệ', en: 'Contact', ja: 'お問合せ', zh: '联系方式' },
   'footer.address': { vi: 'Địa chỉ', en: 'Address', ja: '住所', zh: '地址' },
