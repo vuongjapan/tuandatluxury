@@ -3,17 +3,23 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { CheckCircle, Download, Home, Phone, Mail } from 'lucide-react';
+import { CheckCircle, Download, Home, Phone, Mail, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import sepayQR from '@/assets/sepay-qr.png';
+import { useToast } from '@/hooks/use-toast';
+
+const BANK_NAME = 'BIDV';
+const ACCOUNT_NUMBER = '50110001090777';
+const ACCOUNT_HOLDER = 'VAN DINH GIANG';
 
 const InvoicePage = () => {
   const { bookingCode } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [booking, setBooking] = useState<any>(null);
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const fetchBooking = useCallback(async () => {
     const { data: b } = await supabase
@@ -50,7 +56,6 @@ const InvoicePage = () => {
         .maybeSingle();
 
       if (b && (b.payment_status === 'DEPOSIT_PAID' || b.payment_status === 'PAID')) {
-        // Refresh full data
         fetchBooking();
         clearInterval(interval);
       }
@@ -60,6 +65,17 @@ const InvoicePage = () => {
   }, [booking?.payment_status, bookingCode, fetchBooking]);
 
   const handlePrint = () => window.print();
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({ title: 'Đã sao chép nội dung chuyển khoản!' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: 'Không thể sao chép', variant: 'destructive' });
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -82,6 +98,9 @@ const InvoicePage = () => {
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
+
+  // Dynamic QR URL from SePay
+  const qrUrl = `https://qr.sepay.vn/img?acc=${ACCOUNT_NUMBER}&bank=${BANK_NAME}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -238,23 +257,49 @@ const InvoicePage = () => {
               <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
                 <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 THANH TOÁN ĐẶT CỌC</h3>
                 
+                {/* Bank info */}
+                <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">🏦 Ngân hàng:</span>
+                    <span className="font-bold">{BANK_NAME}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">👤 Chủ tài khoản:</span>
+                    <span className="font-bold">{ACCOUNT_HOLDER}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">🔢 Số tài khoản:</span>
+                    <span className="font-bold">{ACCOUNT_NUMBER}</span>
+                  </div>
+                </div>
+
+                {/* Dynamic QR */}
                 <div className="flex justify-center mb-4">
-                  <img src={sepayQR} alt="QR Thanh toán SePay" className="w-52 h-52 rounded-lg shadow-md" />
+                  <img src={qrUrl} alt="QR Thanh toán" className="w-52 h-52 rounded-lg shadow-md bg-white" />
                 </div>
 
                 <div className="text-center space-y-3">
                   <div>
-                    <p className="text-xs text-amber-700 font-semibold uppercase">Nội dung chuyển khoản:</p>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">📌 Nội dung chuyển khoản:</p>
                     <p className="font-display text-xl font-bold text-primary tracking-widest mt-1">{booking.booking_code}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => handleCopy(booking.booking_code)}
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+                      {copied ? 'Đã sao chép' : 'Sao chép'}
+                    </Button>
                   </div>
                   <div>
-                    <p className="text-xs text-amber-700 font-semibold uppercase">Số tiền cần chuyển:</p>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">💰 Số tiền cần chuyển:</p>
                     <p className="text-2xl font-bold text-destructive mt-1">{depositAmount.toLocaleString('vi')}₫</p>
                   </div>
                 </div>
 
                 <p className="text-xs text-amber-700 text-center mt-3">
-                  ⚡ Sau khi chuyển khoản, trạng thái sẽ tự động cập nhật trong vài giây
+                  ⚡ Quét QR để tự điền số tiền và nội dung. Trạng thái sẽ tự động cập nhật sau khi chuyển khoản.
                 </p>
               </div>
             )}

@@ -20,10 +20,8 @@ const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
 function normalizeBookingCode(desc: string): string | null {
   if (!desc) return null;
-  // Remove spaces, uppercase
-  let cleaned = desc.replace(/\s+/g, "").toUpperCase();
-  // Match TDLH followed by digits, with or without dash
-  const match = cleaned.match(/TDLH-?(\d+)/);
+  const cleaned = desc.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const match = cleaned.match(/TDLH(\d+)/);
   if (!match) return null;
   return "TDLH-" + match[1].padStart(5, "0");
 }
@@ -162,7 +160,7 @@ serve(async (req) => {
     }
 
     // Find booking
-    const { data: booking, error: bErr } = await supabase
+    const { data: booking } = await supabase
       .from("bookings")
       .select("*, rooms(name_vi)")
       .eq("booking_code", bookingCode)
@@ -179,7 +177,6 @@ serve(async (req) => {
     // Check if already paid
     if (booking.payment_status === "DEPOSIT_PAID" || booking.payment_status === "PAID") {
       console.log("Booking already paid:", bookingCode);
-      // Update webhook log
       await supabase.from("webhook_logs")
         .update({ processed: true, matched_booking_code: bookingCode })
         .eq("transaction_id", String(transactionId));
@@ -239,7 +236,6 @@ serve(async (req) => {
           auth: { user: SMTP_EMAIL, pass: smtpPassword },
         });
 
-        // Email to guest
         if (booking.guest_email) {
           await transporter.sendMail({
             from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
@@ -250,7 +246,6 @@ serve(async (req) => {
           console.log("Deposit confirmation email sent to guest");
         }
 
-        // Email to admin
         await transporter.sendMail({
           from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
           to: ADMIN_EMAIL,
@@ -270,7 +265,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("sepay-webhook error:", e);
     return new Response(
-      JSON.stringify({ success: true }), // Always return 200 for webhooks
+      JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
