@@ -17,6 +17,10 @@ const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt 
 const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 098.661.7939";
 const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
+const BANK_NAME = "BIDV";
+const ACCOUNT_NUMBER = "50110001090777";
+const ACCOUNT_HOLDER = "VAN DINH GIANG";
+
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
@@ -35,6 +39,8 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
   const pricePerNight = nights > 0 ? Math.round(booking.total_price_vnd / nights) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
+
+  const qrUrl = `https://qr.sepay.vn/img?acc=${ACCOUNT_NUMBER}&bank=${BANK_NAME}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
 
   return `<!DOCTYPE html>
 <html lang="vi">
@@ -86,12 +92,22 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Ghi chú</h3>
     <p style="background:#f8f6f0;border-radius:8px;padding:12px;font-size:13px;margin:0;">${booking.guest_notes}</p>
     ` : ""}
-    <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;text-align:center;">
-      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#92400E;">💳 THANH TOÁN ĐẶT CỌC</p>
-      <p style="margin:0 0 4px;font-size:12px;color:#92400E;">Nội dung chuyển khoản:</p>
-      <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#8B6914;letter-spacing:2px;">${booking.booking_code}</p>
-      <p style="margin:0 0 4px;font-size:12px;color:#92400E;">Số tiền cần chuyển:</p>
-      <p style="margin:0;font-size:20px;font-weight:700;color:#DC2626;">${formatPrice(depositAmount)}</p>
+    <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;">
+      <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#92400E;text-align:center;">💳 THANH TOÁN ĐẶT CỌC</p>
+      <table style="width:100%;font-size:13px;line-height:1.8;margin-bottom:12px;">
+        <tr><td style="color:#92400E;width:45%;">🏦 Ngân hàng:</td><td style="font-weight:700;">${BANK_NAME}</td></tr>
+        <tr><td style="color:#92400E;">👤 Chủ tài khoản:</td><td style="font-weight:700;">${ACCOUNT_HOLDER}</td></tr>
+        <tr><td style="color:#92400E;">🔢 Số tài khoản:</td><td style="font-weight:700;">${ACCOUNT_NUMBER}</td></tr>
+      </table>
+      <div style="text-align:center;">
+        <img src="${qrUrl}" alt="QR Thanh toán" style="width:180px;height:180px;border-radius:8px;margin-bottom:12px;" />
+      </div>
+      <div style="text-align:center;">
+        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">📌 Nội dung chuyển khoản:</p>
+        <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#8B6914;letter-spacing:2px;">${booking.booking_code}</p>
+        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">💰 Số tiền cần chuyển:</p>
+        <p style="margin:0;font-size:20px;font-weight:700;color:#DC2626;">${formatPrice(depositAmount)}</p>
+      </div>
     </div>
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
       <p>⏰ <strong style="color:#666;">Khách sạn sẽ giữ phòng đến 18:00 ngày nhận phòng.</strong><br>
