@@ -31,6 +31,7 @@ export type Database = {
           payment_status: string
           remaining_amount: number
           room_id: string
+          room_quantity: number
           status: string
           total_price_vnd: number
           updated_at: string
@@ -51,6 +52,7 @@ export type Database = {
           payment_status?: string
           remaining_amount?: number
           room_id: string
+          room_quantity?: number
           status?: string
           total_price_vnd?: number
           updated_at?: string
@@ -71,6 +73,7 @@ export type Database = {
           payment_status?: string
           remaining_amount?: number
           room_id?: string
+          room_quantity?: number
           status?: string
           total_price_vnd?: number
           updated_at?: string
