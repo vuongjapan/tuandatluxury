@@ -15,7 +15,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { room_id, guest_name, guest_email, guest_phone, guest_notes, check_in, check_out, guests_count, total_price_vnd, language } = body;
+    const { room_id, guest_name, guest_email, guest_phone, guest_notes, check_in, check_out, guests_count, total_price_vnd, room_quantity, language } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -47,6 +47,7 @@ serve(async (req) => {
         total_price_vnd: totalPrice,
         deposit_amount: depositAmount,
         remaining_amount: remainingAmount,
+        room_quantity: room_quantity || 1,
         payment_status: "PENDING",
         status: "pending",
         language: language || "vi",

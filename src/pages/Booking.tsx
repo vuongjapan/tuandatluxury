@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users } from 'lucide-react';
+import { CalendarIcon, Users, Minus, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +16,11 @@ import { useRooms } from '@/hooks/useRooms';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { vi, enUS, ja, zhCN } from 'date-fns/locale';
 
 const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
+
+const localeMap = { vi, en: enUS, ja, zh: zhCN };
 
 const Booking = () => {
   const [searchParams] = useSearchParams();
@@ -34,16 +37,16 @@ const Booking = () => {
   const [checkIn, setCheckIn] = useState<Date | undefined>(preCheckin ? new Date(preCheckin + 'T00:00:00') : undefined);
   const [checkOut, setCheckOut] = useState<Date | undefined>(preCheckout ? new Date(preCheckout + 'T00:00:00') : undefined);
   const [guests, setGuests] = useState(searchParams.get('guests') || '2');
+  const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
 
   const room = rooms.find((r) => r.id === roomId) || rooms[0];
-
   const nightCount = checkIn && checkOut ? Math.max(differenceInDays(checkOut, checkIn), 1) : 0;
+  const calendarLocale = localeMap[language] || vi;
 
-  // Check all nights are available
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0 || !room) return true;
     const d = new Date(checkIn);
@@ -62,8 +65,8 @@ const Booking = () => {
       total += getRoomPrice(room, d);
       d.setDate(d.getDate() + 1);
     }
-    return total;
-  }, [checkIn, checkOut, nightCount, room, getRoomPrice]);
+    return total * quantity;
+  }, [checkIn, checkOut, nightCount, room, getRoomPrice, quantity]);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -94,6 +97,7 @@ const Booking = () => {
           check_out: format(checkOut, 'yyyy-MM-dd'),
           guests_count: parseInt(guests),
           total_price_vnd: totalPrice,
+          room_quantity: quantity,
           language,
         }),
       });
@@ -144,7 +148,7 @@ const Booking = () => {
                   </SelectContent>
                 </Select>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
                     <Popover>
@@ -155,7 +159,7 @@ const Booking = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
+                        <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
                       </PopoverContent>
                     </Popover>
                   </div>
@@ -169,7 +173,7 @@ const Booking = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < (checkIn || new Date())} />
+                        <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < (checkIn || new Date())} />
                       </PopoverContent>
                     </Popover>
                   </div>
@@ -188,6 +192,18 @@ const Booking = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.rooms_count')}</label>
+                    <div className="flex items-center gap-2 h-10">
+                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="flex-1 text-center font-semibold text-lg">{quantity}</span>
+                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setQuantity(quantity + 1)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -249,6 +265,10 @@ const Booking = () => {
                     <span className="text-muted-foreground">{t('search.guests')}</span>
                     <span className="font-medium">{guests}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t('booking.rooms_count')}</span>
+                    <span className="font-medium">{quantity}</span>
+                  </div>
                 </div>
                 {!allNightsAvailable && nightCount > 0 && (
                   <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
@@ -262,7 +282,7 @@ const Booking = () => {
                   </div>
                 </div>
                 <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting || !allNightsAvailable}>
-                  {submitting ? 'Đang xử lý...' : t('booking.confirm')}
+                  {submitting ? t('booking.processing') : t('booking.confirm')}
                 </Button>
               </div>
             </motion.div>
