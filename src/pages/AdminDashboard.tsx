@@ -513,6 +513,7 @@ const AdminDashboard = () => {
     { id: 'dining', icon: UtensilsCrossed, label: 'Ẩm thực' },
     { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
     { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
+    { id: 'food-menu', icon: UtensilsCrossed, label: 'Menu đồ ăn' },
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
