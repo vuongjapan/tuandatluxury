@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Update profile with phone
     const { data: { user: newUser } } = await supabase.auth.getUser();
     if (newUser) {
-      await supabase.from('profiles').update({ phone, full_name: fullName }).eq('user_id', newUser.id);
+      await supabase.from('profiles').update({ phone, full_name: fullName, email }).eq('user_id', newUser.id);
     }
     return {};
   };
