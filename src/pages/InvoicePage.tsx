@@ -96,7 +96,9 @@ const InvoicePage = () => {
 
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
   const roomQty = booking.room_quantity || 1;
-  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
+  const comboTotal = combos.reduce((sum: number, c: any) => sum + (c.price_vnd * c.quantity), 0);
+  const roomPrice = booking.total_price_vnd - comboTotal;
+  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomPrice / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
