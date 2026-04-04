@@ -20,22 +20,24 @@ const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
 function normalizeBookingCode(desc: string): string | null {
   if (!desc) return null;
-  const cleaned = desc.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  // Match new format TDYYYYMMAXXXXX (e.g., TD202604A00001)
+  const cleaned = desc.replace(/[^A-Za-z0-9\-]/g, "").toUpperCase();
+  
+  // Match FOOD order: contains -FOOD suffix
+  const foodMatch = cleaned.match(/(TD\d{6}[A-Z]\d{5}-FOOD(?:-\d+)?|TD\d{6}F\d{5}-FOOD(?:-\d+)?)/);
+  if (foodMatch) return foodMatch[1];
+
+  // Match room booking: TDYYYYMMAXXXXX
   const matchNew = cleaned.match(/TD(\d{6})A(\d+)/);
-  if (matchNew) {
-    return `TD${matchNew[1]}A${matchNew[2].padStart(5, "0")}`;
-  }
+  if (matchNew) return `TD${matchNew[1]}A${matchNew[2].padStart(5, "0")}`;
+  
   // Fallback: old format TDLH2026AXXXXX
   const matchOld2 = cleaned.match(/TDLH2026A(\d+)/);
-  if (matchOld2) {
-    return "TDLH2026A" + matchOld2[1].padStart(5, "0");
-  }
+  if (matchOld2) return "TDLH2026A" + matchOld2[1].padStart(5, "0");
+  
   // Fallback: old format TDLH-XXXXX
   const matchOld = cleaned.match(/TDLH(\d+)/);
-  if (matchOld) {
-    return "TDLH-" + matchOld[1].padStart(5, "0");
-  }
+  if (matchOld) return "TDLH-" + matchOld[1].padStart(5, "0");
+  
   return null;
 }
 
@@ -154,8 +156,8 @@ serve(async (req) => {
       }
     }
 
-    // Normalize description to booking code
-    const bookingCode = normalizeBookingCode(description || "");
+    // Normalize description to code
+    const matchedCode = normalizeBookingCode(description || "");
 
     // Log webhook
     await supabase.from("webhook_logs").insert({
@@ -163,19 +165,129 @@ serve(async (req) => {
       transaction_id: transactionId ? String(transactionId) : null,
       description: description || "",
       amount: amount || 0,
-      matched_booking_code: bookingCode,
+      matched_booking_code: matchedCode,
       processed: false,
     });
 
-    if (!bookingCode) {
-      console.log("No booking code found in description:", description);
-      return new Response(JSON.stringify({ success: true, message: "No matching booking code" }), {
+    if (!matchedCode) {
+      console.log("No code found in description:", description);
+      return new Response(JSON.stringify({ success: true, message: "No matching code" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Find booking
+    // Check if it's a food order (contains FOOD)
+    const isFoodOrder = matchedCode.includes("FOOD");
+
+    if (isFoodOrder) {
+      // Handle food order payment
+      const { data: foodOrder } = await supabase
+        .from("food_orders")
+        .select("*")
+        .eq("food_order_id", matchedCode)
+        .maybeSingle();
+
+      if (!foodOrder) {
+        console.log("Food order not found:", matchedCode);
+        return new Response(JSON.stringify({ success: true, message: "Food order not found" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (foodOrder.payment_status === "DEPOSIT_PAID" || foodOrder.payment_status === "PAID") {
+        console.log("Food order already paid:", matchedCode);
+        await supabase.from("webhook_logs")
+          .update({ processed: true })
+          .eq("transaction_id", String(transactionId));
+        return new Response(JSON.stringify({ success: true, message: "Already paid" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const depositAmount = Math.round(foodOrder.total_amount * 0.5);
+
+      if (amount < depositAmount) {
+        console.log(`Food amount ${amount} < deposit ${depositAmount}`);
+        return new Response(JSON.stringify({ success: true, message: "Amount insufficient" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Update food order
+      await supabase
+        .from("food_orders")
+        .update({
+          payment_status: "DEPOSIT_PAID",
+          paid_amount: depositAmount,
+          status: "confirmed",
+        })
+        .eq("id", foodOrder.id);
+
+      // Mark webhook processed
+      await supabase.from("webhook_logs")
+        .update({ processed: true })
+        .eq("transaction_id", String(transactionId));
+
+      console.log("Food order confirmed:", matchedCode);
+
+      // Send deposit paid email
+      try {
+        const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+        if (smtpPassword) {
+          // Fetch order items for email
+          const { data: items } = await supabase
+            .from("food_order_items")
+            .select("*, menu_items:menu_item_id(name_vi)")
+            .eq("food_order_id", foodOrder.id);
+
+          const itemsList = (items || []).map((i: any) => ({
+            name: i.menu_items?.name_vi || 'Món ăn',
+            quantity: i.quantity,
+            price: i.price_vnd,
+          }));
+
+          const supabaseFunctionsUrl = `${supabaseUrl}/functions/v1`;
+          
+          await fetch(`${supabaseFunctionsUrl}/send-booking-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              type: 'food_deposit_paid',
+              food_order: {
+                food_order_id: foodOrder.food_order_id,
+                customer_name: foodOrder.customer_name,
+                phone: foodOrder.phone,
+                guest_email: null, // We'll get it from webhook logs or direct
+                room_number: foodOrder.room_number,
+                booking_code: foodOrder.booking_code,
+                total_amount: foodOrder.total_amount,
+                deposit_amount: depositAmount,
+                items: itemsList,
+              },
+            }),
+          });
+          console.log("Food deposit email triggered");
+        }
+      } catch (emailErr) {
+        console.error("Food email error (non-blocking):", emailErr);
+      }
+
+      return new Response(JSON.stringify({ success: true, message: "Food payment confirmed" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle room booking payment (existing logic)
+    const bookingCode = matchedCode;
+    
     const { data: booking } = await supabase
       .from("bookings")
       .select("*, rooms(name_vi)")
@@ -190,7 +302,6 @@ serve(async (req) => {
       });
     }
 
-    // Check if already paid
     if (booking.payment_status === "DEPOSIT_PAID" || booking.payment_status === "PAID") {
       console.log("Booking already paid:", bookingCode);
       await supabase.from("webhook_logs")
@@ -202,7 +313,6 @@ serve(async (req) => {
       });
     }
 
-    // Check amount >= deposit
     if (amount < booking.deposit_amount) {
       console.log(`Amount ${amount} < deposit ${booking.deposit_amount}`);
       return new Response(JSON.stringify({ success: true, message: "Amount insufficient" }), {
@@ -230,7 +340,7 @@ serve(async (req) => {
 
     console.log("Booking confirmed:", bookingCode);
 
-    // Send confirmation email (EMAIL 2)
+    // Send confirmation email
     try {
       const smtpPassword = Deno.env.get("SMTP_PASSWORD");
       if (smtpPassword) {
