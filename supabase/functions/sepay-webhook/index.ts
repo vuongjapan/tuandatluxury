@@ -20,14 +20,14 @@ const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
 function normalizeBookingCode(desc: string): string | null {
   if (!desc) return null;
-  const cleaned = desc.replace(/[^A-Za-z0-9\-]/g, "").toUpperCase();
+  const cleaned = desc.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
   
-  // Match FOOD order: contains -FOOD suffix
-  const foodMatch = cleaned.match(/(TD\d{6}[A-Z]\d{5}-FOOD(?:-\d+)?|TD\d{6}F\d{5}-FOOD(?:-\d+)?)/);
+  // Match FOOD order: TD202604A00025FOOD, TD202604A00025FOOD1, TD202604A00025FOOD2
+  const foodMatch = cleaned.match(/(TD\d{6}[A-Z]\d{5}FOOD\d*)/);
   if (foodMatch) return foodMatch[1];
 
-  // Match room booking: TDYYYYMMAXXXXX
-  const matchNew = cleaned.match(/TD(\d{6})A(\d+)/);
+  // Match room booking: TDYYYYMMAXXXXX (must NOT be followed by FOOD)
+  const matchNew = cleaned.match(/TD(\d{6})A(\d+)(?!FOOD)/);
   if (matchNew) return `TD${matchNew[1]}A${matchNew[2].padStart(5, "0")}`;
   
   // Fallback: old format TDLH2026AXXXXX
