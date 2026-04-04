@@ -225,6 +225,96 @@ export type Database = {
           },
         ]
       }
+      food_order_items: {
+        Row: {
+          created_at: string
+          food_order_id: string
+          id: string
+          menu_item_id: string
+          price_vnd: number
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          food_order_id: string
+          id?: string
+          menu_item_id: string
+          price_vnd?: number
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          food_order_id?: string
+          id?: string
+          menu_item_id?: string
+          price_vnd?: number
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_order_items_food_order_id_fkey"
+            columns: ["food_order_id"]
+            isOneToOne: false
+            referencedRelation: "food_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "food_order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      food_orders: {
+        Row: {
+          booking_code: string | null
+          created_at: string
+          customer_name: string
+          food_order_id: string
+          id: string
+          notes: string | null
+          paid_amount: number
+          payment_status: string
+          phone: string
+          room_number: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          booking_code?: string | null
+          created_at?: string
+          customer_name: string
+          food_order_id: string
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          payment_status?: string
+          phone: string
+          room_number?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          booking_code?: string | null
+          created_at?: string
+          customer_name?: string
+          food_order_id?: string
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          payment_status?: string
+          phone?: string
+          room_number?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gallery_images: {
         Row: {
           category: string
@@ -310,6 +400,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      menu_items: {
+        Row: {
+          category: string
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_popular: boolean
+          name_en: string
+          name_vi: string
+          price_vnd: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_popular?: boolean
+          name_en?: string
+          name_vi: string
+          price_vnd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_popular?: boolean
+          name_en?: string
+          name_vi?: string
+          price_vnd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
