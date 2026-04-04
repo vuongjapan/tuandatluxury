@@ -294,10 +294,13 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                           size="sm"
                           variant="outline"
                           className="h-7 text-xs shrink-0"
-                          onClick={() => {
-                            const { addItem } = useCart();
-                            // Direct call via context
-                          }}
+                          onClick={() => addItem({
+                            id: item.id,
+                            name_vi: item.name_vi,
+                            name_en: item.name_en,
+                            price_vnd: item.price_vnd,
+                            image_url: item.image_url,
+                          })}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
