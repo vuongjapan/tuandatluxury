@@ -8,7 +8,8 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
-const DEFAULT_SEPAY_BANK = 'BIDV';
+const VA_BANK = 'BIDV';
+const VA_ACCOUNT = '50110001090777';
 const VA_HOLDER = 'TUAN DAT LUXURY';
 
 const InvoicePage = () => {
@@ -98,9 +99,9 @@ const InvoicePage = () => {
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
-  const sepayBank = booking.sepay_bank || DEFAULT_SEPAY_BANK;
-  const sepayVa = booking.sepay_va || 'Đang cập nhật';
-  const qrUrl = booking.sepay_qr_url || '';
+
+  // QR SePay động: tự điền số tiền cọc 50% + nội dung CK = mã đơn
+  const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -271,11 +272,11 @@ const InvoicePage = () => {
                 <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🏦 Ngân hàng:</span>
-                    <span className="font-bold">{sepayBank}</span>
+                    <span className="font-bold">{VA_BANK}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🔢 Số tài khoản (VA):</span>
-                    <span className="font-bold">{sepayVa}</span>
+                    <span className="font-bold">{VA_ACCOUNT}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">👤 Chủ tài khoản:</span>
