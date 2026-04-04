@@ -98,9 +98,9 @@ const InvoicePage = () => {
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
-
-  // QR VietQR động: tài khoản VA SePay + tự điền số tiền cọc 50% + nội dung CK = mã đơn
-  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${VA_ACCOUNT}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}&accountName=${encodeURIComponent(VA_HOLDER)}`;
+  const sepayBank = booking.sepay_bank || DEFAULT_SEPAY_BANK;
+  const sepayVa = booking.sepay_va || 'Đang cập nhật';
+  const qrUrl = booking.sepay_qr_url || '';
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">

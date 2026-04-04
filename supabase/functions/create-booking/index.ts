@@ -115,7 +115,51 @@ serve(async (req) => {
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
 
-    // Insert booking
+    const sepayApiKey = Deno.env.get("SEPAY_API_KEY");
+    if (!sepayApiKey) {
+      throw new Error("SEPAY_API_KEY not configured");
+    }
+
+    const sepayResponse = await fetch(
+      `https://userapi.sepay.vn/v2/bank-accounts/${SEPAY_BANK_ACCOUNT_ID}/orders`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${sepayApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order_code: bookingCode,
+          content: bookingCode,
+          amount: depositAmount,
+          with_qrcode: "1",
+          qrcode_template: "compact",
+        }),
+      }
+    );
+
+    const sepayText = await sepayResponse.text();
+    if (!sepayResponse.ok) {
+      throw new Error(`SePay order creation failed [${sepayResponse.status}]: ${sepayText}`);
+    }
+
+    let sepayPayload: any = {};
+    try {
+      sepayPayload = sepayText ? JSON.parse(sepayText) : {};
+    } catch {
+      throw new Error("SePay returned invalid JSON response");
+    }
+
+    const { sepayVa, sepayBank, sepayQrUrl } = extractSepayOrderData(sepayPayload);
+
+    if (!sepayVa) {
+      throw new Error("SePay response missing virtual account");
+    }
+
+    if (!sepayQrUrl) {
+      throw new Error("SePay response missing QR code");
+    }
+
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -135,6 +179,9 @@ serve(async (req) => {
         payment_status: "PENDING",
         status: "pending",
         language: language || "vi",
+        sepay_va: sepayVa,
+        sepay_bank: sepayBank,
+        sepay_qr_url: sepayQrUrl,
       })
       .select()
       .single();
