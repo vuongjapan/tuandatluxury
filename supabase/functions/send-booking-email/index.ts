@@ -17,7 +17,8 @@ const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt 
 const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 098.661.7939";
 const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
-const DEFAULT_SEPAY_BANK = "BIDV";
+const VA_BANK = "BIDV";
+const VA_ACCOUNT = "50110001090777";
 const VA_HOLDER = "TUAN DAT LUXURY";
 
 function formatDate(dateStr: string): string {
@@ -39,9 +40,9 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
   const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
-  const sepayBank = booking.sepay_bank || DEFAULT_SEPAY_BANK;
-  const sepayVa = booking.sepay_va || "Đang cập nhật";
-  const qrUrl = booking.sepay_qr_url || "";
+
+  // QR SePay động: tự điền số tiền cọc 50% + nội dung CK = mã đơn
+  const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
 
   return `<!DOCTYPE html>
 <html lang="vi">
