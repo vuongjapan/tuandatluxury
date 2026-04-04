@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@/lib/compressImage';
 import { usePromotions, Promotion } from '@/hooks/usePromotions';
@@ -7,29 +7,44 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Save, Trash2, Upload, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Plus, Save, Trash2, Upload, Eye, EyeOff } from 'lucide-react';
 
 const TIER_OPTIONS = [
   { value: 'all', label: 'Tất cả' },
   { value: 'member', label: 'Thành viên đã đăng nhập' },
 ];
 
+const PROMO_TYPE_OPTIONS = [
+  { value: 'seasonal', label: '🌸 Ưu đãi theo mùa' },
+  { value: 'member', label: '⭐ Ưu đãi thành viên' },
+  { value: 'couple', label: '💑 Ưu đãi cặp đôi / gia đình' },
+  { value: 'group', label: '👥 Ưu đãi đoàn / công ty' },
+];
+
+interface GroupTier {
+  min: number;
+  max: number;
+  discount: number;
+}
+
 const AdminPromotions = () => {
   const { promotions, refetch } = usePromotions();
   const { toast } = useToast();
-  const [editing, setEditing] = useState<Promotion | null>(null);
+  const [editing, setEditing] = useState<any | null>(null);
   const [uploading, setUploading] = useState(false);
   const [benefitsText, setBenefitsText] = useState('');
   const [benefitsEnText, setBenefitsEnText] = useState('');
+  const [groupTiers, setGroupTiers] = useState<GroupTier[]>([]);
 
-  const startEdit = (p: Promotion) => {
+  const startEdit = (p: any) => {
     setEditing({ ...p });
     setBenefitsText(p.benefits_vi.join('\n'));
     setBenefitsEnText(p.benefits_en.join('\n'));
+    setGroupTiers(p.group_discount_tiers || []);
   };
 
   const startNew = () => {
-    const newPromo: Promotion = {
+    const newPromo = {
       id: '',
       title_vi: '',
       title_en: '',
@@ -43,10 +58,13 @@ const AdminPromotions = () => {
       applies_to_tier: 'all',
       sort_order: promotions.length,
       is_active: true,
+      promo_type: 'seasonal',
+      group_discount_tiers: [],
     };
     setEditing(newPromo);
     setBenefitsText('');
     setBenefitsEnText('');
+    setGroupTiers([]);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,7 +81,7 @@ const AdminPromotions = () => {
         return;
       }
       const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-      setEditing(prev => prev ? { ...prev, image_url: urlData.publicUrl } : prev);
+      setEditing((prev: any) => prev ? { ...prev, image_url: urlData.publicUrl } : prev);
       toast({ title: 'Đã upload ảnh ✓' });
     } catch (err: any) {
       toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
@@ -87,14 +105,16 @@ const AdminPromotions = () => {
       applies_to_tier: editing.applies_to_tier,
       sort_order: editing.sort_order,
       is_active: editing.is_active,
+      promo_type: editing.promo_type,
+      group_discount_tiers: editing.promo_type === 'group' ? groupTiers : [],
     };
 
     if (editing.id) {
       const { error } = await (supabase.from('promotions' as any) as any).update(payload).eq('id', editing.id);
-      if (error) { toast({ title: 'Lỗi', variant: 'destructive' }); return; }
+      if (error) { toast({ title: 'Lỗi', description: error.message, variant: 'destructive' }); return; }
     } else {
       const { error } = await (supabase.from('promotions' as any) as any).insert(payload);
-      if (error) { toast({ title: 'Lỗi', variant: 'destructive' }); return; }
+      if (error) { toast({ title: 'Lỗi', description: error.message, variant: 'destructive' }); return; }
     }
     toast({ title: 'Đã lưu ✓' });
     setEditing(null);
@@ -108,9 +128,21 @@ const AdminPromotions = () => {
     refetch();
   };
 
-  const toggleActive = async (p: Promotion) => {
+  const toggleActive = async (p: any) => {
     await (supabase.from('promotions' as any) as any).update({ is_active: !p.is_active }).eq('id', p.id);
     refetch();
+  };
+
+  const addGroupTier = () => {
+    setGroupTiers(prev => [...prev, { min: 0, max: 0, discount: 0 }]);
+  };
+
+  const updateGroupTier = (index: number, field: keyof GroupTier, value: number) => {
+    setGroupTiers(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
+  };
+
+  const removeGroupTier = (index: number) => {
+    setGroupTiers(prev => prev.filter((_, i) => i !== index));
   };
 
   if (editing) {
@@ -132,14 +164,27 @@ const AdminPromotions = () => {
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Loại ưu đãi</label>
+            <select
+              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={editing.promo_type || 'seasonal'}
+              onChange={e => setEditing({ ...editing, promo_type: e.target.value })}
+            >
+              {PROMO_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">% Giảm giá cơ bản</label>
+            <Input type="number" value={editing.discount_percent} onChange={e => setEditing({ ...editing, discount_percent: parseInt(e.target.value) || 0 })} />
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="text-xs font-medium text-muted-foreground">Icon (emoji)</label>
             <Input value={editing.icon} onChange={e => setEditing({ ...editing, icon: e.target.value })} />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">% Giảm giá</label>
-            <Input type="number" value={editing.discount_percent} onChange={e => setEditing({ ...editing, discount_percent: parseInt(e.target.value) || 0 })} />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Áp dụng cho</label>
@@ -151,7 +196,35 @@ const AdminPromotions = () => {
               {TIER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Thứ tự sắp xếp</label>
+            <Input type="number" value={editing.sort_order} onChange={e => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })} />
+          </div>
         </div>
+
+        {/* Group discount tiers */}
+        {editing.promo_type === 'group' && (
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Bậc giảm giá theo số người</label>
+              <Button variant="outline" size="sm" onClick={addGroupTier}><Plus className="h-3 w-3 mr-1" /> Thêm bậc</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Admin đặt mức cơ bản + hệ thống cộng thêm theo số người</p>
+            {groupTiers.map((tier, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input type="number" placeholder="Từ" value={tier.min} onChange={e => updateGroupTier(i, 'min', parseInt(e.target.value) || 0)} className="w-20" />
+                <span className="text-xs text-muted-foreground">-</span>
+                <Input type="number" placeholder="Đến" value={tier.max} onChange={e => updateGroupTier(i, 'max', parseInt(e.target.value) || 0)} className="w-20" />
+                <span className="text-xs text-muted-foreground">người →</span>
+                <Input type="number" placeholder="%" value={tier.discount} onChange={e => updateGroupTier(i, 'discount', parseInt(e.target.value) || 0)} className="w-20" />
+                <span className="text-xs text-muted-foreground">%</span>
+                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeGroupTier(i)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div>
           <label className="text-xs font-medium text-muted-foreground">Quyền lợi (VI) — mỗi dòng 1 mục</label>
@@ -192,35 +265,42 @@ const AdminPromotions = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {promotions.map(p => (
-          <div key={p.id} className="bg-card rounded-xl border border-border p-4 flex gap-4">
-            <div className="text-3xl shrink-0">{p.icon}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-semibold text-sm truncate">{p.title_vi}</h4>
-                <Badge variant={p.is_active ? 'default' : 'secondary'} className="text-xs shrink-0">
-                  {p.is_active ? 'Hiện' : 'Ẩn'}
-                </Badge>
+        {promotions.map(p => {
+          const promoType = (p as any).promo_type || 'seasonal';
+          return (
+            <div key={p.id} className="bg-card rounded-xl border border-border p-4 flex gap-4">
+              <div className="text-3xl shrink-0">{p.icon}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-sm truncate">{p.title_vi}</h4>
+                  <Badge variant={p.is_active ? 'default' : 'secondary'} className="text-xs shrink-0">
+                    {p.is_active ? 'Hiện' : 'Ẩn'}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {PROMO_TYPE_OPTIONS.find(o => o.value === promoType)?.label || promoType}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">Giảm: {p.discount_percent}%</p>
+                <ul className="text-xs text-muted-foreground space-y-0.5 mb-2">
+                  {p.benefits_vi.slice(0, 2).map((b, i) => <li key={i}>• {b}</li>)}
+                  {p.benefits_vi.length > 2 && <li>... +{p.benefits_vi.length - 2}</li>}
+                </ul>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => startEdit(p)}>Sửa</Button>
+                  <Button variant="ghost" size="sm" onClick={() => toggleActive(p)}>
+                    {p.is_active ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(p.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
-              <ul className="text-xs text-muted-foreground space-y-0.5 mb-2">
-                {p.benefits_vi.slice(0, 2).map((b, i) => <li key={i}>• {b}</li>)}
-                {p.benefits_vi.length > 2 && <li>... +{p.benefits_vi.length - 2}</li>}
-              </ul>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => startEdit(p)}>Sửa</Button>
-                <Button variant="ghost" size="sm" onClick={() => toggleActive(p)}>
-                  {p.is_active ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </Button>
-                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(p.id)}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
+              {p.image_url && (
+                <img src={p.image_url} alt="" className="h-20 w-20 rounded-lg object-cover shrink-0" />
+              )}
             </div>
-            {p.image_url && (
-              <img src={p.image_url} alt="" className="h-20 w-20 rounded-lg object-cover shrink-0" />
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
