@@ -951,13 +951,14 @@ const AdminDashboard = () => {
                               ${status === 'open' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800 hover:bg-green-100' : ''}
                               ${status === 'closed' ? 'bg-destructive/10 border-destructive/30 hover:bg-destructive/20' : ''}
                               ${status === 'limited' ? 'bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700 hover:bg-yellow-100' : ''}
+                              ${status === 'combo' ? 'bg-purple-50 border-purple-300 dark:bg-purple-900/20 dark:border-purple-700 hover:bg-purple-100' : ''}
                             `}
                           >
                             <span className="text-xs sm:text-sm font-medium text-foreground">{d}</span>
                             <span className={`text-[8px] sm:text-[9px] font-semibold ${
-                              status === 'open' ? 'text-green-600' : status === 'closed' ? 'text-destructive' : 'text-yellow-600'
+                              status === 'open' ? 'text-green-600' : status === 'closed' ? 'text-destructive' : status === 'combo' ? 'text-purple-600' : 'text-yellow-600'
                             }`}>
-                              {status === 'open' ? 'Mở' : status === 'closed' ? 'Đóng' : 'GH'}
+                              {status === 'open' ? 'Mở' : status === 'closed' ? 'Đóng' : status === 'combo' ? 'Combo' : 'GH'}
                             </span>
                           </button>
                         );
