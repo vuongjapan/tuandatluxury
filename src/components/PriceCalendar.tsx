@@ -100,6 +100,9 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
               {isClosed && !cell.isPast && (
                 <span className="text-[9px] font-medium text-destructive">Đóng</span>
               )}
+              {isCombo && !cell.isPast && (
+                <span className="text-[9px] font-medium text-purple-600">Combo</span>
+              )}
             </button>
           );
         })}
