@@ -25,7 +25,16 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { room_id, guest_name, guest_email, guest_phone, guest_notes, check_in, check_out, guests_count, total_price_vnd, room_quantity, language, combos, combo_total } = body;
+    const { 
+      room_id, guest_name, guest_email, guest_phone, guest_notes, 
+      check_in, check_out, guests_count, total_price_vnd, room_quantity, 
+      language, combos, combo_total,
+      // New promotion fields
+      promotion_id, promotion_discount_percent, promotion_discount_amount,
+      member_discount_percent, member_discount_amount,
+      company_name, group_size, special_services, decoration_notes,
+      original_price_vnd,
+    } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -38,7 +47,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Generate booking code with TDYYYYMMAXXXXX format
+    // Generate booking code
     const prefix = generateBookingCodePrefix();
     
     const { data: lastBookings } = await supabase
@@ -63,10 +72,9 @@ serve(async (req) => {
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
 
-    // SePay dynamic QR URL
     const sepayQrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(bookingCode)}`;
 
-    // Insert booking
+    // Insert booking with promotion data
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -80,6 +88,7 @@ serve(async (req) => {
         check_out,
         guests_count: guests_count || 2,
         total_price_vnd: totalPrice,
+        original_price_vnd: original_price_vnd || totalPrice,
         deposit_amount: depositAmount,
         remaining_amount: remainingAmount,
         room_quantity: room_quantity || 1,
@@ -89,6 +98,16 @@ serve(async (req) => {
         sepay_va: VA_ACCOUNT,
         sepay_bank: VA_BANK,
         sepay_qr_url: sepayQrUrl,
+        // Promotion fields
+        promotion_id: promotion_id || null,
+        promotion_discount_percent: promotion_discount_percent || 0,
+        promotion_discount_amount: promotion_discount_amount || 0,
+        member_discount_percent: member_discount_percent || 0,
+        member_discount_amount: member_discount_amount || 0,
+        company_name: company_name || null,
+        group_size: group_size || null,
+        special_services: special_services || null,
+        decoration_notes: decoration_notes || null,
       })
       .select()
       .single();
@@ -142,7 +161,7 @@ serve(async (req) => {
       .eq("id", room_id)
       .single();
 
-    // Send booking emails (fire and forget)
+    // Send booking emails
     try {
       const emailUrl = `${supabaseUrl}/functions/v1/send-booking-email`;
       await fetch(emailUrl, {
