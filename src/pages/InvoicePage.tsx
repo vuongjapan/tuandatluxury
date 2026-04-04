@@ -268,20 +268,16 @@ const InvoicePage = () => {
               <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
                 <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 THANH TOÁN ĐẶT CỌC</h3>
                 
-                {/* Bank info */}
+                {/* SePay VA info */}
                 <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">🏦 Ngân hàng:</span>
-                    <span className="font-bold">{BANK_NAME}</span>
+                    <span className="text-muted-foreground">🏦 Thanh toán qua:</span>
+                    <span className="font-bold">SePay (BIDV)</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">👤 Chủ tài khoản:</span>
-                    <span className="font-bold">{ACCOUNT_HOLDER}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">🔢 Số tài khoản:</span>
-                    <span className="font-bold">{ACCOUNT_NUMBER}</span>
-                  </div>
+                  <p className="text-xs text-amber-700 text-center">
+                    Quét mã QR bên dưới để chuyển khoản qua tài khoản ảo SePay.<br/>
+                    Không chuyển trực tiếp vào tài khoản ngân hàng.
+                  </p>
                 </div>
 
                 {/* Dynamic QR */}
