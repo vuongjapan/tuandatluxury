@@ -303,8 +303,8 @@ serve(async (req) => {
     }
 
     // Default: booking email (backward compatible)
-    const { booking, room_name, invoice_number } = body;
-    const invoiceHtml = buildBookingInvoiceHtml(booking, room_name, invoice_number);
+    const { booking, room_name, invoice_number, combos, combo_total } = body;
+    const invoiceHtml = buildBookingInvoiceHtml(booking, room_name, invoice_number, combos, combo_total);
 
     if (booking.guest_email) {
       await transporter.sendMail({
