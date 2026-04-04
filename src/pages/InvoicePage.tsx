@@ -8,9 +8,9 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
+// SePay VA - thanh toán qua tài khoản ảo, không chuyển trực tiếp
 const BANK_NAME = 'BIDV';
-const ACCOUNT_NUMBER = '50110001090777';
-const ACCOUNT_HOLDER = 'VAN DINH GIANG';
+const SEPAY_ACCOUNT = '50110001090777'; // Tài khoản SePay VA
 
 const InvoicePage = () => {
   const { bookingCode } = useParams();
@@ -101,7 +101,7 @@ const InvoicePage = () => {
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
 
   // Dynamic QR URL from SePay
-  const qrUrl = `https://qr.sepay.vn/img?acc=${ACCOUNT_NUMBER}&bank=${BANK_NAME}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+  const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${BANK_NAME}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -268,20 +268,16 @@ const InvoicePage = () => {
               <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
                 <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 THANH TOÁN ĐẶT CỌC</h3>
                 
-                {/* Bank info */}
+                {/* SePay VA info */}
                 <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">🏦 Ngân hàng:</span>
-                    <span className="font-bold">{BANK_NAME}</span>
+                    <span className="text-muted-foreground">🏦 Thanh toán qua:</span>
+                    <span className="font-bold">SePay (BIDV)</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">👤 Chủ tài khoản:</span>
-                    <span className="font-bold">{ACCOUNT_HOLDER}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">🔢 Số tài khoản:</span>
-                    <span className="font-bold">{ACCOUNT_NUMBER}</span>
-                  </div>
+                  <p className="text-xs text-amber-700 text-center">
+                    Quét mã QR bên dưới để chuyển khoản qua tài khoản ảo SePay.<br/>
+                    Không chuyển trực tiếp vào tài khoản ngân hàng.
+                  </p>
                 </div>
 
                 {/* Dynamic QR */}
