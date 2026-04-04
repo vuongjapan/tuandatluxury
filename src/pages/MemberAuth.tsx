@@ -13,6 +13,7 @@ const MemberAuth = () => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -35,9 +36,13 @@ const MemberAuth = () => {
         if (!fullName.trim() || !phone.trim()) {
           throw new Error('Vui lòng điền đầy đủ thông tin');
         }
+        if (password !== confirmPassword) {
+          throw new Error('Mật khẩu xác nhận không khớp');
+        }
         const { error } = await signUp(email, password, fullName, phone);
         if (error) throw new Error(error);
-        toast({ title: 'Đăng ký thành công!', description: 'Vui lòng kiểm tra email để xác nhận tài khoản.' });
+        toast({ title: 'Đăng ký thành công!', description: 'Bạn đã trở thành thành viên Tuấn Đạt Luxury Hotel.' });
+        navigate('/');
       }
     } catch (err: any) {
       toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
@@ -145,7 +150,23 @@ const MemberAuth = () => {
                   </button>
                 </div>
               </div>
-              <Button variant="hero" className="w-full" type="submit" disabled={loading}>
+              {mode === 'register' && (
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Xác nhận mật khẩu</label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                  {confirmPassword && password !== confirmPassword && (
+                    <p className="text-xs text-destructive mt-1">Mật khẩu không khớp</p>
+                  )}
+                </div>
+              )}
+              <Button variant="hero" className="w-full" type="submit" disabled={loading || (mode === 'register' && password !== confirmPassword)}>
                 {loading ? 'Đang xử lý...' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
               </Button>
             </form>

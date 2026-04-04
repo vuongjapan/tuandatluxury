@@ -123,8 +123,8 @@ const Header = () => {
             </Button>
 
             {/* Auth */}
-            {!loading && user &&
-            <DropdownMenu>
+            {!loading && user ? (
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <User className="h-4 w-4" />
@@ -141,17 +141,27 @@ const Header = () => {
                     <p className="text-xs text-muted-foreground mt-1">Đã đặt: {user.bookingCount} lần</p>
                   </div>
                   <DropdownMenuSeparator />
-                  {isAdmin &&
-                <DropdownMenuItem onClick={() => navigate('/admin')}>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
                       <Shield className="h-4 w-4 mr-2" /> Quản trị
                     </DropdownMenuItem>
-                }
+                  )}
                   <DropdownMenuItem onClick={() => signOut()}>
                     <LogOut className="h-4 w-4 mr-2" /> Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            }
+            ) : !loading ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => navigate('/member')}
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Đăng nhập</span>
+              </Button>
+            ) : null}
 
             {/* Mobile toggle */}
             <Button variant="ghost" size="icon" className="xl:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
