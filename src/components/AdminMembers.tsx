@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Users, Crown, Star, Edit2, Save, X } from 'lucide-react';
+import { Search, Users, Crown, Star } from 'lucide-react';
 
 interface Member {
   user_id: string;
@@ -15,6 +15,8 @@ interface Member {
   tier: 'normal' | 'vip' | 'super_vip';
   total_spent: number;
   last_booking: string | null;
+  registered: boolean;
+  registered_at: string | null;
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -47,71 +49,95 @@ const AdminMembers = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterTier, setFilterTier] = useState<string>('all');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTier, setEditTier] = useState<string>('');
 
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      // Get all profiles
-      const { data: profiles } = await supabase.from('profiles').select('user_id, full_name, phone');
-      
-      // Get all confirmed bookings grouped by email
+      // Get all registered profiles (with email from profiles table)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone, email, created_at');
+
+      // Get all bookings
       const { data: bookings } = await supabase
         .from('bookings')
         .select('guest_email, guest_name, guest_phone, total_price_vnd, status, created_at')
         .order('created_at', { ascending: false });
 
-      // Get auth user emails via profiles
-      // Since we can't query auth.users, we'll use booking data to build member list
-      const emailMap = new Map<string, {
+      // Build booking stats by email
+      const emailStats = new Map<string, {
         name: string;
         phone: string;
         bookingCount: number;
         totalSpent: number;
         lastBooking: string | null;
-        allBookings: number;
       }>();
 
       (bookings || []).forEach(b => {
         if (!b.guest_email) return;
-        const existing = emailMap.get(b.guest_email);
+        const existing = emailStats.get(b.guest_email);
         const isConfirmed = b.status === 'confirmed';
         if (existing) {
           if (isConfirmed) existing.bookingCount++;
           existing.totalSpent += b.total_price_vnd || 0;
-          existing.allBookings++;
           if (!existing.lastBooking) existing.lastBooking = b.created_at;
         } else {
-          emailMap.set(b.guest_email, {
+          emailStats.set(b.guest_email, {
             name: b.guest_name,
             phone: b.guest_phone,
             bookingCount: isConfirmed ? 1 : 0,
             totalSpent: b.total_price_vnd || 0,
             lastBooking: b.created_at,
-            allBookings: 1,
           });
         }
       });
 
-      // Also add profiles that may not have bookings
+      // Build member list: start with registered profiles
+      const memberMap = new Map<string, Member>();
+
       (profiles || []).forEach(p => {
-        // We don't have email from profiles, skip for now
+        const email = p.email || '';
+        if (!email) return;
+        const stats = emailStats.get(email);
+        const bookingCount = stats?.bookingCount || 0;
+        memberMap.set(email, {
+          user_id: p.user_id,
+          full_name: p.full_name || stats?.name || null,
+          phone: p.phone || stats?.phone || null,
+          email,
+          booking_count: bookingCount,
+          tier: getTier(bookingCount) as any,
+          total_spent: stats?.totalSpent || 0,
+          last_booking: stats?.lastBooking || null,
+          registered: true,
+          registered_at: p.created_at,
+        });
       });
 
-      const memberList: Member[] = Array.from(emailMap.entries()).map(([email, data]) => ({
-        user_id: email,
-        full_name: data.name,
-        phone: data.phone,
-        email,
-        booking_count: data.bookingCount,
-        tier: getTier(data.bookingCount) as any,
-        total_spent: data.totalSpent,
-        last_booking: data.lastBooking,
-      }));
+      // Add non-registered guests from bookings
+      emailStats.forEach((stats, email) => {
+        if (!memberMap.has(email)) {
+          memberMap.set(email, {
+            user_id: email,
+            full_name: stats.name,
+            phone: stats.phone,
+            email,
+            booking_count: stats.bookingCount,
+            tier: getTier(stats.bookingCount) as any,
+            total_spent: stats.totalSpent,
+            last_booking: stats.lastBooking,
+            registered: false,
+            registered_at: null,
+          });
+        }
+      });
 
-      // Sort by total spent desc
-      memberList.sort((a, b) => b.total_spent - a.total_spent);
+      const memberList = Array.from(memberMap.values());
+      memberList.sort((a, b) => {
+        // Registered first, then by total spent
+        if (a.registered !== b.registered) return a.registered ? -1 : 1;
+        return b.total_spent - a.total_spent;
+      });
       setMembers(memberList);
     } catch (err: any) {
       toast({ title: 'Lỗi tải danh sách thành viên', description: err.message, variant: 'destructive' });
@@ -122,7 +148,7 @@ const AdminMembers = () => {
   useEffect(() => { fetchMembers(); }, []);
 
   const filteredMembers = members.filter(m => {
-    const matchSearch = !search || 
+    const matchSearch = !search ||
       (m.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
       m.email.toLowerCase().includes(search.toLowerCase()) ||
       (m.phone || '').includes(search);
@@ -132,6 +158,7 @@ const AdminMembers = () => {
 
   const stats = {
     total: members.length,
+    registered: members.filter(m => m.registered).length,
     normal: members.filter(m => m.tier === 'normal').length,
     vip: members.filter(m => m.tier === 'vip').length,
     super_vip: members.filter(m => m.tier === 'super_vip').length,
@@ -140,9 +167,10 @@ const AdminMembers = () => {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
           { label: 'Tổng khách hàng', value: stats.total, icon: Users, color: 'text-blue-600' },
+          { label: 'Đã đăng ký', value: stats.registered, icon: Users, color: 'text-green-600' },
           { label: 'Thành viên', value: stats.normal, icon: Users, color: 'text-muted-foreground' },
           { label: 'VIP', value: stats.vip, icon: Star, color: 'text-primary' },
           { label: 'Siêu VIP', value: stats.super_vip, icon: Crown, color: 'text-amber-600' },
@@ -169,7 +197,7 @@ const AdminMembers = () => {
               className="pl-9"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {['all', 'normal', 'vip', 'super_vip'].map(tier => (
               <Button
                 key={tier}
@@ -195,10 +223,10 @@ const AdminMembers = () => {
           <p className="p-8 text-center text-muted-foreground">Không tìm thấy khách hàng nào</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[700px]">
+            <table className="w-full text-sm min-w-[800px]">
               <thead className="bg-secondary">
                 <tr>
-                  {['Khách hàng', 'Email', 'SĐT', 'Số đặt phòng', 'Tổng chi tiêu', 'Hạng', 'Lần đặt cuối'].map(h => (
+                  {['Khách hàng', 'Email', 'SĐT', 'Trạng thái', 'Số đặt phòng', 'Tổng chi tiêu', 'Hạng', 'Lần đặt cuối'].map(h => (
                     <th key={h} className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs">{h}</th>
                   ))}
                 </tr>
@@ -213,6 +241,13 @@ const AdminMembers = () => {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{m.email}</td>
                       <td className="px-4 py-3 text-muted-foreground">{m.phone || '—'}</td>
+                      <td className="px-4 py-3">
+                        {m.registered ? (
+                          <Badge className="bg-green-100 text-green-700 text-xs">✓ Đã đăng ký</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">Khách vãng lai</Badge>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-semibold">{m.booking_count}</td>
                       <td className="px-4 py-3 font-semibold text-primary">{m.total_spent.toLocaleString('vi')}₫</td>
                       <td className="px-4 py-3">
@@ -234,7 +269,7 @@ const AdminMembers = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        💡 Hạng thành viên tự động xác định: Thường (0-2 đặt phòng), VIP (3-9), Siêu VIP (10+). 
+        💡 Hạng thành viên tự động xác định: Thường (0-2 đặt phòng), VIP (3-9), Siêu VIP (10+).
         Giảm giá tự động: Thường 5%, VIP 10%, Siêu VIP 15%.
       </p>
     </div>
