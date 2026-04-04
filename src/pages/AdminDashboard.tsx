@@ -22,6 +22,7 @@ import { AMENITY_ICONS } from '@/data/rooms';
 import AdminDining from '@/components/AdminDining';
 import AdminPromotions from '@/components/AdminPromotions';
 import AdminServices from '@/components/AdminServices';
+import AdminFoodMenu from '@/components/AdminFoodMenu';
 import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
