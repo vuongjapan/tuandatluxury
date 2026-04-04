@@ -95,6 +95,7 @@ function buildBookingInvoiceHtml(booking: any, roomName: string, invoiceNumber: 
       <tr><td style="color:#888;">Ngày trả phòng:</td><td style="font-weight:500;">${checkOut}</td></tr>
       <tr><td style="color:#888;">Tổng số đêm:</td><td style="font-weight:500;">${nights} đêm</td></tr>
     </table>
+    ${comboHtml}
     <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Chi phí</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Giá phòng / đêm:</td><td style="font-weight:500;">${formatPrice(pricePerNight)}</td></tr>
