@@ -17,9 +17,7 @@ const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt 
 const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 098.661.7939";
 const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
-// SePay VA
-const VA_BANK = "BIDV";
-const VA_ACCOUNT = "50110001090777";
+const DEFAULT_SEPAY_BANK = "BIDV";
 const VA_HOLDER = "TUAN DAT LUXURY";
 
 function formatDate(dateStr: string): string {
@@ -41,9 +39,9 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
   const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
-
-  // QR VietQR động: tài khoản VA SePay + tự điền số tiền cọc + nội dung CK = mã đơn
-  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${VA_ACCOUNT}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}&accountName=${encodeURIComponent(VA_HOLDER)}`;
+  const sepayBank = booking.sepay_bank || DEFAULT_SEPAY_BANK;
+  const sepayVa = booking.sepay_va || "Đang cập nhật";
+  const qrUrl = booking.sepay_qr_url || "";
 
   return `<!DOCTYPE html>
 <html lang="vi">
