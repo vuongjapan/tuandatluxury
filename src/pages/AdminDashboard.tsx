@@ -1158,6 +1158,64 @@ const AdminDashboard = () => {
           {/* MAP & HEADER */}
           {tab === 'map' && (
             <div className="space-y-4">
+              {/* Hero Image Management */}
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                  Ảnh đầu trang (Hero)
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upload ảnh nền hiển thị ở đầu trang chính. Nên dùng ảnh ngang, kích thước tối thiểu 1920×1080px.
+                </p>
+                {siteSettings.hero_image_url && (
+                  <div className="mb-4 p-4 bg-secondary rounded-lg">
+                    <img src={siteSettings.hero_image_url} alt="Hero hiện tại" className="w-full max-h-48 object-cover rounded-lg" />
+                    <span className="text-xs text-muted-foreground mt-2 block">Ảnh đầu trang hiện tại</span>
+                  </div>
+                )}
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" className="relative" disabled={uploadingRoomImage}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploadingRoomImage ? 'Đang tải...' : 'Upload ảnh đầu trang'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploadingRoomImage(true);
+                        try {
+                          const compressed = await compressImage(file, { maxWidth: 1920, quality: 0.75 });
+                          const path = `hero-image-${Date.now()}.jpg`;
+                          const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                          if (upErr) {
+                            toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
+                            setUploadingRoomImage(false);
+                            return;
+                          }
+                          const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                          const err = await updateSetting('hero_image_url', urlData.publicUrl);
+                          if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); }
+                          else { toast({ title: 'Đã cập nhật ảnh đầu trang ✓' }); }
+                        } catch (err: any) {
+                          toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
+                        }
+                        setUploadingRoomImage(false);
+                      }}
+                    />
+                  </Button>
+                  {siteSettings.hero_image_url && (
+                    <Button variant="outline" onClick={async () => {
+                      const err = await updateSetting('hero_image_url', '');
+                      if (!err) toast({ title: 'Đã xóa ảnh đầu trang, hiển thị ảnh mặc định ✓' });
+                    }}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Xóa ảnh
+                    </Button>
+                  )}
+                </div>
+              </div>
               {/* Header Logo Management */}
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
