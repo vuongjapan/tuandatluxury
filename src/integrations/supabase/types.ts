@@ -64,8 +64,11 @@ export type Database = {
           booking_code: string
           check_in: string
           check_out: string
+          company_name: string | null
           created_at: string
+          decoration_notes: string | null
           deposit_amount: number
+          group_size: number | null
           guest_email: string | null
           guest_name: string
           guest_notes: string | null
@@ -73,13 +76,20 @@ export type Database = {
           guests_count: number
           id: string
           language: string | null
+          member_discount_amount: number | null
+          member_discount_percent: number | null
+          original_price_vnd: number | null
           payment_status: string
+          promotion_discount_amount: number | null
+          promotion_discount_percent: number | null
+          promotion_id: string | null
           remaining_amount: number
           room_id: string
           room_quantity: number
           sepay_bank: string | null
           sepay_qr_url: string | null
           sepay_va: string | null
+          special_services: string | null
           status: string
           total_price_vnd: number
           updated_at: string
@@ -88,8 +98,11 @@ export type Database = {
           booking_code: string
           check_in: string
           check_out: string
+          company_name?: string | null
           created_at?: string
+          decoration_notes?: string | null
           deposit_amount?: number
+          group_size?: number | null
           guest_email?: string | null
           guest_name: string
           guest_notes?: string | null
@@ -97,13 +110,20 @@ export type Database = {
           guests_count?: number
           id?: string
           language?: string | null
+          member_discount_amount?: number | null
+          member_discount_percent?: number | null
+          original_price_vnd?: number | null
           payment_status?: string
+          promotion_discount_amount?: number | null
+          promotion_discount_percent?: number | null
+          promotion_id?: string | null
           remaining_amount?: number
           room_id: string
           room_quantity?: number
           sepay_bank?: string | null
           sepay_qr_url?: string | null
           sepay_va?: string | null
+          special_services?: string | null
           status?: string
           total_price_vnd?: number
           updated_at?: string
@@ -112,8 +132,11 @@ export type Database = {
           booking_code?: string
           check_in?: string
           check_out?: string
+          company_name?: string | null
           created_at?: string
+          decoration_notes?: string | null
           deposit_amount?: number
+          group_size?: number | null
           guest_email?: string | null
           guest_name?: string
           guest_notes?: string | null
@@ -121,13 +144,20 @@ export type Database = {
           guests_count?: number
           id?: string
           language?: string | null
+          member_discount_amount?: number | null
+          member_discount_percent?: number | null
+          original_price_vnd?: number | null
           payment_status?: string
+          promotion_discount_amount?: number | null
+          promotion_discount_percent?: number | null
+          promotion_id?: string | null
           remaining_amount?: number
           room_id?: string
           room_quantity?: number
           sepay_bank?: string | null
           sepay_qr_url?: string | null
           sepay_va?: string | null
+          special_services?: string | null
           status?: string
           total_price_vnd?: number
           updated_at?: string
@@ -536,10 +566,12 @@ export type Database = {
           description_en: string | null
           description_vi: string | null
           discount_percent: number | null
+          group_discount_tiers: Json | null
           icon: string
           id: string
           image_url: string | null
           is_active: boolean
+          promo_type: string
           sort_order: number
           title_en: string
           title_vi: string
@@ -553,10 +585,12 @@ export type Database = {
           description_en?: string | null
           description_vi?: string | null
           discount_percent?: number | null
+          group_discount_tiers?: Json | null
           icon?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
+          promo_type?: string
           sort_order?: number
           title_en?: string
           title_vi: string
@@ -570,10 +604,12 @@ export type Database = {
           description_en?: string | null
           description_vi?: string | null
           discount_percent?: number | null
+          group_discount_tiers?: Json | null
           icon?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
+          promo_type?: string
           sort_order?: number
           title_en?: string
           title_vi?: string
