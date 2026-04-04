@@ -99,13 +99,13 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
     <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;">
       <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#92400E;text-align:center;">💳 THANH TOÁN ĐẶT CỌC</p>
       <table style="width:100%;font-size:13px;line-height:1.8;margin-bottom:12px;">
-        <tr><td style="color:#92400E;width:45%;">🏦 Ngân hàng:</td><td style="font-weight:700;">${sepayBank}</td></tr>
+        <tr><td style="color:#92400E;width:45%;">🏦 Ngân hàng:</td><td style="font-weight:700;">${VA_BANK}</td></tr>
         <tr><td style="color:#92400E;">👤 Chủ tài khoản:</td><td style="font-weight:700;">${VA_HOLDER}</td></tr>
-        <tr><td style="color:#92400E;">🔢 Số tài khoản (VA):</td><td style="font-weight:700;">${sepayVa}</td></tr>
+        <tr><td style="color:#92400E;">🔢 Số tài khoản (VA):</td><td style="font-weight:700;">${VA_ACCOUNT}</td></tr>
       </table>
-      ${qrUrl ? `<div style="text-align:center;">
+      <div style="text-align:center;">
         <img src="${qrUrl}" alt="QR Thanh toán SePay" style="width:200px;height:auto;border-radius:8px;margin-bottom:12px;" />
-      </div>` : ""}
+      </div>
       </div>
       <div style="text-align:center;">
         <p style="margin:0 0 4px;font-size:12px;color:#92400E;">📌 Nội dung chuyển khoản:</p>
