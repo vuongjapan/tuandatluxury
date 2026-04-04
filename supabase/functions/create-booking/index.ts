@@ -8,11 +8,66 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SEPAY_BANK_ACCOUNT_ID = "0c8e5471-2dcf-11f1-b21a-a6006ab65aca";
+const DEFAULT_SEPAY_BANK = "BIDV";
+
 function generateBookingCodePrefix(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `TD${year}${month}A`;
+}
+
+function normalizeSepayQrValue(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+
+  const normalized = value.trim();
+  if (
+    normalized.startsWith("https://") ||
+    normalized.startsWith("http://") ||
+    normalized.startsWith("data:image/")
+  ) {
+    return normalized;
+  }
+
+  if (/^[A-Za-z0-9+/=]+$/.test(normalized) && normalized.length > 100) {
+    return `data:image/png;base64,${normalized}`;
+  }
+
+  return null;
+}
+
+function extractSepayOrderData(payload: any) {
+  const data = payload?.data ?? payload?.order ?? payload;
+
+  const sepayVa =
+    data?.account_number ??
+    data?.bank_account_number ??
+    data?.virtual_account ??
+    data?.virtualAccount ??
+    data?.accountNo ??
+    data?.account ??
+    null;
+
+  const sepayBank =
+    data?.bank_short_name ??
+    data?.bank_code ??
+    data?.bank_name ??
+    DEFAULT_SEPAY_BANK;
+
+  const sepayQrUrl = normalizeSepayQrValue(
+    data?.qr_url ??
+    data?.qrcode_url ??
+    data?.qrCodeUrl ??
+    data?.qr_image ??
+    data?.qrImage ??
+    data?.qrcode ??
+    data?.qr ??
+    data?.image_url ??
+    null
+  );
+
+  return { sepayVa, sepayBank, sepayQrUrl };
 }
 
 serve(async (req) => {

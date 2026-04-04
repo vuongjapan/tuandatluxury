@@ -8,9 +8,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
-// SePay VA cố định (tài khoản cá nhân - không tạo VA động được)
-const VA_BANK = 'BIDV';
-const VA_ACCOUNT = '50110001090777';
+const DEFAULT_SEPAY_BANK = 'BIDV';
 const VA_HOLDER = 'TUAN DAT LUXURY';
 
 const InvoicePage = () => {

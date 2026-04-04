@@ -17,9 +17,7 @@ const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt 
 const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 098.661.7939";
 const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
-// SePay VA
-const VA_BANK = "BIDV";
-const VA_ACCOUNT = "50110001090777";
+const DEFAULT_SEPAY_BANK = "BIDV";
 const VA_HOLDER = "TUAN DAT LUXURY";
 
 function formatDate(dateStr: string): string {
