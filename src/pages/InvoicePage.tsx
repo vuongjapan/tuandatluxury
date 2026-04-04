@@ -8,10 +8,10 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
-// SePay VA - thanh toán qua tài khoản ảo, không chuyển trực tiếp
-const SEPAY_VA_BANK = 'BIDV';
-const SEPAY_VA_ACCOUNT = '50110001090777'; // Tài khoản ảo SePay VA
-const SEPAY_VA_HOLDER = 'TUAN DAT LUXURY';
+// Fallback VA (chỉ dùng khi API SePay không trả VA)
+const FALLBACK_VA = '50110001090777';
+const VA_BANK = 'BIDV';
+const VA_HOLDER = 'TUAN DAT LUXURY';
 
 const InvoicePage = () => {
   const { bookingCode } = useParams();
@@ -101,8 +101,11 @@ const InvoicePage = () => {
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
 
-  // Dynamic QR URL from SePay
-  const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_VA_ACCOUNT}&bank=${SEPAY_VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+  // Dynamic VA from booking record (from SePay API), fallback to default
+  const vaAccount = booking.sepay_va || FALLBACK_VA;
+
+  // Dynamic QR URL using VietQR format
+  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${vaAccount}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}`;
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -269,22 +272,22 @@ const InvoicePage = () => {
               <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
                 <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 THANH TOÁN ĐẶT CỌC</h3>
                 
-                {/* SePay VA info */}
+                {/* SePay VA info - dynamic per booking */}
                 <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🏦 Ngân hàng:</span>
-                    <span className="font-bold">{SEPAY_VA_BANK}</span>
+                    <span className="font-bold">{VA_BANK}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">🔢 Số tài khoản:</span>
-                    <span className="font-bold">{SEPAY_VA_ACCOUNT}</span>
+                    <span className="text-muted-foreground">🔢 Số tài khoản (VA):</span>
+                    <span className="font-bold">{vaAccount}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">👤 Chủ tài khoản:</span>
-                    <span className="font-bold">{SEPAY_VA_HOLDER}</span>
+                    <span className="font-bold">{VA_HOLDER}</span>
                   </div>
                   <p className="text-xs text-amber-700 text-center mt-2">
-                    ⚠️ Vui lòng chuyển khoản đúng thông tin trên hoặc quét mã QR bên dưới.
+                    ⚠️ Chỉ chuyển khoản qua tài khoản ảo (VA) hoặc quét mã QR bên dưới.
                   </p>
                 </div>
 
