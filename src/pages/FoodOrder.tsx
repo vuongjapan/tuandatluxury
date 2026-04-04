@@ -21,11 +21,12 @@ const PRICE_FILTERS = [
 ];
 
 const CATEGORY_LABELS: Record<string, { vi: string; en: string }> = {
-  main: { vi: 'Món chính', en: 'Main dishes' },
+  breakfast: { vi: 'Ăn sáng', en: 'Breakfast' },
+  main: { vi: 'Cơm', en: 'Rice dishes' },
+  seafood: { vi: 'Hải sản', en: 'Seafood' },
   drinks: { vi: 'Đồ uống', en: 'Drinks' },
   snacks: { vi: 'Ăn nhẹ', en: 'Snacks' },
   combo: { vi: 'Combo', en: 'Combo' },
-  seafood: { vi: 'Hải sản', en: 'Seafood' },
   dessert: { vi: 'Tráng miệng', en: 'Dessert' },
 };
 
