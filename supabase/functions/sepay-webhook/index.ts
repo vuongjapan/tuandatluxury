@@ -11,7 +11,7 @@ const corsHeaders = {
 
 const SMTP_HOST = "smtp.gmail.com";
 const SMTP_PORT = 587;
-const SMTP_EMAIL = "dovuong.bka@gmail.com";
+const SMTP_EMAIL = "tuandatluxuryflc36hotelsamson@gmail.com";
 const ADMIN_EMAIL = "tuandatluxuryflc36hotel@gmail.com";
 const HOTEL_NAME = "Tuấn Đạt Luxury Hotel";
 const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt Nam";
@@ -21,10 +21,15 @@ const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 function normalizeBookingCode(desc: string): string | null {
   if (!desc) return null;
   const cleaned = desc.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  // Match new format TDLH2026AXXXXX
-  const matchNew = cleaned.match(/TDLH2026A(\d+)/);
+  // Match new format TDYYYYMMAXXXXX (e.g., TD202604A00001)
+  const matchNew = cleaned.match(/TD(\d{6})A(\d+)/);
   if (matchNew) {
-    return "TDLH2026A" + matchNew[1].padStart(5, "0");
+    return `TD${matchNew[1]}A${matchNew[2].padStart(5, "0")}`;
+  }
+  // Fallback: old format TDLH2026AXXXXX
+  const matchOld2 = cleaned.match(/TDLH2026A(\d+)/);
+  if (matchOld2) {
+    return "TDLH2026A" + matchOld2[1].padStart(5, "0");
   }
   // Fallback: old format TDLH-XXXXX
   const matchOld = cleaned.match(/TDLH(\d+)/);

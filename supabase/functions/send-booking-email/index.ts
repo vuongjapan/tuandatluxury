@@ -10,7 +10,7 @@ const corsHeaders = {
 
 const SMTP_HOST = "smtp.gmail.com";
 const SMTP_PORT = 587;
-const SMTP_EMAIL = "dovuong.bka@gmail.com";
+const SMTP_EMAIL = "tuandatluxuryflc36hotelsamson@gmail.com";
 const ADMIN_EMAIL = "tuandatluxuryflc36hotel@gmail.com";
 const HOTEL_NAME = "Tuấn Đạt Luxury Hotel";
 const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt Nam";

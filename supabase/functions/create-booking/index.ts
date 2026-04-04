@@ -8,6 +8,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function generateBookingCodePrefix(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `TD${year}${month}A`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,14 +35,37 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Generate booking code with TDYYYYMMAXXXXX format
+    const prefix = generateBookingCodePrefix();
+    
+    // Find the last booking with this prefix to determine next number
+    const { data: lastBookings } = await supabase
+      .from("bookings")
+      .select("booking_code")
+      .like("booking_code", `${prefix}%`)
+      .order("booking_code", { ascending: false })
+      .limit(1);
+
+    let nextNumber = 1;
+    if (lastBookings && lastBookings.length > 0) {
+      const lastCode = lastBookings[0].booking_code;
+      const lastNum = parseInt(lastCode.slice(-5));
+      if (!isNaN(lastNum)) {
+        nextNumber = lastNum + 1;
+      }
+    }
+
+    const bookingCode = `${prefix}${String(nextNumber).padStart(5, '0')}`;
+
     const totalPrice = total_price_vnd || 0;
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
 
-    // Insert booking with deposit info
+    // Insert booking
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
+        booking_code: bookingCode,
         room_id,
         guest_name,
         guest_email,
@@ -57,11 +87,12 @@ serve(async (req) => {
 
     if (bookingError) throw bookingError;
 
-    // Create invoice with deposit info
+    // Create invoice with same code
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .insert({
         booking_id: booking.id,
+        invoice_number: bookingCode,
         total_vnd: totalPrice,
         deposit_amount: depositAmount,
         remaining_amount: remainingAmount,
@@ -92,7 +123,7 @@ serve(async (req) => {
         body: JSON.stringify({
           booking,
           room_name: room?.name_vi || room_id,
-          invoice_number: invoice?.invoice_number || booking.booking_code,
+          invoice_number: bookingCode,
         }),
       });
       console.log("Email function called successfully");
@@ -105,7 +136,7 @@ serve(async (req) => {
         success: true, 
         booking,
         invoice,
-        booking_code: booking.booking_code,
+        booking_code: bookingCode,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
