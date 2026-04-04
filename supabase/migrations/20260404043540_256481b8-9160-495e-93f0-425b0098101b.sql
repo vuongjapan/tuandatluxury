@@ -1,0 +1,1 @@
+ALTER TABLE public.food_orders ADD COLUMN IF NOT EXISTS guest_email text DEFAULT NULL;

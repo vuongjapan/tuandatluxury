@@ -273,6 +273,7 @@ export type Database = {
           created_at: string
           customer_name: string
           food_order_id: string
+          guest_email: string | null
           id: string
           notes: string | null
           paid_amount: number
@@ -288,6 +289,7 @@ export type Database = {
           created_at?: string
           customer_name: string
           food_order_id: string
+          guest_email?: string | null
           id?: string
           notes?: string | null
           paid_amount?: number
@@ -303,6 +305,7 @@ export type Database = {
           created_at?: string
           customer_name?: string
           food_order_id?: string
+          guest_email?: string | null
           id?: string
           notes?: string | null
           paid_amount?: number
