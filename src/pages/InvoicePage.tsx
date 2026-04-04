@@ -227,6 +227,25 @@ const InvoicePage = () => {
               </div>
             </div>
 
+            {/* Combo ăn uống */}
+            {combos.length > 0 && (
+              <div>
+                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">🍽️ Combo ăn uống</h3>
+                <div className="space-y-2">
+                  {combos.map((c: any) => (
+                    <div key={c.id} className="flex justify-between">
+                      <span className="text-muted-foreground">{c.combo_name} ×{c.quantity}</span>
+                      <span className="font-medium">{(c.price_vnd * c.quantity).toLocaleString('vi')}₫</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-semibold border-t border-border pt-1">
+                    <span className="text-muted-foreground">Tổng combo:</span>
+                    <span className="text-primary">{comboTotal.toLocaleString('vi')}₫</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Chi phí */}
             <div>
               <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Chi phí</h3>
