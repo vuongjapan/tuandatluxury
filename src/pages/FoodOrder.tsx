@@ -24,10 +24,17 @@ const CATEGORY_LABELS: Record<string, { vi: string; en: string }> = {
   breakfast: { vi: 'Ăn sáng', en: 'Breakfast' },
   main: { vi: 'Cơm', en: 'Rice dishes' },
   seafood: { vi: 'Hải sản', en: 'Seafood' },
+  shellfish: { vi: 'Hàu - Sò - Ngao', en: 'Oysters & Clams' },
+  hotpot: { vi: 'Lẩu', en: 'Hotpot' },
+  fish: { vi: 'Cá', en: 'Fish' },
+  chicken: { vi: 'Gà', en: 'Chicken' },
+  meat: { vi: 'Thịt', en: 'Meat' },
+  soup: { vi: 'Canh', en: 'Soup' },
+  vegetable: { vi: 'Rau & Đậu phụ', en: 'Vegetables & Tofu' },
+  snack: { vi: 'Ăn vặt', en: 'Snacks' },
+  other: { vi: 'Món khác', en: 'Other' },
   drinks: { vi: 'Đồ uống', en: 'Drinks' },
-  snacks: { vi: 'Ăn nhẹ', en: 'Snacks' },
   combo: { vi: 'Combo', en: 'Combo' },
-  dessert: { vi: 'Tráng miệng', en: 'Dessert' },
 };
 
 const FoodOrder = () => {
