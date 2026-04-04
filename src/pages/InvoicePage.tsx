@@ -102,7 +102,7 @@ const InvoicePage = () => {
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
 
   // Dynamic QR URL from SePay
-  const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${BANK_NAME}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+  const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_VA_ACCOUNT}&bank=${SEPAY_VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
