@@ -25,9 +25,10 @@ import AdminServices from '@/components/AdminServices';
 import AdminFoodMenu from '@/components/AdminFoodMenu';
 import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import AdminMembers from '@/components/AdminMembers';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -485,6 +486,7 @@ const AdminDashboard = () => {
     { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
     { id: 'food-menu', icon: UtensilsCrossed, label: 'Menu đồ ăn' },
     { id: 'customers', icon: Users, label: 'Khách hàng' },
+    { id: 'members', icon: Users, label: 'Thành viên' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
@@ -1410,6 +1412,9 @@ const AdminDashboard = () => {
               )}
             </div>
           )}
+
+          {/* MEMBERS */}
+          {tab === 'members' && <AdminMembers />}
 
           {/* TRASH */}
           {tab === 'trash' && (

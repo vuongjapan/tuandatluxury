@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,19 +9,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
 import { useDining } from '@/hooks/useDining';
+import { usePromotions } from '@/hooks/usePromotions';
+import { useAuth, MemberTier } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { vi, enUS, ja, zhCN } from 'date-fns/locale';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
 
 const localeMap = { vi, en: enUS, ja, zh: zhCN };
+
+const TIER_DISCOUNT: Record<MemberTier, number> = {
+  normal: 5,
+  vip: 10,
+  super_vip: 15,
+};
 
 interface SelectedCombo {
   id: string;
@@ -37,10 +47,14 @@ const Booking = () => {
   const { toast } = useToast();
   const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays } = useRooms();
   const { items: diningItems, loading: diningLoading } = useDining();
+  const { promotions } = usePromotions();
+  const { user } = useAuth();
 
   const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
   const preCheckin = searchParams.get('checkin');
   const preCheckout = searchParams.get('checkout');
+  const promoId = searchParams.get('promo');
+  const promoType = searchParams.get('promo_type');
 
   const [roomId, setRoomId] = useState(preselectedRoom);
   const [checkIn, setCheckIn] = useState<Date | undefined>(preCheckin ? new Date(preCheckin + 'T00:00:00') : undefined);
@@ -53,9 +67,33 @@ const Booking = () => {
   const [notes, setNotes] = useState('');
   const [selectedCombos, setSelectedCombos] = useState<SelectedCombo[]>([]);
 
+  // Promotion-specific fields
+  const [companyName, setCompanyName] = useState('');
+  const [groupSize, setGroupSize] = useState('');
+  const [specialServices, setSpecialServices] = useState<string[]>([]);
+  const [decorationNotes, setDecorationNotes] = useState('');
+
+  // Auto-fill user info
+  useEffect(() => {
+    if (user) {
+      if (!name) setName(user.fullName);
+      if (!email) setEmail(user.email);
+      if (!phone && user.phone) setPhone(user.phone);
+    }
+  }, [user]);
+
   const room = rooms.find((r) => r.id === roomId) || rooms[0];
   const nightCount = checkIn && checkOut ? Math.max(differenceInDays(checkOut, checkIn), 1) : 0;
   const calendarLocale = localeMap[language] || vi;
+
+  // Active promotion
+  const activePromo = useMemo(() => {
+    if (!promoId) return null;
+    return promotions.find(p => p.id === promoId && p.is_active) || null;
+  }, [promoId, promotions]);
+
+  const isGroupPromo = promoType === 'group' || (activePromo as any)?.promo_type === 'group';
+  const isCouplePromo = promoType === 'couple' || (activePromo as any)?.promo_type === 'couple';
 
   // Filter combo items from dining
   const comboItems = useMemo(() => 
@@ -95,7 +133,31 @@ const Booking = () => {
     return total * quantity;
   }, [checkIn, checkOut, nightCount, room, getRoomPrice, quantity]);
 
-  const totalPrice = roomTotal + comboTotal;
+  // Calculate discounts
+  const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
+
+  const promoDiscountPercent = useMemo(() => {
+    if (!activePromo) return 0;
+    let base = activePromo.discount_percent || 0;
+    
+    // For group promos, add tier-based discount from group_discount_tiers
+    if (isGroupPromo && groupSize) {
+      const size = parseInt(groupSize) || 0;
+      const tiers = (activePromo as any).group_discount_tiers || [];
+      for (const tier of tiers) {
+        if (size >= tier.min && size <= tier.max) {
+          base += tier.discount;
+          break;
+        }
+      }
+    }
+    return base;
+  }, [activePromo, isGroupPromo, groupSize]);
+
+  const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
+  const originalPrice = roomTotal + comboTotal;
+  const discountAmount = Math.round(originalPrice * totalDiscountPercent / 100);
+  const totalPrice = originalPrice - discountAmount;
 
   const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0);
   const comboValidationError = comboRequired && !hasSelectedCombo;
@@ -116,6 +178,21 @@ const Booking = () => {
     ));
   };
 
+  const availableServices = [
+    { id: 'dining', label: 'Ăn uống / Tiệc', labelEn: 'Dining / Banquet' },
+    { id: 'transport', label: 'Xe đưa đón', labelEn: 'Transportation' },
+    { id: 'event', label: 'Tổ chức sự kiện', labelEn: 'Event Planning' },
+    { id: 'decoration', label: 'Trang trí', labelEn: 'Decoration' },
+    { id: 'karaoke', label: 'Karaoke / Giải trí', labelEn: 'Karaoke / Entertainment' },
+    { id: 'pool', label: 'Tiệc bể bơi', labelEn: 'Pool Party' },
+  ];
+
+  const toggleService = (serviceId: string) => {
+    setSpecialServices(prev => 
+      prev.includes(serviceId) ? prev.filter(s => s !== serviceId) : [...prev, serviceId]
+    );
+  };
+
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -131,6 +208,10 @@ const Booking = () => {
       toast({ title: 'Ngày bạn chọn yêu cầu chọn ít nhất 1 combo ăn uống', variant: 'destructive' });
       return;
     }
+    if (isGroupPromo && !companyName) {
+      toast({ title: 'Vui lòng nhập tên công ty/đoàn', variant: 'destructive' });
+      return;
+    }
     setSubmitting(true);
     try {
       const combosPayload = selectedCombos.filter(c => c.quantity > 0).map(c => ({
@@ -139,6 +220,10 @@ const Booking = () => {
         price_vnd: c.price,
         quantity: c.quantity,
       }));
+
+      const serviceLabels = specialServices.map(id => 
+        availableServices.find(s => s.id === id)?.label || id
+      ).join(', ');
 
       const resp = await fetch(BOOKING_URL, {
         method: 'POST',
@@ -156,10 +241,21 @@ const Booking = () => {
           check_out: format(checkOut, 'yyyy-MM-dd'),
           guests_count: parseInt(guests),
           total_price_vnd: totalPrice,
+          original_price_vnd: originalPrice,
           room_quantity: quantity,
           language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: comboTotal > 0 ? comboTotal : undefined,
+          // Promotion data
+          promotion_id: activePromo?.id || undefined,
+          promotion_discount_percent: promoDiscountPercent > 0 ? promoDiscountPercent : undefined,
+          promotion_discount_amount: promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : undefined,
+          member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
+          member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
+          company_name: companyName || undefined,
+          group_size: groupSize ? parseInt(groupSize) : undefined,
+          special_services: serviceLabels || undefined,
+          decoration_notes: decorationNotes || undefined,
         }),
       });
       const data = await resp.json();
@@ -174,6 +270,8 @@ const Booking = () => {
 
   if (!room) return null;
 
+  const isVi = language === 'vi';
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -187,6 +285,43 @@ const Booking = () => {
             {t('booking.title')}
           </motion.h1>
 
+          {/* Active promotion banner */}
+          {activePromo && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3"
+            >
+              <Gift className="h-6 w-6 text-primary shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-foreground text-sm">
+                  {isVi ? `Đang áp dụng: ${activePromo.title_vi}` : `Applied: ${activePromo.title_en}`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {promoDiscountPercent > 0 && `Giảm ${promoDiscountPercent}%`}
+                  {memberDiscountPercent > 0 && ` + Thành viên ${memberDiscountPercent}%`}
+                  {totalDiscountPercent > 0 && ` = Tổng giảm ${totalDiscountPercent}%`}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/booking')}>✕</Button>
+            </motion.div>
+          )}
+
+          {/* Member discount banner */}
+          {!activePromo && user && memberDiscountPercent > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center"
+            >
+              <p className="text-sm text-foreground">
+                ⭐ {isVi 
+                  ? `Bạn đang được giảm ${memberDiscountPercent}% (Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'})`
+                  : `${memberDiscountPercent}% discount (${user.tier.replace('_',' ').toUpperCase()})`}
+              </p>
+            </motion.div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -194,12 +329,11 @@ const Booking = () => {
               transition={{ delay: 0.2 }}
               className="lg:col-span-2 space-y-6"
             >
+              {/* Room selection */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('nav.rooms')}</h2>
                 <Select value={roomId} onValueChange={setRoomId}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {rooms.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
@@ -243,8 +377,7 @@ const Booking = () => {
                     <Select value={guests} onValueChange={setGuests}>
                       <SelectTrigger>
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          <SelectValue />
+                          <Users className="h-4 w-4" /><SelectValue />
                         </div>
                       </SelectTrigger>
                       <SelectContent>
@@ -268,6 +401,79 @@ const Booking = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Group/Corporate promo form */}
+              {isGroupPromo && (
+                <div className="bg-card rounded-xl border-2 border-primary/30 p-6 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-primary" />
+                    <h2 className="font-display text-xl font-semibold">{isVi ? 'Thông tin đoàn / công ty' : 'Group / Company Info'}</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Tên công ty / đoàn *' : 'Company / Group Name *'}</label>
+                      <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder={isVi ? 'Công ty ABC' : 'ABC Company'} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Số lượng người *' : 'Group Size *'}</label>
+                      <Input type="number" value={groupSize} onChange={e => setGroupSize(e.target.value)} placeholder="20" min="1" />
+                    </div>
+                  </div>
+                  {groupSize && promoDiscountPercent > 0 && (
+                    <p className="text-sm text-primary font-medium">
+                      🎉 {isVi ? `Đoàn ${groupSize} người → Giảm ${promoDiscountPercent}%` : `Group of ${groupSize} → ${promoDiscountPercent}% off`}
+                    </p>
+                  )}
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">{isVi ? 'Nhu cầu dịch vụ' : 'Service Needs'}</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {availableServices.map(service => (
+                        <label key={service.id} className={cn(
+                          "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
+                          specialServices.includes(service.id) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                        )}>
+                          <Checkbox 
+                            checked={specialServices.includes(service.id)} 
+                            onCheckedChange={() => toggleService(service.id)} 
+                          />
+                          {isVi ? service.label : service.labelEn}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Couple/Family promo form */}
+              {isCouplePromo && (
+                <div className="bg-card rounded-xl border-2 border-pink-300 p-6 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-5 w-5 text-pink-500" />
+                    <h2 className="font-display text-xl font-semibold">{isVi ? 'Ưu đãi cặp đôi / gia đình' : 'Couple / Family Offer'}</h2>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Yêu cầu trang trí' : 'Decoration Requests'}</label>
+                    <Textarea value={decorationNotes} onChange={e => setDecorationNotes(e.target.value)} rows={2} placeholder={isVi ? 'VD: Trang trí hoa, nến, bóng bay...' : 'E.g.: Flowers, candles, balloons...'} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">{isVi ? 'Dịch vụ đi kèm' : 'Additional Services'}</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {availableServices.map(service => (
+                        <label key={service.id} className={cn(
+                          "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
+                          specialServices.includes(service.id) ? "border-pink-400 bg-pink-50 dark:bg-pink-900/20" : "border-border hover:border-pink-300"
+                        )}>
+                          <Checkbox 
+                            checked={specialServices.includes(service.id)} 
+                            onCheckedChange={() => toggleService(service.id)} 
+                          />
+                          {isVi ? service.label : service.labelEn}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Combo ăn uống section */}
               {comboItems.length > 0 && (
@@ -294,9 +500,7 @@ const Booking = () => {
                           key={item.id}
                           className={cn(
                             "rounded-xl border p-4 transition-all cursor-pointer",
-                            selected 
-                              ? "border-primary bg-primary/5 ring-2 ring-primary" 
-                              : "border-border hover:border-primary/50"
+                            selected ? "border-primary bg-primary/5 ring-2 ring-primary" : "border-border hover:border-primary/50"
                           )}
                           onClick={() => toggleCombo(item)}
                         >
@@ -336,6 +540,7 @@ const Booking = () => {
                 </div>
               )}
 
+              {/* Guest info */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('booking.guest_info')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -359,6 +564,7 @@ const Booking = () => {
               </div>
             </motion.div>
 
+            {/* Summary sidebar */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -405,7 +611,7 @@ const Booking = () => {
                   )}
                 </div>
 
-                {/* Selected combos in summary */}
+                {/* Combos in summary */}
                 {selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <h4 className="font-semibold text-sm flex items-center gap-1">
@@ -417,6 +623,46 @@ const Booking = () => {
                         <span className="font-medium">{formatPrice(c.price * c.quantity)}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Promotion info in summary */}
+                {(isGroupPromo || isCouplePromo) && (
+                  <div className="border-t border-border pt-3 space-y-1">
+                    {isGroupPromo && companyName && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Công ty:</span>
+                        <span className="font-medium">{companyName}</span>
+                      </div>
+                    )}
+                    {groupSize && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Số người:</span>
+                        <span className="font-medium">{groupSize}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Discounts */}
+                {totalDiscountPercent > 0 && originalPrice > 0 && (
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Giá gốc</span>
+                      <span className="font-medium line-through text-muted-foreground">{formatPrice(originalPrice)}</span>
+                    </div>
+                    {memberDiscountPercent > 0 && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>Giảm thành viên ({memberDiscountPercent}%)</span>
+                        <span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span>
+                      </div>
+                    )}
+                    {promoDiscountPercent > 0 && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>Giảm ưu đãi ({promoDiscountPercent}%)</span>
+                        <span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
