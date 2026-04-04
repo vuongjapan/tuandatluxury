@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, Minus, Plus } from 'lucide-react';
+import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
+import { useDining } from '@/hooks/useDining';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -22,12 +23,20 @@ const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-bo
 
 const localeMap = { vi, en: enUS, ja, zh: zhCN };
 
+interface SelectedCombo {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
 const Booking = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
   const { toast } = useToast();
-  const { rooms, getRoomPrice, isDateAvailable } = useRooms();
+  const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays } = useRooms();
+  const { items: diningItems, loading: diningLoading } = useDining();
 
   const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
   const preCheckin = searchParams.get('checkin');
@@ -42,10 +51,23 @@ const Booking = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [selectedCombos, setSelectedCombos] = useState<SelectedCombo[]>([]);
 
   const room = rooms.find((r) => r.id === roomId) || rooms[0];
   const nightCount = checkIn && checkOut ? Math.max(differenceInDays(checkOut, checkIn), 1) : 0;
   const calendarLocale = localeMap[language] || vi;
+
+  // Filter combo items from dining
+  const comboItems = useMemo(() => 
+    diningItems.filter(item => item.is_combo && item.is_active),
+    [diningItems]
+  );
+
+  // Check if combo is required for selected dates
+  const comboRequired = useMemo(() => {
+    if (!checkIn || !checkOut || !room) return false;
+    return hasComboRequiredDays(room.id, checkIn, checkOut);
+  }, [checkIn, checkOut, room, hasComboRequiredDays]);
 
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0 || !room) return true;
@@ -57,7 +79,12 @@ const Booking = () => {
     return true;
   }, [checkIn, checkOut, nightCount, room, isDateAvailable]);
 
-  const totalPrice = useMemo(() => {
+  const comboTotal = useMemo(() => 
+    selectedCombos.reduce((sum, c) => sum + c.price * c.quantity, 0),
+    [selectedCombos]
+  );
+
+  const roomTotal = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0 || !room) return 0;
     let total = 0;
     const d = new Date(checkIn);
@@ -67,6 +94,27 @@ const Booking = () => {
     }
     return total * quantity;
   }, [checkIn, checkOut, nightCount, room, getRoomPrice, quantity]);
+
+  const totalPrice = roomTotal + comboTotal;
+
+  const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0);
+  const comboValidationError = comboRequired && !hasSelectedCombo;
+
+  const toggleCombo = (item: typeof comboItems[0]) => {
+    setSelectedCombos(prev => {
+      const existing = prev.find(c => c.id === item.id);
+      if (existing) {
+        return prev.filter(c => c.id !== item.id);
+      }
+      return [...prev, { id: item.id, name: item.name_vi, price: item.price_vnd, quantity: 1 }];
+    });
+  };
+
+  const updateComboQty = (id: string, delta: number) => {
+    setSelectedCombos(prev => prev.map(c => 
+      c.id === id ? { ...c, quantity: Math.max(1, c.quantity + delta) } : c
+    ));
+  };
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -79,8 +127,19 @@ const Booking = () => {
       toast({ title: 'Một số đêm đã đóng bán, vui lòng chọn ngày khác', variant: 'destructive' });
       return;
     }
+    if (comboValidationError) {
+      toast({ title: 'Ngày bạn chọn yêu cầu chọn ít nhất 1 combo ăn uống', variant: 'destructive' });
+      return;
+    }
     setSubmitting(true);
     try {
+      const combosPayload = selectedCombos.filter(c => c.quantity > 0).map(c => ({
+        dining_item_id: c.id,
+        combo_name: c.name,
+        price_vnd: c.price,
+        quantity: c.quantity,
+      }));
+
       const resp = await fetch(BOOKING_URL, {
         method: 'POST',
         headers: {
@@ -99,6 +158,8 @@ const Booking = () => {
           total_price_vnd: totalPrice,
           room_quantity: quantity,
           language,
+          combos: combosPayload.length > 0 ? combosPayload : undefined,
+          combo_total: comboTotal > 0 ? comboTotal : undefined,
         }),
       });
       const data = await resp.json();
@@ -208,6 +269,73 @@ const Booking = () => {
                 </div>
               </div>
 
+              {/* Combo ăn uống section */}
+              {comboItems.length > 0 && (
+                <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <UtensilsCrossed className="h-5 w-5 text-primary" />
+                    <h2 className="font-display text-xl font-semibold">Combo ăn uống</h2>
+                    {comboRequired && (
+                      <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" /> Bắt buộc
+                      </span>
+                    )}
+                  </div>
+                  {comboRequired && (
+                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
+                      ⚠️ Ngày bạn chọn yêu cầu chọn ít nhất 1 combo ăn uống để hoàn tất đặt phòng.
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {comboItems.map(item => {
+                      const selected = selectedCombos.find(c => c.id === item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className={cn(
+                            "rounded-xl border p-4 transition-all cursor-pointer",
+                            selected 
+                              ? "border-primary bg-primary/5 ring-2 ring-primary" 
+                              : "border-border hover:border-primary/50"
+                          )}
+                          onClick={() => toggleCombo(item)}
+                        >
+                          <div className="flex gap-3">
+                            {item.image_url && (
+                              <img src={item.image_url} alt={item.name_vi} className="w-20 h-20 rounded-lg object-cover shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-foreground truncate">{language === 'vi' ? item.name_vi : item.name_en}</h4>
+                              {item.description_vi && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                  {language === 'vi' ? item.description_vi : item.description_en}
+                                </p>
+                              )}
+                              <p className="text-sm font-bold text-primary mt-1">
+                                {item.price_vnd > 0 ? formatPrice(item.price_vnd) : 'Giá thỏa thuận'}
+                                {item.combo_serves && <span className="text-xs text-muted-foreground font-normal ml-1">/ {item.combo_serves} người</span>}
+                              </p>
+                            </div>
+                          </div>
+                          {selected && (
+                            <div className="flex items-center gap-2 mt-3 justify-end" onClick={e => e.stopPropagation()}>
+                              <span className="text-xs text-muted-foreground">Số lượng:</span>
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateComboQty(item.id, -1)}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="font-semibold w-6 text-center">{selected.quantity}</span>
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateComboQty(item.id, 1)}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('booking.guest_info')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -269,10 +397,37 @@ const Booking = () => {
                     <span className="text-muted-foreground">{t('booking.rooms_count')}</span>
                     <span className="font-medium">{quantity}</span>
                   </div>
+                  {roomTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tiền phòng</span>
+                      <span className="font-medium">{formatPrice(roomTotal)}</span>
+                    </div>
+                  )}
                 </div>
+
+                {/* Selected combos in summary */}
+                {selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) && (
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <h4 className="font-semibold text-sm flex items-center gap-1">
+                      <UtensilsCrossed className="h-3.5 w-3.5 text-primary" /> Combo ăn uống
+                    </h4>
+                    {selectedCombos.filter(c => c.quantity > 0).map(c => (
+                      <div key={c.id} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{c.name} ×{c.quantity}</span>
+                        <span className="font-medium">{formatPrice(c.price * c.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {!allNightsAvailable && nightCount > 0 && (
                   <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
                     Một số đêm trong khoảng ngày đã chọn đang đóng bán. Vui lòng chọn ngày khác.
+                  </div>
+                )}
+                {comboValidationError && (
+                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-300 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
+                    ⚠️ Vui lòng chọn ít nhất 1 combo ăn uống.
                   </div>
                 )}
                 <div className="border-t border-border pt-4">
@@ -280,8 +435,14 @@ const Booking = () => {
                     <span className="font-display text-lg font-semibold">{t('booking.total')}</span>
                     <span className="text-2xl font-bold text-primary">{totalPrice > 0 ? formatPrice(totalPrice) : '—'}</span>
                   </div>
+                  {totalPrice > 0 && (
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>Đặt cọc 50%</span>
+                      <span className="font-semibold">{formatPrice(Math.round(totalPrice * 0.5))}</span>
+                    </div>
+                  )}
                 </div>
-                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting || !allNightsAvailable}>
+                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting || !allNightsAvailable || comboValidationError}>
                   {submitting ? t('booking.processing') : t('booking.confirm')}
                 </Button>
               </div>
