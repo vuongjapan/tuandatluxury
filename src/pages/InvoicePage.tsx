@@ -101,8 +101,8 @@ const InvoicePage = () => {
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
 
-  // QR SePay tài khoản ảo (liên kết trực tiếp với SePay để báo biến động)
-  const qrUrl = '/images/qr-sepay.png';
+  // QR VietQR động: tài khoản VA SePay + tự điền số tiền cọc 50% + nội dung CK = mã đơn
+  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${VA_ACCOUNT}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}&accountName=${encodeURIComponent(VA_HOLDER)}`;
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
