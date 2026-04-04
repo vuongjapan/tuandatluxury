@@ -32,6 +32,8 @@ export type Database = {
           remaining_amount: number
           room_id: string
           room_quantity: number
+          sepay_bank: string | null
+          sepay_qr_url: string | null
           sepay_va: string | null
           status: string
           total_price_vnd: number
@@ -54,6 +56,8 @@ export type Database = {
           remaining_amount?: number
           room_id: string
           room_quantity?: number
+          sepay_bank?: string | null
+          sepay_qr_url?: string | null
           sepay_va?: string | null
           status?: string
           total_price_vnd?: number
@@ -76,6 +80,8 @@ export type Database = {
           remaining_amount?: number
           room_id?: string
           room_quantity?: number
+          sepay_bank?: string | null
+          sepay_qr_url?: string | null
           sepay_va?: string | null
           status?: string
           total_price_vnd?: number
