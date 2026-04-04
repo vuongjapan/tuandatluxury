@@ -140,22 +140,42 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [{ data: b }, { data: r }] = await Promise.all([
-      supabase.from('bookings').select('*, rooms(name_vi)').order('created_at', { ascending: false }),
-      supabase.from('rooms').select('*').order('price_vnd'),
-    ]);
-    setBookings(b || []);
-    setRooms(r || []);
-    setLoading(false);
+    try {
+      const [{ data: b, error: bookingsError }, { data: r, error: roomsError }] = await Promise.all([
+        supabase.from('bookings').select('*, rooms(name_vi)').order('created_at', { ascending: false }),
+        supabase.from('rooms').select('*').order('price_vnd'),
+      ]);
+
+      if (bookingsError || roomsError) {
+        toast({
+          title: 'Lỗi tải dữ liệu admin',
+          description: bookingsError?.message || roomsError?.message,
+          variant: 'destructive',
+        });
+      }
+
+      setBookings(b || []);
+      setRooms(r || []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchMonthlyPrices = async () => {
-    const { data } = await supabase.from('room_monthly_prices').select('*').order('year').order('month');
+    const { data, error } = await supabase.from('room_monthly_prices').select('*').order('year').order('month');
+    if (error) {
+      toast({ title: 'Lỗi tải giá tháng', description: error.message, variant: 'destructive' });
+      return;
+    }
     setMonthlyPrices(data || []);
   };
 
   const fetchDailyAvailability = async () => {
-    const { data } = await supabase.from('room_daily_availability').select('*').order('date');
+    const { data, error } = await supabase.from('room_daily_availability').select('*').order('date');
+    if (error) {
+      toast({ title: 'Lỗi tải lịch bán', description: error.message, variant: 'destructive' });
+      return;
+    }
     setDailyAvailability(data || []);
   };
 

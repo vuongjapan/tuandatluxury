@@ -61,7 +61,6 @@ function dbRoomToRoom(db: DBRoom, staticFallback?: Room): Room {
   };
 }
 
-// Night type: Mon(1)-Thu(4) = weekday, Fri(5)-Sat(6) = weekend, Sun(0) = sunday
 function getNightType(date: Date): 'weekday' | 'weekend' | 'sunday' {
   const day = date.getDay();
   if (day === 0) return 'sunday';
@@ -69,16 +68,22 @@ function getNightType(date: Date): 'weekday' | 'weekend' | 'sunday' {
   return 'weekday';
 }
 
+function getSafeData<T>(result: PromiseSettledResult<{ data: T | null; error: unknown }>, fallback: T): T {
+  if (result.status !== 'fulfilled' || result.value.error) return fallback;
+  return result.value.data ?? fallback;
+}
+
 async function fetchRoomsData() {
-  const [{ data: roomsData }, { data: mpData }, { data: daData }] = await Promise.all([
+  const [roomsResult, monthlyPricesResult, dailyAvailabilityResult] = await Promise.allSettled([
     supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
     supabase.from('room_monthly_prices').select('*'),
     supabase.from('room_daily_availability').select('*'),
   ]);
+
   return {
-    dbRooms: (roomsData as DBRoom[]) || [],
-    monthlyPrices: (mpData as MonthlyPrice[]) || [],
-    dailyAvailability: (daData as DailyAvailability[]) || [],
+    dbRooms: getSafeData(roomsResult, [] as DBRoom[]),
+    monthlyPrices: getSafeData(monthlyPricesResult, [] as MonthlyPrice[]),
+    dailyAvailability: getSafeData(dailyAvailabilityResult, [] as DailyAvailability[]),
   };
 }
 
@@ -86,10 +91,10 @@ export function useRooms() {
   const { data, isLoading: loading, refetch } = useQuery({
     queryKey: ['rooms-data'],
     queryFn: fetchRoomsData,
-    staleTime: 0, // Always refetch on mount - no stale cache
-    gcTime: 2 * 60 * 1000, // Keep in cache for 2 min but always revalidate
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: 'always', // Always refetch on component mount
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const dbRooms = data?.dbRooms || [];
@@ -97,20 +102,19 @@ export function useRooms() {
   const dailyAvailability = data?.dailyAvailability || [];
 
   const rooms: Room[] = useMemo(() => {
-    if (dbRooms.length === 0 && loading) return []; // Don't show static fallback while loading
-    if (dbRooms.length === 0) return staticRooms; // Only fallback if DB truly empty
-    return dbRooms.map(db => {
-      const fallback = staticRooms.find(s => s.id === db.id);
+    if (dbRooms.length === 0) return staticRooms;
+    return dbRooms.map((db) => {
+      const fallback = staticRooms.find((s) => s.id === db.id);
       return dbRoomToRoom(db, fallback);
     });
-  }, [dbRooms, loading]);
+  }, [dbRooms]);
 
   const getRoomPrice = useCallback((room: Room, date: Date): number => {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const nightType = getNightType(date);
 
-    const mp = monthlyPrices.find(p => p.room_id === room.id && p.year === year && p.month === month);
+    const mp = monthlyPrices.find((p) => p.room_id === room.id && p.year === year && p.month === month);
     if (mp) {
       if (nightType === 'weekday') return mp.price_weekday;
       if (nightType === 'weekend') return mp.price_weekend;
@@ -122,7 +126,7 @@ export function useRooms() {
 
   const getAvailability = useCallback((roomId: string, date: Date): DailyAvailability | null => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    return dailyAvailability.find(a => a.room_id === roomId && a.date === dateStr) || null;
+    return dailyAvailability.find((a) => a.room_id === roomId && a.date === dateStr) || null;
   }, [dailyAvailability]);
 
   const isDateAvailable = useCallback((roomId: string, date: Date): boolean => {
@@ -132,8 +136,13 @@ export function useRooms() {
   }, [getAvailability]);
 
   return {
-    rooms, loading, fetchRooms: refetch,
-    getRoomPrice, getAvailability, isDateAvailable,
-    monthlyPrices, dailyAvailability,
+    rooms,
+    loading,
+    fetchRooms: refetch,
+    getRoomPrice,
+    getAvailability,
+    isDateAvailable,
+    monthlyPrices,
+    dailyAvailability,
   };
 }
