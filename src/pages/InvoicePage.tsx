@@ -272,11 +272,11 @@ const InvoicePage = () => {
                 <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🏦 Ngân hàng:</span>
-                    <span className="font-bold">{sepayBank}</span>
+                    <span className="font-bold">{VA_BANK}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🔢 Số tài khoản (VA):</span>
-                    <span className="font-bold">{sepayVa}</span>
+                    <span className="font-bold">{VA_ACCOUNT}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">👤 Chủ tài khoản:</span>
