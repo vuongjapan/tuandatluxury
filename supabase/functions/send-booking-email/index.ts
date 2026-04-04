@@ -17,10 +17,9 @@ const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt 
 const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 098.661.7939";
 const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
-// SePay VA - tài khoản ảo, KHÔNG hiển thị tài khoản thật
-const BANK_NAME = "BIDV";
-const ACCOUNT_NUMBER = "50110001090777"; // SePay VA
-const ACCOUNT_HOLDER = "TUAN DAT LUXURY";
+const VA_BANK = "BIDV";
+const VA_HOLDER = "TUAN DAT LUXURY";
+const FALLBACK_VA = "50110001090777";
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -42,7 +41,9 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
 
-  const qrUrl = `https://qr.sepay.vn/img?acc=${ACCOUNT_NUMBER}&bank=${BANK_NAME}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+  // Use dynamic VA from booking, fallback to default
+  const vaAccount = booking.sepay_va || FALLBACK_VA;
+  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${vaAccount}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}`;
 
   return `<!DOCTYPE html>
 <html lang="vi">
@@ -99,9 +100,9 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
     <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;">
       <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#92400E;text-align:center;">💳 THANH TOÁN ĐẶT CỌC</p>
       <table style="width:100%;font-size:13px;line-height:1.8;margin-bottom:12px;">
-        <tr><td style="color:#92400E;width:45%;">🏦 Ngân hàng:</td><td style="font-weight:700;">${BANK_NAME}</td></tr>
-        <tr><td style="color:#92400E;">👤 Chủ tài khoản:</td><td style="font-weight:700;">${ACCOUNT_HOLDER}</td></tr>
-        <tr><td style="color:#92400E;">🔢 Số tài khoản:</td><td style="font-weight:700;">${ACCOUNT_NUMBER}</td></tr>
+        <tr><td style="color:#92400E;width:45%;">🏦 Ngân hàng:</td><td style="font-weight:700;">${VA_BANK}</td></tr>
+        <tr><td style="color:#92400E;">👤 Chủ tài khoản:</td><td style="font-weight:700;">${VA_HOLDER}</td></tr>
+        <tr><td style="color:#92400E;">🔢 Số tài khoản (VA):</td><td style="font-weight:700;">${vaAccount}</td></tr>
       </table>
       <div style="text-align:center;">
         <img src="${qrUrl}" alt="QR Thanh toán" style="width:180px;height:180px;border-radius:8px;margin-bottom:12px;" />
