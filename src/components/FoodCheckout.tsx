@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -13,10 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-
-const VA_BANK = 'BIDV';
-const VA_ACCOUNT = '96247TUANDATLUXURY';
-const VA_HOLDER = 'VAN DINH GIANG';
 
 interface FoodCheckoutProps {
   onBack: () => void;
@@ -33,15 +28,16 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
   const [form, setForm] = useState({
     customerName: '',
     phone: '',
+    email: '',
     roomNumber: '',
     bookingCode: '',
     notes: '',
   });
-  const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
-  const [partialAmount, setPartialAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const getName = (item: { name_vi: string; name_en: string }) => isVi ? item.name_vi : item.name_en;
+
+  const depositAmount = Math.round(totalAmount * 0.5);
 
   const handleSubmit = async () => {
     if (!form.customerName || !form.phone) {
@@ -61,7 +57,6 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const prefix = form.bookingCode || `TD${yy}${mm}`;
 
-      // Count existing food orders for this booking code
       let suffix = '-FOOD';
       if (form.bookingCode) {
         const { count } = await supabase
@@ -77,8 +72,6 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
         ? `${form.bookingCode}${suffix}`
         : `${prefix}F${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}${suffix}`;
 
-      const paidAmount = paymentType === 'partial' ? parseInt(partialAmount) || 0 : 0;
-
       // Insert food order
       const { data: order, error: orderError } = await supabase
         .from('food_orders')
@@ -89,7 +82,7 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
           phone: form.phone,
           room_number: form.roomNumber || null,
           total_amount: totalAmount,
-          paid_amount: paidAmount,
+          paid_amount: 0,
           status: 'pending',
           payment_status: 'PENDING',
           notes: form.notes || null,
@@ -110,6 +103,31 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
       const { error: itemsError } = await supabase.from('food_order_items').insert(orderItems);
       if (itemsError) throw itemsError;
 
+      // Send email (non-blocking)
+      const itemsList = cartItems.map(item => ({
+        name: isVi ? item.name_vi : item.name_en,
+        quantity: item.quantity,
+        price: item.price_vnd,
+      }));
+
+      supabase.functions.invoke('send-booking-email', {
+        body: {
+          type: 'food_order',
+          food_order: {
+            food_order_id: foodOrderId,
+            customer_name: form.customerName,
+            phone: form.phone,
+            guest_email: form.email || null,
+            room_number: form.roomNumber || null,
+            booking_code: form.bookingCode || null,
+            total_amount: totalAmount,
+            deposit_amount: depositAmount,
+            items: itemsList,
+            notes: form.notes || null,
+          },
+        },
+      }).catch(err => console.error('Email error:', err));
+
       clearCart();
       navigate(`/food-invoice/${foodOrderId}`);
     } catch (err: any) {
@@ -118,7 +136,6 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
       setSubmitting(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -170,9 +187,19 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-3 border-t border-border flex justify-between text-lg font-bold">
-                  <span>{isVi ? 'Tổng cộng' : 'Total'}</span>
-                  <span className="text-primary">{formatPrice(totalAmount)}</span>
+                <div className="mt-4 pt-3 border-t border-border space-y-2">
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>{isVi ? 'Tổng cộng' : 'Total'}</span>
+                    <span className="text-primary">{formatPrice(totalAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{isVi ? 'Tiền cọc (50%)' : 'Deposit (50%)'}</span>
+                    <span className="font-bold text-amber-600">{formatPrice(depositAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{isVi ? 'Còn lại khi nhận' : 'Remaining'}</span>
+                    <span className="font-bold text-primary">{formatPrice(totalAmount - depositAmount)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -191,10 +218,14 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                     <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
                   </div>
                   <div>
+                    <Label>Email</Label>
+                    <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
+                  </div>
+                  <div>
                     <Label>{isVi ? 'Số phòng' : 'Room number'}</Label>
                     <Input value={form.roomNumber} onChange={e => setForm(f => ({ ...f, roomNumber: e.target.value }))} placeholder="VD: 301" />
                   </div>
-                  <div>
+                  <div className="sm:col-span-2">
                     <Label>{isVi ? 'Mã đặt phòng (nếu có)' : 'Booking code (optional)'}</Label>
                     <Input value={form.bookingCode} onChange={e => setForm(f => ({ ...f, bookingCode: e.target.value.toUpperCase() }))} placeholder="VD: TD202604A00025" />
                   </div>
@@ -204,37 +235,9 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                   <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
                 </div>
               </div>
-
-              {/* Payment Type */}
-              <div className="bg-card rounded-xl border border-border p-4 space-y-4">
-                <h2 className="font-display font-semibold text-lg">
-                  {isVi ? 'Phương thức thanh toán' : 'Payment'}
-                </h2>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-secondary transition-colors">
-                    <input type="radio" name="payment" checked={paymentType === 'full'} onChange={() => setPaymentType('full')} className="accent-primary" />
-                    <span className="text-sm font-medium">{isVi ? 'Thanh toán toàn bộ' : 'Pay full amount'} – {formatPrice(totalAmount)}</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-secondary transition-colors">
-                    <input type="radio" name="payment" checked={paymentType === 'partial'} onChange={() => setPaymentType('partial')} className="accent-primary" />
-                    <span className="text-sm font-medium">{isVi ? 'Thanh toán một phần' : 'Pay partial amount'}</span>
-                  </label>
-                  {paymentType === 'partial' && (
-                    <div className="ml-8">
-                      <Input
-                        type="number"
-                        value={partialAmount}
-                        onChange={e => setPartialAmount(e.target.value)}
-                        placeholder={isVi ? 'Nhập số tiền' : 'Enter amount'}
-                        className="max-w-xs"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
-            {/* Right: Upsell Sidebar */}
+            {/* Right: Summary + Upsell */}
             <div className="space-y-6">
               {/* Summary */}
               <div className="bg-card rounded-xl border border-border p-4 sticky top-32">
@@ -244,18 +247,18 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                     <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
                     <span className="font-bold">{formatPrice(totalAmount)}</span>
                   </div>
-                  {paymentType === 'partial' && partialAmount && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{isVi ? 'Thanh toán' : 'Paying'}</span>
-                        <span className="font-bold">{formatPrice(parseInt(partialAmount) || 0)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{isVi ? 'Còn lại' : 'Remaining'}</span>
-                        <span className="font-bold text-destructive">{formatPrice(totalAmount - (parseInt(partialAmount) || 0))}</span>
-                      </div>
-                    </>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{isVi ? 'Cọc 50%' : 'Deposit 50%'}</span>
+                    <span className="font-bold text-amber-600">{formatPrice(depositAmount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{isVi ? 'Còn lại' : 'Remaining'}</span>
+                    <span className="font-bold">{formatPrice(totalAmount - depositAmount)}</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-2 bg-amber-50 rounded-lg text-xs text-amber-700 text-center">
+                  {isVi ? '💳 Sau khi đặt, bạn sẽ được chuyển đến trang thanh toán QR cọc 50%' : '💳 After ordering, you will be redirected to QR payment for 50% deposit'}
                 </div>
 
                 <Button
