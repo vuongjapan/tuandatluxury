@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 const VA_BANK = "BIDV";
-const VA_ACCOUNT = "50110001090777";
+const VA_ACCOUNT = "96247TUANDATLUXURY";
 
 function generateBookingCodePrefix(): string {
   const now = new Date();
