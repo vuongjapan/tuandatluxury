@@ -18,7 +18,7 @@ export interface DailyAvailability {
   id: string;
   room_id: string;
   date: string;
-  status: 'open' | 'closed' | 'limited';
+  status: 'open' | 'closed' | 'limited' | 'combo';
   rooms_available: number;
   note?: string;
 }
