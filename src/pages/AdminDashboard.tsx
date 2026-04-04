@@ -22,11 +22,12 @@ import { AMENITY_ICONS } from '@/data/rooms';
 import AdminDining from '@/components/AdminDining';
 import AdminPromotions from '@/components/AdminPromotions';
 import AdminServices from '@/components/AdminServices';
+import AdminFoodMenu from '@/components/AdminFoodMenu';
 import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -512,6 +513,7 @@ const AdminDashboard = () => {
     { id: 'dining', icon: UtensilsCrossed, label: 'Ẩm thực' },
     { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
     { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
+    { id: 'food-menu', icon: UtensilsCrossed, label: 'Menu đồ ăn' },
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
@@ -1135,6 +1137,7 @@ const AdminDashboard = () => {
           {tab === 'dining' && <AdminDining />}
           {tab === 'promotions' && <AdminPromotions />}
           {tab === 'services' && <AdminServices />}
+          {tab === 'food-menu' && <AdminFoodMenu />}
 
           {/* CUSTOMERS */}
           {tab === 'customers' && (
