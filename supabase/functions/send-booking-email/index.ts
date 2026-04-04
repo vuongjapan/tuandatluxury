@@ -30,7 +30,7 @@ function formatPrice(amount: number): string {
   return amount.toLocaleString("vi-VN") + "₫";
 }
 
-function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string): string {
+function buildBookingInvoiceHtml(booking: any, roomName: string, invoiceNumber: string): string {
   const checkIn = formatDate(booking.check_in);
   const checkOut = formatDate(booking.check_out);
   const nights = Math.ceil(
@@ -40,8 +40,6 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
   const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
-
-  // QR SePay động: tự điền số tiền cọc 50% + nội dung CK = mã đơn
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
 
   return `<!DOCTYPE html>
@@ -64,7 +62,6 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
     <div style="background:#f8f6f0;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
       <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Mã đặt phòng</p>
       <p style="margin:0;font-size:28px;font-weight:700;color:#8B6914;letter-spacing:3px;">${booking.booking_code}</p>
-      <p style="margin:4px 0 0;font-size:11px;color:#999;">Lưu mã này để tra cứu đặt phòng</p>
     </div>
     <div style="background:#FEF3C7;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;">
       <span style="color:#D97706;font-weight:700;font-size:14px;">⏳ CHƯA THANH TOÁN</span>
@@ -92,10 +89,6 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
       <tr><td style="color:#888;">Tiền cọc (50%):</td><td style="font-weight:700;color:#D97706;">${formatPrice(depositAmount)}</td></tr>
       <tr><td style="color:#888;">Còn lại khi nhận phòng:</td><td style="font-weight:700;color:#8B6914;">${formatPrice(remainingAmount)}</td></tr>
     </table>
-    ${booking.guest_notes ? `
-    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Ghi chú</h3>
-    <p style="background:#f8f6f0;border-radius:8px;padding:12px;font-size:13px;margin:0;">${booking.guest_notes}</p>
-    ` : ""}
     <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;">
       <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#92400E;text-align:center;">💳 THANH TOÁN ĐẶT CỌC</p>
       <table style="width:100%;font-size:13px;line-height:1.8;margin-bottom:12px;">
@@ -106,22 +99,15 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
       <div style="text-align:center;">
         <img src="${qrUrl}" alt="QR Thanh toán SePay" style="width:200px;height:auto;border-radius:8px;margin-bottom:12px;" />
       </div>
-      </div>
       <div style="text-align:center;">
         <p style="margin:0 0 4px;font-size:12px;color:#92400E;">📌 Nội dung chuyển khoản:</p>
         <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#8B6914;letter-spacing:2px;">${booking.booking_code}</p>
         <p style="margin:0 0 4px;font-size:12px;color:#92400E;">💰 Số tiền cần chuyển:</p>
         <p style="margin:0;font-size:20px;font-weight:700;color:#DC2626;">${formatPrice(depositAmount)}</p>
       </div>
-      <p style="margin:12px 0 0;font-size:11px;color:#92400E;text-align:center;">⚡ Quét QR để tự điền số tiền và nội dung. Trạng thái tự cập nhật sau chuyển khoản.</p>
     </div>
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
-      <p>⏰ <strong style="color:#666;">Khách sạn sẽ giữ phòng đến 18:00 ngày nhận phòng.</strong><br>
-      Nếu có thay đổi hoặc hủy phòng, vui lòng liên hệ trước để được hỗ trợ.</p>
-      <p style="text-align:center;margin-top:12px;">
-        Xin chân thành cảm ơn Quý khách đã lựa chọn <strong style="color:#8B6914;">${HOTEL_NAME}</strong>.<br>
-        Chúc Quý khách có kỳ nghỉ tuyệt vời!
-      </p>
+      <p style="text-align:center;">Xin chân thành cảm ơn Quý khách đã lựa chọn <strong style="color:#8B6914;">${HOTEL_NAME}</strong>.</p>
       <div style="text-align:center;border-top:1px solid #eee;margin-top:12px;padding-top:12px;">
         <p style="font-weight:600;color:#333;margin:0;">Trân trọng,</p>
         <p style="font-weight:600;color:#333;margin:2px 0;">Bộ phận lễ tân – ${HOTEL_NAME}</p>
@@ -136,32 +122,175 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
 </html>`;
 }
 
+function buildFoodOrderHtml(order: any, statusLabel: string, statusColor: string): string {
+  const depositAmount = Math.round(order.total_amount * 0.5);
+  const remainingAmount = order.total_amount - depositAmount;
+  const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(order.food_order_id)}`;
+  const isPaid = statusLabel === 'PAID';
+
+  let itemsHtml = '';
+  if (order.items && Array.isArray(order.items)) {
+    itemsHtml = order.items.map((item: any) =>
+      `<tr><td style="padding:4px 0;border-bottom:1px solid #f0f0f0;">${item.name} × ${item.quantity}</td><td style="text-align:right;padding:4px 0;border-bottom:1px solid #f0f0f0;font-weight:500;">${formatPrice(item.price * item.quantity)}</td></tr>`
+    ).join('');
+  }
+
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f0;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+  <div style="background:linear-gradient(135deg,#8B6914,#C49B2A,#8B6914);padding:28px 24px;text-align:center;color:#fff;">
+    <div style="font-size:16px;margin-bottom:4px;">🍽️</div>
+    <h1 style="margin:0;font-size:20px;font-weight:700;letter-spacing:1px;">HÓA ĐƠN ĐẶT ĐỒ ĂN</h1>
+    <p style="margin:4px 0 0;font-size:13px;opacity:0.85;">FOOD ORDER CONFIRMATION</p>
+    <div style="margin-top:16px;text-align:left;font-size:13px;line-height:1.6;opacity:0.9;">
+      <p style="margin:2px 0;"><strong>Khách sạn:</strong> ${HOTEL_NAME}</p>
+      <p style="margin:2px 0;"><strong>Hotline:</strong> ${HOTEL_PHONES}</p>
+      <p style="margin:2px 0;"><strong>Email:</strong> ${HOTEL_EMAIL_DISPLAY}</p>
+    </div>
+  </div>
+  <div style="padding:24px;">
+    <div style="background:#f8f6f0;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
+      <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Mã đơn hàng</p>
+      <p style="margin:0;font-size:24px;font-weight:700;color:#8B6914;letter-spacing:2px;">${order.food_order_id}</p>
+    </div>
+    <div style="background:${isPaid ? '#ECFDF5' : '#FEF3C7'};border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;">
+      <span style="color:${statusColor};font-weight:700;font-size:14px;">${isPaid ? '✅ ĐÃ CỌC 50%' : '⏳ CHƯA THANH TOÁN'}</span>
+    </div>
+    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Thông tin khách</h3>
+    <table style="width:100%;font-size:13px;line-height:1.8;">
+      <tr><td style="color:#888;width:40%;">Họ tên:</td><td style="font-weight:500;">${order.customer_name}</td></tr>
+      <tr><td style="color:#888;">Số điện thoại:</td><td style="font-weight:500;">📞 ${order.phone}</td></tr>
+      ${order.guest_email ? `<tr><td style="color:#888;">Email:</td><td style="font-weight:500;">📧 ${order.guest_email}</td></tr>` : ""}
+      ${order.room_number ? `<tr><td style="color:#888;">Phòng:</td><td style="font-weight:500;">${order.room_number}</td></tr>` : ""}
+      ${order.booking_code ? `<tr><td style="color:#888;">Mã đặt phòng:</td><td style="font-weight:500;">${order.booking_code}</td></tr>` : ""}
+    </table>
+    ${itemsHtml ? `
+    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Chi tiết đơn hàng</h3>
+    <table style="width:100%;font-size:13px;">${itemsHtml}</table>
+    ` : ''}
+    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Chi phí</h3>
+    <table style="width:100%;font-size:13px;line-height:1.8;">
+      <tr><td style="color:#888;width:40%;">Tổng tiền:</td><td style="font-weight:700;color:#8B6914;font-size:15px;">${formatPrice(order.total_amount)}</td></tr>
+      <tr><td style="color:#888;">Tiền cọc (50%):</td><td style="font-weight:700;color:${isPaid ? '#059669' : '#D97706'};">${formatPrice(depositAmount)}</td></tr>
+      ${isPaid ? `<tr><td style="color:#888;">Đã thanh toán:</td><td style="font-weight:700;color:#059669;">${formatPrice(depositAmount)}</td></tr>` : ''}
+      <tr><td style="color:#888;">Còn lại:</td><td style="font-weight:700;color:#8B6914;">${formatPrice(isPaid ? remainingAmount : order.total_amount)}</td></tr>
+    </table>
+    ${!isPaid ? `
+    <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;">
+      <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#92400E;text-align:center;">💳 THANH TOÁN ĐẶT CỌC 50%</p>
+      <table style="width:100%;font-size:13px;line-height:1.8;margin-bottom:12px;">
+        <tr><td style="color:#92400E;width:45%;">🏦 Ngân hàng:</td><td style="font-weight:700;">${VA_BANK}</td></tr>
+        <tr><td style="color:#92400E;">👤 Chủ TK:</td><td style="font-weight:700;">${VA_HOLDER}</td></tr>
+        <tr><td style="color:#92400E;">🔢 Số TK (VA):</td><td style="font-weight:700;">${VA_ACCOUNT}</td></tr>
+      </table>
+      <div style="text-align:center;">
+        <img src="${qrUrl}" alt="QR" style="width:200px;height:auto;border-radius:8px;margin-bottom:12px;" />
+        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">📌 Nội dung CK:</p>
+        <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#8B6914;letter-spacing:2px;">${order.food_order_id}</p>
+        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">💰 Số tiền:</p>
+        <p style="margin:0;font-size:20px;font-weight:700;color:#DC2626;">${formatPrice(depositAmount)}</p>
+      </div>
+    </div>` : ''}
+    <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
+      <p style="text-align:center;">Xin chân thành cảm ơn Quý khách đã lựa chọn <strong style="color:#8B6914;">${HOTEL_NAME}</strong>.</p>
+      <div style="text-align:center;border-top:1px solid #eee;margin-top:12px;padding-top:12px;">
+        <p style="font-weight:600;color:#333;margin:0;">Trân trọng,</p>
+        <p style="font-weight:600;color:#333;margin:2px 0;">${HOTEL_NAME}</p>
+        <p style="margin:2px 0;">📞 ${HOTEL_PHONES}</p>
+        <p style="margin:2px 0;">📧 ${HOTEL_EMAIL_DISPLAY}</p>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { booking, room_name, invoice_number } = await req.json();
+    const body = await req.json();
     const smtpPassword = Deno.env.get("SMTP_PASSWORD");
 
     if (!smtpPassword) {
       throw new Error("SMTP_PASSWORD not configured");
     }
 
-    const invoiceHtml = buildInvoiceHtml(booking, room_name, invoice_number);
-
     const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: SMTP_PORT,
       secure: false,
-      auth: {
-        user: SMTP_EMAIL,
-        pass: smtpPassword,
-      },
+      auth: { user: SMTP_EMAIL, pass: smtpPassword },
     });
 
-    // Send to guest if email provided
+    // Handle food order emails
+    if (body.type === 'food_order') {
+      const order = body.food_order;
+      const emailHtml = buildFoodOrderHtml(order, 'PENDING', '#D97706');
+
+      // Send to guest if email provided
+      if (order.guest_email) {
+        await transporter.sendMail({
+          from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
+          to: order.guest_email,
+          subject: `Đơn đồ ăn ${order.food_order_id} - Chưa thanh toán`,
+          html: emailHtml,
+        });
+        console.log("Food order email sent to guest:", order.guest_email);
+      }
+
+      // Admin email
+      await transporter.sendMail({
+        from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
+        to: ADMIN_EMAIL,
+        subject: `🍽️ Đơn đồ ăn mới [${order.food_order_id}] - ${order.customer_name}`,
+        html: emailHtml,
+      });
+      console.log("Food order admin email sent");
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.type === 'food_deposit_paid') {
+      const order = body.food_order;
+      const emailHtml = buildFoodOrderHtml(order, 'PAID', '#059669');
+
+      if (order.guest_email) {
+        await transporter.sendMail({
+          from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
+          to: order.guest_email,
+          subject: `Đơn đồ ăn ${order.food_order_id} - Đã cọc 50%`,
+          html: emailHtml,
+        });
+        console.log("Food deposit email sent to guest:", order.guest_email);
+      }
+
+      await transporter.sendMail({
+        from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
+        to: ADMIN_EMAIL,
+        subject: `✅ Đã nhận cọc đồ ăn [${order.food_order_id}] - ${order.customer_name}`,
+        html: emailHtml,
+      });
+      console.log("Food deposit admin email sent");
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Default: booking email (backward compatible)
+    const { booking, room_name, invoice_number } = body;
+    const invoiceHtml = buildBookingInvoiceHtml(booking, room_name, invoice_number);
+
     if (booking.guest_email) {
       await transporter.sendMail({
         from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
@@ -172,7 +301,6 @@ serve(async (req) => {
       console.log("Guest email sent to:", booking.guest_email);
     }
 
-    // Admin email
     const adminHtml = `
 <div style="max-width:600px;margin:0 auto;padding:0;font-family:'Segoe UI',Arial,sans-serif;">
   <div style="background:#DC2626;color:#fff;padding:16px 20px;border-radius:10px 10px 0 0;text-align:center;">

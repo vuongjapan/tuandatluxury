@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { CircleCheckBig, Download, House, Copy, Clock } from 'lucide-react';
+import { CircleCheckBig, CheckCircle, Download, House, Copy, Clock, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
@@ -48,15 +48,10 @@ const FoodInvoice = () => {
   const [order, setOrder] = useState<FoodOrder | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const payAmount = order ? (order.total_amount - order.paid_amount > 0 ? order.total_amount - order.paid_amount : order.total_amount) : 0;
-
-  const qrUrl = order
-    ? `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${payAmount}&des=${encodeURIComponent(order.food_order_id)}`
-    : '';
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data: orderData } = await supabase
         .from('food_orders')
         .select('*')
@@ -73,9 +68,13 @@ const FoodInvoice = () => {
       }
       setLoading(false);
     };
-    fetch();
+    fetchData();
+  }, [foodOrderId]);
 
-    // Polling for payment status
+  // Polling for payment status
+  useEffect(() => {
+    if (!order || order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID') return;
+
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from('food_orders')
@@ -88,11 +87,25 @@ const FoodInvoice = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [foodOrderId]);
+  }, [order?.payment_status, foodOrderId]);
 
-  const copyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: isVi ? 'Đã sao chép' : 'Copied' });
+  const depositAmount = order ? Math.round(order.total_amount * 0.5) : 0;
+  const remainingAmount = order ? order.total_amount - depositAmount : 0;
+  const isDepositPaid = order ? (order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID') : false;
+
+  const qrUrl = order
+    ? `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(order.food_order_id)}`
+    : '';
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({ title: isVi ? 'Đã sao chép' : 'Copied' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: isVi ? 'Không thể sao chép' : 'Cannot copy', variant: 'destructive' });
+    }
   };
 
   if (loading) {
@@ -116,8 +129,6 @@ const FoodInvoice = () => {
     );
   }
 
-  const isPaid = order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID' || order.paid_amount >= order.total_amount;
-
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
       <div className="max-w-2xl mx-auto">
@@ -129,7 +140,7 @@ const FoodInvoice = () => {
           <div>
             <p className="font-semibold text-foreground">{isVi ? 'Đặt hàng thành công!' : 'Order placed!'}</p>
             <p className="text-sm text-muted-foreground">
-              {isVi ? 'Vui lòng thanh toán để xác nhận đơn hàng.' : 'Please complete payment to confirm.'}
+              {isVi ? 'Vui lòng thanh toán cọc 50% để xác nhận đơn hàng.' : 'Please pay 50% deposit to confirm your order.'}
             </p>
           </div>
         </motion.div>
@@ -143,9 +154,11 @@ const FoodInvoice = () => {
             <h1 className="font-display text-xl font-bold text-center tracking-wide">
               {isVi ? 'HÓA ĐƠN ĐẶT ĐỒ ĂN' : 'FOOD ORDER INVOICE'}
             </h1>
+            <p className="text-center text-sm text-primary-foreground/80 mt-0.5">FOOD ORDER CONFIRMATION</p>
             <div className="mt-4 text-sm space-y-1 text-primary-foreground/90">
               <p><strong>{isVi ? 'Khách sạn:' : 'Hotel:'}</strong> Tuấn Đạt Luxury</p>
-              <p><strong>Hotline:</strong> 098.441.8811 | 098.661.7939</p>
+              <p><strong>Hotline:</strong> 098.360.5768 | 036.984.5422 | 098.661.7939</p>
+              <p><strong>Email:</strong> tuandatluxuryflc36hotel@gmail.com</p>
             </div>
           </div>
 
@@ -156,13 +169,22 @@ const FoodInvoice = () => {
                 {isVi ? 'Mã đơn hàng' : 'Order ID'}
               </p>
               <p className="font-display text-2xl font-bold text-primary tracking-widest">{order.food_order_id}</p>
+              <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Lưu mã này để tra cứu đơn hàng' : 'Save this code'}</p>
             </div>
 
             {/* Status */}
             <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
               <span className="font-semibold text-muted-foreground">{isVi ? 'Trạng thái' : 'Status'}</span>
-              <span className={`font-bold px-3 py-1 rounded-full text-xs ${isPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-chart-4/20 text-chart-4'}`}>
-                {isPaid ? (isVi ? '✓ Đã thanh toán' : '✓ Paid') : (isVi ? '⏳ Chờ thanh toán' : '⏳ Pending')}
+              <span className={`font-bold px-3 py-1 rounded-full text-xs ${isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-chart-4/20 text-chart-4'}`}>
+                {isDepositPaid ? (isVi ? '✓ Đã xác nhận' : '✓ Confirmed') : (isVi ? '⏳ Chờ xác nhận' : '⏳ Pending')}
+              </span>
+            </div>
+
+            {/* Payment status */}
+            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
+              <span className="font-semibold text-muted-foreground">{isVi ? 'Thanh toán' : 'Payment'}</span>
+              <span className={`font-bold px-3 py-1 rounded-full text-xs ${isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-amber-100 text-amber-700'}`}>
+                {isDepositPaid ? (isVi ? '✅ Đã cọc 50%' : '✅ Deposit paid') : (isVi ? '⏳ Chưa thanh toán' : '⏳ Unpaid')}
               </span>
             </div>
 
@@ -226,63 +248,115 @@ const FoodInvoice = () => {
                   <span className="font-bold text-primary text-base">{formatPrice(order.total_amount)}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isVi ? 'Tiền cọc (50%):' : 'Deposit (50%):'}</span>
+                  <span className={`font-bold ${isDepositPaid ? 'text-chart-2' : 'text-amber-600'}`}>{formatPrice(depositAmount)}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">{isVi ? 'Đã thanh toán:' : 'Paid:'}</span>
-                  <span className="font-medium">{formatPrice(order.paid_amount)}</span>
+                  <span className={`font-medium ${isDepositPaid ? 'text-chart-2' : ''}`}>
+                    {isDepositPaid ? formatPrice(depositAmount) : '0₫'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{isVi ? 'Còn lại:' : 'Remaining:'}</span>
-                  <span className="font-bold text-primary">{formatPrice(order.total_amount - order.paid_amount)}</span>
+                  <span className="font-bold text-primary">
+                    {isDepositPaid ? formatPrice(remainingAmount) : formatPrice(order.total_amount)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Payment QR - only show if not fully paid */}
-            {!isPaid && (
-              <div className="print:hidden">
-                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
-                  {isVi ? 'Thanh toán qua QR' : 'Pay via QR'}
-                </h3>
-                <div className="flex flex-col items-center gap-4">
-                  <img src={qrUrl} alt="QR Payment" className="w-52 h-52 rounded-xl border border-border" />
-                  <div className="w-full space-y-2 text-sm">
-                    <div className="flex justify-between items-center p-2 bg-secondary rounded-lg">
-                      <span className="text-muted-foreground">{isVi ? 'Ngân hàng:' : 'Bank:'}</span>
-                      <span className="font-bold">{VA_BANK}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-secondary rounded-lg">
-                      <span className="text-muted-foreground">{isVi ? 'Số TK:' : 'Account:'}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">{VA_ACCOUNT}</span>
-                        <button onClick={() => copyText(VA_ACCOUNT)} className="text-primary"><Copy className="h-3.5 w-3.5" /></button>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-secondary rounded-lg">
-                      <span className="text-muted-foreground">{isVi ? 'Chủ TK:' : 'Holder:'}</span>
-                      <span className="font-bold">{VA_HOLDER}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-secondary rounded-lg">
-                      <span className="text-muted-foreground">{isVi ? 'Số tiền:' : 'Amount:'}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-primary">{formatPrice(payAmount)}</span>
-                        <button onClick={() => copyText(String(payAmount))} className="text-primary"><Copy className="h-3.5 w-3.5" /></button>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-secondary rounded-lg">
-                      <span className="text-muted-foreground">{isVi ? 'Nội dung CK:' : 'Content:'}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">{order.food_order_id}</span>
-                        <button onClick={() => copyText(order.food_order_id)} className="text-primary"><Copy className="h-3.5 w-3.5" /></button>
-                      </div>
-                    </div>
+            {/* QR Payment - only show if not paid */}
+            {!isDepositPaid && (
+              <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
+                <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 {isVi ? 'THANH TOÁN ĐẶT CỌC' : 'DEPOSIT PAYMENT'}</h3>
+                
+                <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">🏦 {isVi ? 'Ngân hàng:' : 'Bank:'}</span>
+                    <span className="font-bold">{VA_BANK}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">🔢 {isVi ? 'Số TK (VA):' : 'Account:'}</span>
+                    <span className="font-bold">{VA_ACCOUNT}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">👤 {isVi ? 'Chủ TK:' : 'Holder:'}</span>
+                    <span className="font-bold">{VA_HOLDER}</span>
+                  </div>
+                  <p className="text-xs text-amber-700 text-center mt-2">
+                    ⚠️ {isVi ? 'Chỉ chuyển khoản qua tài khoản ảo (VA) hoặc quét mã QR bên dưới.' : 'Transfer via VA or scan QR below.'}
+                  </p>
+                </div>
+
+                <div className="flex justify-center mb-4">
+                  <img src={qrUrl} alt="QR Payment" className="w-64 rounded-lg shadow-md bg-white" />
+                </div>
+
+                <div className="text-center space-y-3">
+                  <div>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">📌 {isVi ? 'Nội dung chuyển khoản:' : 'Transfer content:'}</p>
+                    <p className="font-display text-xl font-bold text-primary tracking-widest mt-1">{order.food_order_id}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => handleCopy(order.food_order_id)}
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+                      {copied ? (isVi ? 'Đã sao chép' : 'Copied') : (isVi ? 'Sao chép' : 'Copy')}
+                    </Button>
+                  </div>
+                  <div>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">💰 {isVi ? 'Số tiền cần chuyển:' : 'Amount:'}</p>
+                    <p className="text-2xl font-bold text-destructive mt-1">{formatPrice(depositAmount)}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-4 p-3 bg-chart-4/10 rounded-lg text-xs text-chart-4">
-                  <Clock className="h-4 w-4 shrink-0" />
-                  <span>{isVi ? 'Hệ thống sẽ tự động xác nhận khi nhận được thanh toán.' : 'Payment will be auto-confirmed.'}</span>
-                </div>
+                <p className="text-xs text-amber-700 text-center mt-3">
+                  ⚡ {isVi ? 'Quét QR để tự điền số tiền và nội dung. Trạng thái tự động cập nhật sau chuyển khoản.' : 'Scan QR to auto-fill. Status updates automatically.'}
+                </p>
               </div>
             )}
+
+            {/* Deposit paid confirmation */}
+            {isDepositPaid && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-chart-2/10 border border-chart-2/30 rounded-xl p-4 text-center"
+              >
+                <CheckCircle className="h-8 w-8 text-chart-2 mx-auto mb-2" />
+                <p className="font-bold text-chart-2 text-lg">{isVi ? 'Đã cọc 50% thành công!' : 'Deposit paid!'}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isVi ? `Số tiền còn lại ${formatPrice(remainingAmount)} thanh toán khi nhận đồ` : `Remaining ${formatPrice(remainingAmount)} on delivery`}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Notes */}
+            {order.notes && (
+              <div>
+                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
+                  {isVi ? 'Ghi chú' : 'Notes'}
+                </h3>
+                <p className="text-foreground bg-secondary rounded-lg p-3">{order.notes}</p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="border-t border-border pt-4 space-y-3 text-xs text-muted-foreground">
+              <p className="text-center">
+                {isVi ? 'Xin chân thành cảm ơn Quý khách đã lựa chọn' : 'Thank you for choosing'}{' '}
+                <strong className="text-primary">Tuấn Đạt Luxury</strong>.
+              </p>
+              <div className="text-center pt-2 border-t border-border">
+                <p className="font-semibold text-foreground">{isVi ? 'Trân trọng,' : 'Best regards,'}</p>
+                <p className="font-semibold text-foreground">Tuấn Đạt Luxury</p>
+                <p>📞 098.360.5768 | 036.984.5422 | 098.661.7939</p>
+                <p>📧 tuandatluxuryflc36hotel@gmail.com</p>
+              </div>
+            </div>
 
             {/* Timestamp */}
             <p className="text-xs text-muted-foreground text-center pt-2">
