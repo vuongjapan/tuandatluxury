@@ -9,8 +9,9 @@ import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
 // SePay VA - thanh toán qua tài khoản ảo, không chuyển trực tiếp
-const BANK_NAME = 'BIDV';
-const SEPAY_ACCOUNT = '50110001090777'; // Tài khoản SePay VA
+const SEPAY_VA_BANK = 'BIDV';
+const SEPAY_VA_ACCOUNT = '50110001090777'; // Tài khoản ảo SePay VA
+const SEPAY_VA_HOLDER = 'TUAN DAT LUXURY';
 
 const InvoicePage = () => {
   const { bookingCode } = useParams();
