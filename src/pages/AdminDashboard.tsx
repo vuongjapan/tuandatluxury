@@ -350,7 +350,7 @@ const AdminDashboard = () => {
   }, [mpRoom, mpYear, mpMonth, monthlyPrices, rooms]);
 
   const toggleDayAvailability = async (roomId: string, dateStr: string, currentStatus: string | null) => {
-    const nextStatus = currentStatus === null ? 'closed' : currentStatus === 'open' ? 'closed' : currentStatus === 'closed' ? 'limited' : 'open';
+    const nextStatus = currentStatus === null ? 'closed' : currentStatus === 'open' ? 'closed' : currentStatus === 'closed' ? 'limited' : currentStatus === 'limited' ? 'combo' : 'open';
     if (currentStatus === null) {
       await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
     } else if (nextStatus === 'open') {
