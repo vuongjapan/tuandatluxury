@@ -1137,6 +1137,7 @@ const AdminDashboard = () => {
           {tab === 'dining' && <AdminDining />}
           {tab === 'promotions' && <AdminPromotions />}
           {tab === 'services' && <AdminServices />}
+          {tab === 'food-menu' && <AdminFoodMenu />}
 
           {/* CUSTOMERS */}
           {tab === 'customers' && (
