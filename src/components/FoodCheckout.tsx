@@ -119,9 +119,6 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
     }
   };
 
-  const addUpsell = (item: typeof popularItems[0]) => {
-    const { addItem } = useCart();
-  };
 
   return (
     <div className="min-h-screen bg-background">
