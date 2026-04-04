@@ -351,19 +351,31 @@ const AdminDashboard = () => {
 
   const toggleDayAvailability = async (roomId: string, dateStr: string, currentStatus: string | null) => {
     const nextStatus = currentStatus === null ? 'closed' : currentStatus === 'open' ? 'closed' : currentStatus === 'closed' ? 'limited' : currentStatus === 'limited' ? 'combo' : 'open';
+    const existing = dailyAvailability.find((a: any) => a.room_id === roomId && a.date === dateStr);
+
+    let error: any = null;
+
     if (currentStatus === null) {
-      await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
+      const result = await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
+      error = result.error;
     } else if (nextStatus === 'open') {
-      const existing = dailyAvailability.find((a: any) => a.room_id === roomId && a.date === dateStr);
-      if (existing) await supabase.from('room_daily_availability').delete().eq('id', existing.id);
-    } else {
-      const existing = dailyAvailability.find((a: any) => a.room_id === roomId && a.date === dateStr);
       if (existing) {
-        await supabase.from('room_daily_availability').update({ status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 }).eq('id', existing.id);
-      } else {
-        await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
+        const result = await supabase.from('room_daily_availability').delete().eq('id', existing.id);
+        error = result.error;
       }
+    } else if (existing) {
+      const result = await supabase.from('room_daily_availability').update({ status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 }).eq('id', existing.id);
+      error = result.error;
+    } else {
+      const result = await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
+      error = result.error;
     }
+
+    if (error) {
+      toast({ title: 'Không thể cập nhật trạng thái ngày', description: error.message, variant: 'destructive' });
+      return;
+    }
+
     fetchDailyAvailability();
   };
 

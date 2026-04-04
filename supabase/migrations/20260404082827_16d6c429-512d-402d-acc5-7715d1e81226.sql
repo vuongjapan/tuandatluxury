@@ -1,0 +1,2 @@
+ALTER TABLE public.room_daily_availability DROP CONSTRAINT IF EXISTS room_daily_availability_status_check;
+ALTER TABLE public.room_daily_availability ADD CONSTRAINT room_daily_availability_status_check CHECK ((status = ANY (ARRAY['open'::text, 'closed'::text, 'limited'::text, 'combo'::text])));
