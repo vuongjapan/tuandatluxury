@@ -156,6 +156,7 @@ export function useRooms() {
     getRoomPrice,
     getAvailability,
     isDateAvailable,
+    hasComboRequiredDays,
     monthlyPrices,
     dailyAvailability,
   };
