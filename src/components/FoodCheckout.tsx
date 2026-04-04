@@ -57,20 +57,19 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const prefix = form.bookingCode || `TD${yy}${mm}`;
 
-      let suffix = '-FOOD';
-      if (form.bookingCode) {
-        const { count } = await supabase
-          .from('food_orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('booking_code', form.bookingCode);
-        if (count && count > 0) {
-          suffix = `-FOOD-${count + 1}`;
-        }
-      }
+      // Determine base code for food order ID
+      const baseCode = form.bookingCode || `${prefix}A${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}`;
 
-      const foodOrderId = form.bookingCode
-        ? `${form.bookingCode}${suffix}`
-        : `${prefix}F${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}${suffix}`;
+      // Count existing food orders for this base code
+      const { count } = await supabase
+        .from('food_orders')
+        .select('*', { count: 'exact', head: true })
+        .ilike('food_order_id', `${baseCode}FOOD%`);
+
+      // Format: TD202604A00025FOOD, TD202604A00025FOOD1, TD202604A00025FOOD2...
+      const foodOrderId = count && count > 0
+        ? `${baseCode}FOOD${count}`
+        : `${baseCode}FOOD`;
 
       // Insert food order
       const { data: order, error: orderError } = await supabase
