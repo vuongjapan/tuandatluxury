@@ -80,6 +80,7 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
           booking_code: form.bookingCode || null,
           customer_name: form.customerName,
           phone: form.phone,
+          guest_email: form.email || null,
           room_number: form.roomNumber || null,
           total_amount: totalAmount,
           paid_amount: 0,
