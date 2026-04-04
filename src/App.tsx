@@ -44,26 +44,30 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/room/:id" element={<RoomDetail />} />
-                <Route path="/booking" element={<Booking />} />
-                <Route path="/dining" element={<Dining />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
-                <Route path="/member" element={<MemberAuth />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/room/:id" element={<RoomDetail />} />
+                  <Route path="/booking" element={<Booking />} />
+                  <Route path="/dining" element={<Dining />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/food-order" element={<FoodOrder />} />
+                  <Route path="/food-invoice/:foodOrderId" element={<FoodInvoice />} />
+                  <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
+                  <Route path="/member" element={<MemberAuth />} />
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
       </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>
