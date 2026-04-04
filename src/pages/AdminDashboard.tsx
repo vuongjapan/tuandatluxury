@@ -27,7 +27,7 @@ import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
