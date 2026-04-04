@@ -185,9 +185,17 @@ const Header = () => {
                 {t(item.key)}
               </a>
           )}
+            {!loading && !user && (
+              <Button
+                variant="outline"
+                className="mt-2 w-full gap-2"
+                onClick={() => {setMobileOpen(false);navigate('/member');}}>
+                <User className="h-4 w-4" /> Đăng nhập / Đăng ký
+              </Button>
+            )}
             <Button
             variant="gold"
-            className="mt-3 w-full"
+            className="mt-2 w-full"
             onClick={() => {setMobileOpen(false);navigate('/booking');}}>
             
               {t('hero.book_now')}
