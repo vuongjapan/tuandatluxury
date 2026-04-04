@@ -22,7 +22,7 @@ interface FoodCheckoutProps {
 
 const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
   const { language, formatPrice } = useLanguage();
-  const { items: cartItems, totalAmount, updateQuantity, removeItem, clearCart } = useCart();
+  const { items: cartItems, totalAmount, updateQuantity, removeItem, clearCart, addItem } = useCart();
   const { popularItems } = useMenuItems();
   const { toast } = useToast();
   const navigate = useNavigate();
