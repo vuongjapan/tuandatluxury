@@ -18,6 +18,7 @@ const InvoicePage = () => {
   const { toast } = useToast();
   const [booking, setBooking] = useState<any>(null);
   const [invoice, setInvoice] = useState<any>(null);
+  const [combos, setCombos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
