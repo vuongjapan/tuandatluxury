@@ -31,12 +31,12 @@ const InvoicePage = () => {
 
     if (b) {
       setBooking(b);
-      const { data: inv } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('booking_id', b.id)
-        .maybeSingle();
+      const [{ data: inv }, { data: bc }] = await Promise.all([
+        supabase.from('invoices').select('*').eq('booking_id', b.id).maybeSingle(),
+        supabase.from('booking_combos').select('*').eq('booking_id', b.id),
+      ]);
       setInvoice(inv);
+      setCombos(bc || []);
     }
     setLoading(false);
   }, [bookingCode]);
