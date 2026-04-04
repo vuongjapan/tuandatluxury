@@ -264,7 +264,7 @@ serve(async (req) => {
                 food_order_id: foodOrder.food_order_id,
                 customer_name: foodOrder.customer_name,
                 phone: foodOrder.phone,
-                guest_email: null, // We'll get it from webhook logs or direct
+                guest_email: foodOrder.guest_email || null,
                 room_number: foodOrder.room_number,
                 booking_code: foodOrder.booking_code,
                 total_amount: foodOrder.total_amount,
