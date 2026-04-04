@@ -288,9 +288,9 @@ const InvoicePage = () => {
                   </p>
                 </div>
 
-                {/* Dynamic QR from VietQR */}
+                {/* QR SePay VA - liên kết trực tiếp với SePay */}
                 <div className="flex justify-center mb-4">
-                  <img src={qrUrl} alt="QR Thanh toán" className="w-52 h-52 rounded-lg shadow-md bg-white" />
+                  <img src={qrUrl} alt="QR Thanh toán SePay" className="w-64 rounded-lg shadow-md bg-white" />
                 </div>
 
                 <div className="text-center space-y-3">
