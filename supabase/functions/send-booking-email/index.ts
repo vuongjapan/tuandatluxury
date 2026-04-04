@@ -30,17 +30,31 @@ function formatPrice(amount: number): string {
   return amount.toLocaleString("vi-VN") + "₫";
 }
 
-function buildBookingInvoiceHtml(booking: any, roomName: string, invoiceNumber: string): string {
+function buildBookingInvoiceHtml(booking: any, roomName: string, invoiceNumber: string, combos?: any[], comboTotal?: number): string {
   const checkIn = formatDate(booking.check_in);
   const checkOut = formatDate(booking.check_out);
   const nights = Math.ceil(
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
   const roomQty = booking.room_quantity || 1;
-  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
+  const actualComboTotal = comboTotal || 0;
+  const roomPrice = booking.total_price_vnd - actualComboTotal;
+  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomPrice / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+
+  let comboHtml = '';
+  if (combos && combos.length > 0) {
+    const comboRows = combos.map((c: any) =>
+      `<tr><td style="padding:4px 0;border-bottom:1px solid #f0f0f0;">${c.combo_name} × ${c.quantity}</td><td style="text-align:right;padding:4px 0;border-bottom:1px solid #f0f0f0;font-weight:500;">${formatPrice(c.price_vnd * c.quantity)}</td></tr>`
+    ).join('');
+    comboHtml = `
+    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">🍽️ Combo ăn uống</h3>
+    <table style="width:100%;font-size:13px;">${comboRows}
+      <tr><td style="padding:4px 0;font-weight:600;">Tổng combo:</td><td style="text-align:right;padding:4px 0;font-weight:700;color:#8B6914;">${formatPrice(actualComboTotal)}</td></tr>
+    </table>`;
+  }
 
   return `<!DOCTYPE html>
 <html lang="vi">
