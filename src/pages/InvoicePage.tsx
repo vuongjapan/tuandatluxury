@@ -9,8 +9,8 @@ import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
 const VA_BANK = 'BIDV';
-const VA_ACCOUNT = '50110001090777';
-const VA_HOLDER = 'TUAN DAT LUXURY';
+const VA_ACCOUNT = '96247TUANDATLUXURY';
+const VA_HOLDER = 'VAN DINH GIANG';
 
 const InvoicePage = () => {
   const { bookingCode } = useParams();

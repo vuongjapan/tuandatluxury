@@ -18,8 +18,8 @@ const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 098.661.7939";
 const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
 const VA_BANK = "BIDV";
-const VA_ACCOUNT = "50110001090777";
-const VA_HOLDER = "TUAN DAT LUXURY";
+const VA_ACCOUNT = "96247TUANDATLUXURY";
+const VA_HOLDER = "VAN DINH GIANG";
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
