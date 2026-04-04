@@ -25,7 +25,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { room_id, guest_name, guest_email, guest_phone, guest_notes, check_in, check_out, guests_count, total_price_vnd, room_quantity, language } = body;
+    const { room_id, guest_name, guest_email, guest_phone, guest_notes, check_in, check_out, guests_count, total_price_vnd, room_quantity, language, combos, combo_total } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -63,7 +63,7 @@ serve(async (req) => {
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
 
-    // SePay dynamic QR URL - tự điền số tiền cọc 50% + nội dung CK = mã đơn
+    // SePay dynamic QR URL
     const sepayQrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(bookingCode)}`;
 
     // Insert booking
@@ -95,7 +95,30 @@ serve(async (req) => {
 
     if (bookingError) throw bookingError;
 
-    // Create invoice with same code
+    // Insert booking combos if any
+    let comboDetails: any[] = [];
+    if (combos && Array.isArray(combos) && combos.length > 0) {
+      const comboInserts = combos.map((c: any) => ({
+        booking_id: booking.id,
+        dining_item_id: c.dining_item_id,
+        combo_name: c.combo_name,
+        price_vnd: c.price_vnd,
+        quantity: c.quantity,
+      }));
+
+      const { data: insertedCombos, error: comboError } = await supabase
+        .from("booking_combos")
+        .insert(comboInserts)
+        .select();
+
+      if (comboError) {
+        console.error("Combo insert error:", comboError);
+      } else {
+        comboDetails = insertedCombos || [];
+      }
+    }
+
+    // Create invoice
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .insert({
@@ -132,6 +155,8 @@ serve(async (req) => {
           booking,
           room_name: room?.name_vi || room_id,
           invoice_number: bookingCode,
+          combos: combos || [],
+          combo_total: combo_total || 0,
         }),
       });
       console.log("Email function called successfully");
@@ -145,6 +170,7 @@ serve(async (req) => {
         booking,
         invoice,
         booking_code: bookingCode,
+        combos: comboDetails,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
