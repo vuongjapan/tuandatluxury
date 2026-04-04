@@ -8,9 +8,9 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
-// Fallback VA (chỉ dùng khi API SePay không trả VA)
-const FALLBACK_VA = '50110001090777';
+// SePay VA cố định (tài khoản cá nhân - không tạo VA động được)
 const VA_BANK = 'BIDV';
+const VA_ACCOUNT = '50110001090777';
 const VA_HOLDER = 'TUAN DAT LUXURY';
 
 const InvoicePage = () => {
@@ -101,11 +101,8 @@ const InvoicePage = () => {
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
 
-  // Dynamic VA from booking record (from SePay API), fallback to default
-  const vaAccount = booking.sepay_va || FALLBACK_VA;
-
-  // Dynamic QR URL using VietQR format
-  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${vaAccount}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}`;
+  // Dynamic QR URL - VietQR format with auto-fill amount + booking code
+  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${VA_ACCOUNT}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}`;
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -272,7 +269,7 @@ const InvoicePage = () => {
               <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
                 <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 THANH TOÁN ĐẶT CỌC</h3>
                 
-                {/* SePay VA info - dynamic per booking */}
+                {/* VA info */}
                 <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🏦 Ngân hàng:</span>
@@ -280,7 +277,7 @@ const InvoicePage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🔢 Số tài khoản (VA):</span>
-                    <span className="font-bold">{vaAccount}</span>
+                    <span className="font-bold">{VA_ACCOUNT}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">👤 Chủ tài khoản:</span>
@@ -291,7 +288,7 @@ const InvoicePage = () => {
                   </p>
                 </div>
 
-                {/* Dynamic QR */}
+                {/* Dynamic QR from VietQR */}
                 <div className="flex justify-center mb-4">
                   <img src={qrUrl} alt="QR Thanh toán" className="w-52 h-52 rounded-lg shadow-md bg-white" />
                 </div>

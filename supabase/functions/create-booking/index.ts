@@ -15,46 +15,6 @@ function generateBookingCodePrefix(): string {
   return `TD${year}${month}A`;
 }
 
-async function createSepayVA(bookingCode: string, amount: number): Promise<string | null> {
-  const apiKey = Deno.env.get("SEPAY_API_KEY");
-  if (!apiKey) {
-    console.error("SEPAY_API_KEY not configured");
-    return null;
-  }
-
-  try {
-    const res = await fetch("https://my.sepay.vn/userapi/bank-accounts/virtual", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content: bookingCode,
-        amount: amount,
-      }),
-    });
-
-    const data = await res.json();
-    console.log("SePay VA response:", JSON.stringify(data));
-
-    if (data.status === 200 && data.messages?.success && data.data?.account_number) {
-      return data.data.account_number;
-    }
-
-    // Fallback: try alternative response structure
-    if (data.account_number) {
-      return data.account_number;
-    }
-
-    console.error("SePay VA creation failed:", JSON.stringify(data));
-    return null;
-  } catch (err) {
-    console.error("SePay VA API error:", err);
-    return null;
-  }
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -100,10 +60,6 @@ serve(async (req) => {
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
 
-    // Create SePay Virtual Account for this booking
-    const sepayVa = await createSepayVA(bookingCode, depositAmount);
-    console.log("SePay VA created:", sepayVa, "for booking:", bookingCode);
-
     // Insert booking
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
@@ -124,7 +80,6 @@ serve(async (req) => {
         payment_status: "PENDING",
         status: "pending",
         language: language || "vi",
-        sepay_va: sepayVa,
       })
       .select()
       .single();
@@ -165,7 +120,7 @@ serve(async (req) => {
           Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
         },
         body: JSON.stringify({
-          booking: { ...booking, sepay_va: sepayVa },
+          booking,
           room_name: room?.name_vi || room_id,
           invoice_number: bookingCode,
         }),
