@@ -899,7 +899,7 @@ const AdminDashboard = () => {
                   Trạng thái bán theo ngày
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Click vào ngày để chuyển: <strong className="text-green-600">Mở</strong> → <strong className="text-destructive">Đóng</strong> → <strong className="text-yellow-600">Giới hạn</strong> → Mở.
+                  Click vào ngày để chuyển: <strong className="text-green-600">Mở</strong> → <strong className="text-destructive">Đóng</strong> → <strong className="text-yellow-600">Giới hạn</strong> → <strong className="text-purple-600">Combo bắt buộc</strong> → Mở.
                 </p>
 
                 <div className="flex flex-wrap gap-3 mb-4 items-center">
