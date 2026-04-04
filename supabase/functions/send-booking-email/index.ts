@@ -302,6 +302,78 @@ serve(async (req) => {
       });
     }
 
+    // Welcome member email
+    if (body.type === 'welcome_member') {
+      const { member_name, member_email, member_phone } = body;
+      const welcomeHtml = `<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f0;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+  <div style="background:linear-gradient(135deg,#8B6914,#C49B2A,#8B6914);padding:28px 24px;text-align:center;color:#fff;">
+    <div style="font-size:32px;margin-bottom:8px;">🎉</div>
+    <h1 style="margin:0;font-size:22px;font-weight:700;letter-spacing:1px;">CHÀO MỪNG THÀNH VIÊN MỚI</h1>
+    <p style="margin:4px 0 0;font-size:13px;opacity:0.85;">WELCOME TO ${HOTEL_NAME}</p>
+  </div>
+  <div style="padding:24px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <p style="font-size:16px;color:#333;margin:0 0 8px;">Xin chào <strong style="color:#8B6914;">${member_name}</strong>,</p>
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">Chúc mừng bạn đã đăng ký thành công tài khoản thành viên tại <strong>${HOTEL_NAME}</strong>!</p>
+    </div>
+    <div style="background:#f8f6f0;border-radius:10px;padding:16px;margin-bottom:20px;">
+      <h3 style="font-size:14px;font-weight:600;color:#8B6914;margin:0 0 12px;text-align:center;">📋 Thông tin tài khoản</h3>
+      <table style="width:100%;font-size:13px;line-height:2;">
+        <tr><td style="color:#888;width:40%;">Họ tên:</td><td style="font-weight:600;">${member_name}</td></tr>
+        <tr><td style="color:#888;">Email:</td><td style="font-weight:600;">${member_email}</td></tr>
+        ${member_phone ? `<tr><td style="color:#888;">Số điện thoại:</td><td style="font-weight:600;">${member_phone}</td></tr>` : ''}
+        <tr><td style="color:#888;">Hạng thành viên:</td><td style="font-weight:600;color:#8B6914;">🎖 Thành viên</td></tr>
+      </table>
+    </div>
+    <div style="background:#FEF3C7;border-radius:10px;padding:16px;margin-bottom:20px;">
+      <h3 style="font-size:14px;font-weight:600;color:#92400E;margin:0 0 12px;text-align:center;">🎁 Ưu đãi thành viên</h3>
+      <table style="width:100%;font-size:13px;line-height:2;">
+        <tr><td style="color:#92400E;">🎖 Thường (0-2 lần đặt):</td><td style="font-weight:600;">Giảm 5%</td></tr>
+        <tr><td style="color:#92400E;">⭐ VIP (3-9 lần đặt):</td><td style="font-weight:600;">Giảm 10%</td></tr>
+        <tr><td style="color:#92400E;">👑 Siêu VIP (10+ lần đặt):</td><td style="font-weight:600;">Giảm 15%</td></tr>
+      </table>
+    </div>
+    <p style="font-size:13px;color:#555;line-height:1.6;text-align:center;">Hãy đăng nhập và đặt phòng để tích lũy ưu đãi nhé! Mỗi lần đặt phòng thành công sẽ giúp bạn tiến gần hơn đến hạng VIP và Siêu VIP.</p>
+    <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;text-align:center;">
+      <p style="font-weight:600;color:#333;margin:0;">Trân trọng,</p>
+      <p style="font-weight:600;color:#333;margin:2px 0;">${HOTEL_NAME}</p>
+      <p style="margin:2px 0;">📞 ${HOTEL_PHONES}</p>
+      <p style="margin:2px 0;">📧 ${HOTEL_EMAIL_DISPLAY}</p>
+      <p style="margin:2px 0;">📍 ${HOTEL_ADDRESS}</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+
+      // Send to member
+      await transporter.sendMail({
+        from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
+        to: member_email,
+        subject: `🎉 Chào mừng ${member_name} - Thành viên ${HOTEL_NAME}`,
+        html: welcomeHtml,
+      });
+      console.log("Welcome email sent to:", member_email);
+
+      // Notify admin
+      await transporter.sendMail({
+        from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
+        to: ADMIN_EMAIL,
+        subject: `👤 Thành viên mới: ${member_name} (${member_email})`,
+        html: welcomeHtml,
+      });
+      console.log("Welcome admin notification sent");
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Default: booking email (backward compatible)
     const { booking, room_name, invoice_number, combos, combo_total } = body;
     const invoiceHtml = buildBookingInvoiceHtml(booking, room_name, invoice_number, combos, combo_total);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,7 +42,20 @@ const MemberAuth = () => {
         }
         const { error } = await signUp(email, password, fullName, phone);
         if (error) throw new Error(error);
-        toast({ title: 'Đăng ký thành công!', description: 'Bạn đã trở thành thành viên Tuấn Đạt Luxury Hotel.' });
+        // Send welcome email
+        try {
+          await supabase.functions.invoke('send-booking-email', {
+            body: {
+              type: 'welcome_member',
+              member_name: fullName,
+              member_email: email,
+              member_phone: phone,
+            },
+          });
+        } catch (emailErr) {
+          console.error('Welcome email error:', emailErr);
+        }
+        toast({ title: 'Đăng ký thành công!', description: 'Email xác nhận đã được gửi đến hộp thư của bạn.' });
         navigate('/');
       }
     } catch (err: any) {
