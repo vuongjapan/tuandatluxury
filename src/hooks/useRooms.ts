@@ -18,7 +18,7 @@ export interface DailyAvailability {
   id: string;
   room_id: string;
   date: string;
-  status: 'open' | 'closed' | 'limited';
+  status: 'open' | 'closed' | 'limited' | 'combo';
   rooms_available: number;
   note?: string;
 }
@@ -135,7 +135,18 @@ export function useRooms() {
   const isDateAvailable = useCallback((roomId: string, date: Date): boolean => {
     const avail = getAvailability(roomId, date);
     if (!avail) return true;
-    return avail.status === 'open' || (avail.status === 'limited' && avail.rooms_available > 0);
+    return avail.status === 'open' || avail.status === 'combo' || (avail.status === 'limited' && avail.rooms_available > 0);
+  }, [getAvailability]);
+
+  const hasComboRequiredDays = useCallback((roomId: string, checkIn: Date, checkOut: Date): boolean => {
+    const d = new Date(checkIn);
+    const endDate = new Date(checkOut);
+    while (d < endDate) {
+      const avail = getAvailability(roomId, d);
+      if (avail?.status === 'combo') return true;
+      d.setDate(d.getDate() + 1);
+    }
+    return false;
   }, [getAvailability]);
 
   return {
@@ -145,6 +156,7 @@ export function useRooms() {
     getRoomPrice,
     getAvailability,
     isDateAvailable,
+    hasComboRequiredDays,
     monthlyPrices,
     dailyAvailability,
   };

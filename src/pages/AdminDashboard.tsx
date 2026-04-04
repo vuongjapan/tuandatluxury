@@ -350,7 +350,7 @@ const AdminDashboard = () => {
   }, [mpRoom, mpYear, mpMonth, monthlyPrices, rooms]);
 
   const toggleDayAvailability = async (roomId: string, dateStr: string, currentStatus: string | null) => {
-    const nextStatus = currentStatus === null ? 'closed' : currentStatus === 'open' ? 'closed' : currentStatus === 'closed' ? 'limited' : 'open';
+    const nextStatus = currentStatus === null ? 'closed' : currentStatus === 'open' ? 'closed' : currentStatus === 'closed' ? 'limited' : currentStatus === 'limited' ? 'combo' : 'open';
     if (currentStatus === null) {
       await supabase.from('room_daily_availability').insert({ room_id: roomId, date: dateStr, status: nextStatus, rooms_available: nextStatus === 'limited' ? 1 : 0 });
     } else if (nextStatus === 'open') {
@@ -951,13 +951,14 @@ const AdminDashboard = () => {
                               ${status === 'open' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800 hover:bg-green-100' : ''}
                               ${status === 'closed' ? 'bg-destructive/10 border-destructive/30 hover:bg-destructive/20' : ''}
                               ${status === 'limited' ? 'bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700 hover:bg-yellow-100' : ''}
+                              ${status === 'combo' ? 'bg-purple-50 border-purple-300 dark:bg-purple-900/20 dark:border-purple-700 hover:bg-purple-100' : ''}
                             `}
                           >
                             <span className="text-xs sm:text-sm font-medium text-foreground">{d}</span>
                             <span className={`text-[8px] sm:text-[9px] font-semibold ${
-                              status === 'open' ? 'text-green-600' : status === 'closed' ? 'text-destructive' : 'text-yellow-600'
+                              status === 'open' ? 'text-green-600' : status === 'closed' ? 'text-destructive' : status === 'combo' ? 'text-purple-600' : 'text-yellow-600'
                             }`}>
-                              {status === 'open' ? 'Mở' : status === 'closed' ? 'Đóng' : 'GH'}
+                              {status === 'open' ? 'Mở' : status === 'closed' ? 'Đóng' : status === 'combo' ? 'Combo' : 'GH'}
                             </span>
                           </button>
                         );
@@ -968,6 +969,7 @@ const AdminDashboard = () => {
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-100 border border-green-300" /> Mở bán</span>
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/20 border border-destructive/40" /> Đóng bán</span>
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-400" /> Giới hạn</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-100 border border-purple-400" /> Combo bắt buộc</span>
                     </div>
                   </div>
                 )}

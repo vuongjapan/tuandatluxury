@@ -70,6 +70,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
           const isSelected = selectedDate && cell.date.toDateString() === selectedDate.toDateString();
           const isClosed = cell.status === 'closed';
           const isLimited = cell.status === 'limited';
+          const isCombo = cell.status === 'combo';
           const isWeekend = cell.date.getDay() === 5 || cell.date.getDay() === 6;
           const isSunday = cell.date.getDay() === 0;
           const disabled = cell.isPast || isClosed;
@@ -85,8 +86,9 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
                 ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : ''}
                 ${isClosed ? 'bg-destructive/10 line-through' : ''}
                 ${isLimited ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}
-                ${isWeekend && !disabled ? 'bg-accent/20' : ''}
-                ${isSunday && !disabled ? 'bg-orange-50 dark:bg-orange-900/20' : ''}
+                ${isCombo ? 'bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-300' : ''}
+                ${isWeekend && !disabled && !isCombo ? 'bg-accent/20' : ''}
+                ${isSunday && !disabled && !isCombo ? 'bg-orange-50 dark:bg-orange-900/20' : ''}
               `}
             >
               <span className="text-sm font-medium text-foreground">{cell.date.getDate()}</span>
@@ -98,6 +100,9 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
               {isClosed && !cell.isPast && (
                 <span className="text-[9px] font-medium text-destructive">Đóng</span>
               )}
+              {isCombo && !cell.isPast && (
+                <span className="text-[9px] font-medium text-purple-600">Combo</span>
+              )}
             </button>
           );
         })}
@@ -108,6 +113,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-100 dark:bg-orange-900/30" /> Chủ nhật</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/10" /> Đóng bán</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300" /> Giới hạn</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-50 dark:bg-purple-900/30 border border-purple-300" /> Combo bắt buộc</span>
       </div>
     </div>
   );

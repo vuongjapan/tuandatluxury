@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_combos: {
+        Row: {
+          booking_id: string
+          combo_name: string
+          created_at: string
+          dining_item_id: string
+          id: string
+          price_vnd: number
+          quantity: number
+        }
+        Insert: {
+          booking_id: string
+          combo_name?: string
+          created_at?: string
+          dining_item_id: string
+          id?: string
+          price_vnd?: number
+          quantity?: number
+        }
+        Update: {
+          booking_id?: string
+          combo_name?: string
+          created_at?: string
+          dining_item_id?: string
+          id?: string
+          price_vnd?: number
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_combos_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_combos_dining_item_id_fkey"
+            columns: ["dining_item_id"]
+            isOneToOne: false
+            referencedRelation: "dining_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_code: string

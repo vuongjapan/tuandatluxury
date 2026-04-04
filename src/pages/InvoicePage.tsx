@@ -18,6 +18,7 @@ const InvoicePage = () => {
   const { toast } = useToast();
   const [booking, setBooking] = useState<any>(null);
   const [invoice, setInvoice] = useState<any>(null);
+  const [combos, setCombos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -30,12 +31,12 @@ const InvoicePage = () => {
 
     if (b) {
       setBooking(b);
-      const { data: inv } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('booking_id', b.id)
-        .maybeSingle();
+      const [{ data: inv }, { data: bc }] = await Promise.all([
+        supabase.from('invoices').select('*').eq('booking_id', b.id).maybeSingle(),
+        supabase.from('booking_combos').select('*').eq('booking_id', b.id),
+      ]);
       setInvoice(inv);
+      setCombos(bc || []);
     }
     setLoading(false);
   }, [bookingCode]);
@@ -95,7 +96,9 @@ const InvoicePage = () => {
 
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
   const roomQty = booking.room_quantity || 1;
-  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(booking.total_price_vnd / nights / roomQty) : 0;
+  const comboTotal = combos.reduce((sum: number, c: any) => sum + (c.price_vnd * c.quantity), 0);
+  const roomPrice = booking.total_price_vnd - comboTotal;
+  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomPrice / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
@@ -223,6 +226,25 @@ const InvoicePage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Combo ăn uống */}
+            {combos.length > 0 && (
+              <div>
+                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">🍽️ Combo ăn uống</h3>
+                <div className="space-y-2">
+                  {combos.map((c: any) => (
+                    <div key={c.id} className="flex justify-between">
+                      <span className="text-muted-foreground">{c.combo_name} ×{c.quantity}</span>
+                      <span className="font-medium">{(c.price_vnd * c.quantity).toLocaleString('vi')}₫</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-semibold border-t border-border pt-1">
+                    <span className="text-muted-foreground">Tổng combo:</span>
+                    <span className="text-primary">{comboTotal.toLocaleString('vi')}₫</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Chi phí */}
             <div>
