@@ -1413,6 +1413,9 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {/* MEMBERS */}
+          {tab === 'members' && <AdminMembers />}
+
           {/* TRASH */}
           {tab === 'trash' && (
             <div className="space-y-4">
