@@ -101,8 +101,8 @@ const InvoicePage = () => {
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
 
-  // Dynamic QR URL - VietQR format with auto-fill amount + booking code
-  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${VA_ACCOUNT}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}`;
+  // QR SePay tài khoản ảo (liên kết trực tiếp với SePay để báo biến động)
+  const qrUrl = '/images/qr-sepay.png';
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -288,9 +288,9 @@ const InvoicePage = () => {
                   </p>
                 </div>
 
-                {/* Dynamic QR from VietQR */}
+                {/* QR SePay VA - liên kết trực tiếp với SePay */}
                 <div className="flex justify-center mb-4">
-                  <img src={qrUrl} alt="QR Thanh toán" className="w-52 h-52 rounded-lg shadow-md bg-white" />
+                  <img src={qrUrl} alt="QR Thanh toán SePay" className="w-64 rounded-lg shadow-md bg-white" />
                 </div>
 
                 <div className="text-center space-y-3">

@@ -42,8 +42,8 @@ function buildInvoiceHtml(booking: any, roomName: string, invoiceNumber: string)
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
 
-  // Dynamic QR URL from VietQR - auto-fill amount + booking code
-  const qrUrl = `https://img.vietqr.io/image/${VA_BANK}-${VA_ACCOUNT}-compact.png?amount=${depositAmount}&addInfo=${encodeURIComponent(booking.booking_code)}`;
+  // QR SePay VA - ảnh tĩnh liên kết trực tiếp SePay
+  const qrUrl = "https://hkrueiyvxkdjgvcpfgmq.supabase.co/storage/v1/object/public/email-assets/qr-sepay.png";
 
   return `<!DOCTYPE html>
 <html lang="vi">
