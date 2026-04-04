@@ -37,7 +37,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          booking_code?: string
+          booking_code: string
           check_in: string
           check_out: string
           created_at?: string
@@ -274,7 +274,7 @@ export type Database = {
           booking_id: string
           deposit_amount?: number
           id?: string
-          invoice_number?: string
+          invoice_number: string
           issued_at?: string
           payment_status?: string
           remaining_amount?: number
