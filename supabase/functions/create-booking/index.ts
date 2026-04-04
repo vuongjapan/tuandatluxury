@@ -8,66 +8,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SEPAY_BANK_ACCOUNT_ID = "0c8e5471-2dcf-11f1-b21a-a6006ab65aca";
-const DEFAULT_SEPAY_BANK = "BIDV";
+const VA_BANK = "BIDV";
+const VA_ACCOUNT = "50110001090777";
 
 function generateBookingCodePrefix(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `TD${year}${month}A`;
-}
-
-function normalizeSepayQrValue(value: unknown): string | null {
-  if (typeof value !== "string" || !value.trim()) return null;
-
-  const normalized = value.trim();
-  if (
-    normalized.startsWith("https://") ||
-    normalized.startsWith("http://") ||
-    normalized.startsWith("data:image/")
-  ) {
-    return normalized;
-  }
-
-  if (/^[A-Za-z0-9+/=]+$/.test(normalized) && normalized.length > 100) {
-    return `data:image/png;base64,${normalized}`;
-  }
-
-  return null;
-}
-
-function extractSepayOrderData(payload: any) {
-  const data = payload?.data ?? payload?.order ?? payload;
-
-  const sepayVa =
-    data?.account_number ??
-    data?.bank_account_number ??
-    data?.virtual_account ??
-    data?.virtualAccount ??
-    data?.accountNo ??
-    data?.account ??
-    null;
-
-  const sepayBank =
-    data?.bank_short_name ??
-    data?.bank_code ??
-    data?.bank_name ??
-    DEFAULT_SEPAY_BANK;
-
-  const sepayQrUrl = normalizeSepayQrValue(
-    data?.qr_url ??
-    data?.qrcode_url ??
-    data?.qrCodeUrl ??
-    data?.qr_image ??
-    data?.qrImage ??
-    data?.qrcode ??
-    data?.qr ??
-    data?.image_url ??
-    null
-  );
-
-  return { sepayVa, sepayBank, sepayQrUrl };
 }
 
 serve(async (req) => {
@@ -115,51 +63,10 @@ serve(async (req) => {
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
 
-    const sepayApiKey = Deno.env.get("SEPAY_API_KEY");
-    if (!sepayApiKey) {
-      throw new Error("SEPAY_API_KEY not configured");
-    }
+    // SePay dynamic QR URL - tự điền số tiền cọc 50% + nội dung CK = mã đơn
+    const sepayQrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(bookingCode)}`;
 
-    const sepayResponse = await fetch(
-      `https://userapi.sepay.vn/v2/bank-accounts/${SEPAY_BANK_ACCOUNT_ID}/orders`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${sepayApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          order_code: bookingCode,
-          content: bookingCode,
-          amount: depositAmount,
-          with_qrcode: "1",
-          qrcode_template: "compact",
-        }),
-      }
-    );
-
-    const sepayText = await sepayResponse.text();
-    if (!sepayResponse.ok) {
-      throw new Error(`SePay order creation failed [${sepayResponse.status}]: ${sepayText}`);
-    }
-
-    let sepayPayload: any = {};
-    try {
-      sepayPayload = sepayText ? JSON.parse(sepayText) : {};
-    } catch {
-      throw new Error("SePay returned invalid JSON response");
-    }
-
-    const { sepayVa, sepayBank, sepayQrUrl } = extractSepayOrderData(sepayPayload);
-
-    if (!sepayVa) {
-      throw new Error("SePay response missing virtual account");
-    }
-
-    if (!sepayQrUrl) {
-      throw new Error("SePay response missing QR code");
-    }
-
+    // Insert booking
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -179,8 +86,8 @@ serve(async (req) => {
         payment_status: "PENDING",
         status: "pending",
         language: language || "vi",
-        sepay_va: sepayVa,
-        sepay_bank: sepayBank,
+        sepay_va: VA_ACCOUNT,
+        sepay_bank: VA_BANK,
         sepay_qr_url: sepayQrUrl,
       })
       .select()
