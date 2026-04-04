@@ -68,9 +68,12 @@ function getNightType(date: Date): 'weekday' | 'weekend' | 'sunday' {
   return 'weekday';
 }
 
-function getSafeData<T>(result: PromiseSettledResult<{ data: T | null; error: unknown }>, fallback: T): T {
-  if (result.status !== 'fulfilled' || result.value.error) return fallback;
-  return result.value.data ?? fallback;
+function getSafeData<T>(
+  result: PromiseSettledResult<any>,
+  fallback: T,
+): T {
+  if (result.status !== 'fulfilled' || result.value?.error) return fallback;
+  return (result.value?.data ?? fallback) as T;
 }
 
 async function fetchRoomsData() {
@@ -81,9 +84,9 @@ async function fetchRoomsData() {
   ]);
 
   return {
-    dbRooms: getSafeData(roomsResult, [] as DBRoom[]),
-    monthlyPrices: getSafeData(monthlyPricesResult, [] as MonthlyPrice[]),
-    dailyAvailability: getSafeData(dailyAvailabilityResult, [] as DailyAvailability[]),
+    dbRooms: getSafeData<DBRoom[]>(roomsResult, []),
+    monthlyPrices: getSafeData<MonthlyPrice[]>(monthlyPricesResult, []),
+    dailyAvailability: getSafeData<DailyAvailability[]>(dailyAvailabilityResult, []),
   };
 }
 
