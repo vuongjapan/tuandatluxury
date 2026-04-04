@@ -113,6 +113,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-100 dark:bg-orange-900/30" /> Chủ nhật</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/10" /> Đóng bán</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300" /> Giới hạn</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-50 dark:bg-purple-900/30 border border-purple-300" /> Combo bắt buộc</span>
       </div>
     </div>
   );
