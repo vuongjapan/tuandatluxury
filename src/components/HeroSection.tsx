@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
@@ -13,32 +13,61 @@ const HeroSection = () => {
   const { settings } = useSiteSettings();
   const isVi = t('nav.rooms') === 'Hạng phòng';
   const heroImage = settings.hero_image_url || heroImageFallback;
+  const heroVideo = settings.hero_video_url || '';
 
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [visible, setVisible] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
   useEffect(() => { setVisible(true); }, []);
 
   return (
     <section id="overview" className="relative h-screen min-h-[600px] flex flex-col overflow-hidden">
-      {/* Background image */}
+      {/* Background - Video or Image */}
       <div className="absolute inset-0">
-        <img
-          src={heroImage}
-          alt="Tuấn Đạt Luxury Hotel"
-          className="w-full h-full object-cover"
-          loading="eager"
-          decoding="async"
-        />
+        {heroVideo ? (
+          <>
+            <video
+              ref={videoRef}
+              src={heroVideo}
+              autoPlay
+              muted
+              loop
+              playsInline
+              onLoadedData={() => setVideoLoaded(true)}
+              className={`w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+              style={{ transform: 'scale(1.05)' }}
+            />
+            {/* Fallback image while video loads */}
+            {!videoLoaded && (
+              <img
+                src={heroImage}
+                alt="Tuấn Đạt Luxury Hotel"
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="eager"
+              />
+            )}
+          </>
+        ) : (
+          <img
+            src={heroImage}
+            alt="Tuấn Đạt Luxury Hotel"
+            className="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        )}
         {/* Cinematic gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,10%,0.55)] via-[hsl(220,25%,10%,0.35)] to-[hsl(220,25%,10%,0.80)]" />
         {/* Left vignette */}
         <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,25%,10%,0.4)] to-transparent" />
       </div>
 
-      {/* Decorative gold lines - Imperial style */}
+      {/* Decorative gold lines */}
       <div className="absolute left-8 sm:left-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/60 to-transparent hidden lg:block" />
       <div className="absolute right-8 sm:right-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/60 to-transparent hidden lg:block" />
 
-      {/* Main hero content - vertically centered */}
+      {/* Main hero content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 pt-24">
         <AnimatePresence>
           {visible && (
@@ -59,7 +88,7 @@ const HeroSection = () => {
                 className="font-display font-bold text-primary-foreground drop-shadow-2xl leading-tight mb-4"
                 style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}
               >
-                {t('hero.title')}
+                {settings.hero_title || t('hero.title')}
               </motion.h1>
 
               <motion.div
@@ -75,7 +104,7 @@ const HeroSection = () => {
                 transition={{ duration: 0.8, delay: 1.0 }}
                 className="text-primary-foreground/80 font-light tracking-widest text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-8 sm:mb-10"
               >
-                {t('hero.subtitle')}
+                {settings.hero_subtitle || t('hero.subtitle')}
               </motion.p>
 
               <motion.div
@@ -106,7 +135,7 @@ const HeroSection = () => {
         </AnimatePresence>
       </div>
 
-      {/* Bottom stats bar - Imperial style */}
+      {/* Bottom stats bar */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
