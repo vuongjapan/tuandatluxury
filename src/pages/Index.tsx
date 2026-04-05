@@ -77,7 +77,6 @@ const Index = () => {
   const { settings: siteSettings } = useSiteSettings();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
-  const isVi = t('nav.rooms') === 'Hạng phòng';
 
   return (
     <div className="min-h-screen bg-background">
