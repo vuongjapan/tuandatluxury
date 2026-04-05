@@ -244,6 +244,136 @@ export type Database = {
         }
         Relationships: []
       }
+      combo_menu_dishes: {
+        Row: {
+          combo_menu_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          name_en: string
+          name_vi: string
+          sort_order: number
+        }
+        Insert: {
+          combo_menu_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name_en?: string
+          name_vi: string
+          sort_order?: number
+        }
+        Update: {
+          combo_menu_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name_en?: string
+          name_vi?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combo_menu_dishes_combo_menu_id_fkey"
+            columns: ["combo_menu_id"]
+            isOneToOne: false
+            referencedRelation: "combo_menus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combo_menus: {
+        Row: {
+          combo_package_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          menu_number: number
+          name_en: string
+          name_vi: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          combo_package_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          menu_number?: number
+          name_en?: string
+          name_vi?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          combo_package_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          menu_number?: number
+          name_en?: string
+          name_vi?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combo_menus_combo_package_id_fkey"
+            columns: ["combo_package_id"]
+            isOneToOne: false
+            referencedRelation: "combo_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combo_packages: {
+        Row: {
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          dishes_per_menu: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          menu_count: number
+          name: string
+          price_per_person: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          dishes_per_menu?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          menu_count?: number
+          name: string
+          price_per_person?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          dishes_per_menu?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          menu_count?: number
+          name?: string
+          price_per_person?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dining_categories: {
         Row: {
           created_at: string
