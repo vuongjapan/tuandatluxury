@@ -225,6 +225,16 @@ const Booking = () => {
         quantity: c.quantity,
       }));
 
+      // Add new combo selection to payload
+      if (comboSelection) {
+        combosPayload.push({
+          dining_item_id: comboSelection.packageId,
+          combo_name: `${comboSelection.packageName} – ${comboSelection.menuName}`,
+          price_vnd: comboSelection.pricePerPerson,
+          quantity: comboSelection.quantity,
+        });
+      }
+
       const serviceLabels = specialServices.map(id => 
         availableServices.find(s => s.id === id)?.label || id
       ).join(', ');
