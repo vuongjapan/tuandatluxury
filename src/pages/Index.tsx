@@ -9,6 +9,7 @@ import RoomCard from '@/components/RoomCard';
 import Footer from '@/components/Footer';
 import { useRooms } from '@/hooks/useRooms';
 import { useServices } from '@/hooks/useServices';
+import { useAttractions } from '@/hooks/useAttractions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
