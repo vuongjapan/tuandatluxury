@@ -192,10 +192,10 @@ const Index = () => {
               className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
             >
               {[
-                { titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view', img: poolImg },
-                { titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international', img: restaurantImg },
-                { titleVi: 'Rooftop Bar', titleEn: 'Rooftop Bar', descVi: 'Tầng 6, ngắm biển', descEn: 'Floor 6, sea view', img: rooftopImg },
-                { titleVi: 'Lễ tân 24/7', titleEn: '24/7 Reception', descVi: 'Dịch vụ phòng', descEn: 'Room service', img: receptionImg },
+                { titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view', img: siteSettings.feature_pool_url || poolImg, key: 'pool' },
+                { titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international', img: siteSettings.feature_restaurant_url || restaurantImg, key: 'restaurant' },
+                { titleVi: 'Rooftop Bar', titleEn: 'Rooftop Bar', descVi: 'Tầng 6, ngắm biển', descEn: 'Floor 6, sea view', img: siteSettings.feature_bar_url || rooftopImg, key: 'bar' },
+                { titleVi: 'Lễ tân 24/7', titleEn: '24/7 Reception', descVi: 'Dịch vụ phòng', descEn: 'Room service', img: siteSettings.feature_reception_url || receptionImg, key: 'reception' },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
