@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, Globe, User, LogOut, Shield } from 'lucide-react';
+import { Menu, X, Phone, Globe, User, LogOut, Shield, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
