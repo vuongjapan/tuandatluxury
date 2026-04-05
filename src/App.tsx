@@ -21,6 +21,11 @@ const Dining = lazy(() => import("./pages/Dining"));
 const Services = lazy(() => import("./pages/Services"));
 const FoodOrder = lazy(() => import("./pages/FoodOrder"));
 const FoodInvoice = lazy(() => import("./pages/FoodInvoice"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Cuisine = lazy(() => import("./pages/Cuisine"));
+const Seafood = lazy(() => import("./pages/Seafood"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
