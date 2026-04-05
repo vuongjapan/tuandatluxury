@@ -244,6 +244,7 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
               </span>
             </label>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: 'Tên (VI)', key: 'name_vi' }, { label: 'Tên (EN)', key: 'name_en' },
               { label: 'Tên (JA)', key: 'name_ja' }, { label: 'Tên (ZH)', key: 'name_zh' },
