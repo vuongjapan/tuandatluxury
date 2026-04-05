@@ -27,6 +27,7 @@ import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import AdminMembers from '@/components/AdminMembers';
 import AdminBlog from '@/components/AdminBlog';
+import AdminCombo from '@/components/AdminCombo';
 
 
 type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog';
