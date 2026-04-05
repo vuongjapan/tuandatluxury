@@ -60,10 +60,15 @@ const App = () => (
                   <Route path="/room/:id" element={<RoomDetail />} />
                   <Route path="/booking" element={<Booking />} />
                   <Route path="/dining" element={<Dining />} />
+                  <Route path="/cuisine" element={<Cuisine />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/food-order" element={<FoodOrder />} />
                   <Route path="/food-invoice/:foodOrderId" element={<FoodInvoice />} />
                   <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogPost />} />
+                  <Route path="/seafood" element={<Seafood />} />
+                  <Route path="/terms" element={<Terms />} />
                   <Route path="/member" element={<MemberAuth />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminDashboard />} />
