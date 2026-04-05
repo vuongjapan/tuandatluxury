@@ -20,16 +20,32 @@ const Header = () => {
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const navItems = [
-  { key: 'nav.overview', href: '/#overview' },
-  { key: 'nav.rooms', href: '/#rooms' },
-  { key: 'nav.booking', href: '/booking' },
-  { key: 'nav.services', href: '/#services' },
-  { key: 'nav.dining', href: '/dining' },
-  { key: 'nav.food_order', href: '/food-order' },
-  { key: 'nav.gallery', href: '/#gallery' },
-  { key: 'nav.offers', href: '/#offers' },
-  { key: 'nav.contact', href: '/#contact' }];
+    { key: 'nav.overview', href: '/#overview' },
+    { key: 'nav.rooms', href: '/#rooms' },
+    { key: 'nav.booking', href: '/booking' },
+    { key: 'nav.services', href: '/services' },
+    { key: 'nav.dining', href: '/cuisine' },
+    { key: 'nav.food_order', href: '/food-order' },
+    { key: 'nav.gallery', href: '/#gallery' },
+    { key: 'nav.offers', href: '/#offers' },
+  ];
+
+  const moreItems = [
+    { labelVi: 'Blog', labelEn: 'Blog', href: '/blog' },
+    { labelVi: 'Hải sản khô', labelEn: 'Dried Seafood', href: '/seafood' },
+    { labelVi: 'Điều khoản & Quy định', labelEn: 'Terms & Policies', href: '/terms' },
+    { labelVi: 'Liên hệ', labelEn: 'Contact', href: '/#contact' },
+  ];
+  const isVi = language === 'vi';
 
 
   return (
