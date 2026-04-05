@@ -1526,6 +1526,9 @@ const AdminDashboard = () => {
           {/* BLOG */}
           {tab === 'blog' && <AdminBlog />}
 
+          {/* COMBOS */}
+          {tab === 'combos' && <AdminCombo />}
+
           {/* TRASH */}
           {tab === 'trash' && (
             <div className="space-y-4">
