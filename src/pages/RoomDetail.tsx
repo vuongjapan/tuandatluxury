@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Maximize2, ArrowLeft } from 'lucide-react';
+import { Users, Maximize2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -20,9 +20,17 @@ const RoomDetail = () => {
   const { rooms, getRoomPrice, getAvailability, isSpecialDate } = useRooms();
   const { settings } = useSiteSettings();
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const room = rooms.find((r) => r.id === id);
   if (!room) return <div className="pt-20 text-center">Room not found</div>;
+
+  // Combine main image + gallery images
+  const allImages = [room.image, ...(room.images || [])].filter(Boolean);
+  const uniqueImages = [...new Set(allImages)];
+
+  const prevImage = () => setCurrentImageIndex(i => i === 0 ? uniqueImages.length - 1 : i - 1);
+  const nextImage = () => setCurrentImageIndex(i => i === uniqueImages.length - 1 ? 0 : i + 1);
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,13 +47,44 @@ const RoomDetail = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="rounded-xl overflow-hidden shadow-card-hover">
+              {/* Main image with navigation */}
+              <div className="relative rounded-xl overflow-hidden shadow-card-hover">
                 <img
-                  src={room.image}
+                  src={uniqueImages[currentImageIndex] || '/placeholder.svg'}
                   alt={room.name[language]}
-                  className="w-full h-80 md:h-[500px] object-cover"
+                  className="w-full aspect-video object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                 />
+                {uniqueImages.length > 1 && (
+                  <>
+                    <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors">
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors">
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {uniqueImages.map((_, i) => (
+                        <button key={i} onClick={() => setCurrentImageIndex(i)}
+                          className={`w-2 h-2 rounded-full transition-all ${i === currentImageIndex ? 'bg-white w-6' : 'bg-white/50'}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Thumbnail strip */}
+              {uniqueImages.length > 1 && (
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                  {uniqueImages.map((img, i) => (
+                    <button key={i} onClick={() => setCurrentImageIndex(i)}
+                      className={`shrink-0 w-20 h-14 rounded-lg overflow-hidden border-2 transition-all ${i === currentImageIndex ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}`}>
+                      <img src={img} alt="" className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </motion.div>
 
             <motion.div
@@ -120,7 +159,6 @@ const RoomDetail = () => {
                   </a>
                 </Button>
               </div>
-
             </motion.div>
           </div>
         </div>

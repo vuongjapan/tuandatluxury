@@ -77,11 +77,14 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    const trashBookingIds = trashItems.filter(t => t.type === 'booking').map(t => t.data.id);
     const [{ data: b }, { data: r }] = await Promise.all([
       supabase.from('bookings').select('*, rooms(name_vi)').order('created_at', { ascending: false }),
       supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
     ]);
-    setBookings(b || []);
+    // Filter out bookings that are in trash
+    const filteredBookings = (b || []).filter(booking => !trashBookingIds.includes(booking.id));
+    setBookings(filteredBookings);
     setRooms(r || []);
     setLoading(false);
   };

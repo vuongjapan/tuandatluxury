@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AMENITY_ICONS } from '@/data/rooms';
-import { Save, Upload, Pencil, DollarSign, CalendarRange, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Save, Upload, Pencil, DollarSign, CalendarRange, ChevronLeft, ChevronRight, Trash2, ImageIcon, GripVertical } from 'lucide-react';
 
 const ALL_AMENITIES = Object.keys(AMENITY_ICONS);
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
@@ -21,6 +21,8 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
   const { toast } = useToast();
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [uploadingRoomImage, setUploadingRoomImage] = useState(false);
+  const [roomGallery, setRoomGallery] = useState<any[]>([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   // Monthly prices
   const [monthlyPrices, setMonthlyPrices] = useState<any[]>([]);
@@ -51,6 +53,48 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
     setDailyAvailability(data || []);
   };
 
+  const fetchRoomGallery = async (roomId: string) => {
+    const { data } = await supabase.from('room_images').select('*').eq('room_id', roomId).order('sort_order');
+    setRoomGallery(data || []);
+  };
+
+  useEffect(() => {
+    if (editingRoom?.id) fetchRoomGallery(editingRoom.id);
+    else setRoomGallery([]);
+  }, [editingRoom?.id]);
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !editingRoom) return;
+    setUploadingGallery(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const compressed = await compressImage(files[i], { maxWidth: 1920, quality: 0.8 });
+        const path = `rooms/${editingRoom.id}-gallery-${Date.now()}-${i}.jpg`;
+        const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
+        if (uploadError) continue;
+        const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+        await supabase.from('room_images').insert({
+          room_id: editingRoom.id,
+          image_url: urlData.publicUrl,
+          sort_order: roomGallery.length + i,
+        });
+      }
+      toast({ title: `Đã thêm ${files.length} ảnh` });
+      fetchRoomGallery(editingRoom.id);
+    } catch (err: any) {
+      toast({ title: 'Lỗi upload', description: err.message, variant: 'destructive' });
+    }
+    setUploadingGallery(false);
+    e.target.value = '';
+  };
+
+  const deleteRoomImage = async (imgId: string) => {
+    if (!confirm('Xóa ảnh này?')) return;
+    await supabase.from('room_images').delete().eq('id', imgId);
+    toast({ title: 'Đã xóa ảnh' });
+    if (editingRoom?.id) fetchRoomGallery(editingRoom.id);
+  };
   useEffect(() => {
     if (!mpRoom) return;
     const existing = monthlyPrices.find((p: any) => p.room_id === mpRoom && p.year === mpYear && p.month === mpMonth);
@@ -174,6 +218,31 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
                 </span>
               </label>
             </div>
+          </div>
+          {/* Multi-image gallery */}
+          <div className="mb-4">
+            <label className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">
+              <ImageIcon className="h-3.5 w-3.5 inline mr-1" />Thư viện ảnh phòng ({roomGallery.length} ảnh)
+            </label>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+              {roomGallery.map((img, idx) => (
+                <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
+                  <img src={img.image_url} alt="" className="w-full aspect-[4/3] object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
+                  <button onClick={() => deleteRoomImage(img.id)}
+                    className="absolute top-1 right-1 p-1 bg-destructive/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Trash2 className="h-3 w-3 text-white" />
+                  </button>
+                  <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5">{idx + 1}</span>
+                </div>
+              ))}
+            </div>
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} disabled={uploadingGallery} />
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-lg text-sm font-medium cursor-pointer transition-colors">
+                <Upload className="h-4 w-4" /> {uploadingGallery ? 'Đang tải...' : 'Thêm ảnh (chọn nhiều)'}
+              </span>
+            </label>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
