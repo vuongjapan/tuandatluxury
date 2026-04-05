@@ -305,22 +305,26 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.08 }}
-                className="bg-card rounded-xl p-4 sm:p-6 text-center shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 border border-border group"
+                className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 border border-border group"
               >
                 {s.image_url ? (
-                  <img src={s.image_url} alt={isVi ? s.name_vi : s.name_en} className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-lg object-cover" loading="lazy" />
+                  <div className="aspect-video overflow-hidden">
+                    <img src={s.image_url} alt={isVi ? s.name_vi : s.name_en} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  </div>
                 ) : (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-display text-lg font-bold">{(isVi ? s.name_vi : s.name_en).charAt(0)}</span>
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <span className="text-primary font-display text-3xl font-bold">{(isVi ? s.name_vi : s.name_en).charAt(0)}</span>
                   </div>
                 )}
-                <h3 className="font-display text-xs sm:text-sm font-semibold mb-1 group-hover:text-primary transition-colors duration-300">{isVi ? s.name_vi : s.name_en}</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed">{isVi ? s.description_vi : s.description_en}</p>
-                {s.is_free && (
-                  <Badge variant="outline" className="mt-2 text-[10px] border-primary/30 text-primary">
-                    {isVi ? 'Miễn phí' : 'Free'}
-                  </Badge>
-                )}
+                <div className="p-3 sm:p-4 text-center">
+                  <h3 className="font-display text-xs sm:text-sm font-semibold mb-1 group-hover:text-primary transition-colors duration-300">{isVi ? s.name_vi : s.name_en}</h3>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed">{isVi ? s.description_vi : s.description_en}</p>
+                  {s.is_free && (
+                    <Badge variant="outline" className="mt-2 text-[10px] border-primary/30 text-primary">
+                      {isVi ? 'Miễn phí' : 'Free'}
+                    </Badge>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
