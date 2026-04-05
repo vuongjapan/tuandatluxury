@@ -1,6 +1,5 @@
 import roomStandard from '@/assets/room-standard.jpg';
 import roomDeluxe from '@/assets/room-deluxe.jpg';
-import roomSuite from '@/assets/room-suite.jpg';
 import roomFamily from '@/assets/room-family.jpg';
 
 export interface Room {
@@ -50,23 +49,6 @@ export const rooms: Room[] = [
     image: roomDeluxe,
     weekendMultiplier: 1.3,
     peakMultiplier: 1.6,
-  },
-  {
-    id: 'suite',
-    name: { vi: 'Phòng Suite', en: 'Suite Room', ja: 'スイートルーム', zh: '套房' },
-    description: {
-      vi: 'Suite cao cấp với phòng khách riêng, bồn tắm jacuzzi và dịch vụ VIP.',
-      en: 'Premium suite with separate living room, jacuzzi and VIP service.',
-      ja: 'リビング、ジャグジー付きプレミアムスイート、VIPサービス。',
-      zh: '高级套房，配有独立客厅、按摩浴缸和VIP服务。',
-    },
-    priceVND: 3500000,
-    capacity: 4,
-    size: 60,
-    amenities: ['wifi', 'ac', 'tv', 'minibar', 'safe', 'balcony', 'bathtub', 'ocean_view', 'jacuzzi', 'living_room'],
-    image: roomSuite,
-    weekendMultiplier: 1.2,
-    peakMultiplier: 1.5,
   },
   {
     id: 'family',
