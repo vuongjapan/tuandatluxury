@@ -172,7 +172,7 @@ const Index = () => {
                 <div className="mt-3 p-3 sm:p-4 bg-card rounded-xl border border-border text-xs sm:text-sm space-y-1 text-muted-foreground">
                   <p>LK29-20, FLC Sầm Sơn, Thanh Hóa</p>
                   <p>098.661.7939 · 091.693.0969</p>
-                  <p>tuandatluxury@gmail.com</p>
+                  <p>tuandatluxuryflc36hotel@gmail.com</p>
                 </div>
               </motion.div>
             </div>
