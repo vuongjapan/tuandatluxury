@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Trash2, Save, Eye, MapPin, ImageIcon, Download, UploadCloud } from 'lucide-react';
 import { format } from 'date-fns';
+import AdminAttractions from './AdminAttractions';
 
 interface Props {
   onBackup: () => void;
