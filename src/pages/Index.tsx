@@ -9,6 +9,7 @@ import RoomCard from '@/components/RoomCard';
 import Footer from '@/components/Footer';
 import { useRooms } from '@/hooks/useRooms';
 import { useServices } from '@/hooks/useServices';
+import { useAttractions } from '@/hooks/useAttractions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ const Index = () => {
   const { t } = useLanguage();
   const { rooms, loading: roomsLoading } = useRooms();
   const { amenities } = useServices();
+  const { attractions } = useAttractions();
   const { settings: siteSettings } = useSiteSettings();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
@@ -190,10 +192,10 @@ const Index = () => {
               className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
             >
               {[
-                { titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view', img: poolImg },
-                { titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international', img: restaurantImg },
-                { titleVi: 'Rooftop Bar', titleEn: 'Rooftop Bar', descVi: 'Tầng 6, ngắm biển', descEn: 'Floor 6, sea view', img: rooftopImg },
-                { titleVi: 'Lễ tân 24/7', titleEn: '24/7 Reception', descVi: 'Dịch vụ phòng', descEn: 'Room service', img: receptionImg },
+                { titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view', img: siteSettings.feature_pool_url || poolImg, key: 'pool' },
+                { titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international', img: siteSettings.feature_restaurant_url || restaurantImg, key: 'restaurant' },
+                { titleVi: 'Rooftop Bar', titleEn: 'Rooftop Bar', descVi: 'Tầng 6, ngắm biển', descEn: 'Floor 6, sea view', img: siteSettings.feature_bar_url || rooftopImg, key: 'bar' },
+                { titleVi: 'Lễ tân 24/7', titleEn: '24/7 Reception', descVi: 'Dịch vụ phòng', descEn: 'Room service', img: siteSettings.feature_reception_url || receptionImg, key: 'reception' },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -224,26 +226,34 @@ const Index = () => {
             tagline={isVi ? 'Khám phá' : 'Explore'}
             title={isVi ? 'Điểm tham quan lân cận' : 'Nearby Attractions'}
           />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-5xl mx-auto">
-            {[
-              { name: isVi ? 'Bãi biển Sầm Sơn' : 'Sầm Sơn Beach', dist: '50m', icon: '🏖️' },
-              { name: isVi ? 'Quảng trường biển' : 'Beach Square', dist: isVi ? '2 phút xe' : '2 min', icon: '🌊' },
-              { name: isVi ? 'Công viên nước' : 'Water Park', dist: isVi ? '5 phút xe' : '5 min', icon: '🎢' },
-              { name: isVi ? 'Đền Độc Cước' : 'Doc Cuoc Temple', dist: isVi ? '10 phút xe' : '10 min', icon: '⛩️' },
-              { name: isVi ? 'Hòn Trống Mái' : 'Trong Mai Rock', dist: isVi ? '12 phút xe' : '12 min', icon: '🪨' },
-              { name: isVi ? 'Sân Golf FLC' : 'FLC Golf Course', dist: isVi ? '3 phút xe' : '3 min', icon: '⛳' },
-            ].map((place, idx) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-5xl mx-auto">
+            {attractions.map((place, idx) => (
               <motion.div
-                key={idx}
+                key={place.id}
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.06 }}
-                className="bg-card rounded-xl p-4 text-center border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-300"
+                className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-300"
               >
-                <span className="text-2xl block mb-2">{place.icon}</span>
-                <p className="font-display text-xs sm:text-sm font-semibold text-foreground mb-1">{place.name}</p>
-                <p className="text-[10px] sm:text-xs text-primary font-medium">{place.dist}</p>
+                {place.image_url ? (
+                  <div className="aspect-video overflow-hidden">
+                    <img src={place.image_url} alt={isVi ? place.name_vi : place.name_en} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <span className="text-4xl">{place.icon}</span>
+                  </div>
+                )}
+                <div className="p-4 text-center">
+                  <p className="font-display text-sm sm:text-base font-semibold text-foreground mb-1">{isVi ? place.name_vi : place.name_en}</p>
+                  <p className="text-xs text-primary font-medium mb-2">{place.distance}</p>
+                  {(isVi ? place.description_vi : place.description_en) && (
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                      {isVi ? place.description_vi : place.description_en}
+                    </p>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
@@ -295,22 +305,26 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.08 }}
-                className="bg-card rounded-xl p-4 sm:p-6 text-center shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 border border-border group"
+                className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 border border-border group"
               >
                 {s.image_url ? (
-                  <img src={s.image_url} alt={isVi ? s.name_vi : s.name_en} className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-lg object-cover" loading="lazy" />
+                  <div className="aspect-video overflow-hidden">
+                    <img src={s.image_url} alt={isVi ? s.name_vi : s.name_en} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  </div>
                 ) : (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-display text-lg font-bold">{(isVi ? s.name_vi : s.name_en).charAt(0)}</span>
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <span className="text-primary font-display text-3xl font-bold">{(isVi ? s.name_vi : s.name_en).charAt(0)}</span>
                   </div>
                 )}
-                <h3 className="font-display text-xs sm:text-sm font-semibold mb-1 group-hover:text-primary transition-colors duration-300">{isVi ? s.name_vi : s.name_en}</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed">{isVi ? s.description_vi : s.description_en}</p>
-                {s.is_free && (
-                  <Badge variant="outline" className="mt-2 text-[10px] border-primary/30 text-primary">
-                    {isVi ? 'Miễn phí' : 'Free'}
-                  </Badge>
-                )}
+                <div className="p-3 sm:p-4 text-center">
+                  <h3 className="font-display text-xs sm:text-sm font-semibold mb-1 group-hover:text-primary transition-colors duration-300">{isVi ? s.name_vi : s.name_en}</h3>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed">{isVi ? s.description_vi : s.description_en}</p>
+                  {s.is_free && (
+                    <Badge variant="outline" className="mt-2 text-[10px] border-primary/30 text-primary">
+                      {isVi ? 'Miễn phí' : 'Free'}
+                    </Badge>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>

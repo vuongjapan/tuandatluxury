@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Trash2, Save, Eye, MapPin, ImageIcon, Download, UploadCloud } from 'lucide-react';
 import { format } from 'date-fns';
+import AdminAttractions from './AdminAttractions';
 
 interface Props {
   onBackup: () => void;
@@ -103,6 +104,16 @@ const AdminSettings = ({ onBackup, onRestore }: Props) => {
         { key: 'chatbot_avatar', label: 'Avatar Chatbot Linh (200×200px)', accept: 'image/*', preview: 'avatar', maxWidth: 400 },
       ],
     },
+    {
+      title: '🏊 Ảnh giới thiệu (Về chúng tôi)',
+      desc: 'Ảnh hồ bơi, nhà hàng, bar, lễ tân hiển thị trên trang chủ',
+      items: [
+        { key: 'feature_pool', label: 'Hồ bơi vô cực', accept: 'image/*', preview: 'image' },
+        { key: 'feature_restaurant', label: '2 Nhà hàng', accept: 'image/*', preview: 'image' },
+        { key: 'feature_bar', label: 'Rooftop Bar', accept: 'image/*', preview: 'image' },
+        { key: 'feature_reception', label: 'Lễ tân 24/7', accept: 'image/*', preview: 'image' },
+      ],
+    },
   ];
 
   return (
@@ -193,6 +204,9 @@ const AdminSettings = ({ onBackup, onRestore }: Props) => {
             dangerouslySetInnerHTML={{ __html: mapEmbedCode }} />
         )}
       </div>
+
+      {/* Điểm tham quan */}
+      <AdminAttractions />
 
       {/* Backup */}
       <div className="bg-card rounded-xl border border-border p-5">
