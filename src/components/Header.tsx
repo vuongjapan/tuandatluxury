@@ -113,12 +113,12 @@ const Header = () => {
           {/* Desktop Nav */}
           <nav className="hidden xl:flex items-center gap-0.5">
             {navItems.map((item) =>
-            <Link
+            <button
               key={item.key}
-              to={item.href}
+              onClick={() => handleNavClick(item.href)}
               className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-primary transition-colors">
                 {t(item.key)}
-              </Link>
+              </button>
             )}
             {/* More dropdown */}
             <DropdownMenu>
