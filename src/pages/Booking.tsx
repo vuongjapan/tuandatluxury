@@ -163,7 +163,7 @@ const Booking = () => {
   const discountAmount = Math.round(originalPrice * totalDiscountPercent / 100);
   const totalPrice = originalPrice - discountAmount;
 
-  const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0);
+  const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) || comboSelection !== null;
   const comboValidationError = comboRequired && !hasSelectedCombo;
 
   const toggleCombo = (item: typeof comboItems[0]) => {
