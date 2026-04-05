@@ -268,7 +268,7 @@ const Index = () => {
       </section>
 
       {/* 5. Dịch vụ nổi bật (4-6 items) */}
-      <section id="services" className="py-16 sm:py-24 bg-secondary">
+      <section id="services" className="py-20 sm:py-28 bg-secondary luxury-section">
         <div className="container mx-auto px-4">
           <SectionHeader
             tagline={isVi ? 'Tiện ích' : 'Facilities'}
