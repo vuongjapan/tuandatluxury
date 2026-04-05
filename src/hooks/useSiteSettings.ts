@@ -28,6 +28,7 @@ const DEFAULTS: SiteSettings = {
   hero_subtitle: '',
   map_embed_url: '',
   map_embed_code: '',
+  about_image_url: '',
   google_maps_url: 'https://maps.app.goo.gl/pBbcvrqXQQT4PVfn6',
   platform_booking_url: 'https://www.booking.com/hotel/vn/tuan-dat-luxury-flc-sam-son-sam-son.vi.html',
   platform_booking_name: 'Booking.com',
