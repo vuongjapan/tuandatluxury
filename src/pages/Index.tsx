@@ -226,26 +226,34 @@ const Index = () => {
             tagline={isVi ? 'Khám phá' : 'Explore'}
             title={isVi ? 'Điểm tham quan lân cận' : 'Nearby Attractions'}
           />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-5xl mx-auto">
-            {[
-              { name: isVi ? 'Bãi biển Sầm Sơn' : 'Sầm Sơn Beach', dist: '50m', icon: '🏖️' },
-              { name: isVi ? 'Quảng trường biển' : 'Beach Square', dist: isVi ? '2 phút xe' : '2 min', icon: '🌊' },
-              { name: isVi ? 'Công viên nước' : 'Water Park', dist: isVi ? '5 phút xe' : '5 min', icon: '🎢' },
-              { name: isVi ? 'Đền Độc Cước' : 'Doc Cuoc Temple', dist: isVi ? '10 phút xe' : '10 min', icon: '⛩️' },
-              { name: isVi ? 'Hòn Trống Mái' : 'Trong Mai Rock', dist: isVi ? '12 phút xe' : '12 min', icon: '🪨' },
-              { name: isVi ? 'Sân Golf FLC' : 'FLC Golf Course', dist: isVi ? '3 phút xe' : '3 min', icon: '⛳' },
-            ].map((place, idx) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-5xl mx-auto">
+            {attractions.map((place, idx) => (
               <motion.div
-                key={idx}
+                key={place.id}
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.06 }}
-                className="bg-card rounded-xl p-4 text-center border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-300"
+                className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-300"
               >
-                <span className="text-2xl block mb-2">{place.icon}</span>
-                <p className="font-display text-xs sm:text-sm font-semibold text-foreground mb-1">{place.name}</p>
-                <p className="text-[10px] sm:text-xs text-primary font-medium">{place.dist}</p>
+                {place.image_url ? (
+                  <div className="aspect-video overflow-hidden">
+                    <img src={place.image_url} alt={isVi ? place.name_vi : place.name_en} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <span className="text-4xl">{place.icon}</span>
+                  </div>
+                )}
+                <div className="p-4 text-center">
+                  <p className="font-display text-sm sm:text-base font-semibold text-foreground mb-1">{isVi ? place.name_vi : place.name_en}</p>
+                  <p className="text-xs text-primary font-medium mb-2">{place.distance}</p>
+                  {(isVi ? place.description_vi : place.description_en) && (
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                      {isVi ? place.description_vi : place.description_en}
+                    </p>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
