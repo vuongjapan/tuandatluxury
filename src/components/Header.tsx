@@ -193,7 +193,7 @@ const Header = () => {
             ) : null}
 
             {/* Mobile toggle */}
-            <Button variant="ghost" size="icon" className="xl:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+            <Button variant="ghost" size="icon" className="xl:hidden h-9 w-9 min-w-[36px]" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
