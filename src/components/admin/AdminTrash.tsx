@@ -43,12 +43,25 @@ const AdminTrash = ({ trashItems, setTrashItems, onRefresh }: Props) => {
     toast({ title: 'Đã khôi phục' });
   };
 
-  const permanentDelete = (index: number) => {
+  const permanentDelete = async (index: number) => {
     if (!confirm('Xóa vĩnh viễn? Không thể hoàn tác!')) return;
+    const item = trashItems[index];
+    if (item.type === 'booking') {
+      // Xóa booking_combos liên quan trước
+      await supabase.from('booking_combos').delete().eq('booking_id', item.data.id);
+      // Xóa invoices liên quan
+      await supabase.from('invoices').delete().eq('booking_id', item.data.id);
+      // Xóa booking khỏi DB
+      const { error } = await supabase.from('bookings').delete().eq('id', item.data.id);
+      if (error) {
+        toast({ title: 'Lỗi xóa', description: error.message, variant: 'destructive' });
+        return;
+      }
+    }
     const newTrash = trashItems.filter((_, i) => i !== index);
     saveTrash(newTrash);
     setTrashItems(newTrash);
-    toast({ title: 'Đã xóa vĩnh viễn' });
+    toast({ title: 'Đã xóa vĩnh viễn khỏi hệ thống' });
   };
 
   return (
