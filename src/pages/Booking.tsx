@@ -570,7 +570,7 @@ const Booking = () => {
                 </div>
 
                 {/* Combos in summary */}
-                {selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) && (
+                {(selectedCombos.some(c => c.quantity > 0) || comboSelection) && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <h4 className="font-semibold text-sm flex items-center gap-1">
                       <UtensilsCrossed className="h-3.5 w-3.5 text-primary" /> Combo ăn uống
@@ -581,6 +581,15 @@ const Booking = () => {
                         <span className="font-medium">{formatPrice(c.price * c.quantity)}</span>
                       </div>
                     ))}
+                    {comboSelection && (
+                      <div className="text-sm space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{comboSelection.packageName} – {comboSelection.menuName} ×{comboSelection.quantity}</span>
+                          <span className="font-medium">{formatPrice(comboSelection.pricePerPerson * comboSelection.quantity)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{comboSelection.dishes.slice(0, 5).join(', ')}...</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
