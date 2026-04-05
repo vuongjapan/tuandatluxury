@@ -36,6 +36,7 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
           {formatPrice(room.priceVND)}
           <span className="text-[10px] font-normal opacity-80 block">{t('room.per_night')}</span>
         </div>
+        </div>
       </div>
 
       {/* Content */}
