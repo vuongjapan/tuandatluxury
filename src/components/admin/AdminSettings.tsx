@@ -205,6 +205,9 @@ const AdminSettings = ({ onBackup, onRestore }: Props) => {
         )}
       </div>
 
+      {/* Điểm tham quan */}
+      <AdminAttractions />
+
       {/* Backup */}
       <div className="bg-card rounded-xl border border-border p-5">
         <h3 className="font-display text-lg font-semibold mb-1">💾 Sao lưu & Khôi phục</h3>
