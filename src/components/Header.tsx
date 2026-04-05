@@ -30,8 +30,7 @@ const Header = () => {
 
   const navItems = [
     { key: 'nav.overview', href: '/#overview' },
-    { key: 'nav.rooms', href: '/#rooms' },
-    { key: 'nav.booking', href: '/booking' },
+    { key: 'nav.rooms_booking', href: '/#rooms' },
     { key: 'nav.services', href: '/services' },
     { key: 'nav.dining', href: '/cuisine' },
     { key: 'nav.food_order', href: '/food-order' },
