@@ -20,16 +20,14 @@ const Header = () => {
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
-  const scrollToHash = (href: string) => {
-    const hash = href.split('#')[1];
-    if (hash && window.location.pathname === '/') {
-      const el = document.getElementById(hash);
-      if (el) {
-        const headerHeight = document.querySelector('header')?.getBoundingClientRect().height || 80;
-        const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 16;
-        window.scrollTo({ top, behavior: 'smooth' });
-        return true;
-      }
+  const scrollToElement = (hash: string) => {
+    const el = document.getElementById(hash);
+    if (el) {
+      const headerEl = document.querySelector('header');
+      const headerHeight = headerEl ? headerEl.offsetHeight : 90;
+      const top = el.offsetTop - headerHeight - 8;
+      window.scrollTo({ top, behavior: 'smooth' });
+      return true;
     }
     return false;
   };
@@ -37,8 +35,12 @@ const Header = () => {
   const handleNavClick = (href: string) => {
     setMobileOpen(false);
     if (href.startsWith('/#')) {
+      const hash = href.split('#')[1];
       if (window.location.pathname === '/') {
-        scrollToHash(href);
+        // Try immediately, then retry after lazy sections load
+        if (!scrollToElement(hash)) {
+          setTimeout(() => scrollToElement(hash), 500);
+        }
       } else {
         navigate(href);
       }
