@@ -95,8 +95,7 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
     toast({ title: 'Đã xóa ảnh' });
     if (editingRoom?.id) fetchRoomGallery(editingRoom.id);
   };
-
-
+  useEffect(() => {
     if (!mpRoom) return;
     const existing = monthlyPrices.find((p: any) => p.room_id === mpRoom && p.year === mpYear && p.month === mpMonth);
     if (existing) {
