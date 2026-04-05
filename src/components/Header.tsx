@@ -112,10 +112,10 @@ const Header = () => {
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
             {/* Hotline on mobile */}
             <a href="tel:0986617939" className="sm:hidden">
-              <Button variant="ghost" size="icon" className="text-primary">
+              <Button variant="ghost" size="icon" className="text-primary h-8 w-8">
                 <Phone className="h-4 w-4" />
               </Button>
             </a>
@@ -123,7 +123,7 @@ const Header = () => {
             {/* Language Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1">
                   <Globe className="h-4 w-4" />
                   <span className="hidden sm:inline text-xs">{langLabels[language]}</span>
                 </Button>
