@@ -1196,62 +1196,123 @@ const AdminDashboard = () => {
           {/* MAP & HEADER */}
           {tab === 'map' && (
             <div className="space-y-4">
-              {/* Hero Image Management */}
+              {/* Hero Video Management */}
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5 text-primary" />
-                  Ảnh đầu trang (Hero)
+                  🎬 Video / Ảnh đầu trang (Hero)
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Upload ảnh nền hiển thị ở đầu trang chính. Nên dùng ảnh ngang, kích thước tối thiểu 1920×1080px.
+                  Upload video MP4 hoặc ảnh nền. Nếu có video, video sẽ autoplay. Nếu không, hiển thị ảnh.
                 </p>
-                {siteSettings.hero_image_url && (
-                  <div className="mb-4 p-4 bg-secondary rounded-lg">
-                    <img src={siteSettings.hero_image_url} alt="Hero hiện tại" className="w-full max-h-48 object-cover rounded-lg" />
-                    <span className="text-xs text-muted-foreground mt-2 block">Ảnh đầu trang hiện tại</span>
-                  </div>
-                )}
-                <div className="flex gap-2 flex-wrap">
-                  <Button variant="outline" className="relative" disabled={uploadingRoomImage}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploadingRoomImage ? 'Đang tải...' : 'Upload ảnh đầu trang'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setUploadingRoomImage(true);
-                        try {
-                          const compressed = await compressImage(file, { maxWidth: 1920, quality: 0.75 });
-                          const path = `hero-image-${Date.now()}.jpg`;
-                          const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
-                          if (upErr) {
-                            toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' });
-                            setUploadingRoomImage(false);
+
+                {/* Video */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium mb-2 block">Video Hero (MP4, tối đa 50MB)</label>
+                  {siteSettings.hero_video_url && (
+                    <div className="mb-3 p-3 bg-secondary rounded-lg">
+                      <video src={siteSettings.hero_video_url} className="w-full max-h-40 rounded-lg object-cover" controls muted />
+                      <span className="text-xs text-muted-foreground mt-1 block">Video hiện tại</span>
+                    </div>
+                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" className="relative" disabled={uploadingRoomImage}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadingRoomImage ? 'Đang tải...' : 'Upload video'}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 50 * 1024 * 1024) {
+                            toast({ title: 'Video quá lớn (tối đa 50MB)', variant: 'destructive' });
                             return;
                           }
-                          const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
-                          const err = await updateSetting('hero_image_url', urlData.publicUrl);
-                          if (err) { toast({ title: 'Lỗi lưu', variant: 'destructive' }); }
-                          else { toast({ title: 'Đã cập nhật ảnh đầu trang ✓' }); }
-                        } catch (err: any) {
-                          toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
-                        }
-                        setUploadingRoomImage(false);
+                          setUploadingRoomImage(true);
+                          try {
+                            const path = `hero-video-${Date.now()}.mp4`;
+                            const { error: upErr } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true });
+                            if (upErr) { toast({ title: 'Lỗi upload', description: upErr.message, variant: 'destructive' }); setUploadingRoomImage(false); return; }
+                            const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                            const err = await updateSetting('hero_video_url', urlData.publicUrl);
+                            if (err) toast({ title: 'Lỗi lưu', variant: 'destructive' });
+                            else toast({ title: 'Đã cập nhật video hero ✓' });
+                          } catch (err: any) { toast({ title: 'Lỗi', description: err.message, variant: 'destructive' }); }
+                          setUploadingRoomImage(false);
+                        }}
+                      />
+                    </Button>
+                    {siteSettings.hero_video_url && (
+                      <Button variant="outline" onClick={async () => { await updateSetting('hero_video_url', ''); toast({ title: 'Đã xóa video ✓' }); }}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Xóa video
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hero Image (fallback) */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium mb-2 block">Ảnh nền Hero (fallback khi không có video)</label>
+                  {siteSettings.hero_image_url && (
+                    <div className="mb-3 p-3 bg-secondary rounded-lg">
+                      <img src={siteSettings.hero_image_url} alt="Hero" className="w-full max-h-40 object-cover rounded-lg" />
+                    </div>
+                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" className="relative" disabled={uploadingRoomImage}>
+                      <Upload className="h-4 w-4 mr-2" /> Upload ảnh
+                      <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          setUploadingRoomImage(true);
+                          try {
+                            const compressed = await compressImage(file, { maxWidth: 1920, quality: 0.75 });
+                            const path = `hero-image-${Date.now()}.jpg`;
+                            const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                            if (upErr) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploadingRoomImage(false); return; }
+                            const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                            const err = await updateSetting('hero_image_url', urlData.publicUrl);
+                            if (err) toast({ title: 'Lỗi lưu', variant: 'destructive' });
+                            else toast({ title: 'Đã cập nhật ảnh hero ✓' });
+                          } catch (err: any) { toast({ title: 'Lỗi', description: err.message, variant: 'destructive' }); }
+                          setUploadingRoomImage(false);
+                        }}
+                      />
+                    </Button>
+                    {siteSettings.hero_image_url && (
+                      <Button variant="outline" onClick={async () => { await updateSetting('hero_image_url', ''); toast({ title: 'Đã xóa ảnh ✓' }); }}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Xóa ảnh
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hero Text */}
+                <div className="space-y-3 border-t border-border pt-4">
+                  <h4 className="text-sm font-semibold">Nội dung Hero (để trống = mặc định)</h4>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Tiêu đề chính</label>
+                    <Input
+                      placeholder="Tuấn Đạt Luxury"
+                      defaultValue={siteSettings.hero_title}
+                      onBlur={async (e) => {
+                        await updateSetting('hero_title', e.target.value);
+                        toast({ title: 'Đã lưu tiêu đề ✓' });
                       }}
                     />
-                  </Button>
-                  {siteSettings.hero_image_url && (
-                    <Button variant="outline" onClick={async () => {
-                      const err = await updateSetting('hero_image_url', '');
-                      if (!err) toast({ title: 'Đã xóa ảnh đầu trang, hiển thị ảnh mặc định ✓' });
-                    }}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Xóa ảnh
-                    </Button>
-                  )}
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Phụ đề / Slogan</label>
+                    <Input
+                      placeholder="Trải nghiệm nghỉ dưỡng đẳng cấp..."
+                      defaultValue={siteSettings.hero_subtitle}
+                      onBlur={async (e) => {
+                        await updateSetting('hero_subtitle', e.target.value);
+                        toast({ title: 'Đã lưu phụ đề ✓' });
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
               {/* Header Logo Management */}
