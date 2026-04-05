@@ -489,6 +489,7 @@ const AdminDashboard = () => {
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'members', icon: Users, label: 'Thành viên' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
+    { id: 'blog', icon: BookOpen, label: 'Blog' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
   ];
