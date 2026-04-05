@@ -102,7 +102,7 @@ const Index = () => {
                   <img
                     src={siteSettings.about_image_url}
                     alt="Tuấn Đạt Luxury Hotel"
-                    className="w-full h-[400px] sm:h-[500px] object-cover rounded-2xl shadow-lg"
+                    className="w-full h-[400px] sm:h-[500px] object-cover rounded-2xl shadow-luxury"
                     loading="lazy"
                   />
                 ) : (
