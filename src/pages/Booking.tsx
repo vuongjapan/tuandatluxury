@@ -120,10 +120,11 @@ const Booking = () => {
     return true;
   }, [checkIn, checkOut, nightCount, room, isDateAvailable]);
 
-  const comboTotal = useMemo(() => 
-    selectedCombos.reduce((sum, c) => sum + c.price * c.quantity, 0),
-    [selectedCombos]
-  );
+  const comboTotal = useMemo(() => {
+    const oldTotal = selectedCombos.reduce((sum, c) => sum + c.price * c.quantity, 0);
+    const newTotal = comboSelection ? comboSelection.pricePerPerson * comboSelection.quantity : 0;
+    return oldTotal + newTotal;
+  }, [selectedCombos, comboSelection]);
 
   const roomTotal = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0 || !room) return 0;
