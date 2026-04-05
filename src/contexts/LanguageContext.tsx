@@ -32,6 +32,7 @@ const translations: Record<string, Record<Language, string>> = {
   'nav.overview': { vi: 'Tổng quan', en: 'Overview', ja: '概要', zh: '概览' },
   'nav.rooms': { vi: 'Hạng phòng', en: 'Room Types', ja: '客室タイプ', zh: '房型' },
   'nav.booking': { vi: 'Đặt phòng', en: 'Booking', ja: '予約', zh: '预订' },
+  'nav.rooms_booking': { vi: 'Phòng & Đặt phòng', en: 'Rooms & Booking', ja: '客室・予約', zh: '客房与预订' },
   'nav.about': { vi: 'Giới thiệu', en: 'About', ja: '紹介', zh: '关于' },
   'nav.services': { vi: 'Dịch vụ', en: 'Services', ja: 'サービス', zh: '服务' },
   'nav.dining': { vi: 'Ẩm thực', en: 'Dining', ja: 'お食事', zh: '餐饮' },

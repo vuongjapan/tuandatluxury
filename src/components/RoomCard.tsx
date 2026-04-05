@@ -19,7 +19,8 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
   return (
     <div className="group bg-card rounded-2xl border border-border shadow-card hover:shadow-luxury transition-all duration-500 overflow-hidden flex flex-col md:flex-row hover-lift">
       {/* Image with zoom */}
-      <div className="relative w-full md:w-96 h-56 sm:h-64 md:h-auto shrink-0 overflow-hidden">
+      <div className="relative w-full md:w-96 shrink-0 overflow-hidden">
+        <div className="aspect-video md:aspect-auto md:h-full">
         <img
           src={imgSrc}
           alt={room.name[language]}
@@ -34,6 +35,7 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
         <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold text-sm shadow-gold backdrop-blur-sm">
           {formatPrice(room.priceVND)}
           <span className="text-[10px] font-normal opacity-80 block">{t('room.per_night')}</span>
+        </div>
         </div>
       </div>
 
