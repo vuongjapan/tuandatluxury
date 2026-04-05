@@ -31,7 +31,7 @@ import AdminCombo from '@/components/AdminCombo';
 import AdminSpecialPrices from '@/components/AdminSpecialPrices';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog' | 'combos';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog' | 'combos' | 'special-prices';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
