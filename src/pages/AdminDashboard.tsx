@@ -12,7 +12,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
-  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive, MapPin, BookOpen
+  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive, MapPin, BookOpen, Flame
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -28,9 +28,10 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import AdminMembers from '@/components/AdminMembers';
 import AdminBlog from '@/components/AdminBlog';
 import AdminCombo from '@/components/AdminCombo';
+import AdminSpecialPrices from '@/components/AdminSpecialPrices';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog' | 'combos';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog' | 'combos' | 'special-prices';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -492,6 +493,7 @@ const AdminDashboard = () => {
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'blog', icon: BookOpen, label: 'Blog' },
     { id: 'combos', icon: UtensilsCrossed, label: 'Combo ăn uống' },
+    { id: 'special-prices', icon: Flame, label: 'Giá đặc biệt' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
   ];
@@ -1528,6 +1530,9 @@ const AdminDashboard = () => {
 
           {/* COMBOS */}
           {tab === 'combos' && <AdminCombo />}
+
+          {/* SPECIAL PRICES */}
+          {tab === 'special-prices' && <AdminSpecialPrices />}
 
           {/* TRASH */}
           {tab === 'trash' && (

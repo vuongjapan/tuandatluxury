@@ -1136,6 +1136,65 @@ export type Database = {
         }
         Relationships: []
       }
+      special_date_prices: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_active: boolean
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      special_room_prices: {
+        Row: {
+          created_at: string
+          id: string
+          price: number
+          room_id: string
+          special_date_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          price?: number
+          room_id: string
+          special_date_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          price?: number
+          room_id?: string
+          special_date_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_room_prices_special_date_id_fkey"
+            columns: ["special_date_id"]
+            isOneToOne: false
+            referencedRelation: "special_date_prices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
