@@ -79,7 +79,7 @@ const AdminDashboard = () => {
     setLoading(true);
     const [{ data: b }, { data: r }] = await Promise.all([
       supabase.from('bookings').select('*, rooms(name_vi)').order('created_at', { ascending: false }),
-      supabase.from('rooms').select('*').order('price_vnd'),
+      supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
     ]);
     setBookings(b || []);
     setRooms(r || []);
