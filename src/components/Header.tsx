@@ -183,12 +183,12 @@ const Header = () => {
             ) : !loading ? (
               <Button
                 variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5"
                 onClick={() => navigate('/member')}
               >
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Đăng nhập</span>
+                <span className="hidden sm:inline text-xs">Đăng nhập</span>
               </Button>
             ) : null}
 
