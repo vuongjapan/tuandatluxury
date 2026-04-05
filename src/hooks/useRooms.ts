@@ -37,6 +37,15 @@ export interface SpecialRoomPrice {
   price: number;
 }
 
+export interface RoomImage {
+  id: string;
+  room_id: string;
+  image_url: string;
+  caption: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
 export interface DBRoom {
   id: string;
   name_vi: string;
@@ -57,7 +66,7 @@ export interface DBRoom {
   is_active: boolean | null;
 }
 
-function dbRoomToRoom(db: DBRoom, staticFallback?: Room): Room {
+function dbRoomToRoom(db: DBRoom, staticFallback?: Room, images?: RoomImage[]): Room {
   return {
     id: db.id,
     name: { vi: db.name_vi, en: db.name_en, ja: db.name_ja, zh: db.name_zh },
@@ -70,6 +79,7 @@ function dbRoomToRoom(db: DBRoom, staticFallback?: Room): Room {
     size: db.size_sqm,
     amenities: db.amenities || [],
     image: db.image_url || staticFallback?.image || '/placeholder.svg',
+    images: images?.map(img => img.image_url) || [],
     weekendMultiplier: db.weekend_multiplier || 1.3,
     peakMultiplier: db.peak_multiplier || 1.5,
   };
@@ -95,12 +105,13 @@ function toDateStr(date: Date): string {
 }
 
 async function fetchRoomsData() {
-  const [roomsResult, monthlyPricesResult, dailyAvailabilityResult, specialDatesResult, specialRoomPricesResult] = await Promise.allSettled([
+  const [roomsResult, monthlyPricesResult, dailyAvailabilityResult, specialDatesResult, specialRoomPricesResult, roomImagesResult] = await Promise.allSettled([
     supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
     supabase.from('room_monthly_prices').select('*'),
     supabase.from('room_daily_availability').select('*'),
     supabase.from('special_date_prices').select('*').eq('is_active', true),
     supabase.from('special_room_prices').select('*'),
+    supabase.from('room_images').select('*').eq('is_active', true).order('sort_order'),
   ]);
 
   return {
@@ -109,6 +120,7 @@ async function fetchRoomsData() {
     dailyAvailability: getSafeData<DailyAvailability[]>(dailyAvailabilityResult, []),
     specialDates: getSafeData<SpecialDatePrice[]>(specialDatesResult, []),
     specialRoomPrices: getSafeData<SpecialRoomPrice[]>(specialRoomPricesResult, []),
+    roomImages: getSafeData<RoomImage[]>(roomImagesResult, []),
   };
 }
 
@@ -127,6 +139,7 @@ export function useRooms() {
   const dailyAvailability = data?.dailyAvailability || [];
   const specialDates = data?.specialDates || [];
   const specialRoomPrices = data?.specialRoomPrices || [];
+  const roomImages = data?.roomImages || [];
 
   // Build a map of date -> special_date_id for fast lookup
   const specialDateMap = useMemo(() => {
@@ -139,33 +152,27 @@ export function useRooms() {
     if (dbRooms.length === 0) return staticRooms;
     return dbRooms.map((db) => {
       const fallback = staticRooms.find((s) => s.id === db.id);
-      return dbRoomToRoom(db, fallback);
+      const images = roomImages.filter(img => img.room_id === db.id);
+      return dbRoomToRoom(db, fallback, images);
     });
-  }, [dbRooms]);
+  }, [dbRooms, roomImages]);
 
   const getRoomPrice = useCallback((room: Room, date: Date): number => {
     const dateStr = toDateStr(date);
-
-    // PRIORITY 1: Special date price (highest priority, overrides everything)
     const specialDate = specialDateMap[dateStr];
     if (specialDate) {
       const srp = specialRoomPrices.find(p => p.special_date_id === specialDate.id && p.room_id === room.id);
       if (srp) return srp.price;
     }
-
-    // PRIORITY 2: Monthly price
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const nightType = getNightType(date);
-
     const mp = monthlyPrices.find((p) => p.room_id === room.id && p.year === year && p.month === month);
     if (mp) {
       if (nightType === 'weekday') return mp.price_weekday;
       if (nightType === 'weekend') return mp.price_weekend;
       return mp.price_sunday;
     }
-
-    // PRIORITY 3: Base price
     return room.priceVND;
   }, [monthlyPrices, specialDateMap, specialRoomPrices]);
 
@@ -208,5 +215,6 @@ export function useRooms() {
     dailyAvailability,
     specialDates,
     specialRoomPrices,
+    roomImages,
   };
 }

@@ -11,6 +11,7 @@ export interface Room {
   size: number;
   amenities: string[];
   image: string;
+  images?: string[];
   weekendMultiplier: number;
   peakMultiplier: number;
 }
