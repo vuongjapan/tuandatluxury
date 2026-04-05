@@ -251,7 +251,7 @@ const Index = () => {
             title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
             isVi={isVi}
           />
-          <div className="space-y-6">
+          <div className="space-y-8">
             {roomsLoading && rooms.length === 0 ? (
               <>
                 <RoomSkeleton />
