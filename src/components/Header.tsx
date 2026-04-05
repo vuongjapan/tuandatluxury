@@ -74,13 +74,12 @@ const Header = () => {
       <div className={`backdrop-blur-md border-b border-border shadow-sm transition-all duration-300 ${scrolled ? 'bg-card/98 py-0' : 'bg-card/95'}`}>
         <div className={`container mx-auto flex items-center justify-between px-4 transition-all duration-300 ${scrolled ? 'h-14' : 'h-16'}`}>
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <Link to="/" className="flex items-center shrink-0">
             {settings.header_logo_url ?
             <img src={settings.header_logo_url} alt="Tuấn Đạt Luxury" className="h-10 w-auto object-contain" /> :
-
-            <div className="flex items-center gap-2">
-                <span className="font-display text-xl sm:text-2xl font-bold text-gold-gradient">Tuấn Đạt</span>
-                <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-muted-foreground">Luxury Hotel</span>
+            <div className="flex flex-col leading-tight">
+                <span className="font-display text-lg sm:text-2xl font-bold text-gold-gradient">Tuấn Đạt</span>
+                <span className="text-[8px] sm:text-[10px] font-semibold tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">Luxury Hotel</span>
               </div>
             }
           </Link>
@@ -113,10 +112,10 @@ const Header = () => {
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
             {/* Hotline on mobile */}
             <a href="tel:0986617939" className="sm:hidden">
-              <Button variant="ghost" size="icon" className="text-primary">
+              <Button variant="ghost" size="icon" className="text-primary h-8 w-8">
                 <Phone className="h-4 w-4" />
               </Button>
             </a>
@@ -124,7 +123,7 @@ const Header = () => {
             {/* Language Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1">
                   <Globe className="h-4 w-4" />
                   <span className="hidden sm:inline text-xs">{langLabels[language]}</span>
                 </Button>
@@ -156,7 +155,7 @@ const Header = () => {
             {!loading && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5">
+                  <Button variant="outline" size="sm" className="gap-1 h-8 px-2 sm:px-3 sm:gap-1.5">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline max-w-[100px] truncate text-xs">{user.fullName}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${TIER_COLORS[user.tier]}`}>
@@ -184,17 +183,17 @@ const Header = () => {
             ) : !loading ? (
               <Button
                 variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5"
                 onClick={() => navigate('/member')}
               >
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Đăng nhập</span>
+                <span className="hidden sm:inline text-xs">Đăng nhập</span>
               </Button>
             ) : null}
 
             {/* Mobile toggle */}
-            <Button variant="ghost" size="icon" className="xl:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+            <Button variant="ghost" size="icon" className="xl:hidden h-9 w-9 min-w-[36px]" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
