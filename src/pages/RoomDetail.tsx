@@ -17,7 +17,7 @@ const RoomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
-  const { rooms, getRoomPrice, getAvailability } = useRooms();
+  const { rooms, getRoomPrice, getAvailability, isSpecialDate } = useRooms();
   const { settings } = useSiteSettings();
   const [selectedDate, setSelectedDate] = useState<Date>();
 
