@@ -74,13 +74,12 @@ const Header = () => {
       <div className={`backdrop-blur-md border-b border-border shadow-sm transition-all duration-300 ${scrolled ? 'bg-card/98 py-0' : 'bg-card/95'}`}>
         <div className={`container mx-auto flex items-center justify-between px-4 transition-all duration-300 ${scrolled ? 'h-14' : 'h-16'}`}>
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <Link to="/" className="flex items-center shrink-0">
             {settings.header_logo_url ?
             <img src={settings.header_logo_url} alt="Tuấn Đạt Luxury" className="h-10 w-auto object-contain" /> :
-
-            <div className="flex items-center gap-2">
-                <span className="font-display text-xl sm:text-2xl font-bold text-gold-gradient">Tuấn Đạt</span>
-                <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-muted-foreground">Luxury Hotel</span>
+            <div className="flex flex-col leading-tight">
+                <span className="font-display text-lg sm:text-2xl font-bold text-gold-gradient">Tuấn Đạt</span>
+                <span className="text-[8px] sm:text-[10px] font-semibold tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">Luxury Hotel</span>
               </div>
             }
           </Link>
