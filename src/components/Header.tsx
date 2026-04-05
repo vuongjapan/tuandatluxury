@@ -37,9 +37,15 @@ const Header = () => {
     if (href.startsWith('/#')) {
       const hash = href.split('#')[1];
       if (window.location.pathname === '/') {
-        // Try immediately, then retry after lazy sections load
+        // Try immediately, retry with increasing delays for lazy-loaded sections
         if (!scrollToElement(hash)) {
-          setTimeout(() => scrollToElement(hash), 500);
+          const attempts = [200, 600, 1200];
+          attempts.forEach(delay => {
+            setTimeout(() => scrollToElement(hash), delay);
+          });
+        } else {
+          // Re-scroll after layout settles
+          setTimeout(() => scrollToElement(hash), 100);
         }
       } else {
         navigate(href);
