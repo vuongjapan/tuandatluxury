@@ -71,8 +71,8 @@ const Header = () => {
       </div>
 
       {/* Main nav */}
-      <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="container mx-auto flex items-center justify-between h-16 px-4">
+      <div className={`backdrop-blur-md border-b border-border shadow-sm transition-all duration-300 ${scrolled ? 'bg-card/98 py-0' : 'bg-card/95'}`}>
+        <div className={`container mx-auto flex items-center justify-between px-4 transition-all duration-300 ${scrolled ? 'h-14' : 'h-16'}`}>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             {settings.header_logo_url ?
