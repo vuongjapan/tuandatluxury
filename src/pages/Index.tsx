@@ -13,7 +13,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Badge } from '@/components/ui/badge';
 
 // Lazy load heavy below-fold components
 const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
