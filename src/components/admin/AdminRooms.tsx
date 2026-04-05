@@ -53,7 +53,50 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
     setDailyAvailability(data || []);
   };
 
+  const fetchRoomGallery = async (roomId: string) => {
+    const { data } = await supabase.from('room_images').select('*').eq('room_id', roomId).order('sort_order');
+    setRoomGallery(data || []);
+  };
+
   useEffect(() => {
+    if (editingRoom?.id) fetchRoomGallery(editingRoom.id);
+    else setRoomGallery([]);
+  }, [editingRoom?.id]);
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !editingRoom) return;
+    setUploadingGallery(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const compressed = await compressImage(files[i], { maxWidth: 1920, quality: 0.8 });
+        const path = `rooms/${editingRoom.id}-gallery-${Date.now()}-${i}.jpg`;
+        const { error: uploadError } = await supabase.storage.from('gallery').upload(path, compressed);
+        if (uploadError) continue;
+        const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+        await supabase.from('room_images').insert({
+          room_id: editingRoom.id,
+          image_url: urlData.publicUrl,
+          sort_order: roomGallery.length + i,
+        });
+      }
+      toast({ title: `Đã thêm ${files.length} ảnh` });
+      fetchRoomGallery(editingRoom.id);
+    } catch (err: any) {
+      toast({ title: 'Lỗi upload', description: err.message, variant: 'destructive' });
+    }
+    setUploadingGallery(false);
+    e.target.value = '';
+  };
+
+  const deleteRoomImage = async (imgId: string) => {
+    if (!confirm('Xóa ảnh này?')) return;
+    await supabase.from('room_images').delete().eq('id', imgId);
+    toast({ title: 'Đã xóa ảnh' });
+    if (editingRoom?.id) fetchRoomGallery(editingRoom.id);
+  };
+
+
     if (!mpRoom) return;
     const existing = monthlyPrices.find((p: any) => p.room_id === mpRoom && p.year === mpYear && p.month === mpMonth);
     if (existing) {
