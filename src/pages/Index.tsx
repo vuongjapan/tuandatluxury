@@ -86,7 +86,7 @@ const Index = () => {
 
       {/* 3. Về chúng tôi — compact intro */}
       <section id="about" className="py-20 sm:py-28 bg-secondary luxury-section">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(hsl(43 74% 49%) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
