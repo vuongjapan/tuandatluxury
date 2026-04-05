@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AMENITY_ICONS } from '@/data/rooms';
-import { Save, Upload, Pencil, DollarSign, CalendarRange, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Save, Upload, Pencil, DollarSign, CalendarRange, ChevronLeft, ChevronRight, Trash2, ImageIcon, GripVertical } from 'lucide-react';
 
 const ALL_AMENITIES = Object.keys(AMENITY_ICONS);
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
