@@ -203,7 +203,7 @@ const Index = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  className="bg-card rounded-xl p-4 sm:p-5 text-center border border-border shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300"
+                  className="bg-card rounded-2xl p-5 sm:p-6 text-center border border-border shadow-card hover:shadow-luxury hover:-translate-y-2 transition-all duration-500 gold-border-glow"
                 >
                   <span className="text-3xl sm:text-4xl block mb-2">{item.icon}</span>
                   <p className="font-display text-sm font-semibold text-foreground">{isVi ? item.titleVi : item.titleEn}</p>
