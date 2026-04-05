@@ -1,6 +1,5 @@
 import roomStandard from '@/assets/room-standard.jpg';
 import roomDeluxe from '@/assets/room-deluxe.jpg';
-import roomSuite from '@/assets/room-suite.jpg';
 import roomFamily from '@/assets/room-family.jpg';
 
 export interface Room {
