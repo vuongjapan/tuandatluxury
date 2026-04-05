@@ -68,6 +68,7 @@ const Booking = () => {
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedCombos, setSelectedCombos] = useState<SelectedCombo[]>([]);
+  const [comboSelection, setComboSelection] = useState<ComboSelection | null>(null);
 
   // Promotion-specific fields
   const [companyName, setCompanyName] = useState('');
