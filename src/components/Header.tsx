@@ -229,13 +229,12 @@ const Header = () => {
       <div className="xl:hidden bg-card border-t border-border animate-fade-in">
           <nav className="container mx-auto py-4 px-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {navItems.map((item) =>
-            <Link
+            <button
               key={item.key}
-              to={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+              onClick={() => handleNavClick(item.href)}
+              className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors text-left">
                 {t(item.key)}
-              </Link>
+              </button>
           )}
             {moreItems.map((item) =>
           <Link
