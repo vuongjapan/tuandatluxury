@@ -1531,6 +1531,9 @@ const AdminDashboard = () => {
           {/* COMBOS */}
           {tab === 'combos' && <AdminCombo />}
 
+          {/* SPECIAL PRICES */}
+          {tab === 'special-prices' && <AdminSpecialPrices />}
+
           {/* TRASH */}
           {tab === 'trash' && (
             <div className="space-y-4">
