@@ -20,6 +20,41 @@ const Header = () => {
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
+  const scrollToElement = (hash: string) => {
+    const el = document.getElementById(hash);
+    if (el) {
+      const headerEl = document.querySelector('header');
+      const headerHeight = headerEl ? headerEl.offsetHeight : 90;
+      const top = el.offsetTop - headerHeight - 8;
+      window.scrollTo({ top, behavior: 'smooth' });
+      return true;
+    }
+    return false;
+  };
+
+  const handleNavClick = (href: string) => {
+    setMobileOpen(false);
+    if (href.startsWith('/#')) {
+      const hash = href.split('#')[1];
+      if (window.location.pathname === '/') {
+        // Try immediately, retry with increasing delays for lazy-loaded sections
+        if (!scrollToElement(hash)) {
+          const attempts = [200, 600, 1200];
+          attempts.forEach(delay => {
+            setTimeout(() => scrollToElement(hash), delay);
+          });
+        } else {
+          // Re-scroll after layout settles
+          setTimeout(() => scrollToElement(hash), 100);
+        }
+      } else {
+        navigate(href);
+      }
+    } else {
+      navigate(href);
+    }
+  };
+
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -86,12 +121,12 @@ const Header = () => {
           {/* Desktop Nav */}
           <nav className="hidden xl:flex items-center gap-0.5">
             {navItems.map((item) =>
-            <Link
+            <button
               key={item.key}
-              to={item.href}
+              onClick={() => handleNavClick(item.href)}
               className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-primary transition-colors">
                 {t(item.key)}
-              </Link>
+              </button>
             )}
             {/* More dropdown */}
             <DropdownMenu>
@@ -100,10 +135,8 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {moreItems.map(item => (
-                  <DropdownMenuItem key={item.href} asChild>
-                    <Link to={item.href} className="cursor-pointer">
-                      {isVi ? item.labelVi : item.labelEn}
-                    </Link>
+                  <DropdownMenuItem key={item.href} onClick={() => handleNavClick(item.href)} className="cursor-pointer">
+                    {isVi ? item.labelVi : item.labelEn}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -204,22 +237,20 @@ const Header = () => {
       <div className="xl:hidden bg-card border-t border-border animate-fade-in">
           <nav className="container mx-auto py-4 px-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {navItems.map((item) =>
-            <Link
+            <button
               key={item.key}
-              to={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+              onClick={() => handleNavClick(item.href)}
+              className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors text-left">
                 {t(item.key)}
-              </Link>
+              </button>
           )}
             {moreItems.map((item) =>
-          <Link
+          <button
             key={item.href}
-            to={item.href}
-            onClick={() => setMobileOpen(false)}
-            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+            onClick={() => handleNavClick(item.href)}
+            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors text-left">
                 {isVi ? item.labelVi : item.labelEn}
-              </Link>
+              </button>
           )}
             {!loading && !user && (
               <Button
