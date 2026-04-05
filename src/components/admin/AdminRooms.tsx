@@ -219,7 +219,31 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
               </label>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Multi-image gallery */}
+          <div className="mb-4">
+            <label className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">
+              <ImageIcon className="h-3.5 w-3.5 inline mr-1" />Thư viện ảnh phòng ({roomGallery.length} ảnh)
+            </label>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+              {roomGallery.map((img, idx) => (
+                <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
+                  <img src={img.image_url} alt="" className="w-full aspect-[4/3] object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
+                  <button onClick={() => deleteRoomImage(img.id)}
+                    className="absolute top-1 right-1 p-1 bg-destructive/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Trash2 className="h-3 w-3 text-white" />
+                  </button>
+                  <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5">{idx + 1}</span>
+                </div>
+              ))}
+            </div>
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} disabled={uploadingGallery} />
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-lg text-sm font-medium cursor-pointer transition-colors">
+                <Upload className="h-4 w-4" /> {uploadingGallery ? 'Đang tải...' : 'Thêm ảnh (chọn nhiều)'}
+              </span>
+            </label>
+          </div>
             {[
               { label: 'Tên (VI)', key: 'name_vi' }, { label: 'Tên (EN)', key: 'name_en' },
               { label: 'Tên (JA)', key: 'name_ja' }, { label: 'Tên (ZH)', key: 'name_zh' },
