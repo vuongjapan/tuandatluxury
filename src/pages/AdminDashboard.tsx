@@ -1315,6 +1315,48 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+              {/* About Us Image */}
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                  Ảnh "Về chúng tôi"
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upload ảnh giới thiệu khách sạn hiển thị trong section "Về chúng tôi" trên trang chủ.
+                </p>
+                {siteSettings.about_image_url && (
+                  <div className="mb-4 p-3 bg-secondary rounded-lg">
+                    <img src={siteSettings.about_image_url} alt="About" className="w-full max-h-60 object-cover rounded-lg" />
+                  </div>
+                )}
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" className="relative" disabled={uploadingRoomImage}>
+                    <Upload className="h-4 w-4 mr-2" /> Upload ảnh
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        setUploadingRoomImage(true);
+                        try {
+                          const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.75 });
+                          const path = `about-image-${Date.now()}.jpg`;
+                          const { error: upErr } = await supabase.storage.from('site-assets').upload(path, compressed, { upsert: true });
+                          if (upErr) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploadingRoomImage(false); return; }
+                          const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(path);
+                          const err = await updateSetting('about_image_url', urlData.publicUrl);
+                          if (err) toast({ title: 'Lỗi lưu', variant: 'destructive' });
+                          else toast({ title: 'Đã cập nhật ảnh Về chúng tôi ✓' });
+                        } catch (err: any) { toast({ title: 'Lỗi', description: err.message, variant: 'destructive' }); }
+                        setUploadingRoomImage(false);
+                      }}
+                    />
+                  </Button>
+                  {siteSettings.about_image_url && (
+                    <Button variant="outline" onClick={async () => { await updateSetting('about_image_url', ''); toast({ title: 'Đã xóa ảnh ✓' }); }}>
+                      <Trash2 className="h-4 w-4 mr-2" /> Xóa ảnh
+                    </Button>
+                  )}
+                </div>
+              </div>
               {/* Header Logo Management */}
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
