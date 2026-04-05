@@ -27,9 +27,10 @@ import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import AdminMembers from '@/components/AdminMembers';
 import AdminBlog from '@/components/AdminBlog';
+import AdminCombo from '@/components/AdminCombo';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog' | 'combos';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -490,6 +491,7 @@ const AdminDashboard = () => {
     { id: 'members', icon: Users, label: 'Thành viên' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'blog', icon: BookOpen, label: 'Blog' },
+    { id: 'combos', icon: UtensilsCrossed, label: 'Combo ăn uống' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
   ];
@@ -1523,6 +1525,9 @@ const AdminDashboard = () => {
 
           {/* BLOG */}
           {tab === 'blog' && <AdminBlog />}
+
+          {/* COMBOS */}
+          {tab === 'combos' && <AdminCombo />}
 
           {/* TRASH */}
           {tab === 'trash' && (
