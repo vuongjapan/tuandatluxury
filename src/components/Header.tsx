@@ -92,10 +92,24 @@ const Header = () => {
               key={item.key}
               href={item.href}
               className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-primary transition-colors">
-              
                 {t(item.key)}
               </a>
             )}
+            {/* More dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-primary transition-colors flex items-center gap-1">
+                {isVi ? 'Thêm' : 'More'} <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {moreItems.map(item => (
+                  <DropdownMenuItem key={item.href} asChild>
+                    <a href={item.href} className="cursor-pointer">
+                      {isVi ? item.labelVi : item.labelEn}
+                    </a>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
 
           {/* Right side */}
