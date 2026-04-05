@@ -23,6 +23,20 @@ export interface DailyAvailability {
   note?: string;
 }
 
+export interface SpecialDatePrice {
+  id: string;
+  date: string;
+  is_active: boolean;
+  note: string | null;
+}
+
+export interface SpecialRoomPrice {
+  id: string;
+  special_date_id: string;
+  room_id: string;
+  price: number;
+}
+
 export interface DBRoom {
   id: string;
   name_vi: string;
@@ -76,17 +90,25 @@ function getSafeData<T>(
   return (result.value?.data ?? fallback) as T;
 }
 
+function toDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 async function fetchRoomsData() {
-  const [roomsResult, monthlyPricesResult, dailyAvailabilityResult] = await Promise.allSettled([
+  const [roomsResult, monthlyPricesResult, dailyAvailabilityResult, specialDatesResult, specialRoomPricesResult] = await Promise.allSettled([
     supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
     supabase.from('room_monthly_prices').select('*'),
     supabase.from('room_daily_availability').select('*'),
+    supabase.from('special_date_prices').select('*').eq('is_active', true),
+    supabase.from('special_room_prices').select('*'),
   ]);
 
   return {
     dbRooms: getSafeData<DBRoom[]>(roomsResult, []),
     monthlyPrices: getSafeData<MonthlyPrice[]>(monthlyPricesResult, []),
     dailyAvailability: getSafeData<DailyAvailability[]>(dailyAvailabilityResult, []),
+    specialDates: getSafeData<SpecialDatePrice[]>(specialDatesResult, []),
+    specialRoomPrices: getSafeData<SpecialRoomPrice[]>(specialRoomPricesResult, []),
   };
 }
 
@@ -103,6 +125,15 @@ export function useRooms() {
   const dbRooms = data?.dbRooms || [];
   const monthlyPrices = data?.monthlyPrices || [];
   const dailyAvailability = data?.dailyAvailability || [];
+  const specialDates = data?.specialDates || [];
+  const specialRoomPrices = data?.specialRoomPrices || [];
+
+  // Build a map of date -> special_date_id for fast lookup
+  const specialDateMap = useMemo(() => {
+    const map: Record<string, SpecialDatePrice> = {};
+    specialDates.forEach(sd => { map[sd.date] = sd; });
+    return map;
+  }, [specialDates]);
 
   const rooms: Room[] = useMemo(() => {
     if (dbRooms.length === 0) return staticRooms;
@@ -113,6 +144,16 @@ export function useRooms() {
   }, [dbRooms]);
 
   const getRoomPrice = useCallback((room: Room, date: Date): number => {
+    const dateStr = toDateStr(date);
+
+    // PRIORITY 1: Special date price (highest priority, overrides everything)
+    const specialDate = specialDateMap[dateStr];
+    if (specialDate) {
+      const srp = specialRoomPrices.find(p => p.special_date_id === specialDate.id && p.room_id === room.id);
+      if (srp) return srp.price;
+    }
+
+    // PRIORITY 2: Monthly price
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const nightType = getNightType(date);
@@ -124,11 +165,16 @@ export function useRooms() {
       return mp.price_sunday;
     }
 
+    // PRIORITY 3: Base price
     return room.priceVND;
-  }, [monthlyPrices]);
+  }, [monthlyPrices, specialDateMap, specialRoomPrices]);
+
+  const isSpecialDate = useCallback((date: Date): SpecialDatePrice | null => {
+    return specialDateMap[toDateStr(date)] || null;
+  }, [specialDateMap]);
 
   const getAvailability = useCallback((roomId: string, date: Date): DailyAvailability | null => {
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dateStr = toDateStr(date);
     return dailyAvailability.find((a) => a.room_id === roomId && a.date === dateStr) || null;
   }, [dailyAvailability]);
 
@@ -157,7 +203,10 @@ export function useRooms() {
     getAvailability,
     isDateAvailable,
     hasComboRequiredDays,
+    isSpecialDate,
     monthlyPrices,
     dailyAvailability,
+    specialDates,
+    specialRoomPrices,
   };
 }

@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
+import type { SpecialDatePrice } from '@/hooks/useRooms';
 
 interface PriceCalendarProps {
   room: Room;
@@ -10,9 +11,10 @@ interface PriceCalendarProps {
   selectedDate?: Date;
   getRoomPrice?: (room: Room, date: Date) => number;
   getAvailability?: (roomId: string, date: Date) => { status: string; rooms_available: number } | null;
+  isSpecialDate?: (date: Date) => SpecialDatePrice | null;
 }
 
-const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvailability }: PriceCalendarProps) => {
+const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvailability, isSpecialDate }: PriceCalendarProps) => {
   const { formatPrice } = useLanguage();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -26,18 +28,19 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
   const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
   const cells = useMemo(() => {
-    const result: { date: Date | null; price: number; isPast: boolean; status: string }[] = [];
-    for (let i = 0; i < firstDay; i++) result.push({ date: null, price: 0, isPast: true, status: 'open' });
+    const result: { date: Date | null; price: number; isPast: boolean; status: string; isSpecial: boolean; specialNote: string | null }[] = [];
+    for (let i = 0; i < firstDay; i++) result.push({ date: null, price: 0, isPast: true, status: 'open', isSpecial: false, specialNote: null });
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const isPast = date < today;
       const price = getRoomPrice ? getRoomPrice(room, date) : room.priceVND;
       const avail = getAvailability ? getAvailability(room.id, date) : null;
       const status = avail?.status || 'open';
-      result.push({ date, price, isPast, status });
+      const special = isSpecialDate ? isSpecialDate(date) : null;
+      result.push({ date, price, isPast, status, isSpecial: !!special, specialNote: special?.note || null });
     }
     return result;
-  }, [year, month, room, firstDay, daysInMonth, getRoomPrice, getAvailability]);
+  }, [year, month, room, firstDay, daysInMonth, getRoomPrice, getAvailability, isSpecialDate]);
 
   const monthNames = [
     'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
@@ -80,6 +83,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
               key={i}
               disabled={disabled}
               onClick={() => onSelectDate?.(cell.date!)}
+              title={cell.isSpecial ? (cell.specialNote || 'Giá đặc biệt') : undefined}
               className={`
                 relative p-1 rounded-lg text-center transition-all duration-200 min-h-[52px] flex flex-col items-center justify-center
                 ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-secondary cursor-pointer'}
@@ -87,15 +91,19 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
                 ${isClosed ? 'bg-destructive/10 line-through' : ''}
                 ${isLimited ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}
                 ${isCombo ? 'bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-300' : ''}
-                ${isWeekend && !disabled && !isCombo ? 'bg-accent/20' : ''}
-                ${isSunday && !disabled && !isCombo ? 'bg-orange-50 dark:bg-orange-900/20' : ''}
+                ${cell.isSpecial && !disabled ? 'bg-red-50 dark:bg-red-900/20 ring-1 ring-red-400' : ''}
+                ${isWeekend && !disabled && !isCombo && !cell.isSpecial ? 'bg-accent/20' : ''}
+                ${isSunday && !disabled && !isCombo && !cell.isSpecial ? 'bg-orange-50 dark:bg-orange-900/20' : ''}
               `}
             >
               <span className="text-sm font-medium text-foreground">{cell.date.getDate()}</span>
               {!cell.isPast && !isClosed && (
-                <span className="text-[10px] font-medium text-primary leading-tight">
+                <span className={`text-[10px] font-medium leading-tight ${cell.isSpecial ? 'text-destructive font-bold' : 'text-primary'}`}>
                   {formatPrice(cell.price).replace(/\.\d+/, '')}
                 </span>
+              )}
+              {cell.isSpecial && !cell.isPast && (
+                <Flame className="h-2.5 w-2.5 text-destructive absolute top-0.5 right-0.5" />
               )}
               {isClosed && !cell.isPast && (
                 <span className="text-[9px] font-medium text-destructive">Đóng</span>
@@ -109,6 +117,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
       </div>
 
       <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 dark:bg-red-900/30 border border-red-400" /> Giá đặc biệt</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-accent/20" /> Cuối tuần (T6-T7)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-100 dark:bg-orange-900/30" /> Chủ nhật</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/10" /> Đóng bán</span>
