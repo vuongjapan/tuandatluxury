@@ -839,6 +839,36 @@ export type Database = {
           },
         ]
       }
+      room_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          room_id: string
+          sort_order: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          room_id: string
+          sort_order?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          room_id?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       room_monthly_prices: {
         Row: {
           created_at: string
