@@ -86,33 +86,109 @@ const Index = () => {
       <section id="about" className="py-16 sm:py-24 bg-secondary relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+              {/* Left: Image */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
+                className="relative"
+              >
+                {siteSettings.about_image_url ? (
+                  <img
+                    src={siteSettings.about_image_url}
+                    alt="Tuấn Đạt Luxury Hotel"
+                    className="w-full h-[400px] sm:h-[500px] object-cover rounded-2xl shadow-lg"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-[400px] sm:h-[500px] bg-muted rounded-2xl flex items-center justify-center">
+                    <span className="text-6xl">🏨</span>
+                  </div>
+                )}
+                <div className="absolute -bottom-4 -right-4 bg-primary text-primary-foreground rounded-xl px-5 py-3 shadow-lg">
+                  <p className="font-display text-2xl font-bold">5★</p>
+                  <p className="text-xs">FLC Sầm Sơn</p>
+                </div>
+              </motion.div>
+
+              {/* Right: Content */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
+              >
+                <p className="text-primary font-display text-xs sm:text-sm tracking-[0.35em] uppercase mb-3">
+                  {isVi ? 'Về chúng tôi' : 'About Us'}
+                </p>
+                <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                  Tuấn Đạt Luxury Hotel
+                </h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-[1px] bg-primary/70" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/70" />
+                  <div className="w-12 h-[1px] bg-primary/70" />
+                </div>
+                <p className="text-primary font-medium text-sm mb-4">
+                  ✦ {isVi ? 'Nghỉ dưỡng đẳng cấp trong khu FLC Sầm Sơn 5 sao' : 'Premium resort inside FLC Sầm Sơn 5-star complex'} ✦
+                </p>
+                <div className="space-y-3 text-muted-foreground text-sm sm:text-base leading-relaxed">
+                  <p>
+                    {isVi
+                      ? 'Tọa lạc trong khu nghỉ dưỡng cao cấp 5 sao FLC Sầm Sơn — khu nghỉ dưỡng đầu tiên của miền Bắc và Bắc Trung Bộ. Khách sạn Tuấn Đạt Luxury gồm 6 tầng với hơn 19 phòng nghỉ sang trọng, chỉ cách bãi biển 50m. Mỗi phòng đều được trang bị điều hòa, TV màn hình phẳng, minibar, tủ lạnh, máy sấy tóc, ban công riêng và thiết bị vệ sinh cao cấp.'
+                      : 'Located inside the prestigious FLC Sầm Sơn 5-star resort — the first resort of Northern and North Central Vietnam. Tuấn Đạt Luxury Hotel features 6 floors with 19+ luxury rooms, just 50m from the beach. Each room is equipped with air conditioning, flat-screen TV, minibar, refrigerator, hair dryer, private balcony and premium bathroom amenities.'}
+                  </p>
+                  <p>
+                    {isVi
+                      ? 'Khách sạn có 2 nhà hàng tại tầng 1 & 2 phục vụ hải sản tươi sống Sầm Sơn và ẩm thực Việt-Quốc tế. Sân thượng tầng 6 là khu Bar-Coffee với không gian sôi động, ngắm cảnh biển thơ mộng. Check-in: 14:00 | Check-out: 12:00.'
+                      : 'The hotel has 2 restaurants on floors 1 & 2 serving fresh Sầm Sơn seafood and Vietnamese-International cuisine. The 6th-floor rooftop features a Bar-Coffee area with lively atmosphere and romantic sea views. Check-in: 14:00 | Check-out: 12:00.'}
+                  </p>
+                </div>
+
+                {/* Free amenities */}
+                <div className="mt-6 p-4 bg-card rounded-xl border border-border">
+                  <p className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    🎁 {isVi ? 'Miễn phí khi nghỉ tại khách sạn:' : 'Complimentary amenities:'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    {[
+                      { icon: '🏊', text: isVi ? 'Bể bơi vô cực view biển' : 'Infinity pool, sea view' },
+                      { icon: '🚲', text: isVi ? 'Xe đạp đôi dạo FLC' : 'Tandem bikes in FLC' },
+                      { icon: '🎤', text: isVi ? 'Karaoke sân khấu ánh sáng' : 'Karaoke stage' },
+                      { icon: '🏞️', text: isVi ? 'Tham quan toàn khu FLC 5 sao' : 'Tour FLC 5-star complex' },
+                      { icon: '📶', text: isVi ? 'Wifi Internet 24/7' : 'Wifi 24/7' },
+                      { icon: '🚐', text: isVi ? 'Xe điện đưa đón bãi biển' : 'Beach shuttle' },
+                      { icon: '💧', text: isVi ? '2 chai nước + trà, cafe/ngày' : '2 water bottles + tea, coffee/day' },
+                      { icon: '🅿️', text: isVi ? 'Bãi đỗ xe an ninh 24/7' : 'Secure parking 24/7' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span>{item.icon}</span>
+                        <span>{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Contact info */}
+                <div className="mt-4 p-4 bg-card rounded-xl border border-border text-sm space-y-1 text-muted-foreground">
+                  <p>📍 LK29-20, FLC Sầm Sơn, Thanh Hóa</p>
+                  <p>📞 098.661.7939 • 091.693.0969</p>
+                  <p>✉️ tuandatluxury@gmail.com</p>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Nearby attractions */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4"
             >
-              <p className="text-primary font-display text-xs sm:text-sm tracking-[0.35em] uppercase mb-3">
-                {isVi ? 'Về chúng tôi' : 'About Us'}
-              </p>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-                Tuấn Đạt Luxury Hotel
-              </h2>
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <div className="w-12 h-[1px] bg-primary/70" />
-                <div className="w-1.5 h-1.5 rounded-full bg-primary/70" />
-                <div className="w-12 h-[1px] bg-primary/70" />
-              </div>
-              <p className="text-muted-foreground leading-relaxed text-sm sm:text-base max-w-2xl mx-auto mb-8">
-                {isVi
-                  ? 'Tọa lạc trong khu nghỉ dưỡng 5 sao FLC Sầm Sơn, khách sạn Tuấn Đạt Luxury gồm 6 tầng với hơn 19 phòng nghỉ sang trọng, chỉ cách bãi biển 50m. Trải nghiệm dịch vụ đẳng cấp cùng ẩm thực biển tươi ngon nhất miền Bắc.'
-                  : 'Located inside the prestigious FLC Sầm Sơn 5-star resort, Tuấn Đạt Luxury Hotel features 6 floors with 19+ luxury rooms, just 50m from the beach. Experience premium services and the freshest seafood cuisine in Northern Vietnam.'}
-              </p>
-            </motion.div>
-
-            {/* 4 icon highlights */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
               {[
                 { icon: '🏊', titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view' },
                 { icon: '🍽️', titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international' },
@@ -132,7 +208,35 @@ const Index = () => {
                   <p className="text-xs text-muted-foreground mt-1">{isVi ? item.descVi : item.descEn}</p>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
+
+            {/* Nearby places */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mt-8 bg-card rounded-xl border border-border p-5 sm:p-6 max-w-2xl mx-auto"
+            >
+              <h3 className="font-display text-base font-semibold mb-4 flex items-center gap-2">
+                📍 {isVi ? 'Điểm tham quan lân cận' : 'Nearby Attractions'}
+              </h3>
+              <div className="space-y-2">
+                {[
+                  { name: isVi ? 'Bãi biển Sầm Sơn' : 'Sầm Sơn Beach', dist: '50m' },
+                  { name: isVi ? 'Quảng trường biển' : 'Beach Square', dist: isVi ? '2 phút xe' : '2 min drive' },
+                  { name: isVi ? 'Công viên nước' : 'Water Park', dist: isVi ? '5 phút xe' : '5 min drive' },
+                  { name: isVi ? 'Đền Độc Cước' : 'Doc Cuoc Temple', dist: isVi ? '10 phút xe' : '10 min drive' },
+                  { name: isVi ? 'Hòn Trống Mái' : 'Trong Mai Rock', dist: isVi ? '12 phút xe' : '12 min drive' },
+                  { name: isVi ? 'Sân Golf FLC' : 'FLC Golf Course', dist: isVi ? '3 phút xe' : '3 min drive' },
+                ].map((place, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
+                    <span className="text-sm text-foreground">{place.name}</span>
+                    <span className="text-xs text-primary font-medium">{place.dist}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
