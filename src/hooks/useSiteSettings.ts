@@ -15,6 +15,7 @@ export interface SiteSettings {
   platform_booking_name: string;
   platform_agoda_url: string;
   platform_agoda_name: string;
+  about_image_url: string;
   [key: string]: string;
 }
 
