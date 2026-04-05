@@ -480,82 +480,13 @@ const Booking = () => {
               )}
 
               {/* Combo ăn uống section */}
-              {comboItems.length > 0 && (
-                <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <UtensilsCrossed className="h-5 w-5 text-primary" />
-                    <h2 className="font-display text-xl font-semibold">Combo ăn uống</h2>
-                    {comboRequired && (
-                      <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" /> Bắt buộc
-                      </span>
-                    )}
-                  </div>
-                  {comboRequired && (
-                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
-                      ⚠️ Ngày bạn chọn yêu cầu chọn ít nhất 1 combo ăn uống để hoàn tất đặt phòng.
-                    </div>
-                  )}
-                  <div className="space-y-4">
-                    {comboItems.map(item => {
-                      const selected = selectedCombos.find(c => c.id === item.id);
-                      return (
-                        <div
-                          key={item.id}
-                          className={cn(
-                            "rounded-xl border overflow-hidden transition-all cursor-pointer",
-                            selected ? "border-primary bg-primary/5 ring-2 ring-primary" : "border-border hover:border-primary/50"
-                          )}
-                          onClick={() => toggleCombo(item)}
-                        >
-                          <div className="flex flex-col sm:flex-row">
-                            {item.image_url && (
-                              <div className="sm:w-48 h-48 sm:h-auto shrink-0 overflow-hidden">
-                                <img src={item.image_url} alt={item.name_vi} className="w-full h-full object-cover" />
-                              </div>
-                            )}
-                            <div className="flex-1 p-4 sm:p-5">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-display text-lg font-semibold text-foreground">{language === 'vi' ? item.name_vi : item.name_en}</h4>
-                                  {item.description_vi && (
-                                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                                      {language === 'vi' ? item.description_vi : item.description_en}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="text-right shrink-0">
-                                  <p className="text-lg font-bold text-primary">
-                                    {item.price_vnd > 0 ? formatPrice(item.price_vnd) : 'Giá thỏa thuận'}
-                                  </p>
-                                  {item.combo_serves && (
-                                    <p className="text-xs text-muted-foreground">/ {item.combo_serves} {isVi ? 'người' : 'pax'}</p>
-                                  )}
-                                </div>
-                              </div>
-                              {selected && (
-                                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-border" onClick={e => e.stopPropagation()}>
-                                  <span className="text-sm text-muted-foreground font-medium">{isVi ? 'Số lượng:' : 'Qty:'}</span>
-                                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateComboQty(item.id, -1)}>
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="font-bold text-lg w-8 text-center">{selected.quantity}</span>
-                                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateComboQty(item.id, 1)}>
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="ml-auto text-sm font-semibold text-primary">
-                                    = {formatPrice(selected.quantity * item.price_vnd)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* New Combo Selector */}
+              <ComboSelector
+                required={comboRequired}
+                selection={comboSelection}
+                onSelect={setComboSelection}
+                guestCount={parseInt(guests)}
+              />
 
               {/* Guest info */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
