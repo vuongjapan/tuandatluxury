@@ -36,6 +36,28 @@ const queryClient = new QueryClient({
   },
 });
 
+const ScrollToHash = () => {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      // Small delay to ensure DOM is ready (lazy-loaded sections)
+      const timer = setTimeout(() => {
+        const id = hash.replace('#', '');
+        const el = document.getElementById(id);
+        if (el) {
+          const headerHeight = document.querySelector('header')?.getBoundingClientRect().height || 80;
+          const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 16;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [pathname, hash]);
+  return null;
+};
+
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="text-center">
