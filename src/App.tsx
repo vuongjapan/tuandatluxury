@@ -21,6 +21,11 @@ const Dining = lazy(() => import("./pages/Dining"));
 const Services = lazy(() => import("./pages/Services"));
 const FoodOrder = lazy(() => import("./pages/FoodOrder"));
 const FoodInvoice = lazy(() => import("./pages/FoodInvoice"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Cuisine = lazy(() => import("./pages/Cuisine"));
+const Seafood = lazy(() => import("./pages/Seafood"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,10 +60,15 @@ const App = () => (
                   <Route path="/room/:id" element={<RoomDetail />} />
                   <Route path="/booking" element={<Booking />} />
                   <Route path="/dining" element={<Dining />} />
+                  <Route path="/cuisine" element={<Cuisine />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/food-order" element={<FoodOrder />} />
                   <Route path="/food-invoice/:foodOrderId" element={<FoodInvoice />} />
                   <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogPost />} />
+                  <Route path="/seafood" element={<Seafood />} />
+                  <Route path="/terms" element={<Terms />} />
                   <Route path="/member" element={<MemberAuth />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminDashboard />} />

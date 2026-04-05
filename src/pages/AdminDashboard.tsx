@@ -12,7 +12,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Pencil, Trash2, Plus, Save,
-  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive, MapPin
+  FileText, RefreshCw, ImageIcon, Upload, ChevronLeft, ChevronRight, UtensilsCrossed, Gift, Sparkles, Download, UploadCloud, RotateCcw, Archive, MapPin, BookOpen
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -26,9 +26,10 @@ import AdminFoodMenu from '@/components/AdminFoodMenu';
 import AdminImageOptimizer from '@/components/AdminImageOptimizer';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import AdminMembers from '@/components/AdminMembers';
+import AdminBlog from '@/components/AdminBlog';
 
 
-type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members';
+type Tab = 'dashboard' | 'rooms' | 'bookings' | 'customers' | 'revenue' | 'gallery' | 'dining' | 'promotions' | 'services' | 'map' | 'trash' | 'food-menu' | 'members' | 'blog';
 
 type GalleryCategory = 'featured' | 'rooms' | 'restaurant' | 'wellness' | 'entertainment';
 
@@ -488,6 +489,7 @@ const AdminDashboard = () => {
     { id: 'customers', icon: Users, label: 'Khách hàng' },
     { id: 'members', icon: Users, label: 'Thành viên' },
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
+    { id: 'blog', icon: BookOpen, label: 'Blog' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
   ];
@@ -1415,6 +1417,9 @@ const AdminDashboard = () => {
 
           {/* MEMBERS */}
           {tab === 'members' && <AdminMembers />}
+
+          {/* BLOG */}
+          {tab === 'blog' && <AdminBlog />}
 
           {/* TRASH */}
           {tab === 'trash' && (

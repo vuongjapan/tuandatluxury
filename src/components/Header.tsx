@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, Globe, User, LogOut, Shield } from 'lucide-react';
+import { Menu, X, Phone, Globe, User, LogOut, Shield, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
@@ -20,16 +20,32 @@ const Header = () => {
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const navItems = [
-  { key: 'nav.overview', href: '/#overview' },
-  { key: 'nav.rooms', href: '/#rooms' },
-  { key: 'nav.booking', href: '/booking' },
-  { key: 'nav.services', href: '/#services' },
-  { key: 'nav.dining', href: '/dining' },
-  { key: 'nav.food_order', href: '/food-order' },
-  { key: 'nav.gallery', href: '/#gallery' },
-  { key: 'nav.offers', href: '/#offers' },
-  { key: 'nav.contact', href: '/#contact' }];
+    { key: 'nav.overview', href: '/#overview' },
+    { key: 'nav.rooms', href: '/#rooms' },
+    { key: 'nav.booking', href: '/booking' },
+    { key: 'nav.services', href: '/services' },
+    { key: 'nav.dining', href: '/cuisine' },
+    { key: 'nav.food_order', href: '/food-order' },
+    { key: 'nav.gallery', href: '/#gallery' },
+    { key: 'nav.offers', href: '/#offers' },
+  ];
+
+  const moreItems = [
+    { labelVi: 'Blog', labelEn: 'Blog', href: '/blog' },
+    { labelVi: 'Hải sản khô', labelEn: 'Dried Seafood', href: '/seafood' },
+    { labelVi: 'Điều khoản & Quy định', labelEn: 'Terms & Policies', href: '/terms' },
+    { labelVi: 'Liên hệ', labelEn: 'Contact', href: '/#contact' },
+  ];
+  const isVi = language === 'vi';
 
 
   return (
@@ -55,8 +71,8 @@ const Header = () => {
       </div>
 
       {/* Main nav */}
-      <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="container mx-auto flex items-center justify-between h-16 px-4">
+      <div className={`backdrop-blur-md border-b border-border shadow-sm transition-all duration-300 ${scrolled ? 'bg-card/98 py-0' : 'bg-card/95'}`}>
+        <div className={`container mx-auto flex items-center justify-between px-4 transition-all duration-300 ${scrolled ? 'h-14' : 'h-16'}`}>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             {settings.header_logo_url ?
@@ -76,10 +92,24 @@ const Header = () => {
               key={item.key}
               href={item.href}
               className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-primary transition-colors">
-              
                 {t(item.key)}
               </a>
             )}
+            {/* More dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-primary transition-colors flex items-center gap-1">
+                {isVi ? 'Thêm' : 'More'} <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {moreItems.map(item => (
+                  <DropdownMenuItem key={item.href} asChild>
+                    <a href={item.href} className="cursor-pointer">
+                      {isVi ? item.labelVi : item.labelEn}
+                    </a>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
 
           {/* Right side */}
@@ -174,15 +204,23 @@ const Header = () => {
       {/* Mobile Menu */}
       {mobileOpen &&
       <div className="xl:hidden bg-card border-t border-border animate-fade-in">
-          <nav className="container mx-auto py-4 px-4 flex flex-col gap-1">
+          <nav className="container mx-auto py-4 px-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {navItems.map((item) =>
           <a
             key={item.key}
             href={item.href}
             onClick={() => setMobileOpen(false)}
             className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
-            
                 {t(item.key)}
+              </a>
+          )}
+            {moreItems.map((item) =>
+          <a
+            key={item.href}
+            href={item.href}
+            onClick={() => setMobileOpen(false)}
+            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+                {isVi ? item.labelVi : item.labelEn}
               </a>
           )}
             {!loading && !user && (
