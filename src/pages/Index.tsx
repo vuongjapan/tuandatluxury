@@ -244,7 +244,7 @@ const Index = () => {
       </section>
 
       {/* 4. Phòng nổi bật */}
-      <section id="rooms" className="py-20 sm:py-28 bg-background">
+      <section id="rooms" className="py-20 sm:py-28 bg-background luxury-section">
         <div className="container mx-auto px-4">
           <SectionHeader
             tagline={isVi ? 'Hạng phòng' : 'Accommodation'}
