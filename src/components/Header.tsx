@@ -127,10 +127,8 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {moreItems.map(item => (
-                  <DropdownMenuItem key={item.href} asChild>
-                    <Link to={item.href} className="cursor-pointer">
-                      {isVi ? item.labelVi : item.labelEn}
-                    </Link>
+                  <DropdownMenuItem key={item.href} onClick={() => handleNavClick(item.href)} className="cursor-pointer">
+                    {isVi ? item.labelVi : item.labelEn}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
