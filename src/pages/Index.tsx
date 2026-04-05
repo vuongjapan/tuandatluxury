@@ -327,8 +327,8 @@ const Index = () => {
       </Suspense>
 
       {/* 10. CTA đặt phòng lớn */}
-      <section className="py-20 sm:py-28 bg-foreground text-background relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground via-foreground/95 to-foreground" />
+      <section className="py-24 sm:py-32 bg-foreground text-background relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(hsl(43 74% 49%) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
