@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
