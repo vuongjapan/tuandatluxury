@@ -493,6 +493,7 @@ const AdminDashboard = () => {
     { id: 'revenue', icon: BarChart3, label: 'Doanh thu' },
     { id: 'blog', icon: BookOpen, label: 'Blog' },
     { id: 'combos', icon: UtensilsCrossed, label: 'Combo ăn uống' },
+    { id: 'special-prices', icon: Flame, label: 'Giá đặc biệt' },
     { id: 'map', icon: MapPin, label: 'Bản đồ' },
     { id: 'trash', icon: Archive, label: 'Thùng rác' },
   ];
