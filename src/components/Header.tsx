@@ -20,6 +20,33 @@ const Header = () => {
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
+  const scrollToHash = (href: string) => {
+    const hash = href.split('#')[1];
+    if (hash && window.location.pathname === '/') {
+      const el = document.getElementById(hash);
+      if (el) {
+        const headerHeight = document.querySelector('header')?.getBoundingClientRect().height || 80;
+        const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 16;
+        window.scrollTo({ top, behavior: 'smooth' });
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const handleNavClick = (href: string) => {
+    setMobileOpen(false);
+    if (href.startsWith('/#')) {
+      if (window.location.pathname === '/') {
+        scrollToHash(href);
+      } else {
+        navigate(href);
+      }
+    } else {
+      navigate(href);
+    }
+  };
+
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
