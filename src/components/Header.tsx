@@ -88,12 +88,12 @@ const Header = () => {
           {/* Desktop Nav */}
           <nav className="hidden xl:flex items-center gap-0.5">
             {navItems.map((item) =>
-            <a
+            <Link
               key={item.key}
-              href={item.href}
+              to={item.href}
               className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/70 hover:text-primary transition-colors">
                 {t(item.key)}
-              </a>
+              </Link>
             )}
             {/* More dropdown */}
             <DropdownMenu>
@@ -103,9 +103,9 @@ const Header = () => {
               <DropdownMenuContent align="end">
                 {moreItems.map(item => (
                   <DropdownMenuItem key={item.href} asChild>
-                    <a href={item.href} className="cursor-pointer">
+                    <Link to={item.href} className="cursor-pointer">
                       {isVi ? item.labelVi : item.labelEn}
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -206,22 +206,22 @@ const Header = () => {
       <div className="xl:hidden bg-card border-t border-border animate-fade-in">
           <nav className="container mx-auto py-4 px-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {navItems.map((item) =>
-          <a
-            key={item.key}
-            href={item.href}
-            onClick={() => setMobileOpen(false)}
-            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+            <Link
+              key={item.key}
+              to={item.href}
+              onClick={() => setMobileOpen(false)}
+              className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
                 {t(item.key)}
-              </a>
+              </Link>
           )}
             {moreItems.map((item) =>
-          <a
+          <Link
             key={item.href}
-            href={item.href}
+            to={item.href}
             onClick={() => setMobileOpen(false)}
             className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
                 {isVi ? item.labelVi : item.labelEn}
-              </a>
+              </Link>
           )}
             {!loading && !user && (
               <Button
