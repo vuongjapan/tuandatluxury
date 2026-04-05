@@ -237,13 +237,12 @@ const Header = () => {
               </button>
           )}
             {moreItems.map((item) =>
-          <Link
+          <button
             key={item.href}
-            to={item.href}
-            onClick={() => setMobileOpen(false)}
-            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+            onClick={() => handleNavClick(item.href)}
+            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors text-left">
                 {isVi ? item.labelVi : item.labelEn}
-              </Link>
+              </button>
           )}
             {!loading && !user && (
               <Button
