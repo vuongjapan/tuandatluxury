@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SiteSettings {
   header_logo_url: string;
   hero_image_url: string;
+  hero_video_url: string;
+  hero_title: string;
+  hero_subtitle: string;
   chatbot_avatar_url: string;
   map_embed_url: string;
   map_embed_code: string;
