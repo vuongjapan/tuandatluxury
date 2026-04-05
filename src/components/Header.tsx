@@ -204,15 +204,23 @@ const Header = () => {
       {/* Mobile Menu */}
       {mobileOpen &&
       <div className="xl:hidden bg-card border-t border-border animate-fade-in">
-          <nav className="container mx-auto py-4 px-4 flex flex-col gap-1">
+          <nav className="container mx-auto py-4 px-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
             {navItems.map((item) =>
           <a
             key={item.key}
             href={item.href}
             onClick={() => setMobileOpen(false)}
             className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
-            
                 {t(item.key)}
+              </a>
+          )}
+            {moreItems.map((item) =>
+          <a
+            key={item.href}
+            href={item.href}
+            onClick={() => setMobileOpen(false)}
+            className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors">
+                {isVi ? item.labelVi : item.labelEn}
               </a>
           )}
             {!loading && !user && (
