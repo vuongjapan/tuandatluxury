@@ -155,7 +155,7 @@ const Header = () => {
             {!loading && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5">
+                  <Button variant="outline" size="sm" className="gap-1 h-8 px-2 sm:px-3 sm:gap-1.5">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline max-w-[100px] truncate text-xs">{user.fullName}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${TIER_COLORS[user.tier]}`}>
