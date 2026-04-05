@@ -47,7 +47,8 @@
 
     --shadow-gold: 0 4px 20px -4px hsl(43 74% 49% / 0.25);
     --shadow-card: 0 2px 12px -2px hsl(220 20% 15% / 0.08);
-    --shadow-card-hover: 0 8px 30px -4px hsl(220 20% 15% / 0.12);
+    --shadow-card-hover: 0 12px 40px -8px hsl(220 20% 15% / 0.14);
+    --shadow-luxury: 0 20px 60px -12px hsl(43 74% 49% / 0.15), 0 4px 20px -4px hsl(220 20% 15% / 0.08);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
