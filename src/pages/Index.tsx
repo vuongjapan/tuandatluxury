@@ -181,7 +181,7 @@ const Index = () => {
               </motion.div>
             </div>
 
-            {/* Feature cards - no emoji, text only */}
+            {/* Feature cards with real images */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -190,10 +190,10 @@ const Index = () => {
               className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
             >
               {[
-                { titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view' },
-                { titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international' },
-                { titleVi: 'Rooftop Bar', titleEn: 'Rooftop Bar', descVi: 'Tầng 6, ngắm biển', descEn: 'Floor 6, sea view' },
-                { titleVi: 'Lễ tân 24/7', titleEn: '24/7 Reception', descVi: 'Dịch vụ phòng', descEn: 'Room service' },
+                { titleVi: 'Hồ bơi vô cực', titleEn: 'Infinity Pool', descVi: 'Miễn phí, view biển', descEn: 'Free, sea view', img: poolImg },
+                { titleVi: '2 Nhà hàng', titleEn: '2 Restaurants', descVi: 'Hải sản & quốc tế', descEn: 'Seafood & international', img: restaurantImg },
+                { titleVi: 'Rooftop Bar', titleEn: 'Rooftop Bar', descVi: 'Tầng 6, ngắm biển', descEn: 'Floor 6, sea view', img: rooftopImg },
+                { titleVi: 'Lễ tân 24/7', titleEn: '24/7 Reception', descVi: 'Dịch vụ phòng', descEn: 'Room service', img: receptionImg },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -201,40 +201,17 @@ const Index = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  className="bg-card rounded-xl p-4 sm:p-5 text-center border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500"
+                  className="bg-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500"
                 >
-                  <p className="font-display text-xs sm:text-sm font-semibold text-foreground">{isVi ? item.titleVi : item.titleEn}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{isVi ? item.descVi : item.descEn}</p>
+                  <div className="aspect-video overflow-hidden">
+                    <img src={item.img} alt={isVi ? item.titleVi : item.titleEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  </div>
+                  <div className="p-3 sm:p-4 text-center">
+                    <p className="font-display text-xs sm:text-sm font-semibold text-foreground">{isVi ? item.titleVi : item.titleEn}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{isVi ? item.descVi : item.descEn}</p>
+                  </div>
                 </motion.div>
               ))}
-            </motion.div>
-
-            {/* Nearby places - no emoji */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="mt-8 bg-card rounded-xl border border-border p-4 sm:p-5 max-w-2xl mx-auto"
-            >
-              <h3 className="font-display text-sm font-semibold mb-3">
-                {isVi ? 'Điểm tham quan lân cận' : 'Nearby Attractions'}
-              </h3>
-              <div className="space-y-1.5">
-                {[
-                  { name: isVi ? 'Bãi biển Sầm Sơn' : 'Sầm Sơn Beach', dist: '50m' },
-                  { name: isVi ? 'Quảng trường biển' : 'Beach Square', dist: isVi ? '2 phút xe' : '2 min drive' },
-                  { name: isVi ? 'Công viên nước' : 'Water Park', dist: isVi ? '5 phút xe' : '5 min drive' },
-                  { name: isVi ? 'Đền Độc Cước' : 'Doc Cuoc Temple', dist: isVi ? '10 phút xe' : '10 min drive' },
-                  { name: isVi ? 'Hòn Trống Mái' : 'Trong Mai Rock', dist: isVi ? '12 phút xe' : '12 min drive' },
-                  { name: isVi ? 'Sân Golf FLC' : 'FLC Golf Course', dist: isVi ? '3 phút xe' : '3 min drive' },
-                ].map((place, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-1 border-b border-border/50 last:border-0">
-                    <span className="text-xs sm:text-sm text-foreground">{place.name}</span>
-                    <span className="text-[10px] sm:text-xs text-primary font-medium">{place.dist}</span>
-                  </div>
-                ))}
-              </div>
             </motion.div>
           </div>
         </div>

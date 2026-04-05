@@ -1,4 +1,4 @@
-const MAX_FILE_SIZE_MB = 10; // Maximum allowed file size in MB before compression
+const MAX_FILE_SIZE_MB = 50; // Maximum allowed file size in MB before compression
 
 /**
  * Validate and compress an image file before uploading.
