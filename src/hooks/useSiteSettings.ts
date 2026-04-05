@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SiteSettings {
   header_logo_url: string;
   hero_image_url: string;
+  hero_video_url: string;
+  hero_title: string;
+  hero_subtitle: string;
   chatbot_avatar_url: string;
   map_embed_url: string;
   map_embed_code: string;
@@ -19,6 +22,9 @@ const DEFAULTS: SiteSettings = {
   header_logo_url: '',
   chatbot_avatar_url: '',
   hero_image_url: '',
+  hero_video_url: '',
+  hero_title: '',
+  hero_subtitle: '',
   map_embed_url: '',
   map_embed_code: '',
   google_maps_url: 'https://maps.app.goo.gl/pBbcvrqXQQT4PVfn6',
