@@ -41,6 +41,7 @@ interface SelectedCombo {
   quantity: number;
 }
 
+
 const Booking = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
