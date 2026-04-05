@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, Phone } from 'lucide-react';
+import { Sparkles, ArrowRight, Phone, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
@@ -13,6 +13,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import poolImg from '@/assets/pool-feature.jpg';
+import restaurantImg from '@/assets/restaurant-feature.jpg';
+import rooftopImg from '@/assets/rooftop-bar-feature.jpg';
+import receptionImg from '@/assets/reception-feature.jpg';
 
 const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
 const PromotionsSection = lazy(() => import('@/components/PromotionsSection'));
