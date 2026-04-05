@@ -492,47 +492,60 @@ const Booking = () => {
                       ⚠️ Ngày bạn chọn yêu cầu chọn ít nhất 1 combo ăn uống để hoàn tất đặt phòng.
                     </div>
                   )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-4">
                     {comboItems.map(item => {
                       const selected = selectedCombos.find(c => c.id === item.id);
                       return (
                         <div
                           key={item.id}
                           className={cn(
-                            "rounded-xl border p-4 transition-all cursor-pointer",
+                            "rounded-xl border overflow-hidden transition-all cursor-pointer",
                             selected ? "border-primary bg-primary/5 ring-2 ring-primary" : "border-border hover:border-primary/50"
                           )}
                           onClick={() => toggleCombo(item)}
                         >
-                          <div className="flex gap-3">
+                          <div className="flex flex-col sm:flex-row">
                             {item.image_url && (
-                              <img src={item.image_url} alt={item.name_vi} className="w-20 h-20 rounded-lg object-cover shrink-0" />
+                              <div className="sm:w-48 h-48 sm:h-auto shrink-0 overflow-hidden">
+                                <img src={item.image_url} alt={item.name_vi} className="w-full h-full object-cover" />
+                              </div>
                             )}
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-foreground truncate">{language === 'vi' ? item.name_vi : item.name_en}</h4>
-                              {item.description_vi && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                                  {language === 'vi' ? item.description_vi : item.description_en}
-                                </p>
+                            <div className="flex-1 p-4 sm:p-5">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-display text-lg font-semibold text-foreground">{language === 'vi' ? item.name_vi : item.name_en}</h4>
+                                  {item.description_vi && (
+                                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                      {language === 'vi' ? item.description_vi : item.description_en}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-lg font-bold text-primary">
+                                    {item.price_vnd > 0 ? formatPrice(item.price_vnd) : 'Giá thỏa thuận'}
+                                  </p>
+                                  {item.combo_serves && (
+                                    <p className="text-xs text-muted-foreground">/ {item.combo_serves} {isVi ? 'người' : 'pax'}</p>
+                                  )}
+                                </div>
+                              </div>
+                              {selected && (
+                                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-border" onClick={e => e.stopPropagation()}>
+                                  <span className="text-sm text-muted-foreground font-medium">{isVi ? 'Số lượng:' : 'Qty:'}</span>
+                                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateComboQty(item.id, -1)}>
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className="font-bold text-lg w-8 text-center">{selected.quantity}</span>
+                                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateComboQty(item.id, 1)}>
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                  <span className="ml-auto text-sm font-semibold text-primary">
+                                    = {formatPrice(selected.quantity * item.price_vnd)}
+                                  </span>
+                                </div>
                               )}
-                              <p className="text-sm font-bold text-primary mt-1">
-                                {item.price_vnd > 0 ? formatPrice(item.price_vnd) : 'Giá thỏa thuận'}
-                                {item.combo_serves && <span className="text-xs text-muted-foreground font-normal ml-1">/ {item.combo_serves} người</span>}
-                              </p>
                             </div>
                           </div>
-                          {selected && (
-                            <div className="flex items-center gap-2 mt-3 justify-end" onClick={e => e.stopPropagation()}>
-                              <span className="text-xs text-muted-foreground">Số lượng:</span>
-                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateComboQty(item.id, -1)}>
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="font-semibold w-6 text-center">{selected.quantity}</span>
-                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateComboQty(item.id, 1)}>
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
                         </div>
                       );
                     })}
