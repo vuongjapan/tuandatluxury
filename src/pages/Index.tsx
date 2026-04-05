@@ -217,7 +217,40 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Phòng nổi bật */}
+      {/* Điểm tham quan lân cận - Section riêng */}
+      <section id="nearby" className="py-12 sm:py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <SectionHeader
+            tagline={isVi ? 'Khám phá' : 'Explore'}
+            title={isVi ? 'Điểm tham quan lân cận' : 'Nearby Attractions'}
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-5xl mx-auto">
+            {[
+              { name: isVi ? 'Bãi biển Sầm Sơn' : 'Sầm Sơn Beach', dist: '50m', icon: '🏖️' },
+              { name: isVi ? 'Quảng trường biển' : 'Beach Square', dist: isVi ? '2 phút xe' : '2 min', icon: '🌊' },
+              { name: isVi ? 'Công viên nước' : 'Water Park', dist: isVi ? '5 phút xe' : '5 min', icon: '🎢' },
+              { name: isVi ? 'Đền Độc Cước' : 'Doc Cuoc Temple', dist: isVi ? '10 phút xe' : '10 min', icon: '⛩️' },
+              { name: isVi ? 'Hòn Trống Mái' : 'Trong Mai Rock', dist: isVi ? '12 phút xe' : '12 min', icon: '🪨' },
+              { name: isVi ? 'Sân Golf FLC' : 'FLC Golf Course', dist: isVi ? '3 phút xe' : '3 min', icon: '⛳' },
+            ].map((place, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.06 }}
+                className="bg-card rounded-xl p-4 text-center border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-300"
+              >
+                <span className="text-2xl block mb-2">{place.icon}</span>
+                <p className="font-display text-xs sm:text-sm font-semibold text-foreground mb-1">{place.name}</p>
+                <p className="text-[10px] sm:text-xs text-primary font-medium">{place.dist}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
       <section id="rooms" className="py-16 sm:py-24 bg-background luxury-section">
         <div className="container mx-auto px-4">
           <SectionHeader
