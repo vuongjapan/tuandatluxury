@@ -85,8 +85,8 @@ const Index = () => {
       <BookingSearch />
 
       {/* 3. Về chúng tôi — compact intro */}
-      <section id="about" className="py-16 sm:py-24 bg-secondary relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+      <section id="about" className="py-20 sm:py-28 bg-secondary luxury-section">
+        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(hsl(43 74% 49%) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
@@ -102,7 +102,7 @@ const Index = () => {
                   <img
                     src={siteSettings.about_image_url}
                     alt="Tuấn Đạt Luxury Hotel"
-                    className="w-full h-[400px] sm:h-[500px] object-cover rounded-2xl shadow-lg"
+                    className="w-full h-[400px] sm:h-[500px] object-cover rounded-2xl shadow-luxury"
                     loading="lazy"
                   />
                 ) : (
@@ -203,7 +203,7 @@ const Index = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  className="bg-card rounded-xl p-4 sm:p-5 text-center border border-border shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300"
+                  className="bg-card rounded-2xl p-5 sm:p-6 text-center border border-border shadow-card hover:shadow-luxury hover:-translate-y-2 transition-all duration-500 gold-border-glow"
                 >
                   <span className="text-3xl sm:text-4xl block mb-2">{item.icon}</span>
                   <p className="font-display text-sm font-semibold text-foreground">{isVi ? item.titleVi : item.titleEn}</p>
@@ -244,14 +244,14 @@ const Index = () => {
       </section>
 
       {/* 4. Phòng nổi bật */}
-      <section id="rooms" className="py-20 sm:py-28 bg-background">
+      <section id="rooms" className="py-20 sm:py-28 bg-background luxury-section">
         <div className="container mx-auto px-4">
           <SectionHeader
             tagline={isVi ? 'Hạng phòng' : 'Accommodation'}
             title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
             isVi={isVi}
           />
-          <div className="space-y-6">
+          <div className="space-y-8">
             {roomsLoading && rooms.length === 0 ? (
               <>
                 <RoomSkeleton />
@@ -268,7 +268,7 @@ const Index = () => {
       </section>
 
       {/* 5. Dịch vụ nổi bật (4-6 items) */}
-      <section id="services" className="py-16 sm:py-24 bg-secondary">
+      <section id="services" className="py-20 sm:py-28 bg-secondary luxury-section">
         <div className="container mx-auto px-4">
           <SectionHeader
             tagline={isVi ? 'Tiện ích' : 'Facilities'}
@@ -283,11 +283,11 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.08 }}
-                className="bg-card rounded-2xl p-5 sm:p-6 text-center shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 border border-border"
+                className="bg-card rounded-2xl p-6 sm:p-7 text-center shadow-card hover:shadow-luxury hover:-translate-y-2 transition-all duration-500 border border-border group"
               >
-                <span className="text-3xl sm:text-4xl mb-3 block">{s.icon}</span>
-                <h3 className="font-display text-sm sm:text-base font-semibold mb-1">{isVi ? s.name_vi : s.name_en}</h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">{isVi ? s.description_vi : s.description_en}</p>
+                <span className="text-3xl sm:text-4xl mb-3 block group-hover:scale-110 transition-transform duration-300">{s.icon}</span>
+                <h3 className="font-display text-sm sm:text-base font-semibold mb-1.5 group-hover:text-primary transition-colors duration-300">{isVi ? s.name_vi : s.name_en}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{isVi ? s.description_vi : s.description_en}</p>
                 {s.is_free && (
                   <Badge variant="outline" className="mt-2 text-xs border-primary/30 text-primary">
                     {isVi ? 'Miễn phí' : 'Free'}
@@ -327,8 +327,8 @@ const Index = () => {
       </Suspense>
 
       {/* 10. CTA đặt phòng lớn */}
-      <section className="py-20 sm:py-28 bg-foreground text-background relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground via-foreground/95 to-foreground" />
+      <section className="py-24 sm:py-32 bg-foreground text-background relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(hsl(43 74% 49%) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

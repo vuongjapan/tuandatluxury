@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Users, Maximize2 } from 'lucide-react';
+import { Users, Maximize2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
@@ -14,43 +14,46 @@ interface RoomCardProps {
 const RoomCard = ({ room, index }: RoomCardProps) => {
   const { language, t, formatPrice } = useLanguage();
   const navigate = useNavigate();
-
-  // Optimize: smaller image for mobile, larger for desktop
   const imgSrc = optimizeImageUrl(room.image, { width: 640, quality: 70 });
 
   return (
-    <div
-      className="group bg-card rounded-xl border border-border shadow-card hover:shadow-card-hover transition-shadow duration-300 overflow-hidden flex flex-col md:flex-row"
-    >
-      {/* Image */}
-      <div className="relative w-full md:w-80 h-48 sm:h-56 md:h-auto shrink-0 overflow-hidden">
+    <div className="group bg-card rounded-2xl border border-border shadow-card hover:shadow-luxury transition-all duration-500 overflow-hidden flex flex-col md:flex-row hover-lift">
+      {/* Image with zoom */}
+      <div className="relative w-full md:w-96 h-56 sm:h-64 md:h-auto shrink-0 overflow-hidden">
         <img
           src={imgSrc}
           alt={room.name[language]}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover img-zoom"
           loading={index < 2 ? "eager" : "lazy"}
           decoding="async"
           onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
         />
+        {/* Overlay gradient on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {/* Price badge on image */}
+        <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold text-sm shadow-gold backdrop-blur-sm">
+          {formatPrice(room.priceVND)}
+          <span className="text-[10px] font-normal opacity-80 block">{t('room.per_night')}</span>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4 sm:p-5 md:p-6 flex flex-col justify-between">
+      <div className="flex-1 p-5 sm:p-6 md:p-8 flex flex-col justify-between">
         <div>
-          <h3 className="font-display text-xl sm:text-2xl font-semibold text-foreground mb-2">
+          <h3 className="font-display text-2xl sm:text-3xl font-semibold text-foreground mb-3 group-hover:text-primary transition-colors duration-300">
             {room.name[language]}
           </h3>
-          <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-5">
             {room.description[language]}
           </p>
 
           {/* Amenities */}
-          <div className="flex flex-wrap gap-2 sm:gap-3 mb-4">
+          <div className="flex flex-wrap gap-2 mb-5">
             {room.amenities.slice(0, 5).map((a) => {
               const amenity = AMENITY_ICONS[a];
               const label = amenity ? amenity.label[language] || amenity.label['vi'] : a;
               return (
-                <span key={a} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                <span key={a} className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/80 px-3 py-1.5 rounded-full border border-border/50 font-medium">
                   {label}
                 </span>
               );
@@ -58,30 +61,35 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
           </div>
 
           {/* Capacity & Size */}
-          <div className="flex gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Users className="h-4 w-4" /> {room.capacity} {t('room.capacity')}
+          <div className="flex gap-5 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <Users className="h-4 w-4 text-primary/70" /> {room.capacity} {t('room.capacity')}
             </span>
-            <span className="flex items-center gap-1">
-              <Maximize2 className="h-4 w-4" /> {room.size}m²
+            <span className="flex items-center gap-1.5">
+              <Maximize2 className="h-4 w-4 text-primary/70" /> {room.size}m²
             </span>
           </div>
         </div>
 
-        {/* Price & Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 sm:mt-5 pt-4 border-t border-border gap-3">
-          <div>
-            <span className="text-xl sm:text-2xl font-bold text-primary">{formatPrice(room.priceVND)}</span>
-            <span className="text-sm text-muted-foreground">{t('room.per_night')}</span>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="gold-outline" size="sm" onClick={() => navigate(`/room/${room.id}`)}>
-              {t('room.view_detail')}
-            </Button>
-            <Button variant="gold" size="sm" onClick={() => navigate(`/booking?room=${room.id}`)}>
-              {t('room.book')}
-            </Button>
-          </div>
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end mt-5 pt-5 border-t border-border/50 gap-3">
+          <Button
+            variant="gold-outline"
+            size="sm"
+            onClick={() => navigate(`/room/${room.id}`)}
+            className="gap-1.5"
+          >
+            {t('room.view_detail')}
+          </Button>
+          <Button
+            variant="gold"
+            size="sm"
+            onClick={() => navigate(`/booking?room=${room.id}`)}
+            className="gap-1.5 group/btn"
+          >
+            {t('room.book')}
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+          </Button>
         </div>
       </div>
     </div>
