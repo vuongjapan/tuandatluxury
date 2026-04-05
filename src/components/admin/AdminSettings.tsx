@@ -59,7 +59,24 @@ const AdminSettings = ({ onBackup, onRestore }: Props) => {
     toast({ title: 'Đã xóa ✓' });
   };
 
-  const sections = [
+  interface AssetItem {
+    key: string;
+    label: string;
+    accept: string;
+    maxSize?: number;
+    preview: string;
+    maxWidth?: number;
+  }
+
+  interface AssetSection {
+    title: string;
+    desc: string;
+    type?: 'text';
+    items?: AssetItem[];
+    fields?: { key: string; label: string; placeholder: string }[];
+  }
+
+  const sections: AssetSection[] = [
     {
       title: '🎬 Video Hero (đầu trang)',
       desc: 'Upload video MP4 autoplay hoặc ảnh nền fallback',
@@ -71,7 +88,7 @@ const AdminSettings = ({ onBackup, onRestore }: Props) => {
     {
       title: '📝 Nội dung Hero',
       desc: 'Tiêu đề & slogan hiển thị trên trang chủ',
-      type: 'text' as const,
+      type: 'text',
       fields: [
         { key: 'hero_title', label: 'Tiêu đề chính', placeholder: 'Tuấn Đạt Luxury' },
         { key: 'hero_subtitle', label: 'Phụ đề / Slogan', placeholder: 'Trải nghiệm nghỉ dưỡng đẳng cấp...' },
