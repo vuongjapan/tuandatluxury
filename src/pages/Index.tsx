@@ -73,8 +73,10 @@ const Index = () => {
   const { t } = useLanguage();
   const { rooms, loading: roomsLoading } = useRooms();
   const { amenities } = useServices();
+  const { attractions } = useAttractions();
   const { settings: siteSettings } = useSiteSettings();
   const navigate = useNavigate();
+  const isVi = t('nav.rooms') === 'Hạng phòng';
   const isVi = t('nav.rooms') === 'Hạng phòng';
 
   return (
