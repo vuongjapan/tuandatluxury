@@ -285,9 +285,9 @@ const Index = () => {
                 transition={{ duration: 0.5, delay: idx * 0.08 }}
                 className="bg-card rounded-2xl p-6 sm:p-7 text-center shadow-card hover:shadow-luxury hover:-translate-y-2 transition-all duration-500 border border-border group"
               >
-                <span className="text-3xl sm:text-4xl mb-3 block">{s.icon}</span>
-                <h3 className="font-display text-sm sm:text-base font-semibold mb-1">{isVi ? s.name_vi : s.name_en}</h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">{isVi ? s.description_vi : s.description_en}</p>
+                <span className="text-3xl sm:text-4xl mb-3 block group-hover:scale-110 transition-transform duration-300">{s.icon}</span>
+                <h3 className="font-display text-sm sm:text-base font-semibold mb-1.5 group-hover:text-primary transition-colors duration-300">{isVi ? s.name_vi : s.name_en}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{isVi ? s.description_vi : s.description_en}</p>
                 {s.is_free && (
                   <Badge variant="outline" className="mt-2 text-xs border-primary/30 text-primary">
                     {isVi ? 'Miễn phí' : 'Free'}
