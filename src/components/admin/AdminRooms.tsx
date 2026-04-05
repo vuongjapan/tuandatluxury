@@ -21,6 +21,8 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
   const { toast } = useToast();
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [uploadingRoomImage, setUploadingRoomImage] = useState(false);
+  const [roomGallery, setRoomGallery] = useState<any[]>([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   // Monthly prices
   const [monthlyPrices, setMonthlyPrices] = useState<any[]>([]);
