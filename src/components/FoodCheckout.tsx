@@ -270,18 +270,46 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
               <div className="bg-card rounded-xl border border-border p-4 sticky top-32">
                 <h3 className="font-display font-semibold mb-3">{isVi ? 'Tóm tắt' : 'Summary'}</h3>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
-                    <span className="font-bold">{formatPrice(totalAmount)}</span>
-                  </div>
+                  {discountCodeAmount > 0 ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+                        <span className="font-medium line-through text-muted-foreground">{formatPrice(totalAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-primary">
+                        <span>Mã {appliedDiscount?.code}</span>
+                        <span>-{formatPrice(discountCodeAmount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
+                        <span className="font-bold">{formatPrice(finalAmount)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
+                      <span className="font-bold">{formatPrice(totalAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{isVi ? 'Cọc 50%' : 'Deposit 50%'}</span>
                     <span className="font-bold text-amber-600">{formatPrice(depositAmount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{isVi ? 'Còn lại' : 'Remaining'}</span>
-                    <span className="font-bold">{formatPrice(totalAmount - depositAmount)}</span>
+                    <span className="font-bold">{formatPrice(finalAmount - depositAmount)}</span>
                   </div>
+                </div>
+
+                {/* Discount code input */}
+                <div className="mt-3 pt-3 border-t border-border">
+                  <DiscountCodeInput
+                    orderType="food"
+                    orderAmount={totalAmount}
+                    onApply={setAppliedDiscount}
+                    onRemove={() => setAppliedDiscount(null)}
+                    appliedCode={appliedDiscount}
+                  />
                 </div>
 
                 <div className="mt-3 p-2 bg-amber-50 rounded-lg text-xs text-amber-700 text-center">
