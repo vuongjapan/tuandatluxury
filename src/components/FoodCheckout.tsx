@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import DiscountCodeInput from '@/components/DiscountCodeInput';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
 import { useMenuItems } from '@/hooks/useMenuItems';
+import { type DiscountCode } from '@/hooks/usePromotionSystem';
 import { ArrowLeft, UtensilsCrossed, Plus, Minus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
