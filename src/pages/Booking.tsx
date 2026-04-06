@@ -626,8 +626,22 @@ const Booking = () => {
                   </div>
                 )}
 
+                {/* Discount code input */}
+                {originalPrice > 0 && (
+                  <div className="border-t border-border pt-3">
+                    <h4 className="font-semibold text-sm mb-2">{isVi ? '🎟️ Mã giảm giá' : '🎟️ Discount Code'}</h4>
+                    <DiscountCodeInput
+                      orderType="room"
+                      orderAmount={originalPrice}
+                      onApply={setAppliedDiscountCode}
+                      onRemove={() => setAppliedDiscountCode(null)}
+                      appliedCode={appliedDiscountCode}
+                    />
+                  </div>
+                )}
+
                 {/* Discounts */}
-                {totalDiscountPercent > 0 && originalPrice > 0 && (
+                {(totalDiscountPercent > 0 || discountCodeAmount > 0) && originalPrice > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Giá gốc</span>
@@ -643,6 +657,12 @@ const Booking = () => {
                       <div className="flex justify-between text-sm text-primary">
                         <span>Giảm ưu đãi ({promoDiscountPercent}%)</span>
                         <span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span>
+                      </div>
+                    )}
+                    {discountCodeAmount > 0 && appliedDiscountCode && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>Mã {appliedDiscountCode.code}</span>
+                        <span>-{formatPrice(discountCodeAmount)}</span>
                       </div>
                     )}
                   </div>
