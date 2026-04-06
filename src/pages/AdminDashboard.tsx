@@ -351,6 +351,7 @@ const AdminDashboard = () => {
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'dining' && <AdminDining />}
           {tab === 'promotions' && <AdminPromotions />}
+          {tab === 'promotion-system' && <AdminPromotionSystem />}
           {tab === 'services' && <AdminServices />}
           {tab === 'food-menu' && <AdminFoodMenu />}
           {tab === 'members' && <AdminMembers />}
