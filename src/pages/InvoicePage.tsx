@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { CheckCircle, Download, Home, Phone, Mail, Copy, Check, Gift, Building2, Heart } from 'lucide-react';
+import { CheckCircle, Download, Home, Phone, Mail, Copy, Check, Gift, Building2, Heart, UtensilsCrossed, BedDouble, CalendarDays, Users, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ const InvoicePage = () => {
   const [booking, setBooking] = useState<any>(null);
   const [invoice, setInvoice] = useState<any>(null);
   const [combos, setCombos] = useState<any[]>([]);
+  const [comboDishes, setComboDishes] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -36,7 +37,42 @@ const InvoicePage = () => {
         supabase.from('booking_combos').select('*').eq('booking_id', b.id),
       ]);
       setInvoice(inv);
-      setCombos(bc || []);
+      const comboList = bc || [];
+      setCombos(comboList);
+
+      // Fetch dishes for each combo by looking up combo_menus matching the package
+      if (comboList.length > 0) {
+        const dishMap: Record<string, any[]> = {};
+        for (const combo of comboList) {
+          // combo.dining_item_id = combo_packages.id
+          // combo.combo_name = "Package Name – Menu Name"
+          const parts = combo.combo_name?.split(' – ') || [];
+          const menuName = parts.length > 1 ? parts.slice(1).join(' – ') : '';
+          
+          if (menuName && combo.dining_item_id) {
+            // Find matching combo_menu
+            const { data: menus } = await supabase
+              .from('combo_menus')
+              .select('id, name_vi, name_en')
+              .eq('combo_package_id', combo.dining_item_id)
+              .eq('is_active', true);
+            
+            const matchedMenu = menus?.find(m => 
+              m.name_vi === menuName || m.name_en === menuName
+            );
+            
+            if (matchedMenu) {
+              const { data: dishes } = await supabase
+                .from('combo_menu_dishes')
+                .select('name_vi, sort_order')
+                .eq('combo_menu_id', matchedMenu.id)
+                .order('sort_order');
+              dishMap[combo.id] = dishes || [];
+            }
+          }
+        }
+        setComboDishes(dishMap);
+      }
     }
     setLoading(false);
   }, [bookingCode]);
@@ -94,15 +130,20 @@ const InvoicePage = () => {
   const roomQty = booking.room_quantity || 1;
   const comboTotal = combos.reduce((sum: number, c: any) => sum + (c.price_vnd * c.quantity), 0);
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
-  const totalDiscount = (booking.promotion_discount_amount || 0) + (booking.member_discount_amount || 0);
-  const roomPrice = originalPrice - comboTotal - totalDiscount;
-  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(Math.max(0, originalPrice - comboTotal) / nights / roomQty) : 0;
+  const roomSubtotal = Math.max(0, originalPrice - comboTotal);
+  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomSubtotal / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
+  
+  const promotionDiscount = booking.promotion_discount_amount || 0;
+  const memberDiscount = booking.member_discount_amount || 0;
+  const totalDiscount = promotionDiscount + memberDiscount;
   const hasDiscount = totalDiscount > 0 || booking.discount_code;
 
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+
+  const fmt = (n: number) => n.toLocaleString('vi') + '₫';
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -148,42 +189,42 @@ const InvoicePage = () => {
               <p className="text-xs text-muted-foreground mt-1">Lưu mã này để tra cứu đặt phòng</p>
             </div>
 
-            {/* Trạng thái */}
-            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
-              <span className="font-semibold text-muted-foreground">Trạng thái</span>
-              <span className={`font-bold px-3 py-1 rounded-full text-xs ${
-                booking.status === 'confirmed' ? 'bg-chart-2/20 text-chart-2' :
-                booking.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
-                'bg-chart-4/20 text-chart-4'
-              }`}>
-                {booking.status === 'confirmed' ? '✓ Đã xác nhận' :
-                 booking.status === 'cancelled' ? '✗ Đã hủy' : '⏳ Chờ xác nhận'}
-              </span>
+            {/* Trạng thái & Thanh toán */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-secondary rounded-xl text-center">
+                <p className="text-xs text-muted-foreground mb-1">Trạng thái</p>
+                <span className={`font-bold px-3 py-1 rounded-full text-xs ${
+                  booking.status === 'confirmed' ? 'bg-chart-2/20 text-chart-2' :
+                  booking.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
+                  'bg-chart-4/20 text-chart-4'
+                }`}>
+                  {booking.status === 'confirmed' ? '✓ Đã xác nhận' :
+                   booking.status === 'cancelled' ? '✗ Đã hủy' : '⏳ Chờ xác nhận'}
+                </span>
+              </div>
+              <div className="p-3 bg-secondary rounded-xl text-center">
+                <p className="text-xs text-muted-foreground mb-1">Thanh toán</p>
+                <span className={`font-bold px-3 py-1 rounded-full text-xs ${
+                  isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {isDepositPaid ? '✅ Đã cọc 50%' : '⏳ Chưa thanh toán'}
+                </span>
+              </div>
             </div>
 
-            {/* Thanh toán */}
-            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
-              <span className="font-semibold text-muted-foreground">Thanh toán</span>
-              <span className={`font-bold px-3 py-1 rounded-full text-xs ${
-                isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-amber-100 text-amber-700'
-              }`}>
-                {isDepositPaid ? '✅ Đã cọc 50%' : '⏳ Chưa thanh toán'}
-              </span>
-            </div>
-
-            {/* Promotion/Discount applied banner */}
-            {(booking.promotion_discount_percent > 0 || booking.member_discount_percent > 0 || booking.discount_code) && (
+            {/* Ưu đãi đã áp dụng */}
+            {hasDiscount && (
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-2">
                   <Gift className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-foreground text-sm">Ưu đãi đã áp dụng</span>
                 </div>
                 <div className="space-y-1 text-xs">
-                  {booking.member_discount_percent > 0 && (
-                    <p className="text-muted-foreground">⭐ Giảm giá thành viên: {booking.member_discount_percent}% (-{(booking.member_discount_amount || 0).toLocaleString('vi')}₫)</p>
+                  {memberDiscount > 0 && (
+                    <p className="text-muted-foreground">⭐ Giảm giá thành viên: {booking.member_discount_percent}% (-{fmt(memberDiscount)})</p>
                   )}
-                  {booking.promotion_discount_percent > 0 && (
-                    <p className="text-muted-foreground">🎁 Giảm giá ưu đãi: {booking.promotion_discount_percent}% (-{(booking.promotion_discount_amount || 0).toLocaleString('vi')}₫)</p>
+                  {promotionDiscount > 0 && (
+                    <p className="text-muted-foreground">🎁 Giảm giá ưu đãi: {booking.promotion_discount_percent}% (-{fmt(promotionDiscount)})</p>
                   )}
                   {booking.discount_code && (
                     <p className="text-muted-foreground">🎟️ Mã giảm giá: <strong>{booking.discount_code}</strong></p>
@@ -194,7 +235,9 @@ const InvoicePage = () => {
 
             {/* Thông tin khách */}
             <div>
-              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Thông tin khách</h3>
+              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2 flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" /> Thông tin khách hàng
+              </h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Họ tên:</span>
@@ -240,7 +283,7 @@ const InvoicePage = () => {
               </div>
             )}
 
-            {/* Trang trí (couple) */}
+            {/* Trang trí */}
             {booking.decoration_notes && (
               <div>
                 <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2 flex items-center gap-2">
@@ -256,113 +299,192 @@ const InvoicePage = () => {
               </div>
             )}
 
-            {/* Thông tin đặt phòng */}
+            {/* ═══════ PHẦN 1: CHI TIẾT ĐẶT PHÒNG ═══════ */}
             <div>
-              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Thông tin đặt phòng</h3>
+              <h3 className="font-display font-semibold text-base mb-3 border-b-2 border-primary/30 pb-2 flex items-center gap-2">
+                <BedDouble className="h-4 w-4 text-primary" /> Chi tiết đặt phòng
+              </h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Loại phòng:</span>
-                  <span className="font-medium">{booking.rooms?.name_vi || booking.room_id}</span>
+                  <span className="font-semibold text-foreground">{booking.rooms?.name_vi || booking.room_id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Số phòng:</span>
-                  <span className="font-medium">{roomQty}</span>
+                  <span className="text-muted-foreground">Số lượng phòng:</span>
+                  <span className="font-medium">{roomQty} phòng</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Số khách:</span>
                   <span className="font-medium">{booking.guests_count} người</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ngày nhận phòng (Check-in):</span>
-                  <span className="font-medium">{format(new Date(booking.check_in), 'dd/MM/yyyy')}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" /> Nhận phòng:
+                  </span>
+                  <span className="font-medium">{format(new Date(booking.check_in), 'EEEE, dd/MM/yyyy', { locale: vi })}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ngày trả phòng (Check-out):</span>
-                  <span className="font-medium">{format(new Date(booking.check_out), 'dd/MM/yyyy')}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" /> Trả phòng:
+                  </span>
+                  <span className="font-medium">{format(new Date(booking.check_out), 'EEEE, dd/MM/yyyy', { locale: vi })}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tổng số đêm:</span>
-                  <span className="font-medium">{nights} đêm</span>
+                  <span className="font-semibold text-primary">{nights} đêm</span>
+                </div>
+              </div>
+
+              {/* Room price breakdown */}
+              <div className="mt-3 bg-secondary/70 rounded-lg p-3 space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Giá phòng / đêm:</span>
+                  <span className="font-medium">{fmt(pricePerNight)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Tính:</span>
+                  <span className="font-medium">{fmt(pricePerNight)} × {nights} đêm × {roomQty} phòng</span>
+                </div>
+                <div className="flex justify-between font-semibold text-sm border-t border-border pt-1 mt-1">
+                  <span className="text-muted-foreground">Thành tiền phòng:</span>
+                  <span className="text-foreground">{fmt(roomSubtotal)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Combo ăn uống */}
+            {/* ═══════ PHẦN 2: COMBO ĂN UỐNG ═══════ */}
             {combos.length > 0 && (
               <div>
-                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">🍽️ Combo ăn uống</h3>
-                <div className="space-y-2">
-                  {combos.map((c: any) => (
-                    <div key={c.id} className="flex justify-between">
-                      <span className="text-muted-foreground">{c.combo_name} ×{c.quantity}</span>
-                      <span className="font-medium">{(c.price_vnd * c.quantity).toLocaleString('vi')}₫</span>
+                <h3 className="font-display font-semibold text-base mb-3 border-b-2 border-primary/30 pb-2 flex items-center gap-2">
+                  <UtensilsCrossed className="h-4 w-4 text-primary" /> Set ăn uống đã chọn
+                </h3>
+                <div className="space-y-4">
+                  {combos.map((c: any, idx: number) => {
+                    const parts = c.combo_name?.split(' – ') || [c.combo_name];
+                    const packageName = parts[0] || '';
+                    const menuName = parts.length > 1 ? parts.slice(1).join(' – ') : '';
+                    const dishes = comboDishes[c.id] || [];
+                    const comboItemTotal = c.price_vnd * c.quantity;
+                    
+                    return (
+                      <div key={c.id} className="bg-secondary/50 rounded-xl p-4 border border-border/50">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-semibold text-foreground">{idx + 1}. {packageName}</p>
+                            {menuName && (
+                              <p className="text-xs text-primary font-medium mt-0.5">📋 {menuName}</p>
+                            )}
+                          </div>
+                          <span className="font-bold text-primary text-sm">{fmt(comboItemTotal)}</span>
+                        </div>
+                        
+                        <div className="flex gap-4 text-xs text-muted-foreground mb-2">
+                          <span>💰 Đơn giá: {fmt(c.price_vnd)}/người</span>
+                          <span>👥 Số lượng: {c.quantity} set</span>
+                        </div>
+
+                        {/* Dishes list */}
+                        {dishes.length > 0 && (
+                          <div className="mt-2 border-t border-border/50 pt-2">
+                            <p className="text-xs font-semibold text-muted-foreground mb-1.5">🍽️ Thực đơn gồm {dishes.length} món:</p>
+                            <div className="grid grid-cols-1 gap-0.5">
+                              {dishes.map((dish, i) => (
+                                <p key={i} className="text-xs text-muted-foreground pl-2">
+                                  {i + 1}. {dish.name_vi}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Combo subtotal */}
+                  <div className="bg-secondary/70 rounded-lg p-3">
+                    <div className="flex justify-between font-semibold text-sm">
+                      <span className="text-muted-foreground">Tổng set ăn uống ({combos.length} set):</span>
+                      <span className="text-primary">{fmt(comboTotal)}</span>
                     </div>
-                  ))}
-                  <div className="flex justify-between font-semibold border-t border-border pt-1">
-                    <span className="text-muted-foreground">Tổng combo:</span>
-                    <span className="text-primary">{comboTotal.toLocaleString('vi')}₫</span>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Chi phí */}
+            {/* ═══════ PHẦN 3: TỔNG HỢP CHI PHÍ ═══════ */}
             <div>
-              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Chi phí</h3>
+              <h3 className="font-display font-semibold text-base mb-3 border-b-2 border-primary/30 pb-2">
+                💰 Tổng hợp chi phí
+              </h3>
               <div className="space-y-2">
+                {/* Room subtotal */}
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Giá phòng / đêm:</span>
-                  <span className="font-medium">{pricePerNight.toLocaleString('vi')}₫</span>
+                  <span className="text-muted-foreground">🏨 Tiền phòng ({roomQty} phòng × {nights} đêm):</span>
+                  <span className="font-medium">{fmt(roomSubtotal)}</span>
                 </div>
-                {roomQty > 1 && (
+
+                {/* Combo subtotal */}
+                {comboTotal > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Số phòng × Số đêm:</span>
-                    <span className="font-medium">{roomQty} × {nights}</span>
+                    <span className="text-muted-foreground">🍽️ Set ăn uống ({combos.length} set):</span>
+                    <span className="font-medium">{fmt(comboTotal)}</span>
                   </div>
                 )}
 
+                {/* Subtotal before discount */}
                 {hasDiscount && (
                   <>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Giá gốc:</span>
-                      <span className="font-medium line-through text-muted-foreground">{originalPrice.toLocaleString('vi')}₫</span>
+                    <div className="flex justify-between border-t border-border pt-2">
+                      <span className="text-muted-foreground font-semibold">Tạm tính:</span>
+                      <span className="font-medium line-through text-muted-foreground">{fmt(originalPrice)}</span>
                     </div>
-                    {booking.member_discount_amount > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>Giảm thành viên ({booking.member_discount_percent}%):</span>
-                        <span className="font-medium">-{booking.member_discount_amount.toLocaleString('vi')}₫</span>
+                    {memberDiscount > 0 && (
+                      <div className="flex justify-between text-chart-2">
+                        <span>⭐ Giảm thành viên ({booking.member_discount_percent}%):</span>
+                        <span className="font-medium">-{fmt(memberDiscount)}</span>
                       </div>
                     )}
-                    {booking.promotion_discount_amount > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>Giảm ưu đãi ({booking.promotion_discount_percent}%):</span>
-                        <span className="font-medium">-{booking.promotion_discount_amount.toLocaleString('vi')}₫</span>
+                    {promotionDiscount > 0 && (
+                      <div className="flex justify-between text-chart-2">
+                        <span>🎁 Giảm ưu đãi ({booking.promotion_discount_percent}%):</span>
+                        <span className="font-medium">-{fmt(promotionDiscount)}</span>
+                      </div>
+                    )}
+                    {booking.discount_code && (
+                      <div className="flex justify-between text-chart-2">
+                        <span>🎟️ Mã: {booking.discount_code}:</span>
+                        <span className="font-medium">Đã áp dụng</span>
                       </div>
                     )}
                   </>
                 )}
 
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tổng tiền{hasDiscount ? ' (sau giảm)' : ''}:</span>
-                  <span className="font-bold text-primary text-base">{booking.total_price_vnd.toLocaleString('vi')}₫</span>
+                {/* Total */}
+                <div className="flex justify-between border-t-2 border-primary/30 pt-2">
+                  <span className="font-bold text-foreground text-base">TỔNG CỘNG{hasDiscount ? ' (sau giảm)' : ''}:</span>
+                  <span className="font-bold text-primary text-lg">{fmt(booking.total_price_vnd)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tiền cọc (50%):</span>
-                  <span className={`font-bold ${isDepositPaid ? 'text-chart-2' : 'text-amber-600'}`}>
-                    {depositAmount.toLocaleString('vi')}₫
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Đã thanh toán:</span>
-                  <span className={`font-medium ${isDepositPaid ? 'text-chart-2' : ''}`}>
-                    {isDepositPaid ? depositAmount.toLocaleString('vi') + '₫' : '0₫'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Còn lại khi nhận phòng:</span>
-                  <span className="font-bold text-primary">
-                    {isDepositPaid ? remainingAmount.toLocaleString('vi') : booking.total_price_vnd.toLocaleString('vi')}₫
-                  </span>
+
+                {/* Payment breakdown */}
+                <div className="bg-secondary rounded-xl p-3 mt-2 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tiền cọc (50%):</span>
+                    <span className={`font-bold ${isDepositPaid ? 'text-chart-2' : 'text-amber-600'}`}>
+                      {fmt(depositAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Đã thanh toán:</span>
+                    <span className={`font-semibold ${isDepositPaid ? 'text-chart-2' : ''}`}>
+                      {isDepositPaid ? fmt(depositAmount) : '0₫'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-1">
+                    <span className="text-muted-foreground font-semibold">Còn lại khi nhận phòng:</span>
+                    <span className="font-bold text-primary">
+                      {isDepositPaid ? fmt(remainingAmount) : fmt(booking.total_price_vnd)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -402,7 +524,7 @@ const InvoicePage = () => {
                   </div>
                   <div>
                     <p className="text-xs text-amber-700 font-semibold uppercase">💰 Số tiền cần chuyển:</p>
-                    <p className="text-2xl font-bold text-destructive mt-1">{depositAmount.toLocaleString('vi')}₫</p>
+                    <p className="text-2xl font-bold text-destructive mt-1">{fmt(depositAmount)}</p>
                   </div>
                 </div>
                 <p className="text-xs text-amber-700 text-center mt-3">
@@ -420,17 +542,25 @@ const InvoicePage = () => {
                 <CheckCircle className="h-8 w-8 text-chart-2 mx-auto mb-2" />
                 <p className="font-bold text-chart-2 text-lg">Đã cọc 50% thành công!</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Số tiền còn lại {remainingAmount.toLocaleString('vi')}₫ thanh toán khi nhận phòng
+                  Số tiền còn lại {fmt(remainingAmount)} thanh toán khi nhận phòng
                 </p>
               </motion.div>
             )}
 
             {booking.guest_notes && (
               <div>
-                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Ghi chú</h3>
-                <p className="text-muted-foreground">{booking.guest_notes}</p>
+                <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">📝 Ghi chú</h3>
+                <p className="text-muted-foreground bg-secondary rounded-lg p-3">{booking.guest_notes}</p>
               </div>
             )}
+
+            {/* Thời gian đặt */}
+            <div className="bg-secondary/50 rounded-lg p-3 text-center">
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                Thời gian đặt phòng: {format(new Date(booking.created_at), 'HH:mm - EEEE, dd/MM/yyyy', { locale: vi })}
+              </p>
+            </div>
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3 print:hidden pt-4 border-t border-border">
@@ -443,8 +573,9 @@ const InvoicePage = () => {
             </div>
 
             <div className="text-center text-xs text-muted-foreground pt-4">
-              <p>Cảm ơn quý khách đã tin tưởng Tuấn Đạt Luxury Hotel!</p>
+              <p>Cảm ơn quý khách đã tin tưởng <strong className="text-primary">Tuấn Đạt Luxury Hotel</strong>!</p>
               <p className="mt-1">📞 Hotline: 098.360.5768 | 036.984.5422 | 098.661.7939</p>
+              <p>📧 tuandatluxuryflc36hotel@gmail.com</p>
             </div>
           </div>
         </motion.div>
