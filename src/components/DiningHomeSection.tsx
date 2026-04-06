@@ -171,14 +171,14 @@ const DiningHomeSection = () => {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => navigate('/cuisine')}
-                className="w-32 sm:w-40 shrink-0 aspect-[9/16] rounded-xl overflow-hidden bg-muted relative group cursor-pointer"
+                className="w-32 sm:w-40 shrink-0 aspect-[9/16] rounded-xl overflow-hidden bg-foreground relative group cursor-pointer"
               >
                 <video
                   src={v.media_url}
                   className="w-full h-full object-cover"
                   muted
                   playsInline
-                  preload="none"
+                  preload="metadata"
                   onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
                   onMouseLeave={e => { const vid = e.target as HTMLVideoElement; vid.pause(); vid.currentTime = 0; }}
                 />
