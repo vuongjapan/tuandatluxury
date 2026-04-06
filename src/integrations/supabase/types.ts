@@ -520,6 +520,161 @@ export type Database = {
           },
         ]
       }
+      discount_codes: {
+        Row: {
+          applies_to: string
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          end_date: string
+          id: string
+          is_active: boolean
+          max_uses: number
+          max_uses_per_user: number
+          min_order_amount: number
+          start_date: string
+          title_en: string
+          title_vi: string
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          applies_to?: string
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          end_date: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          max_uses_per_user?: number
+          min_order_amount?: number
+          start_date?: string
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          applies_to?: string
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          max_uses_per_user?: number
+          min_order_amount?: number
+          start_date?: string
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
+      flash_sale_items: {
+        Row: {
+          created_at: string
+          flash_sale_id: string
+          id: string
+          image_url: string | null
+          item_id: string
+          item_name_en: string
+          item_name_vi: string
+          item_type: string
+          original_price: number
+          quantity_limit: number
+          quantity_sold: number
+          sale_price: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          flash_sale_id: string
+          id?: string
+          image_url?: string | null
+          item_id: string
+          item_name_en?: string
+          item_name_vi?: string
+          item_type?: string
+          original_price?: number
+          quantity_limit?: number
+          quantity_sold?: number
+          sale_price?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          flash_sale_id?: string
+          id?: string
+          image_url?: string | null
+          item_id?: string
+          item_name_en?: string
+          item_name_vi?: string
+          item_type?: string
+          original_price?: number
+          quantity_limit?: number
+          quantity_sold?: number
+          sale_price?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flash_sale_items_flash_sale_id_fkey"
+            columns: ["flash_sale_id"]
+            isOneToOne: false
+            referencedRelation: "flash_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flash_sales: {
+        Row: {
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          end_time: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          start_time: string
+          title_en: string
+          title_vi: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          end_time: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          start_time: string
+          title_en?: string
+          title_vi: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          start_time?: string
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       food_order_items: {
         Row: {
           created_at: string
@@ -651,6 +806,51 @@ export type Database = {
           sort_order?: number
           title_en?: string | null
           title_vi?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      global_discounts: {
+        Row: {
+          allow_stacking: boolean
+          applies_to: string
+          created_at: string
+          discount_percent: number
+          end_date: string
+          id: string
+          is_active: boolean
+          max_total_discount: number
+          start_date: string
+          title_en: string
+          title_vi: string
+          updated_at: string
+        }
+        Insert: {
+          allow_stacking?: boolean
+          applies_to?: string
+          created_at?: string
+          discount_percent?: number
+          end_date: string
+          id?: string
+          is_active?: boolean
+          max_total_discount?: number
+          start_date?: string
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_stacking?: boolean
+          applies_to?: string
+          created_at?: string
+          discount_percent?: number
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          max_total_discount?: number
+          start_date?: string
+          title_en?: string
+          title_vi?: string
           updated_at?: string
         }
         Relationships: []
@@ -1250,6 +1450,63 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string
+        }
+        Relationships: []
+      }
+      smart_pricing_rules: {
+        Row: {
+          applies_to: string
+          badge_text_en: string | null
+          badge_text_vi: string | null
+          created_at: string
+          day_of_week: number | null
+          discount_percent: number
+          id: string
+          is_active: boolean
+          min_days_advance: number | null
+          occupancy_threshold: number | null
+          rule_type: string
+          sort_order: number
+          specific_date: string | null
+          title_en: string
+          title_vi: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to?: string
+          badge_text_en?: string | null
+          badge_text_vi?: string | null
+          created_at?: string
+          day_of_week?: number | null
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          min_days_advance?: number | null
+          occupancy_threshold?: number | null
+          rule_type?: string
+          sort_order?: number
+          specific_date?: string | null
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to?: string
+          badge_text_en?: string | null
+          badge_text_vi?: string | null
+          created_at?: string
+          day_of_week?: number | null
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          min_days_advance?: number | null
+          occupancy_threshold?: number | null
+          rule_type?: string
+          sort_order?: number
+          specific_date?: string | null
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
         }
         Relationships: []
       }
