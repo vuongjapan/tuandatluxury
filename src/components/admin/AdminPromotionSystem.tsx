@@ -234,6 +234,7 @@ const AdminPromotionSystem = () => {
           <TabsTrigger value="codes" className="gap-1.5"><Tag className="h-4 w-4" /> Mã giảm giá</TabsTrigger>
           <TabsTrigger value="global" className="gap-1.5"><Percent className="h-4 w-4" /> Giảm giá chung</TabsTrigger>
           <TabsTrigger value="smart" className="gap-1.5"><Brain className="h-4 w-4" /> Smart Pricing</TabsTrigger>
+          <TabsTrigger value="stats" className="gap-1.5"><BarChart3 className="h-4 w-4" /> Thống kê</TabsTrigger>
         </TabsList>
 
         {/* FLASH SALES */}
