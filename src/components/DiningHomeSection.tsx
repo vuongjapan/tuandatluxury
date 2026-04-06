@@ -94,7 +94,7 @@ const DiningHomeSection = () => {
             onClick={() => navigate('/cuisine')}
           >
             {heroVideo.media_url.includes('youtube') || heroVideo.media_url.includes('youtu.be') ? (
-              <div className="aspect-video">
+              <div className="aspect-video bg-foreground">
                 <iframe
                   src={`${heroVideo.media_url.replace('watch?v=', 'embed/')}?autoplay=0&mute=1&controls=0`}
                   className="w-full h-full"
