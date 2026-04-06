@@ -550,6 +550,19 @@ const AdminPromotionSystem = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Áp dụng chi tiết cho</label>
+                <PromotionItemSelector
+                  appliesTo={g.applies_to}
+                  appliesToItems={Array.isArray(g.applies_to_items) ? g.applies_to_items : []}
+                  rooms={rooms}
+                  menuItems={menuItems}
+                  diningItems={diningItems}
+                  onChangeAppliesTo={v => { updateGlobal(g.id, { applies_to: v }); setGlobals(p => p.map(x => x.id === g.id ? {...x, applies_to: v} : x)); }}
+                  onChangeItems={items => { updateGlobal(g.id, { applies_to_items: items }); setGlobals(p => p.map(x => x.id === g.id ? {...x, applies_to_items: items} : x)); }}
+                />
+              </div>
+
               <div className="flex items-center gap-2">
                 <Switch checked={g.allow_stacking}
                   onCheckedChange={v => { updateGlobal(g.id, { allow_stacking: v }); setGlobals(p => p.map(x => x.id === g.id ? {...x, allow_stacking: v} : x)); }}
