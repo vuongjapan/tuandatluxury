@@ -32,7 +32,7 @@ import AdminSpecialPrices from '@/components/AdminSpecialPrices';
 import AdminCuisineMedia from '@/components/admin/AdminCuisineMedia';
 import AdminPromotionSystem from '@/components/admin/AdminPromotionSystem';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
