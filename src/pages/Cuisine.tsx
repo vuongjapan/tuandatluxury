@@ -168,14 +168,14 @@ const Cuisine = () => {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  className="aspect-[9/16] rounded-2xl overflow-hidden bg-muted relative group"
+                  className="aspect-[9/16] rounded-2xl overflow-hidden bg-foreground relative group"
                 >
                   <video
                     src={v.media_url}
                     className="w-full h-full object-cover"
                     muted
                     playsInline
-                    preload="none"
+                    preload="metadata"
                     onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
                     onMouseLeave={e => { const vid = e.target as HTMLVideoElement; vid.pause(); vid.currentTime = 0; }}
                   />
