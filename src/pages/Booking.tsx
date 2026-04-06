@@ -280,6 +280,7 @@ const Booking = () => {
           promotion_discount_amount: promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
+          discount_code: appliedDiscountCode?.code || undefined,
           company_name: companyName || undefined,
           group_size: groupSize ? parseInt(groupSize) : undefined,
           special_services: serviceLabels || undefined,
