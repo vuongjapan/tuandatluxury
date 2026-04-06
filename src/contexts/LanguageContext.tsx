@@ -1,3 +1,4 @@
+/* Language context v2 */
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
 export type Language = 'vi' | 'en' | 'ja' | 'zh';
