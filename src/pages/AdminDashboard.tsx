@@ -170,6 +170,7 @@ const AdminDashboard = () => {
     {
       title: 'Ẩm thực',
       items: [
+        { id: 'cuisine-media', icon: Film, label: 'Trang Ẩm thực' },
         { id: 'dining', icon: UtensilsCrossed, label: 'Nhà hàng' },
         { id: 'food-menu', icon: ShoppingCart, label: 'Menu đồ ăn' },
         { id: 'combos', icon: Gift, label: 'Combo ăn uống' },
