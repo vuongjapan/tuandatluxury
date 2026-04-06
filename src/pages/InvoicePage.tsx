@@ -138,7 +138,8 @@ const InvoicePage = () => {
   
   const promotionDiscount = booking.promotion_discount_amount || 0;
   const memberDiscount = booking.member_discount_amount || 0;
-  const totalDiscount = promotionDiscount + memberDiscount;
+  const discountCodeAmt = booking.discount_code_amount || 0;
+  const totalDiscount = promotionDiscount + memberDiscount + discountCodeAmt;
   const hasDiscount = totalDiscount > 0 || booking.discount_code;
 
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
