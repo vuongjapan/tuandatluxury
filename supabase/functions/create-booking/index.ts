@@ -33,7 +33,7 @@ serve(async (req) => {
       promotion_id, promotion_discount_percent, promotion_discount_amount,
       member_discount_percent, member_discount_amount,
       company_name, group_size, special_services, decoration_notes,
-      original_price_vnd,
+      original_price_vnd, discount_code,
     } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
@@ -108,6 +108,7 @@ serve(async (req) => {
         group_size: group_size || null,
         special_services: special_services || null,
         decoration_notes: decoration_notes || null,
+        discount_code: discount_code || null,
       })
       .select()
       .single();

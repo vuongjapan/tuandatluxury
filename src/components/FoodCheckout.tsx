@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import DiscountCodeInput from '@/components/DiscountCodeInput';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
 import { useMenuItems } from '@/hooks/useMenuItems';
+import { type DiscountCode } from '@/hooks/usePromotionSystem';
 import { ArrowLeft, UtensilsCrossed, Plus, Minus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,10 +36,18 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
     notes: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
 
   const getName = (item: { name_vi: string; name_en: string }) => isVi ? item.name_vi : item.name_en;
 
-  const depositAmount = Math.round(totalAmount * 0.5);
+  // Calculate discount
+  const discountCodeAmount = appliedDiscount
+    ? appliedDiscount.discount_type === 'percent'
+      ? Math.round(totalAmount * appliedDiscount.discount_value / 100)
+      : Math.min(appliedDiscount.discount_value, totalAmount)
+    : 0;
+  const finalAmount = totalAmount - discountCodeAmount;
+  const depositAmount = Math.round(finalAmount * 0.5);
 
   const handleSubmit = async () => {
     if (!form.customerName || !form.phone) {
@@ -81,12 +91,17 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
           phone: form.phone,
           guest_email: form.email || null,
           room_number: form.roomNumber || null,
-          total_amount: totalAmount,
+          total_amount: finalAmount,
+          original_amount: totalAmount,
+          discount_code: appliedDiscount?.code || null,
+          discount_type: appliedDiscount?.discount_type || null,
+          discount_value: appliedDiscount?.discount_value || 0,
+          discount_amount: discountCodeAmount,
           paid_amount: 0,
           status: 'pending',
           payment_status: 'PENDING',
           notes: form.notes || null,
-        })
+        } as any)
         .select('id')
         .single();
 
@@ -188,9 +203,21 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                   ))}
                 </div>
                 <div className="mt-4 pt-3 border-t border-border space-y-2">
+                  {discountCodeAmount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+                        <span className="font-medium line-through text-muted-foreground">{formatPrice(totalAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>Mã {appliedDiscount?.code}</span>
+                        <span>-{formatPrice(discountCodeAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between text-lg font-bold">
                     <span>{isVi ? 'Tổng cộng' : 'Total'}</span>
-                    <span className="text-primary">{formatPrice(totalAmount)}</span>
+                    <span className="text-primary">{formatPrice(finalAmount)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{isVi ? 'Tiền cọc (50%)' : 'Deposit (50%)'}</span>
@@ -198,7 +225,7 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{isVi ? 'Còn lại khi nhận' : 'Remaining'}</span>
-                    <span className="font-bold text-primary">{formatPrice(totalAmount - depositAmount)}</span>
+                    <span className="font-bold text-primary">{formatPrice(finalAmount - depositAmount)}</span>
                   </div>
                 </div>
               </div>
@@ -243,18 +270,46 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
               <div className="bg-card rounded-xl border border-border p-4 sticky top-32">
                 <h3 className="font-display font-semibold mb-3">{isVi ? 'Tóm tắt' : 'Summary'}</h3>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
-                    <span className="font-bold">{formatPrice(totalAmount)}</span>
-                  </div>
+                  {discountCodeAmount > 0 ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+                        <span className="font-medium line-through text-muted-foreground">{formatPrice(totalAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-primary">
+                        <span>Mã {appliedDiscount?.code}</span>
+                        <span>-{formatPrice(discountCodeAmount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
+                        <span className="font-bold">{formatPrice(finalAmount)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
+                      <span className="font-bold">{formatPrice(totalAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{isVi ? 'Cọc 50%' : 'Deposit 50%'}</span>
                     <span className="font-bold text-amber-600">{formatPrice(depositAmount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{isVi ? 'Còn lại' : 'Remaining'}</span>
-                    <span className="font-bold">{formatPrice(totalAmount - depositAmount)}</span>
+                    <span className="font-bold">{formatPrice(finalAmount - depositAmount)}</span>
                   </div>
+                </div>
+
+                {/* Discount code input */}
+                <div className="mt-3 pt-3 border-t border-border">
+                  <DiscountCodeInput
+                    orderType="food"
+                    orderAmount={totalAmount}
+                    onApply={setAppliedDiscount}
+                    onRemove={() => setAppliedDiscount(null)}
+                    appliedCode={appliedDiscount}
+                  />
                 </div>
 
                 <div className="mt-3 p-2 bg-amber-50 rounded-lg text-xs text-amber-700 text-center">

@@ -89,9 +89,13 @@ const FoodInvoice = () => {
     return () => clearInterval(interval);
   }, [order?.payment_status, foodOrderId]);
 
+  const originalAmount = order ? ((order as any).original_amount || order.total_amount) : 0;
+  const discountCode = order ? (order as any).discount_code : null;
+  const discountAmountVal = order ? ((order as any).discount_amount || 0) : 0;
   const depositAmount = order ? Math.round(order.total_amount * 0.5) : 0;
   const remainingAmount = order ? order.total_amount - depositAmount : 0;
   const isDepositPaid = order ? (order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID') : false;
+  const hasDiscount = discountAmountVal > 0;
 
   const qrUrl = order
     ? `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(order.food_order_id)}`
@@ -188,6 +192,19 @@ const FoodInvoice = () => {
               </span>
             </div>
 
+            {/* Discount info */}
+            {hasDiscount && discountCode && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">🎟️</span>
+                  <span className="font-semibold text-foreground text-sm">{isVi ? 'Ưu đãi đã áp dụng' : 'Discount Applied'}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isVi ? 'Mã giảm giá' : 'Code'}: <strong>{discountCode}</strong> (-{formatPrice(discountAmountVal)})
+                </p>
+              </div>
+            )}
+
             {/* Customer Info */}
             <div>
               <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
@@ -243,6 +260,18 @@ const FoodInvoice = () => {
                 {isVi ? 'Chi phí' : 'Payment'}
               </h3>
               <div className="space-y-2">
+                {hasDiscount && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{isVi ? 'Tạm tính:' : 'Subtotal:'}</span>
+                      <span className="font-medium line-through text-muted-foreground">{formatPrice(originalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-primary">
+                      <span>{isVi ? 'Giảm giá:' : 'Discount:'}</span>
+                      <span className="font-medium">-{formatPrice(discountAmountVal)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{isVi ? 'Tổng tiền:' : 'Total:'}</span>
                   <span className="font-bold text-primary text-base">{formatPrice(order.total_amount)}</span>

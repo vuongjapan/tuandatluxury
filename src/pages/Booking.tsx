@@ -4,8 +4,10 @@ import { format, differenceInDays } from 'date-fns';
 import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
+import DiscountCodeInput from '@/components/DiscountCodeInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { type DiscountCode } from '@/hooks/usePromotionSystem';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -69,6 +71,7 @@ const Booking = () => {
   const [notes, setNotes] = useState('');
   const [selectedCombos, setSelectedCombos] = useState<SelectedCombo[]>([]);
   const [comboSelection, setComboSelection] = useState<ComboSelection | null>(null);
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState<DiscountCode | null>(null);
 
   // Promotion-specific fields
   const [companyName, setCompanyName] = useState('');
@@ -158,9 +161,20 @@ const Booking = () => {
     return base;
   }, [activePromo, isGroupPromo, groupSize]);
 
+  // Discount code calculation
+  const discountCodeAmount = useMemo(() => {
+    if (!appliedDiscountCode) return 0;
+    const base = roomTotal + comboTotal;
+    if (appliedDiscountCode.discount_type === 'percent') {
+      return Math.round(base * appliedDiscountCode.discount_value / 100);
+    }
+    return Math.min(appliedDiscountCode.discount_value, base);
+  }, [appliedDiscountCode, roomTotal, comboTotal]);
+
   const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
   const originalPrice = roomTotal + comboTotal;
-  const discountAmount = Math.round(originalPrice * totalDiscountPercent / 100);
+  const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
+  const discountAmount = percentDiscount + discountCodeAmount;
   const totalPrice = originalPrice - discountAmount;
 
   const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) || comboSelection !== null;
@@ -266,6 +280,7 @@ const Booking = () => {
           promotion_discount_amount: promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
+          discount_code: appliedDiscountCode?.code || undefined,
           company_name: companyName || undefined,
           group_size: groupSize ? parseInt(groupSize) : undefined,
           special_services: serviceLabels || undefined,
@@ -611,8 +626,22 @@ const Booking = () => {
                   </div>
                 )}
 
+                {/* Discount code input */}
+                {originalPrice > 0 && (
+                  <div className="border-t border-border pt-3">
+                    <h4 className="font-semibold text-sm mb-2">{isVi ? '🎟️ Mã giảm giá' : '🎟️ Discount Code'}</h4>
+                    <DiscountCodeInput
+                      orderType="room"
+                      orderAmount={originalPrice}
+                      onApply={setAppliedDiscountCode}
+                      onRemove={() => setAppliedDiscountCode(null)}
+                      appliedCode={appliedDiscountCode}
+                    />
+                  </div>
+                )}
+
                 {/* Discounts */}
-                {totalDiscountPercent > 0 && originalPrice > 0 && (
+                {(totalDiscountPercent > 0 || discountCodeAmount > 0) && originalPrice > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Giá gốc</span>
@@ -628,6 +657,12 @@ const Booking = () => {
                       <div className="flex justify-between text-sm text-primary">
                         <span>Giảm ưu đãi ({promoDiscountPercent}%)</span>
                         <span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span>
+                      </div>
+                    )}
+                    {discountCodeAmount > 0 && appliedDiscountCode && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>Mã {appliedDiscountCode.code}</span>
+                        <span>-{formatPrice(discountCodeAmount)}</span>
                       </div>
                     )}
                   </div>
