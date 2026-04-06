@@ -89,9 +89,13 @@ const FoodInvoice = () => {
     return () => clearInterval(interval);
   }, [order?.payment_status, foodOrderId]);
 
+  const originalAmount = order ? ((order as any).original_amount || order.total_amount) : 0;
+  const discountCode = order ? (order as any).discount_code : null;
+  const discountAmountVal = order ? ((order as any).discount_amount || 0) : 0;
   const depositAmount = order ? Math.round(order.total_amount * 0.5) : 0;
   const remainingAmount = order ? order.total_amount - depositAmount : 0;
   const isDepositPaid = order ? (order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID') : false;
+  const hasDiscount = discountAmountVal > 0;
 
   const qrUrl = order
     ? `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(order.food_order_id)}`
