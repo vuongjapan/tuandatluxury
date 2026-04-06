@@ -452,6 +452,25 @@ const Booking = () => {
               transition={{ delay: 0.2 }}
               className="lg:col-span-2 space-y-6"
             >
+              {/* Flash Sale banner for selected room */}
+              {activeFlashSaleItem && (
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-300 dark:border-orange-700 rounded-xl p-4 flex items-center gap-3">
+                  <Zap className="h-6 w-6 text-orange-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">⚡ {(activeFlashSaleItem as any).saleName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isVi ? 'Giá Flash Sale: ' : 'Flash Sale Price: '}
+                      <span className="line-through">{formatPrice(activeFlashSaleItem.original_price)}</span>
+                      {' → '}
+                      <span className="font-bold text-primary">{formatPrice(activeFlashSaleItem.sale_price)}</span>
+                      /đêm · Còn {activeFlashSaleItem.quantity_limit - activeFlashSaleItem.quantity_sold} suất
+                    </p>
+                  </div>
+                  <Badge className="bg-orange-500 text-white shrink-0">-{Math.round((1 - activeFlashSaleItem.sale_price / activeFlashSaleItem.original_price) * 100)}%</Badge>
+                </motion.div>
+              )}
+
               {/* Room selection */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('nav.rooms')}</h2>
