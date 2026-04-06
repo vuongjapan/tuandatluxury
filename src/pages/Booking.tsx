@@ -673,7 +673,9 @@ const Booking = () => {
                     )}
                     {discountCodeAmount > 0 && appliedDiscountCode && (
                       <div className="flex justify-between text-sm text-primary">
-                        <span>Mã {appliedDiscountCode.code}</span>
+                        <span>🎟️ Mã {appliedDiscountCode.code} ({appliedDiscountCode.discount_type === 'percent' ? `${appliedDiscountCode.discount_value}%` : formatPrice(appliedDiscountCode.discount_value)}
+                          {appliedDiscountCode.applies_to === 'room' ? ' - chỉ phòng' : appliedDiscountCode.applies_to === 'food' ? ' - chỉ đồ ăn' : ''}
+                        )</span>
                         <span>-{formatPrice(discountCodeAmount)}</span>
                       </div>
                     )}
