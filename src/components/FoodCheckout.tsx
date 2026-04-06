@@ -203,9 +203,21 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                   ))}
                 </div>
                 <div className="mt-4 pt-3 border-t border-border space-y-2">
+                  {discountCodeAmount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+                        <span className="font-medium line-through text-muted-foreground">{formatPrice(totalAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>Mã {appliedDiscount?.code}</span>
+                        <span>-{formatPrice(discountCodeAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between text-lg font-bold">
                     <span>{isVi ? 'Tổng cộng' : 'Total'}</span>
-                    <span className="text-primary">{formatPrice(totalAmount)}</span>
+                    <span className="text-primary">{formatPrice(finalAmount)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{isVi ? 'Tiền cọc (50%)' : 'Deposit (50%)'}</span>
@@ -213,7 +225,7 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{isVi ? 'Còn lại khi nhận' : 'Remaining'}</span>
-                    <span className="font-bold text-primary">{formatPrice(totalAmount - depositAmount)}</span>
+                    <span className="font-bold text-primary">{formatPrice(finalAmount - depositAmount)}</span>
                   </div>
                 </div>
               </div>
