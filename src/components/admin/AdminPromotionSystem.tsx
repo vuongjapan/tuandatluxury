@@ -457,16 +457,17 @@ const AdminPromotionSystem = () => {
                     onBlur={e => updateCode(code.id, { discount_value: +e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Áp dụng cho</label>
-                  <Select value={code.applies_to} onValueChange={v => { updateCode(code.id, { applies_to: v }); setCodes(p => p.map(c => c.id === code.id ? {...c, applies_to: v} : c)); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="room">Chỉ đặt phòng</SelectItem>
-                      <SelectItem value="food">Chỉ đồ ăn</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="col-span-2 sm:col-span-4">
+                  <label className="text-xs text-muted-foreground mb-1 block">Áp dụng chi tiết cho</label>
+                  <PromotionItemSelector
+                    appliesTo={code.applies_to}
+                    appliesToItems={Array.isArray(code.applies_to_items) ? code.applies_to_items : []}
+                    rooms={rooms}
+                    menuItems={menuItems}
+                    diningItems={diningItems}
+                    onChangeAppliesTo={v => { updateCode(code.id, { applies_to: v }); setCodes(p => p.map(c => c.id === code.id ? {...c, applies_to: v} : c)); }}
+                    onChangeItems={items => { updateCode(code.id, { applies_to_items: items }); setCodes(p => p.map(c => c.id === code.id ? {...c, applies_to_items: items} : c)); }}
+                  />
                 </div>
               </div>
 
