@@ -94,7 +94,7 @@ const DiningHomeSection = () => {
             onClick={() => navigate('/cuisine')}
           >
             {heroVideo.media_url.includes('youtube') || heroVideo.media_url.includes('youtu.be') ? (
-              <div className="aspect-video">
+              <div className="aspect-video bg-foreground">
                 <iframe
                   src={`${heroVideo.media_url.replace('watch?v=', 'embed/')}?autoplay=0&mute=1&controls=0`}
                   className="w-full h-full"
@@ -103,14 +103,13 @@ const DiningHomeSection = () => {
                 />
               </div>
             ) : (
-              <div className="aspect-video">
+              <div className="aspect-video bg-foreground">
                 <video
                   src={heroVideo.media_url}
                   className="w-full h-full object-cover"
                   muted
                   playsInline
-                  preload="none"
-                  poster=""
+                  preload="metadata"
                   onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
                   onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); }}
                 />
@@ -172,14 +171,14 @@ const DiningHomeSection = () => {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => navigate('/cuisine')}
-                className="w-32 sm:w-40 shrink-0 aspect-[9/16] rounded-xl overflow-hidden bg-muted relative group cursor-pointer"
+                className="w-32 sm:w-40 shrink-0 aspect-[9/16] rounded-xl overflow-hidden bg-foreground relative group cursor-pointer"
               >
                 <video
                   src={v.media_url}
                   className="w-full h-full object-cover"
                   muted
                   playsInline
-                  preload="none"
+                  preload="metadata"
                   onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
                   onMouseLeave={e => { const vid = e.target as HTMLVideoElement; vid.pause(); vid.currentTime = 0; }}
                 />
