@@ -30,6 +30,7 @@ import AdminBlog from '@/components/AdminBlog';
 import AdminCombo from '@/components/AdminCombo';
 import AdminSpecialPrices from '@/components/AdminSpecialPrices';
 import AdminCuisineMedia from '@/components/admin/AdminCuisineMedia';
+import AdminPromotionSystem from '@/components/admin/AdminPromotionSystem';
 
 type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
 
