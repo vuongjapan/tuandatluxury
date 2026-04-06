@@ -161,10 +161,18 @@ const Booking = () => {
     return base;
   }, [activePromo, isGroupPromo, groupSize]);
 
-  // Discount code calculation
+  // Discount code calculation - respect applies_to setting
   const discountCodeAmount = useMemo(() => {
     if (!appliedDiscountCode) return 0;
-    const base = roomTotal + comboTotal;
+    // If code applies to 'room' only, base = roomTotal only
+    // If code applies to 'food' only, base = comboTotal only  
+    // If code applies to 'all', base = roomTotal + comboTotal
+    let base = roomTotal + comboTotal;
+    if (appliedDiscountCode.applies_to === 'room') {
+      base = roomTotal;
+    } else if (appliedDiscountCode.applies_to === 'food') {
+      base = comboTotal;
+    }
     if (appliedDiscountCode.discount_type === 'percent') {
       return Math.round(base * appliedDiscountCode.discount_value / 100);
     }

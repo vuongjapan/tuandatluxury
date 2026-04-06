@@ -288,7 +288,10 @@ const AdminPromotionSystem = () => {
                 <Switch checked={code.is_active}
                   onCheckedChange={v => { updateCode(code.id, { is_active: v }); setCodes(p => p.map(c => c.id === code.id ? {...c, is_active: v} : c)); }}
                 />
-                <code className="font-mono font-bold text-primary bg-primary/10 px-3 py-1 rounded">{code.code}</code>
+                <Input value={code.code} className="font-mono font-bold w-48"
+                  onChange={e => setCodes(p => p.map(c => c.id === code.id ? {...c, code: e.target.value.toUpperCase()} : c))}
+                  onBlur={e => updateCode(code.id, { code: e.target.value.toUpperCase() })}
+                />
                 <Badge variant={code.is_active ? 'default' : 'secondary'}>{code.is_active ? 'Bật' : 'Tắt'}</Badge>
                 <span className="text-xs text-muted-foreground">Đã dùng: {code.used_count}/{code.max_uses}</span>
                 <Button variant="destructive" size="sm" className="ml-auto" onClick={() => deleteCode(code.id)}><Trash2 className="h-4 w-4" /></Button>
