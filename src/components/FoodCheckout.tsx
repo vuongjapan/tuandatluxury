@@ -36,10 +36,18 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
     notes: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
 
   const getName = (item: { name_vi: string; name_en: string }) => isVi ? item.name_vi : item.name_en;
 
-  const depositAmount = Math.round(totalAmount * 0.5);
+  // Calculate discount
+  const discountCodeAmount = appliedDiscount
+    ? appliedDiscount.discount_type === 'percent'
+      ? Math.round(totalAmount * appliedDiscount.discount_value / 100)
+      : Math.min(appliedDiscount.discount_value, totalAmount)
+    : 0;
+  const finalAmount = totalAmount - discountCodeAmount;
+  const depositAmount = Math.round(finalAmount * 0.5);
 
   const handleSubmit = async () => {
     if (!form.customerName || !form.phone) {
