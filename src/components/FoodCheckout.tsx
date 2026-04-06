@@ -91,12 +91,17 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
           phone: form.phone,
           guest_email: form.email || null,
           room_number: form.roomNumber || null,
-          total_amount: totalAmount,
+          total_amount: finalAmount,
+          original_amount: totalAmount,
+          discount_code: appliedDiscount?.code || null,
+          discount_type: appliedDiscount?.discount_type || null,
+          discount_value: appliedDiscount?.discount_value || 0,
+          discount_amount: discountCodeAmount,
           paid_amount: 0,
           status: 'pending',
           payment_status: 'PENDING',
           notes: form.notes || null,
-        })
+        } as any)
         .select('id')
         .single();
 
