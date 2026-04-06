@@ -71,6 +71,7 @@ const Booking = () => {
   const [notes, setNotes] = useState('');
   const [selectedCombos, setSelectedCombos] = useState<SelectedCombo[]>([]);
   const [comboSelection, setComboSelection] = useState<ComboSelection | null>(null);
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState<DiscountCode | null>(null);
 
   // Promotion-specific fields
   const [companyName, setCompanyName] = useState('');
