@@ -103,14 +103,13 @@ const DiningHomeSection = () => {
                 />
               </div>
             ) : (
-              <div className="aspect-video">
+              <div className="aspect-video bg-foreground">
                 <video
                   src={heroVideo.media_url}
                   className="w-full h-full object-cover"
                   muted
                   playsInline
-                  preload="none"
-                  poster=""
+                  preload="metadata"
                   onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
                   onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); }}
                 />
