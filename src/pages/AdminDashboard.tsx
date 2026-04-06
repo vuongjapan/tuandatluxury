@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -29,8 +29,9 @@ import AdminMembers from '@/components/AdminMembers';
 import AdminBlog from '@/components/AdminBlog';
 import AdminCombo from '@/components/AdminCombo';
 import AdminSpecialPrices from '@/components/AdminSpecialPrices';
+import AdminCuisineMedia from '@/components/admin/AdminCuisineMedia';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'settings' | 'trash';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -169,6 +170,7 @@ const AdminDashboard = () => {
     {
       title: 'Ẩm thực',
       items: [
+        { id: 'cuisine-media', icon: Film, label: 'Trang Ẩm thực' },
         { id: 'dining', icon: UtensilsCrossed, label: 'Nhà hàng' },
         { id: 'food-menu', icon: ShoppingCart, label: 'Menu đồ ăn' },
         { id: 'combos', icon: Gift, label: 'Combo ăn uống' },
@@ -354,6 +356,7 @@ const AdminDashboard = () => {
           {tab === 'blog' && <AdminBlog />}
           {tab === 'combos' && <AdminCombo />}
           {tab === 'special-prices' && <AdminSpecialPrices />}
+          {tab === 'cuisine-media' && <AdminCuisineMedia />}
           {tab === 'settings' && <AdminSettings onBackup={handleBackup} onRestore={handleRestore} />}
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
         </div>

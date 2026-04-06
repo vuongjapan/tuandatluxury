@@ -1,62 +1,140 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { UtensilsCrossed, ArrowRight, Star, Clock, Phone } from 'lucide-react';
+import { UtensilsCrossed, ArrowRight, Star, Clock, Phone, Play, X, ChefHat, Waves } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useDining } from '@/hooks/useDining';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
+interface CuisineMedia {
+  id: string;
+  type: string;
+  title: string | null;
+  caption: string | null;
+  media_url: string;
+  thumbnail_url: string | null;
+  media_group: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
 
 const Cuisine = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
-  const { categories, items } = useDining();
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
-  // Fetch combo packages for set menu display
-  const { data: combos = [] } = useQuery({
-    queryKey: ['combo-packages-cuisine'],
+  const { data: media = [] } = useQuery({
+    queryKey: ['cuisine-media'],
     queryFn: async () => {
       const { data } = await supabase
-        .from('combo_packages')
+        .from('cuisine_media')
         .select('*')
         .eq('is_active', true)
         .order('sort_order');
-      return data || [];
+      return (data || []) as CuisineMedia[];
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Group items by category
-  const featuredItems = items.filter(i => i.image_url).slice(0, 12);
+  const heroVideos = media.filter(m => m.type === 'hero_video');
+  const shortVideos = media.filter(m => m.type === 'short_video');
+  const images = media.filter(m => m.type === 'image');
+  const moments = media.filter(m => m.type === 'moment');
+  const menuPhotos = media.filter(m => m.type === 'menu_photo');
+
+  const menuLe = menuPhotos.filter(m => m.media_group === 'menu_le');
+  const menuDoan = menuPhotos.filter(m => m.media_group === 'menu_doan');
+  const menuCombo = menuPhotos.filter(m => m.media_group === 'combo');
+  const menuGeneral = menuPhotos.filter(m => !m.media_group || m.media_group === 'general');
+
+  const ctaButton = (
+    <Button
+      variant="gold"
+      size="lg"
+      onClick={() => navigate('/food-order')}
+      className="gap-2 group/btn"
+    >
+      <UtensilsCrossed className="h-5 w-5" />
+      {isVi ? 'Đặt đồ ăn ngay' : 'Order Food Now'}
+      <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
+    </Button>
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero Banner */}
-      <section className="relative pt-28 pb-16 sm:pt-36 sm:pb-20 bg-foreground text-background overflow-hidden">
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <p className="text-primary font-display text-xs tracking-[0.4em] uppercase mb-3">
+      {/* ===== 1. HERO VIDEO ===== */}
+      <section className="relative pt-20 min-h-[70vh] flex items-center justify-center bg-foreground text-background overflow-hidden">
+        {heroVideos.length > 0 && (
+          <div className="absolute inset-0">
+            {heroVideos[0].media_url.includes('youtube') || heroVideos[0].media_url.includes('youtu.be') ? (
+              <iframe
+                src={`${heroVideos[0].media_url.replace('watch?v=', 'embed/')}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0`}
+                className="w-full h-full object-cover"
+                allow="autoplay; encrypted-media"
+                style={{ position: 'absolute', top: '-60px', left: 0, width: '100%', height: 'calc(100% + 120px)' }}
+              />
+            ) : (
+              <video
+                src={heroVideos[0].media_url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+          </div>
+        )}
+        {heroVideos.length === 0 && (
+          <div className="absolute inset-0 bg-gradient-to-br from-foreground via-foreground/95 to-foreground/90" />
+        )}
+        <div className="container mx-auto px-4 text-center relative z-10 py-20">
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-primary font-display text-xs tracking-[0.4em] uppercase mb-4"
+          >
             {isVi ? 'Nhà hàng Tuấn Đạt Luxury' : 'Tuấn Đạt Luxury Restaurant'}
-          </p>
-          <h1 className="font-display text-3xl sm:text-5xl font-bold mb-4">
+          </motion.p>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold mb-5"
+          >
             {isVi ? 'Ẩm thực đẳng cấp biển Sầm Sơn' : 'Premium Sầm Sơn Seafood Cuisine'}
-          </h1>
-          <p className="text-background/70 max-w-2xl mx-auto text-sm sm:text-base">
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-background/70 max-w-2xl mx-auto text-sm sm:text-base mb-8"
+          >
             {isVi
               ? 'Hải sản tươi sống đánh bắt trong ngày, chế biến bởi đầu bếp giàu kinh nghiệm. Từ bàn ăn gia đình đến tiệc đoàn — mọi bữa ăn đều là trải nghiệm.'
               : 'Fresh seafood caught daily, prepared by experienced chefs. From family dining to group feasts — every meal is an experience.'}
-          </p>
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <div className="flex items-center gap-1.5 text-sm text-background/60">
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            {ctaButton}
+          </motion.div>
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <div className="flex items-center gap-1.5 text-sm text-background/50">
               <Clock className="h-4 w-4 text-primary" />
               <span>10:00 – 21:00</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-background/30" />
-            <div className="flex items-center gap-1.5 text-sm text-background/60">
+            <div className="flex items-center gap-1.5 text-sm text-background/50">
               <Phone className="h-4 w-4 text-primary" />
               <span>098.360.5768</span>
             </div>
@@ -64,9 +142,153 @@ const Cuisine = () => {
         </div>
       </section>
 
-      {/* Featured Dishes - Blog/Marketing style */}
-      {featuredItems.length > 0 && (
+      {/* ===== 2. VIDEO NGẮN (Reels) ===== */}
+      {shortVideos.length > 0 && (
+        <section className="py-16 sm:py-24 bg-secondary">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-10"
+            >
+              <p className="text-primary font-display text-xs tracking-[0.3em] uppercase mb-2">
+                {isVi ? 'Trải nghiệm' : 'EXPERIENCE'}
+              </p>
+              <h2 className="font-display text-2xl sm:text-4xl font-bold text-foreground">
+                {isVi ? 'Khoảnh khắc tại nhà hàng' : 'Restaurant Moments'}
+              </h2>
+            </motion.div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
+              {shortVideos.map((v, i) => (
+                <motion.div
+                  key={v.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  className="aspect-[9/16] rounded-2xl overflow-hidden bg-muted relative group"
+                >
+                  <video
+                    src={v.media_url}
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                    onMouseEnter={e => (e.target as HTMLVideoElement).play()}
+                    onMouseLeave={e => { const vid = e.target as HTMLVideoElement; vid.pause(); vid.currentTime = 0; }}
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-all flex items-center justify-center">
+                    <Play className="h-8 w-8 text-white/80 group-hover:opacity-0 transition-opacity" />
+                  </div>
+                  {v.caption && (
+                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                      <p className="text-white text-xs line-clamp-2">{v.caption}</p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===== 3. HÌNH ẢNH + MOMENT KHÁCH ===== */}
+      {(images.length > 0 || moments.length > 0) && (
         <section className="py-16 sm:py-24">
+          <div className="container mx-auto px-4 max-w-6xl">
+            {images.length > 0 && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="text-center mb-10"
+                >
+                  <p className="text-primary font-display text-xs tracking-[0.3em] uppercase mb-2">
+                    {isVi ? 'Hình ảnh' : 'GALLERY'}
+                  </p>
+                  <h2 className="font-display text-2xl sm:text-4xl font-bold text-foreground">
+                    {isVi ? 'Không gian & Ẩm thực' : 'Space & Cuisine'}
+                  </h2>
+                </motion.div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-10">
+                  {images.map((img, i) => (
+                    <motion.div
+                      key={img.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.05 }}
+                      className="aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer group"
+                      onClick={() => setLightboxImg(img.media_url)}
+                    >
+                      <img
+                        src={img.media_url}
+                        alt={img.title || ''}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {moments.length > 0 && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="text-center mb-10 mt-16"
+                >
+                  <p className="text-primary font-display text-xs tracking-[0.3em] uppercase mb-2">
+                    {isVi ? 'Khách hàng chia sẻ' : 'GUEST MOMENTS'}
+                  </p>
+                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+                    {isVi ? 'Khoảnh khắc của khách hàng' : 'Guest Experiences'}
+                  </h2>
+                </motion.div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {moments.map((m, i) => (
+                    <motion.div
+                      key={m.id}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.04 }}
+                      className="rounded-xl overflow-hidden bg-muted cursor-pointer group"
+                      onClick={() => setLightboxImg(m.media_url)}
+                    >
+                      <div className="aspect-square overflow-hidden">
+                        <img
+                          src={m.media_url}
+                          alt={m.caption || ''}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                      </div>
+                      {m.caption && (
+                        <div className="p-2">
+                          <p className="text-xs text-muted-foreground line-clamp-2">{m.caption}</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Mid CTA */}
+            <div className="text-center mt-12">{ctaButton}</div>
+          </div>
+        </section>
+      )}
+
+      {/* ===== 4. ĐẶC SẢN NỔI BẬT - Ảnh Menu ===== */}
+      {menuPhotos.length > 0 && (
+        <section className="py-16 sm:py-24 bg-secondary">
           <div className="container mx-auto px-4 max-w-6xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -87,186 +309,83 @@ const Cuisine = () => {
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredItems.map((item, i) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.06 }}
-                  className="bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl transition-all duration-300 group"
-                >
-                  {item.image_url && (
-                    <div className="relative aspect-video overflow-hidden">
-                      <img
-                        src={item.image_url}
-                        alt={isVi ? item.name_vi : item.name_en}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                      <div className="absolute bottom-3 right-3 bg-primary text-primary-foreground px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">
-                        {item.price_vnd.toLocaleString('vi-VN')}₫
-                      </div>
-                    </div>
-                  )}
-                  <div className="p-4 sm:p-5">
-                    <h3 className="font-display text-base sm:text-lg font-bold text-foreground mb-1.5 group-hover:text-primary transition-colors">
-                      {isVi ? item.name_vi : item.name_en}
+            {/* Menu groups */}
+            {[
+              { items: menuLe, labelVi: 'Menu lẻ', labelEn: 'À la carte' },
+              { items: menuDoan, labelVi: 'Menu đoàn', labelEn: 'Group Menu' },
+              { items: menuCombo, labelVi: 'Combo', labelEn: 'Combo Set' },
+              { items: menuGeneral, labelVi: '', labelEn: '' },
+            ]
+              .filter(g => g.items.length > 0)
+              .map((group, gi) => (
+                <div key={gi} className="mb-10">
+                  {group.labelVi && (
+                    <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <UtensilsCrossed className="h-4 w-4 text-primary" />
+                      {isVi ? group.labelVi : group.labelEn}
                     </h3>
-                    {(isVi ? item.description_vi : item.description_en) && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {isVi ? item.description_vi : item.description_en}
-                      </p>
-                    )}
-                    {item.is_combo && item.combo_serves && (
-                      <span className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
-                        {isVi ? `Phục vụ ${item.combo_serves} người` : `Serves ${item.combo_serves}`}
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="text-center mt-10">
-              <Button variant="gold" size="lg" onClick={() => navigate('/food-order')} className="gap-2">
-                <UtensilsCrossed className="h-4 w-4" />
-                {isVi ? 'Xem thực đơn đầy đủ & Đặt món' : 'Full Menu & Order'}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Menu Categories */}
-      {categories.length > 0 && (
-        <section className="py-16 bg-secondary">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-10"
-            >
-              <p className="text-primary font-display text-xs tracking-[0.3em] uppercase mb-2">MENU</p>
-              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                {isVi ? 'Danh mục ẩm thực' : 'Our Menu Categories'}
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categories.map((cat, i) => (
-                <motion.div
-                  key={cat.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  className="bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer"
-                  onClick={() => navigate('/dining')}
-                >
-                  {cat.image_url && (
-                    <div className="aspect-video overflow-hidden">
-                      <img
-                        src={cat.image_url}
-                        alt={isVi ? cat.name_vi : cat.name_en}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    </div>
                   )}
-                  <div className="p-5">
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                      {isVi ? cat.name_vi : cat.name_en}
-                    </h3>
-                    {cat.serving_hours && (
-                      <p className="text-xs text-primary font-medium mb-2 flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {cat.serving_hours}
-                      </p>
-                    )}
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {isVi ? cat.description_vi : cat.description_en}
-                    </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {group.items.map((photo, i) => (
+                      <motion.div
+                        key={photo.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.06 }}
+                        className="bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                        onClick={() => setLightboxImg(photo.media_url)}
+                      >
+                        <div className="overflow-hidden">
+                          <img
+                            src={photo.media_url}
+                            alt={photo.title || 'Menu'}
+                            className="w-full object-contain max-h-[500px] group-hover:scale-[1.02] transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        </div>
+                        {photo.title && (
+                          <div className="p-3 sm:p-4">
+                            <h4 className="font-display text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                              {photo.title}
+                            </h4>
+                            {photo.caption && (
+                              <p className="text-xs text-muted-foreground mt-1">{photo.caption}</p>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
                   </div>
-                </motion.div>
+                </div>
               ))}
-            </div>
+
+            <div className="text-center mt-8">{ctaButton}</div>
           </div>
         </section>
       )}
 
-      {/* Set Menu / Combo Packages */}
-      {combos.length > 0 && (
-        <section className="py-16 sm:py-24">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
-            >
-              <p className="text-primary font-display text-xs tracking-[0.3em] uppercase mb-2">SET MENU</p>
-              <h2 className="font-display text-2xl sm:text-4xl font-bold text-foreground mb-3">
-                {isVi ? 'Thực đơn đoàn — Giá ưu đãi' : 'Group Set Menus — Great Value'}
-              </h2>
-              <p className="text-muted-foreground max-w-xl mx-auto text-sm">
-                {isVi
-                  ? 'Phù hợp cho gia đình, nhóm bạn bè và đoàn khách. Phục vụ 10:00 – 21:00.'
-                  : 'Perfect for families, friend groups and tour groups. Served 10:00 – 21:00.'}
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {combos.map((combo, i) => (
-                <motion.div
-                  key={combo.id}
-                  initial={{ opacity: 0, y: 25 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-card rounded-2xl border border-border p-5 sm:p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="text-primary font-display text-2xl sm:text-3xl font-bold mb-2">
-                    {combo.price_per_person.toLocaleString('vi-VN')}₫
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">{isVi ? '/suất' : '/person'}</p>
-                  <h3 className="font-display text-base font-semibold text-foreground mb-3">{combo.name}</h3>
-                  <div className="space-y-1.5 text-sm text-muted-foreground">
-                    <p>{combo.menu_count} {isVi ? 'thực đơn' : 'menus'} · {combo.dishes_per_menu} {isVi ? 'món/set' : 'dishes/set'}</p>
-                    {(isVi ? combo.description_vi : combo.description_en) && (
-                      <p className="text-xs line-clamp-2">{isVi ? combo.description_vi : combo.description_en}</p>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Highlights */}
-      <section className="py-16 sm:py-20 bg-secondary">
+      {/* ===== 5. USP HIGHLIGHTS ===== */}
+      <section className="py-16 sm:py-20">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {[
               {
-                icon: <UtensilsCrossed className="h-8 w-8 text-primary mx-auto" />,
+                icon: <Waves className="h-10 w-10 text-primary mx-auto" />,
                 titleVi: 'Hải sản tươi sống',
                 titleEn: 'Fresh Seafood',
                 descVi: 'Tôm, cua, ghẹ, mực, hàu — tất cả đều được đánh bắt trong ngày từ biển Sầm Sơn.',
                 descEn: 'Shrimp, crab, squid, oysters — all caught daily from Sầm Sơn sea.',
               },
               {
-                icon: <Clock className="h-8 w-8 text-primary mx-auto" />,
+                icon: <Clock className="h-10 w-10 text-primary mx-auto" />,
                 titleVi: 'Buffet sáng miễn phí',
                 titleEn: 'Free Breakfast Buffet',
                 descVi: 'Buffet sáng đa dạng tại tầng 1. Món Việt và quốc tế, phục vụ 06:00 – 08:30.',
                 descEn: 'Rich breakfast buffet at 1st floor. Vietnamese and international, served 06:00 – 08:30.',
               },
               {
-                icon: <Star className="h-8 w-8 text-primary mx-auto" />,
+                icon: <ChefHat className="h-10 w-10 text-primary mx-auto" />,
                 titleVi: 'Đầu bếp chuyên nghiệp',
                 titleEn: 'Expert Chefs',
                 descVi: 'Đội ngũ đầu bếp kinh nghiệm 10+ năm, chuyên hải sản & ẩm thực Việt.',
@@ -279,7 +398,7 @@ const Cuisine = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="space-y-3"
+                className="space-y-4"
               >
                 {item.icon}
                 <h3 className="font-display text-lg font-bold text-foreground">{isVi ? item.titleVi : item.titleEn}</h3>
@@ -290,30 +409,27 @@ const Cuisine = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 sm:py-20">
+      {/* ===== 6. FINAL CTA ===== */}
+      <section className="py-20 sm:py-28 bg-foreground text-background">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            className="max-w-2xl mx-auto"
           >
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-4">
-              {isVi ? 'Sẵn sàng thưởng thức?' : 'Ready to Dine?'}
+            <h2 className="font-display text-2xl sm:text-4xl font-bold mb-4">
+              {isVi ? 'Xem là muốn ăn ngay!' : 'See It, Crave It!'}
             </h2>
-            <p className="text-muted-foreground mb-6 max-w-lg mx-auto text-sm">
+            <p className="text-background/60 mb-8 text-sm sm:text-base">
               {isVi
-                ? 'Đặt món trực tuyến hoặc liên hệ trực tiếp để đặt bàn cho đoàn.'
-                : 'Order online or contact us directly to book a table for your group.'}
+                ? 'Đặt món trực tuyến — giao nhanh tại khách sạn hoặc liên hệ đặt bàn cho đoàn.'
+                : 'Order online — fast delivery to hotel or contact us to book a table for your group.'}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button variant="gold" size="lg" onClick={() => navigate('/food-order')} className="gap-2">
-                <UtensilsCrossed className="h-4 w-4" />
-                {isVi ? 'Đặt món ngay' : 'Order Food Now'}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              {ctaButton}
               <a href="tel:0983605768">
-                <Button variant="outline" size="lg" className="gap-2">
+                <Button variant="outline" size="lg" className="gap-2 border-background/30 text-background hover:bg-background/10">
                   <Phone className="h-4 w-4" /> 098.360.5768
                 </Button>
               </a>
@@ -321,6 +437,27 @@ const Cuisine = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Lightbox */}
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxImg(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white p-2"
+            onClick={() => setLightboxImg(null)}
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <img
+            src={lightboxImg}
+            alt=""
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       <Footer />
     </div>
