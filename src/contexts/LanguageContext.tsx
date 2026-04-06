@@ -40,6 +40,7 @@ const translations: Record<string, Record<Language, string>> = {
   'nav.policies': { vi: 'Quy định', en: 'Policies', ja: '規定', zh: '规定' },
   'nav.gallery': { vi: 'Thư viện ảnh', en: 'Gallery', ja: 'ギャラリー', zh: '图库' },
   'nav.offers': { vi: 'Ưu đãi', en: 'Offers', ja: '特典', zh: '优惠' },
+  'nav.promotions': { vi: 'Khuyến mại', en: 'Promotions', ja: 'プロモ', zh: '促销' },
   'nav.contact': { vi: 'Liên hệ', en: 'Contact', ja: 'お問合せ', zh: '联系' },
   'hero.title': { vi: 'Tuấn Đạt Luxury', en: 'Tuấn Đạt Luxury', ja: 'Tuấn Đạt Luxury', zh: 'Tuấn Đạt Luxury' },
   'hero.subtitle': { vi: 'Trải nghiệm nghỉ dưỡng đẳng cấp bên bờ biển Sầm Sơn', en: 'Premium beachside resort experience in Sầm Sơn', ja: 'サムソンビーチのプレミアムリゾート体験', zh: '岑山海滩高级度假体验' },

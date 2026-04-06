@@ -181,6 +181,7 @@ const AdminDashboard = () => {
       title: 'Khác',
       items: [
         { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
+        { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
         { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
         { id: 'members', icon: Users, label: 'Khách & Thành viên' },
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },

@@ -71,6 +71,7 @@ const Header = () => {
     { key: 'nav.food_order', href: '/food-order' },
     { key: 'nav.gallery', href: '/#gallery' },
     { key: 'nav.offers', href: '/#offers' },
+    { key: 'nav.promotions', href: '/promotions' },
   ];
 
   const moreItems = [
