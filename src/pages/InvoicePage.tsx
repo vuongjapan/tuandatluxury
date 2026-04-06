@@ -138,7 +138,8 @@ const InvoicePage = () => {
   
   const promotionDiscount = booking.promotion_discount_amount || 0;
   const memberDiscount = booking.member_discount_amount || 0;
-  const totalDiscount = promotionDiscount + memberDiscount;
+  const discountCodeAmt = booking.discount_code_amount || 0;
+  const totalDiscount = promotionDiscount + memberDiscount + discountCodeAmt;
   const hasDiscount = totalDiscount > 0 || booking.discount_code;
 
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
@@ -219,15 +220,41 @@ const InvoicePage = () => {
                   <Gift className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-foreground text-sm">Ưu đãi đã áp dụng</span>
                 </div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1.5 text-xs">
                   {memberDiscount > 0 && (
-                    <p className="text-muted-foreground">⭐ Giảm giá thành viên: {booking.member_discount_percent}% (-{fmt(memberDiscount)})</p>
+                    <div className="flex justify-between items-center bg-chart-2/5 rounded-lg px-2 py-1.5">
+                      <span className="text-foreground">⭐ Giảm giá thành viên ({booking.member_discount_percent}%)</span>
+                      <span className="font-bold text-chart-2">-{fmt(memberDiscount)}</span>
+                    </div>
                   )}
                   {promotionDiscount > 0 && (
-                    <p className="text-muted-foreground">🎁 Giảm giá ưu đãi: {booking.promotion_discount_percent}% (-{fmt(promotionDiscount)})</p>
+                    <div className="flex justify-between items-center bg-primary/5 rounded-lg px-2 py-1.5">
+                      <span className="text-foreground">
+                        🎁 {booking.promotion_name || 'Ưu đãi đặc biệt'} ({booking.promotion_discount_percent}%)
+                      </span>
+                      <span className="font-bold text-primary">-{fmt(promotionDiscount)}</span>
+                    </div>
                   )}
                   {booking.discount_code && (
-                    <p className="text-muted-foreground">🎟️ Mã giảm giá: <strong>{booking.discount_code}</strong></p>
+                    <div className="flex justify-between items-center bg-amber-50 dark:bg-amber-900/20 rounded-lg px-2 py-1.5">
+                      <span className="text-foreground">
+                        🎟️ Mã giảm giá: <strong className="text-primary">{booking.discount_code}</strong>
+                        {booking.discount_code_type === 'percent' 
+                          ? ` (${booking.discount_code_value}%)` 
+                          : booking.discount_code_value ? ` (${fmt(booking.discount_code_value)})` : ''}
+                        {' - '}
+                        {booking.discount_code_type === 'percent' ? 'Giảm phần trăm' : 'Giảm trực tiếp'}
+                      </span>
+                      <span className="font-bold text-amber-700 dark:text-amber-400">
+                        {discountCodeAmt > 0 ? `-${fmt(discountCodeAmt)}` : 'Đã áp dụng'}
+                      </span>
+                    </div>
+                  )}
+                  {totalDiscount > 0 && (
+                    <div className="flex justify-between items-center border-t border-primary/20 pt-1.5 mt-1">
+                      <span className="font-semibold text-foreground">💰 Tổng tiết kiệm:</span>
+                      <span className="font-bold text-chart-2 text-sm">{fmt(totalDiscount)}</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -450,7 +477,13 @@ const InvoicePage = () => {
                         <span className="font-medium">-{fmt(promotionDiscount)}</span>
                       </div>
                     )}
-                    {booking.discount_code && (
+                    {booking.discount_code && discountCodeAmt > 0 && (
+                      <div className="flex justify-between text-chart-2">
+                        <span>🎟️ Mã {booking.discount_code} ({booking.discount_code_type === 'percent' ? `${booking.discount_code_value}%` : fmt(booking.discount_code_value || 0)}):</span>
+                        <span className="font-medium">-{fmt(discountCodeAmt)}</span>
+                      </div>
+                    )}
+                    {booking.discount_code && !discountCodeAmt && (
                       <div className="flex justify-between text-chart-2">
                         <span>🎟️ Mã: {booking.discount_code}:</span>
                         <span className="font-medium">Đã áp dụng</span>

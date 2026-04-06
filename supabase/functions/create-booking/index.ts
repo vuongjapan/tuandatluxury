@@ -30,10 +30,10 @@ serve(async (req) => {
       check_in, check_out, guests_count, total_price_vnd, room_quantity, 
       language, combos, combo_total,
       // New promotion fields
-      promotion_id, promotion_discount_percent, promotion_discount_amount,
+      promotion_id, promotion_name, promotion_discount_percent, promotion_discount_amount,
       member_discount_percent, member_discount_amount,
       company_name, group_size, special_services, decoration_notes,
-      original_price_vnd, discount_code,
+      original_price_vnd, discount_code, discount_code_amount, discount_code_type, discount_code_value,
     } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
@@ -100,6 +100,7 @@ serve(async (req) => {
         sepay_qr_url: sepayQrUrl,
         // Promotion fields
         promotion_id: promotion_id || null,
+        promotion_name: promotion_name || null,
         promotion_discount_percent: promotion_discount_percent || 0,
         promotion_discount_amount: promotion_discount_amount || 0,
         member_discount_percent: member_discount_percent || 0,
@@ -109,6 +110,9 @@ serve(async (req) => {
         special_services: special_services || null,
         decoration_notes: decoration_notes || null,
         discount_code: discount_code || null,
+        discount_code_amount: discount_code_amount || 0,
+        discount_code_type: discount_code_type || null,
+        discount_code_value: discount_code_value || 0,
       })
       .select()
       .single();

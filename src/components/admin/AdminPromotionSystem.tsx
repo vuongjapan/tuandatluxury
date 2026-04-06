@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Save, Zap, Tag, Percent, Brain, RefreshCw, Eye, EyeOff, Link2, Image } from 'lucide-react';
+import PromotionItemSelector from './PromotionItemSelector';
 
 interface RoomOption { id: string; name_vi: string; price_vnd: number; image_url: string | null; }
 interface FoodOption { id: string; name_vi: string; price_vnd: number; image_url: string | null; category?: string; }
@@ -456,16 +457,17 @@ const AdminPromotionSystem = () => {
                     onBlur={e => updateCode(code.id, { discount_value: +e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Áp dụng cho</label>
-                  <Select value={code.applies_to} onValueChange={v => { updateCode(code.id, { applies_to: v }); setCodes(p => p.map(c => c.id === code.id ? {...c, applies_to: v} : c)); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="room">Chỉ đặt phòng</SelectItem>
-                      <SelectItem value="food">Chỉ đồ ăn</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="col-span-2 sm:col-span-4">
+                  <label className="text-xs text-muted-foreground mb-1 block">Áp dụng chi tiết cho</label>
+                  <PromotionItemSelector
+                    appliesTo={code.applies_to}
+                    appliesToItems={Array.isArray(code.applies_to_items) ? code.applies_to_items : []}
+                    rooms={rooms}
+                    menuItems={menuItems}
+                    diningItems={diningItems}
+                    onChangeAppliesTo={v => { updateCode(code.id, { applies_to: v }); setCodes(p => p.map(c => c.id === code.id ? {...c, applies_to: v} : c)); }}
+                    onChangeItems={items => { updateCode(code.id, { applies_to_items: items }); setCodes(p => p.map(c => c.id === code.id ? {...c, applies_to_items: items} : c)); }}
+                  />
                 </div>
               </div>
 
@@ -519,24 +521,13 @@ const AdminPromotionSystem = () => {
                 <Button variant="destructive" size="sm" onClick={() => deleteGlobal(g.id)}><Trash2 className="h-4 w-4" /></Button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">% Giảm</label>
                   <Input type="number" value={g.discount_percent}
                     onChange={e => setGlobals(p => p.map(x => x.id === g.id ? {...x, discount_percent: +e.target.value} : x))}
                     onBlur={e => updateGlobal(g.id, { discount_percent: +e.target.value })}
                   />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Áp dụng</label>
-                  <Select value={g.applies_to} onValueChange={v => { updateGlobal(g.id, { applies_to: v }); setGlobals(p => p.map(x => x.id === g.id ? {...x, applies_to: v} : x)); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="room">Chỉ phòng</SelectItem>
-                      <SelectItem value="food">Chỉ đồ ăn</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Giới hạn max %</label>
@@ -557,6 +548,19 @@ const AdminPromotionSystem = () => {
                     onChange={e => updateGlobal(g.id, { end_date: new Date(e.target.value).toISOString() })}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Áp dụng chi tiết cho</label>
+                <PromotionItemSelector
+                  appliesTo={g.applies_to}
+                  appliesToItems={Array.isArray(g.applies_to_items) ? g.applies_to_items : []}
+                  rooms={rooms}
+                  menuItems={menuItems}
+                  diningItems={diningItems}
+                  onChangeAppliesTo={v => { updateGlobal(g.id, { applies_to: v }); setGlobals(p => p.map(x => x.id === g.id ? {...x, applies_to: v} : x)); }}
+                  onChangeItems={items => { updateGlobal(g.id, { applies_to_items: items }); setGlobals(p => p.map(x => x.id === g.id ? {...x, applies_to_items: items} : x)); }}
+                />
               </div>
 
               <div className="flex items-center gap-2">
@@ -637,17 +641,19 @@ const AdminPromotionSystem = () => {
                     onBlur={e => updateRule(rule.id, { badge_text_vi: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Áp dụng</label>
-                  <Select value={rule.applies_to} onValueChange={v => { updateRule(rule.id, { applies_to: v }); setRules(p => p.map(r => r.id === rule.id ? {...r, applies_to: v} : r)); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="room">Phòng</SelectItem>
-                      <SelectItem value="food">Đồ ăn</SelectItem>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Áp dụng chi tiết cho</label>
+                <PromotionItemSelector
+                  appliesTo={rule.applies_to}
+                  appliesToItems={Array.isArray(rule.applies_to_items) ? rule.applies_to_items : []}
+                  rooms={rooms}
+                  menuItems={menuItems}
+                  diningItems={diningItems}
+                  onChangeAppliesTo={v => { updateRule(rule.id, { applies_to: v }); setRules(p => p.map(r => r.id === rule.id ? {...r, applies_to: v} : r)); }}
+                  onChangeItems={items => { updateRule(rule.id, { applies_to_items: items }); setRules(p => p.map(r => r.id === rule.id ? {...r, applies_to_items: items} : r)); }}
+                />
               </div>
             </div>
           ))}

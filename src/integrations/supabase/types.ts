@@ -117,6 +117,9 @@ export type Database = {
           decoration_notes: string | null
           deposit_amount: number
           discount_code: string | null
+          discount_code_amount: number | null
+          discount_code_type: string | null
+          discount_code_value: number | null
           group_size: number | null
           guest_email: string | null
           guest_name: string
@@ -132,6 +135,7 @@ export type Database = {
           promotion_discount_amount: number | null
           promotion_discount_percent: number | null
           promotion_id: string | null
+          promotion_name: string | null
           remaining_amount: number
           room_id: string
           room_quantity: number
@@ -152,6 +156,9 @@ export type Database = {
           decoration_notes?: string | null
           deposit_amount?: number
           discount_code?: string | null
+          discount_code_amount?: number | null
+          discount_code_type?: string | null
+          discount_code_value?: number | null
           group_size?: number | null
           guest_email?: string | null
           guest_name: string
@@ -167,6 +174,7 @@ export type Database = {
           promotion_discount_amount?: number | null
           promotion_discount_percent?: number | null
           promotion_id?: string | null
+          promotion_name?: string | null
           remaining_amount?: number
           room_id: string
           room_quantity?: number
@@ -187,6 +195,9 @@ export type Database = {
           decoration_notes?: string | null
           deposit_amount?: number
           discount_code?: string | null
+          discount_code_amount?: number | null
+          discount_code_type?: string | null
+          discount_code_value?: number | null
           group_size?: number | null
           guest_email?: string | null
           guest_name?: string
@@ -202,6 +213,7 @@ export type Database = {
           promotion_discount_amount?: number | null
           promotion_discount_percent?: number | null
           promotion_id?: string | null
+          promotion_name?: string | null
           remaining_amount?: number
           room_id?: string
           room_quantity?: number
@@ -526,6 +538,7 @@ export type Database = {
       discount_codes: {
         Row: {
           applies_to: string
+          applies_to_items: Json | null
           code: string
           created_at: string
           discount_type: string
@@ -544,6 +557,7 @@ export type Database = {
         }
         Insert: {
           applies_to?: string
+          applies_to_items?: Json | null
           code: string
           created_at?: string
           discount_type?: string
@@ -562,6 +576,7 @@ export type Database = {
         }
         Update: {
           applies_to?: string
+          applies_to_items?: Json | null
           code?: string
           created_at?: string
           discount_type?: string
@@ -832,6 +847,7 @@ export type Database = {
         Row: {
           allow_stacking: boolean
           applies_to: string
+          applies_to_items: Json | null
           created_at: string
           discount_percent: number
           end_date: string
@@ -846,6 +862,7 @@ export type Database = {
         Insert: {
           allow_stacking?: boolean
           applies_to?: string
+          applies_to_items?: Json | null
           created_at?: string
           discount_percent?: number
           end_date: string
@@ -860,6 +877,7 @@ export type Database = {
         Update: {
           allow_stacking?: boolean
           applies_to?: string
+          applies_to_items?: Json | null
           created_at?: string
           discount_percent?: number
           end_date?: string
@@ -1474,6 +1492,7 @@ export type Database = {
       smart_pricing_rules: {
         Row: {
           applies_to: string
+          applies_to_items: Json | null
           badge_text_en: string | null
           badge_text_vi: string | null
           created_at: string
@@ -1492,6 +1511,7 @@ export type Database = {
         }
         Insert: {
           applies_to?: string
+          applies_to_items?: Json | null
           badge_text_en?: string | null
           badge_text_vi?: string | null
           created_at?: string
@@ -1510,6 +1530,7 @@ export type Database = {
         }
         Update: {
           applies_to?: string
+          applies_to_items?: Json | null
           badge_text_en?: string | null
           badge_text_vi?: string | null
           created_at?: string

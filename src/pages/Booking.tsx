@@ -284,11 +284,15 @@ const Booking = () => {
           combo_total: comboTotal > 0 ? comboTotal : undefined,
           // Promotion data
           promotion_id: activePromo?.id || undefined,
+          promotion_name: activePromo ? (activePromo.title_vi || activePromo.title_en) : undefined,
           promotion_discount_percent: promoDiscountPercent > 0 ? promoDiscountPercent : undefined,
           promotion_discount_amount: promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
           discount_code: appliedDiscountCode?.code || undefined,
+          discount_code_amount: discountCodeAmount > 0 ? discountCodeAmount : undefined,
+          discount_code_type: appliedDiscountCode?.discount_type || undefined,
+          discount_code_value: appliedDiscountCode?.discount_value || undefined,
           company_name: companyName || undefined,
           group_size: groupSize ? parseInt(groupSize) : undefined,
           special_services: serviceLabels || undefined,
@@ -669,7 +673,9 @@ const Booking = () => {
                     )}
                     {discountCodeAmount > 0 && appliedDiscountCode && (
                       <div className="flex justify-between text-sm text-primary">
-                        <span>Mã {appliedDiscountCode.code}</span>
+                        <span>🎟️ Mã {appliedDiscountCode.code} ({appliedDiscountCode.discount_type === 'percent' ? `${appliedDiscountCode.discount_value}%` : formatPrice(appliedDiscountCode.discount_value)}
+                          {appliedDiscountCode.applies_to === 'room' ? ' - chỉ phòng' : appliedDiscountCode.applies_to === 'food' ? ' - chỉ đồ ăn' : ''}
+                        )</span>
                         <span>-{formatPrice(discountCodeAmount)}</span>
                       </div>
                     )}
