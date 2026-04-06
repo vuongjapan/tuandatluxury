@@ -26,6 +26,7 @@ const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Cuisine = lazy(() => import("./pages/Cuisine"));
 const Seafood = lazy(() => import("./pages/Seafood"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Promotions = lazy(() => import("./pages/Promotions"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
