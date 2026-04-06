@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart } from 'lucide-react';
+import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { type DiscountCode } from '@/hooks/usePromotionSystem';
+import { type DiscountCode, useFlashSales, useGlobalDiscounts, useSmartPricing } from '@/hooks/usePromotionSystem';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -53,6 +53,9 @@ const Booking = () => {
   const { items: diningItems, loading: diningLoading } = useDining();
   const { promotions } = usePromotions();
   const { user } = useAuth();
+  const { flashSales } = useFlashSales();
+  const { discounts: globalDiscounts } = useGlobalDiscounts();
+  const { rules: smartRules } = useSmartPricing();
 
   const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
   const preCheckin = searchParams.get('checkin');
@@ -140,6 +143,69 @@ const Booking = () => {
     return total * quantity;
   }, [checkIn, checkOut, nightCount, room, getRoomPrice, quantity]);
 
+  // === FLASH SALE: Check if current room has an active flash sale ===
+  const activeFlashSaleItem = useMemo(() => {
+    if (!roomId || flashSales.length === 0) return null;
+    for (const sale of flashSales) {
+      const item = (sale.items || []).find(i => i.item_type === 'room' && i.item_id === roomId && i.quantity_sold < i.quantity_limit);
+      if (item) return { ...item, saleName: sale.title_vi };
+    }
+    return null;
+  }, [roomId, flashSales]);
+
+  const flashSaleDiscount = useMemo(() => {
+    if (!activeFlashSaleItem || roomTotal <= 0) return 0;
+    // Flash sale replaces room price per night with sale_price
+    const originalPerNight = activeFlashSaleItem.original_price;
+    const salePerNight = activeFlashSaleItem.sale_price;
+    if (originalPerNight <= 0) return 0;
+    const discountPerNight = originalPerNight - salePerNight;
+    return discountPerNight * nightCount * quantity;
+  }, [activeFlashSaleItem, roomTotal, nightCount, quantity]);
+
+  // === GLOBAL DISCOUNT: Check active global discounts for rooms ===
+  const activeGlobalDiscount = useMemo(() => {
+    return globalDiscounts.find(gd => {
+      if (gd.applies_to === 'food') return false; // skip food-only
+      const items = (gd as any).applies_to_items || [];
+      if (items.length > 0 && !items.includes(roomId)) return false;
+      return true;
+    }) || null;
+  }, [globalDiscounts, roomId]);
+
+  const globalDiscountAmount = useMemo(() => {
+    if (!activeGlobalDiscount || roomTotal <= 0) return 0;
+    return Math.round(roomTotal * activeGlobalDiscount.discount_percent / 100);
+  }, [activeGlobalDiscount, roomTotal]);
+
+  // === SMART PRICING: Check active rules ===
+  const activeSmartRule = useMemo(() => {
+    if (!checkIn || smartRules.length === 0) return null;
+    const now = new Date();
+    const daysAdvance = differenceInDays(checkIn, now);
+    const checkInDay = checkIn.getDay();
+
+    for (const rule of smartRules) {
+      if (rule.applies_to === 'food') continue;
+      const items = (rule as any).applies_to_items || [];
+      if (items.length > 0 && !items.includes(roomId)) continue;
+
+      if (rule.rule_type === 'early_bird' && rule.min_days_advance && daysAdvance >= rule.min_days_advance) {
+        return rule;
+      }
+      if (rule.rule_type === 'day_of_week' && rule.day_of_week !== null && checkInDay === rule.day_of_week) {
+        return rule;
+      }
+      // occupancy type would need availability data - skip for now
+    }
+    return null;
+  }, [checkIn, smartRules, roomId]);
+
+  const smartPricingAmount = useMemo(() => {
+    if (!activeSmartRule || roomTotal <= 0) return 0;
+    return Math.round(roomTotal * activeSmartRule.discount_percent / 100);
+  }, [activeSmartRule, roomTotal]);
+
   // Calculate discounts
   const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
 
@@ -164,9 +230,6 @@ const Booking = () => {
   // Discount code calculation - respect applies_to setting
   const discountCodeAmount = useMemo(() => {
     if (!appliedDiscountCode) return 0;
-    // If code applies to 'room' only, base = roomTotal only
-    // If code applies to 'food' only, base = comboTotal only  
-    // If code applies to 'all', base = roomTotal + comboTotal
     let base = roomTotal + comboTotal;
     if (appliedDiscountCode.applies_to === 'room') {
       base = roomTotal;
@@ -182,8 +245,24 @@ const Booking = () => {
   const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
   const originalPrice = roomTotal + comboTotal;
   const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
-  const discountAmount = percentDiscount + discountCodeAmount;
-  const totalPrice = originalPrice - discountAmount;
+  const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount;
+  const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
+  const totalPrice = Math.max(0, originalPrice - discountAmount);
+
+  // Collect all applied promotions for display and invoice
+  const appliedPromotions = useMemo(() => {
+    const list: { name: string; amount: number; badge?: string }[] = [];
+    if (flashSaleDiscount > 0 && activeFlashSaleItem) {
+      list.push({ name: `⚡ Flash Sale: ${(activeFlashSaleItem as any).saleName}`, amount: flashSaleDiscount, badge: 'Flash Sale' });
+    }
+    if (globalDiscountAmount > 0 && activeGlobalDiscount) {
+      list.push({ name: `🎉 ${activeGlobalDiscount.title_vi} (-${activeGlobalDiscount.discount_percent}%)`, amount: globalDiscountAmount, badge: 'Giảm giá chung' });
+    }
+    if (smartPricingAmount > 0 && activeSmartRule) {
+      list.push({ name: `🧠 ${activeSmartRule.title_vi} (-${activeSmartRule.discount_percent}%)`, amount: smartPricingAmount, badge: activeSmartRule.badge_text_vi || 'Smart Price' });
+    }
+    return list;
+  }, [flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
   const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) || comboSelection !== null;
   const comboValidationError = comboRequired && !hasSelectedCombo;
@@ -284,9 +363,12 @@ const Booking = () => {
           combo_total: comboTotal > 0 ? comboTotal : undefined,
           // Promotion data
           promotion_id: activePromo?.id || undefined,
-          promotion_name: activePromo ? (activePromo.title_vi || activePromo.title_en) : undefined,
+          promotion_name: [
+            activePromo ? (activePromo.title_vi || activePromo.title_en) : null,
+            ...appliedPromotions.map(p => p.name),
+          ].filter(Boolean).join(' | ') || undefined,
           promotion_discount_percent: promoDiscountPercent > 0 ? promoDiscountPercent : undefined,
-          promotion_discount_amount: promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : undefined,
+          promotion_discount_amount: (promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : 0) + allAutoDiscounts || undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
           discount_code: appliedDiscountCode?.code || undefined,
@@ -370,6 +452,25 @@ const Booking = () => {
               transition={{ delay: 0.2 }}
               className="lg:col-span-2 space-y-6"
             >
+              {/* Flash Sale banner for selected room */}
+              {activeFlashSaleItem && (
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-300 dark:border-orange-700 rounded-xl p-4 flex items-center gap-3">
+                  <Zap className="h-6 w-6 text-orange-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">⚡ {(activeFlashSaleItem as any).saleName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isVi ? 'Giá Flash Sale: ' : 'Flash Sale Price: '}
+                      <span className="line-through">{formatPrice(activeFlashSaleItem.original_price)}</span>
+                      {' → '}
+                      <span className="font-bold text-primary">{formatPrice(activeFlashSaleItem.sale_price)}</span>
+                      /đêm · Còn {activeFlashSaleItem.quantity_limit - activeFlashSaleItem.quantity_sold} suất
+                    </p>
+                  </div>
+                  <Badge className="bg-orange-500 text-white shrink-0">-{Math.round((1 - activeFlashSaleItem.sale_price / activeFlashSaleItem.original_price) * 100)}%</Badge>
+                </motion.div>
+              )}
+
               {/* Room selection */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('nav.rooms')}</h2>
@@ -652,8 +753,24 @@ const Booking = () => {
                   </div>
                 )}
 
+                {/* Auto-applied promotions banner */}
+                {appliedPromotions.length > 0 && (
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <h4 className="font-semibold text-sm flex items-center gap-1">🎁 {isVi ? 'Ưu đãi tự động áp dụng' : 'Auto-applied offers'}</h4>
+                    {appliedPromotions.map((p, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm bg-primary/5 rounded-lg px-3 py-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge variant="outline" className="text-xs shrink-0">{p.badge}</Badge>
+                          <span className="text-xs truncate">{p.name}</span>
+                        </div>
+                        <span className="text-primary font-medium shrink-0">-{formatPrice(p.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Discounts */}
-                {(totalDiscountPercent > 0 || discountCodeAmount > 0) && originalPrice > 0 && (
+                {(totalDiscountPercent > 0 || discountCodeAmount > 0 || allAutoDiscounts > 0) && originalPrice > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Giá gốc</span>
@@ -661,14 +778,32 @@ const Booking = () => {
                     </div>
                     {memberDiscountPercent > 0 && (
                       <div className="flex justify-between text-sm text-primary">
-                        <span>Giảm thành viên ({memberDiscountPercent}%)</span>
+                        <span>⭐ Giảm thành viên ({memberDiscountPercent}%)</span>
                         <span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span>
                       </div>
                     )}
                     {promoDiscountPercent > 0 && (
                       <div className="flex justify-between text-sm text-primary">
-                        <span>Giảm ưu đãi ({promoDiscountPercent}%)</span>
+                        <span>🎉 Giảm ưu đãi ({promoDiscountPercent}%)</span>
                         <span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span>
+                      </div>
+                    )}
+                    {flashSaleDiscount > 0 && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>⚡ Flash Sale</span>
+                        <span>-{formatPrice(flashSaleDiscount)}</span>
+                      </div>
+                    )}
+                    {globalDiscountAmount > 0 && activeGlobalDiscount && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>🎉 {activeGlobalDiscount.title_vi} ({activeGlobalDiscount.discount_percent}%)</span>
+                        <span>-{formatPrice(globalDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {smartPricingAmount > 0 && activeSmartRule && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>🧠 {activeSmartRule.title_vi} ({activeSmartRule.discount_percent}%)</span>
+                        <span>-{formatPrice(smartPricingAmount)}</span>
                       </div>
                     )}
                     {discountCodeAmount > 0 && appliedDiscountCode && (
@@ -677,6 +812,12 @@ const Booking = () => {
                           {appliedDiscountCode.applies_to === 'room' ? ' - chỉ phòng' : appliedDiscountCode.applies_to === 'food' ? ' - chỉ đồ ăn' : ''}
                         )</span>
                         <span>-{formatPrice(discountCodeAmount)}</span>
+                      </div>
+                    )}
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm font-semibold text-primary border-t border-border pt-2 mt-2">
+                        <span>Tổng tiết kiệm</span>
+                        <span>-{formatPrice(discountAmount)}</span>
                       </div>
                     )}
                   </div>
