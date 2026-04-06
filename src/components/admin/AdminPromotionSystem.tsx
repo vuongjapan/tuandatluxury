@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Save, Zap, Tag, Percent, Brain, RefreshCw, Eye, EyeOff, Link2, Image } from 'lucide-react';
+import { Plus, Trash2, Save, Zap, Tag, Percent, Brain, RefreshCw, Eye, EyeOff, Link2, Image, BarChart3 } from 'lucide-react';
 import PromotionItemSelector from './PromotionItemSelector';
+import AdminPromotionStats from './AdminPromotionStats';
 
 interface RoomOption { id: string; name_vi: string; price_vnd: number; image_url: string | null; }
 interface FoodOption { id: string; name_vi: string; price_vnd: number; image_url: string | null; category?: string; }
