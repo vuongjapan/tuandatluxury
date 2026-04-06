@@ -734,8 +734,24 @@ const Booking = () => {
                   </div>
                 )}
 
+                {/* Auto-applied promotions banner */}
+                {appliedPromotions.length > 0 && (
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <h4 className="font-semibold text-sm flex items-center gap-1">🎁 {isVi ? 'Ưu đãi tự động áp dụng' : 'Auto-applied offers'}</h4>
+                    {appliedPromotions.map((p, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm bg-primary/5 rounded-lg px-3 py-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge variant="outline" className="text-xs shrink-0">{p.badge}</Badge>
+                          <span className="text-xs truncate">{p.name}</span>
+                        </div>
+                        <span className="text-primary font-medium shrink-0">-{formatPrice(p.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Discounts */}
-                {(totalDiscountPercent > 0 || discountCodeAmount > 0) && originalPrice > 0 && (
+                {(totalDiscountPercent > 0 || discountCodeAmount > 0 || allAutoDiscounts > 0) && originalPrice > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Giá gốc</span>
@@ -743,14 +759,32 @@ const Booking = () => {
                     </div>
                     {memberDiscountPercent > 0 && (
                       <div className="flex justify-between text-sm text-primary">
-                        <span>Giảm thành viên ({memberDiscountPercent}%)</span>
+                        <span>⭐ Giảm thành viên ({memberDiscountPercent}%)</span>
                         <span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span>
                       </div>
                     )}
                     {promoDiscountPercent > 0 && (
                       <div className="flex justify-between text-sm text-primary">
-                        <span>Giảm ưu đãi ({promoDiscountPercent}%)</span>
+                        <span>🎉 Giảm ưu đãi ({promoDiscountPercent}%)</span>
                         <span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span>
+                      </div>
+                    )}
+                    {flashSaleDiscount > 0 && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>⚡ Flash Sale</span>
+                        <span>-{formatPrice(flashSaleDiscount)}</span>
+                      </div>
+                    )}
+                    {globalDiscountAmount > 0 && activeGlobalDiscount && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>🎉 {activeGlobalDiscount.title_vi} ({activeGlobalDiscount.discount_percent}%)</span>
+                        <span>-{formatPrice(globalDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {smartPricingAmount > 0 && activeSmartRule && (
+                      <div className="flex justify-between text-sm text-primary">
+                        <span>🧠 {activeSmartRule.title_vi} ({activeSmartRule.discount_percent}%)</span>
+                        <span>-{formatPrice(smartPricingAmount)}</span>
                       </div>
                     )}
                     {discountCodeAmount > 0 && appliedDiscountCode && (
@@ -759,6 +793,12 @@ const Booking = () => {
                           {appliedDiscountCode.applies_to === 'room' ? ' - chỉ phòng' : appliedDiscountCode.applies_to === 'food' ? ' - chỉ đồ ăn' : ''}
                         )</span>
                         <span>-{formatPrice(discountCodeAmount)}</span>
+                      </div>
+                    )}
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm font-semibold text-primary border-t border-border pt-2 mt-2">
+                        <span>Tổng tiết kiệm</span>
+                        <span>-{formatPrice(discountAmount)}</span>
                       </div>
                     )}
                   </div>
