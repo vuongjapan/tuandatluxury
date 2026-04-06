@@ -660,6 +660,10 @@ const AdminPromotionSystem = () => {
             </div>
           ))}
         </TabsContent>
+
+        <TabsContent value="stats">
+          <AdminPromotionStats />
+        </TabsContent>
       </Tabs>
     </div>
   );
