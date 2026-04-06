@@ -260,6 +260,18 @@ const FoodInvoice = () => {
                 {isVi ? 'Chi phí' : 'Payment'}
               </h3>
               <div className="space-y-2">
+                {hasDiscount && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{isVi ? 'Tạm tính:' : 'Subtotal:'}</span>
+                      <span className="font-medium line-through text-muted-foreground">{formatPrice(originalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-primary">
+                      <span>{isVi ? 'Giảm giá:' : 'Discount:'}</span>
+                      <span className="font-medium">-{formatPrice(discountAmountVal)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{isVi ? 'Tổng tiền:' : 'Total:'}</span>
                   <span className="font-bold text-primary text-base">{formatPrice(order.total_amount)}</span>
