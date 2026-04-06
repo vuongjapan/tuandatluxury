@@ -192,6 +192,19 @@ const FoodInvoice = () => {
               </span>
             </div>
 
+            {/* Discount info */}
+            {hasDiscount && discountCode && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">🎟️</span>
+                  <span className="font-semibold text-foreground text-sm">{isVi ? 'Ưu đãi đã áp dụng' : 'Discount Applied'}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isVi ? 'Mã giảm giá' : 'Code'}: <strong>{discountCode}</strong> (-{formatPrice(discountAmountVal)})
+                </p>
+              </div>
+            )}
+
             {/* Customer Info */}
             <div>
               <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
