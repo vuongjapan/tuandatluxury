@@ -171,8 +171,8 @@ const InvoicePage = () => {
               </span>
             </div>
 
-            {/* Promotion applied banner */}
-            {(booking.promotion_discount_percent > 0 || booking.member_discount_percent > 0) && (
+            {/* Promotion/Discount applied banner */}
+            {(booking.promotion_discount_percent > 0 || booking.member_discount_percent > 0 || booking.discount_code) && (
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Gift className="h-4 w-4 text-primary" />
@@ -180,10 +180,13 @@ const InvoicePage = () => {
                 </div>
                 <div className="space-y-1 text-xs">
                   {booking.member_discount_percent > 0 && (
-                    <p className="text-muted-foreground">⭐ Giảm giá thành viên: {booking.member_discount_percent}%</p>
+                    <p className="text-muted-foreground">⭐ Giảm giá thành viên: {booking.member_discount_percent}% (-{(booking.member_discount_amount || 0).toLocaleString('vi')}₫)</p>
                   )}
                   {booking.promotion_discount_percent > 0 && (
-                    <p className="text-muted-foreground">🎁 Giảm giá ưu đãi: {booking.promotion_discount_percent}%</p>
+                    <p className="text-muted-foreground">🎁 Giảm giá ưu đãi: {booking.promotion_discount_percent}% (-{(booking.promotion_discount_amount || 0).toLocaleString('vi')}₫)</p>
+                  )}
+                  {booking.discount_code && (
+                    <p className="text-muted-foreground">🎟️ Mã giảm giá: <strong>{booking.discount_code}</strong></p>
                   )}
                 </div>
               </div>
