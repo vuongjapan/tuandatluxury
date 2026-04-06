@@ -641,17 +641,19 @@ const AdminPromotionSystem = () => {
                     onBlur={e => updateRule(rule.id, { badge_text_vi: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Áp dụng</label>
-                  <Select value={rule.applies_to} onValueChange={v => { updateRule(rule.id, { applies_to: v }); setRules(p => p.map(r => r.id === rule.id ? {...r, applies_to: v} : r)); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="room">Phòng</SelectItem>
-                      <SelectItem value="food">Đồ ăn</SelectItem>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Áp dụng chi tiết cho</label>
+                <PromotionItemSelector
+                  appliesTo={rule.applies_to}
+                  appliesToItems={Array.isArray(rule.applies_to_items) ? rule.applies_to_items : []}
+                  rooms={rooms}
+                  menuItems={menuItems}
+                  diningItems={diningItems}
+                  onChangeAppliesTo={v => { updateRule(rule.id, { applies_to: v }); setRules(p => p.map(r => r.id === rule.id ? {...r, applies_to: v} : r)); }}
+                  onChangeItems={items => { updateRule(rule.id, { applies_to_items: items }); setRules(p => p.map(r => r.id === rule.id ? {...r, applies_to_items: items} : r)); }}
+                />
               </div>
             </div>
           ))}
