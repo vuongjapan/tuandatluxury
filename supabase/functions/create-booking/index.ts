@@ -100,6 +100,7 @@ serve(async (req) => {
         sepay_qr_url: sepayQrUrl,
         // Promotion fields
         promotion_id: promotion_id || null,
+        promotion_name: promotion_name || null,
         promotion_discount_percent: promotion_discount_percent || 0,
         promotion_discount_amount: promotion_discount_amount || 0,
         member_discount_percent: member_discount_percent || 0,
@@ -109,6 +110,9 @@ serve(async (req) => {
         special_services: special_services || null,
         decoration_notes: decoration_notes || null,
         discount_code: discount_code || null,
+        discount_code_amount: discount_code_amount || 0,
+        discount_code_type: discount_code_type || null,
+        discount_code_value: discount_code_value || 0,
       })
       .select()
       .single();
