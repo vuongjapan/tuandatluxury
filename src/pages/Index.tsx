@@ -84,13 +84,41 @@ const Index = () => {
       <HeroSection />
       <BookingSearch />
 
-      {/* Về chúng tôi */}
+      {/* 1. Phòng nghỉ cao cấp - ưu tiên hàng đầu */}
+      <section id="rooms" className="py-16 sm:py-24 bg-background luxury-section">
+        <div className="container mx-auto px-4">
+          <SectionHeader
+            tagline={isVi ? 'Hạng phòng' : 'Accommodation'}
+            title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
+          />
+          <div className="space-y-6 sm:space-y-8">
+            {roomsLoading && rooms.length === 0 ? (
+              <>
+                <RoomSkeleton />
+                <RoomSkeleton />
+                <RoomSkeleton />
+              </>
+            ) : (
+              rooms.map((room, i) => (
+                <RoomCard key={room.id} room={room} index={i} />
+              ))
+            )}
+          </div>
+          <div className="text-center mt-8 sm:mt-10">
+            <Button variant="gold" size="lg" onClick={() => navigate('/booking')} className="gap-2 text-sm px-8">
+              {t('hero.book_now')}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Về chúng tôi */}
       <section id="about" className="py-16 sm:py-24 bg-secondary luxury-section">
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(hsl(43 74% 49%) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              {/* Image - 16:9 ratio */}
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -116,7 +144,6 @@ const Index = () => {
                 </div>
               </motion.div>
 
-              {/* Content */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -150,7 +177,6 @@ const Index = () => {
                   </p>
                 </div>
 
-                {/* Free amenities - no emoji */}
                 <div className="mt-5 p-3 sm:p-4 bg-card rounded-xl border border-border">
                   <p className="font-semibold text-xs sm:text-sm mb-2.5">
                     {isVi ? 'Miễn phí khi nghỉ tại khách sạn:' : 'Complimentary amenities:'}
@@ -174,7 +200,6 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Contact - no emoji */}
                 <div className="mt-3 p-3 sm:p-4 bg-card rounded-xl border border-border text-xs sm:text-sm space-y-1 text-muted-foreground">
                   <p>LK29-20, FLC Sầm Sơn, Thanh Hóa</p>
                   <p>098.661.7939 · 091.693.0969</p>
@@ -183,7 +208,6 @@ const Index = () => {
               </motion.div>
             </div>
 
-            {/* Feature cards with real images */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -219,7 +243,12 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Điểm tham quan lân cận - Section riêng */}
+      {/* 3. Khách hàng nói gì - ngay sau About Us */}
+      <Suspense fallback={<SectionFallback />}>
+        <TestimonialsSection />
+      </Suspense>
+
+      {/* 4. Điểm tham quan lân cận */}
       <section id="nearby" className="py-12 sm:py-16 bg-background">
         <div className="container mx-auto px-4">
           <SectionHeader
@@ -260,37 +289,7 @@ const Index = () => {
         </div>
       </section>
 
-
-      <section id="rooms" className="py-16 sm:py-24 bg-background luxury-section">
-        <div className="container mx-auto px-4">
-          <SectionHeader
-            tagline={isVi ? 'Hạng phòng' : 'Accommodation'}
-            title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
-          />
-          <div className="space-y-6 sm:space-y-8">
-            {roomsLoading && rooms.length === 0 ? (
-              <>
-                <RoomSkeleton />
-                <RoomSkeleton />
-                <RoomSkeleton />
-              </>
-            ) : (
-              rooms.map((room, i) => (
-                <RoomCard key={room.id} room={room} index={i} />
-              ))
-            )}
-          </div>
-          {/* CTA đặt phòng ngay dưới danh sách phòng */}
-          <div className="text-center mt-8 sm:mt-10">
-            <Button variant="gold" size="lg" onClick={() => navigate('/booking')} className="gap-2 text-sm px-8">
-              {t('hero.book_now')}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Dịch vụ */}
+      {/* 5. Dịch vụ */}
       <section id="services" className="py-16 sm:py-24 bg-secondary luxury-section">
         <div className="container mx-auto px-4">
           <SectionHeader
@@ -338,24 +337,19 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Ẩm thực */}
-      <Suspense fallback={<SectionFallback />}>
-        <DiningSection />
-      </Suspense>
-
-      {/* Thư viện ảnh */}
-      <Suspense fallback={<SectionFallback />}>
-        <PhotoGallery />
-      </Suspense>
-
-      {/* Ưu đãi */}
+      {/* 6. Khuyến mãi & Ưu đãi - ngay sau dịch vụ */}
       <Suspense fallback={<SectionFallback />}>
         <PromotionsSection />
       </Suspense>
 
-      {/* Đánh giá */}
+      {/* 7. Ẩm thực */}
       <Suspense fallback={<SectionFallback />}>
-        <TestimonialsSection />
+        <DiningSection />
+      </Suspense>
+
+      {/* 8. Thư viện ảnh */}
+      <Suspense fallback={<SectionFallback />}>
+        <PhotoGallery />
       </Suspense>
 
       {/* CTA đặt phòng */}
