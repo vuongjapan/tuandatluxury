@@ -116,6 +116,7 @@ export type Database = {
           created_at: string
           decoration_notes: string | null
           deposit_amount: number
+          discount_code: string | null
           group_size: number | null
           guest_email: string | null
           guest_name: string
@@ -150,6 +151,7 @@ export type Database = {
           created_at?: string
           decoration_notes?: string | null
           deposit_amount?: number
+          discount_code?: string | null
           group_size?: number | null
           guest_email?: string | null
           guest_name: string
@@ -184,6 +186,7 @@ export type Database = {
           created_at?: string
           decoration_notes?: string | null
           deposit_amount?: number
+          discount_code?: string | null
           group_size?: number | null
           guest_email?: string | null
           guest_name?: string
@@ -722,10 +725,15 @@ export type Database = {
           booking_code: string | null
           created_at: string
           customer_name: string
+          discount_amount: number | null
+          discount_code: string | null
+          discount_type: string | null
+          discount_value: number | null
           food_order_id: string
           guest_email: string | null
           id: string
           notes: string | null
+          original_amount: number | null
           paid_amount: number
           payment_status: string
           phone: string
@@ -738,10 +746,15 @@ export type Database = {
           booking_code?: string | null
           created_at?: string
           customer_name: string
+          discount_amount?: number | null
+          discount_code?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
           food_order_id: string
           guest_email?: string | null
           id?: string
           notes?: string | null
+          original_amount?: number | null
           paid_amount?: number
           payment_status?: string
           phone: string
@@ -754,10 +767,15 @@ export type Database = {
           booking_code?: string | null
           created_at?: string
           customer_name?: string
+          discount_amount?: number | null
+          discount_code?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
           food_order_id?: string
           guest_email?: string | null
           id?: string
           notes?: string | null
+          original_amount?: number | null
           paid_amount?: number
           payment_status?: string
           phone?: string
