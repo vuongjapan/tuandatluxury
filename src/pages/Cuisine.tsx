@@ -174,8 +174,8 @@ const Cuisine = () => {
                     className="w-full h-full object-cover"
                     muted
                     playsInline
-                    preload="metadata"
-                    onMouseEnter={e => (e.target as HTMLVideoElement).play()}
+                    preload="none"
+                    onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
                     onMouseLeave={e => { const vid = e.target as HTMLVideoElement; vid.pause(); vid.currentTime = 0; }}
                   />
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-all flex items-center justify-center">
