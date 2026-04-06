@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -30,8 +30,9 @@ import AdminBlog from '@/components/AdminBlog';
 import AdminCombo from '@/components/AdminCombo';
 import AdminSpecialPrices from '@/components/AdminSpecialPrices';
 import AdminCuisineMedia from '@/components/admin/AdminCuisineMedia';
+import AdminPromotionSystem from '@/components/admin/AdminPromotionSystem';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -180,6 +181,7 @@ const AdminDashboard = () => {
       title: 'Khác',
       items: [
         { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
+        { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
         { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
         { id: 'members', icon: Users, label: 'Khách & Thành viên' },
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
@@ -349,6 +351,7 @@ const AdminDashboard = () => {
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'dining' && <AdminDining />}
           {tab === 'promotions' && <AdminPromotions />}
+          {tab === 'promotion-system' && <AdminPromotionSystem />}
           {tab === 'services' && <AdminServices />}
           {tab === 'food-menu' && <AdminFoodMenu />}
           {tab === 'members' && <AdminMembers />}

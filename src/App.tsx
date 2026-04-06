@@ -26,6 +26,7 @@ const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Cuisine = lazy(() => import("./pages/Cuisine"));
 const Seafood = lazy(() => import("./pages/Seafood"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Promotions = lazy(() => import("./pages/Promotions"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -92,6 +93,7 @@ const App = () => (
                   <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/seafood" element={<Seafood />} />
                   <Route path="/terms" element={<Terms />} />
+                  <Route path="/promotions" element={<Promotions />} />
                   <Route path="/member" element={<MemberAuth />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminDashboard />} />
