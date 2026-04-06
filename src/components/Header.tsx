@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import ActivePromoBanner from '@/components/ActivePromoBanner';
 import {
   DropdownMenu,
   DropdownMenuContent,
