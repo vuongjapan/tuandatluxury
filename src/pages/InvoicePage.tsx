@@ -477,7 +477,13 @@ const InvoicePage = () => {
                         <span className="font-medium">-{fmt(promotionDiscount)}</span>
                       </div>
                     )}
-                    {booking.discount_code && (
+                    {booking.discount_code && discountCodeAmt > 0 && (
+                      <div className="flex justify-between text-chart-2">
+                        <span>🎟️ Mã {booking.discount_code} ({booking.discount_code_type === 'percent' ? `${booking.discount_code_value}%` : fmt(booking.discount_code_value || 0)}):</span>
+                        <span className="font-medium">-{fmt(discountCodeAmt)}</span>
+                      </div>
+                    )}
+                    {booking.discount_code && !discountCodeAmt && (
                       <div className="flex justify-between text-chart-2">
                         <span>🎟️ Mã: {booking.discount_code}:</span>
                         <span className="font-medium">Đã áp dụng</span>
