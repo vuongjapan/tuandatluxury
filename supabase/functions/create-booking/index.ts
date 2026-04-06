@@ -108,6 +108,7 @@ serve(async (req) => {
         group_size: group_size || null,
         special_services: special_services || null,
         decoration_notes: decoration_notes || null,
+        discount_code: discount_code || null,
       })
       .select()
       .single();
