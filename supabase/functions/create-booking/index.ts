@@ -30,10 +30,10 @@ serve(async (req) => {
       check_in, check_out, guests_count, total_price_vnd, room_quantity, 
       language, combos, combo_total,
       // New promotion fields
-      promotion_id, promotion_discount_percent, promotion_discount_amount,
+      promotion_id, promotion_name, promotion_discount_percent, promotion_discount_amount,
       member_discount_percent, member_discount_amount,
       company_name, group_size, special_services, decoration_notes,
-      original_price_vnd, discount_code,
+      original_price_vnd, discount_code, discount_code_amount, discount_code_type, discount_code_value,
     } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
