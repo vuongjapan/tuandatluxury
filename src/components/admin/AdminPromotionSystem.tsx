@@ -521,24 +521,13 @@ const AdminPromotionSystem = () => {
                 <Button variant="destructive" size="sm" onClick={() => deleteGlobal(g.id)}><Trash2 className="h-4 w-4" /></Button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">% Giảm</label>
                   <Input type="number" value={g.discount_percent}
                     onChange={e => setGlobals(p => p.map(x => x.id === g.id ? {...x, discount_percent: +e.target.value} : x))}
                     onBlur={e => updateGlobal(g.id, { discount_percent: +e.target.value })}
                   />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Áp dụng</label>
-                  <Select value={g.applies_to} onValueChange={v => { updateGlobal(g.id, { applies_to: v }); setGlobals(p => p.map(x => x.id === g.id ? {...x, applies_to: v} : x)); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="room">Chỉ phòng</SelectItem>
-                      <SelectItem value="food">Chỉ đồ ăn</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Giới hạn max %</label>
