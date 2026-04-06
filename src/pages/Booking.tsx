@@ -53,6 +53,9 @@ const Booking = () => {
   const { items: diningItems, loading: diningLoading } = useDining();
   const { promotions } = usePromotions();
   const { user } = useAuth();
+  const { flashSales } = useFlashSales();
+  const { discounts: globalDiscounts } = useGlobalDiscounts();
+  const { rules: smartRules } = useSmartPricing();
 
   const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
   const preCheckin = searchParams.get('checkin');
