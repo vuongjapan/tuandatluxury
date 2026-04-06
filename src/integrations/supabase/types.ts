@@ -374,6 +374,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cuisine_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          media_group: string | null
+          media_url: string
+          sort_order: number
+          thumbnail_url: string | null
+          title: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_group?: string | null
+          media_url: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_group?: string | null
+          media_url?: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dining_categories: {
         Row: {
           created_at: string
