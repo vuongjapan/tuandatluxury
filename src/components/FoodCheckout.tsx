@@ -40,11 +40,13 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
 
   const getName = (item: { name_vi: string; name_en: string }) => isVi ? item.name_vi : item.name_en;
 
-  // Calculate discount
+  // Calculate discount - respect applies_to setting
   const discountCodeAmount = appliedDiscount
-    ? appliedDiscount.discount_type === 'percent'
-      ? Math.round(totalAmount * appliedDiscount.discount_value / 100)
-      : Math.min(appliedDiscount.discount_value, totalAmount)
+    ? (appliedDiscount.applies_to === 'room' ? 0 : (
+        appliedDiscount.discount_type === 'percent'
+          ? Math.round(totalAmount * appliedDiscount.discount_value / 100)
+          : Math.min(appliedDiscount.discount_value, totalAmount)
+      ))
     : 0;
   const finalAmount = totalAmount - discountCodeAmount;
   const depositAmount = Math.round(finalAmount * 0.5);
