@@ -363,9 +363,12 @@ const Booking = () => {
           combo_total: comboTotal > 0 ? comboTotal : undefined,
           // Promotion data
           promotion_id: activePromo?.id || undefined,
-          promotion_name: activePromo ? (activePromo.title_vi || activePromo.title_en) : undefined,
+          promotion_name: [
+            activePromo ? (activePromo.title_vi || activePromo.title_en) : null,
+            ...appliedPromotions.map(p => p.name),
+          ].filter(Boolean).join(' | ') || undefined,
           promotion_discount_percent: promoDiscountPercent > 0 ? promoDiscountPercent : undefined,
-          promotion_discount_amount: promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : undefined,
+          promotion_discount_amount: (promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : 0) + allAutoDiscounts || undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
           discount_code: appliedDiscountCode?.code || undefined,
