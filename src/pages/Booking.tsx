@@ -161,9 +161,20 @@ const Booking = () => {
     return base;
   }, [activePromo, isGroupPromo, groupSize]);
 
+  // Discount code calculation
+  const discountCodeAmount = useMemo(() => {
+    if (!appliedDiscountCode) return 0;
+    const base = roomTotal + comboTotal;
+    if (appliedDiscountCode.discount_type === 'percent') {
+      return Math.round(base * appliedDiscountCode.discount_value / 100);
+    }
+    return Math.min(appliedDiscountCode.discount_value, base);
+  }, [appliedDiscountCode, roomTotal, comboTotal]);
+
   const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
   const originalPrice = roomTotal + comboTotal;
-  const discountAmount = Math.round(originalPrice * totalDiscountPercent / 100);
+  const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
+  const discountAmount = percentDiscount + discountCodeAmount;
   const totalPrice = originalPrice - discountAmount;
 
   const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) || comboSelection !== null;
