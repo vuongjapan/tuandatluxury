@@ -143,6 +143,69 @@ const Booking = () => {
     return total * quantity;
   }, [checkIn, checkOut, nightCount, room, getRoomPrice, quantity]);
 
+  // === FLASH SALE: Check if current room has an active flash sale ===
+  const activeFlashSaleItem = useMemo(() => {
+    if (!roomId || flashSales.length === 0) return null;
+    for (const sale of flashSales) {
+      const item = (sale.items || []).find(i => i.item_type === 'room' && i.item_id === roomId && i.quantity_sold < i.quantity_limit);
+      if (item) return { ...item, saleName: sale.title_vi };
+    }
+    return null;
+  }, [roomId, flashSales]);
+
+  const flashSaleDiscount = useMemo(() => {
+    if (!activeFlashSaleItem || roomTotal <= 0) return 0;
+    // Flash sale replaces room price per night with sale_price
+    const originalPerNight = activeFlashSaleItem.original_price;
+    const salePerNight = activeFlashSaleItem.sale_price;
+    if (originalPerNight <= 0) return 0;
+    const discountPerNight = originalPerNight - salePerNight;
+    return discountPerNight * nightCount * quantity;
+  }, [activeFlashSaleItem, roomTotal, nightCount, quantity]);
+
+  // === GLOBAL DISCOUNT: Check active global discounts for rooms ===
+  const activeGlobalDiscount = useMemo(() => {
+    return globalDiscounts.find(gd => {
+      if (gd.applies_to === 'food') return false; // skip food-only
+      const items = (gd as any).applies_to_items || [];
+      if (items.length > 0 && !items.includes(roomId)) return false;
+      return true;
+    }) || null;
+  }, [globalDiscounts, roomId]);
+
+  const globalDiscountAmount = useMemo(() => {
+    if (!activeGlobalDiscount || roomTotal <= 0) return 0;
+    return Math.round(roomTotal * activeGlobalDiscount.discount_percent / 100);
+  }, [activeGlobalDiscount, roomTotal]);
+
+  // === SMART PRICING: Check active rules ===
+  const activeSmartRule = useMemo(() => {
+    if (!checkIn || smartRules.length === 0) return null;
+    const now = new Date();
+    const daysAdvance = differenceInDays(checkIn, now);
+    const checkInDay = checkIn.getDay();
+
+    for (const rule of smartRules) {
+      if (rule.applies_to === 'food') continue;
+      const items = (rule as any).applies_to_items || [];
+      if (items.length > 0 && !items.includes(roomId)) continue;
+
+      if (rule.rule_type === 'early_bird' && rule.min_days_advance && daysAdvance >= rule.min_days_advance) {
+        return rule;
+      }
+      if (rule.rule_type === 'day_of_week' && rule.day_of_week !== null && checkInDay === rule.day_of_week) {
+        return rule;
+      }
+      // occupancy type would need availability data - skip for now
+    }
+    return null;
+  }, [checkIn, smartRules, roomId]);
+
+  const smartPricingAmount = useMemo(() => {
+    if (!activeSmartRule || roomTotal <= 0) return 0;
+    return Math.round(roomTotal * activeSmartRule.discount_percent / 100);
+  }, [activeSmartRule, roomTotal]);
+
   // Calculate discounts
   const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
 
@@ -167,9 +230,6 @@ const Booking = () => {
   // Discount code calculation - respect applies_to setting
   const discountCodeAmount = useMemo(() => {
     if (!appliedDiscountCode) return 0;
-    // If code applies to 'room' only, base = roomTotal only
-    // If code applies to 'food' only, base = comboTotal only  
-    // If code applies to 'all', base = roomTotal + comboTotal
     let base = roomTotal + comboTotal;
     if (appliedDiscountCode.applies_to === 'room') {
       base = roomTotal;
@@ -185,8 +245,24 @@ const Booking = () => {
   const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
   const originalPrice = roomTotal + comboTotal;
   const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
-  const discountAmount = percentDiscount + discountCodeAmount;
-  const totalPrice = originalPrice - discountAmount;
+  const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount;
+  const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
+  const totalPrice = Math.max(0, originalPrice - discountAmount);
+
+  // Collect all applied promotions for display and invoice
+  const appliedPromotions = useMemo(() => {
+    const list: { name: string; amount: number; badge?: string }[] = [];
+    if (flashSaleDiscount > 0 && activeFlashSaleItem) {
+      list.push({ name: `⚡ Flash Sale: ${(activeFlashSaleItem as any).saleName}`, amount: flashSaleDiscount, badge: 'Flash Sale' });
+    }
+    if (globalDiscountAmount > 0 && activeGlobalDiscount) {
+      list.push({ name: `🎉 ${activeGlobalDiscount.title_vi} (-${activeGlobalDiscount.discount_percent}%)`, amount: globalDiscountAmount, badge: 'Giảm giá chung' });
+    }
+    if (smartPricingAmount > 0 && activeSmartRule) {
+      list.push({ name: `🧠 ${activeSmartRule.title_vi} (-${activeSmartRule.discount_percent}%)`, amount: smartPricingAmount, badge: activeSmartRule.badge_text_vi || 'Smart Price' });
+    }
+    return list;
+  }, [flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
   const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) || comboSelection !== null;
   const comboValidationError = comboRequired && !hasSelectedCombo;
