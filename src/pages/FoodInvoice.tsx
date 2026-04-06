@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { CircleCheckBig, CheckCircle, Download, House, Copy, Clock, Check } from 'lucide-react';
+import { CircleCheckBig, CheckCircle, Download, House, Copy, Check, Clock, ShoppingBag, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
@@ -13,21 +13,6 @@ const VA_BANK = 'BIDV';
 const VA_ACCOUNT = '96247TUANDATLUXURY';
 const VA_HOLDER = 'VAN DINH GIANG';
 
-interface FoodOrder {
-  id: string;
-  food_order_id: string;
-  booking_code: string | null;
-  customer_name: string;
-  phone: string;
-  room_number: string | null;
-  total_amount: number;
-  paid_amount: number;
-  status: string;
-  payment_status: string;
-  notes: string | null;
-  created_at: string;
-}
-
 interface OrderItem {
   id: string;
   quantity: number;
@@ -35,6 +20,7 @@ interface OrderItem {
   menu_items?: {
     name_vi: string;
     name_en: string;
+    category: string;
   };
 }
 
@@ -45,7 +31,7 @@ const FoodInvoice = () => {
   const { toast } = useToast();
   const isVi = language === 'vi';
 
-  const [order, setOrder] = useState<FoodOrder | null>(null);
+  const [order, setOrder] = useState<any>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -59,10 +45,10 @@ const FoodInvoice = () => {
         .maybeSingle();
 
       if (orderData) {
-        setOrder(orderData as FoodOrder);
+        setOrder(orderData);
         const { data: items } = await supabase
           .from('food_order_items')
-          .select('*, menu_items:menu_item_id(name_vi, name_en)')
+          .select('*, menu_items:menu_item_id(name_vi, name_en, category)')
           .eq('food_order_id', orderData.id);
         setOrderItems((items as OrderItem[]) || []);
       }
@@ -74,7 +60,6 @@ const FoodInvoice = () => {
   // Polling for payment status
   useEffect(() => {
     if (!order || order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID') return;
-
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from('food_orders')
@@ -82,16 +67,17 @@ const FoodInvoice = () => {
         .eq('food_order_id', foodOrderId)
         .maybeSingle();
       if (data) {
-        setOrder(prev => prev ? { ...prev, ...data } : prev);
+        setOrder((prev: any) => prev ? { ...prev, ...data } : prev);
       }
     }, 5000);
-
     return () => clearInterval(interval);
   }, [order?.payment_status, foodOrderId]);
 
-  const originalAmount = order ? ((order as any).original_amount || order.total_amount) : 0;
-  const discountCode = order ? (order as any).discount_code : null;
-  const discountAmountVal = order ? ((order as any).discount_amount || 0) : 0;
+  const originalAmount = order ? (order.original_amount || order.total_amount) : 0;
+  const discountCode = order?.discount_code || null;
+  const discountAmountVal = order?.discount_amount || 0;
+  const discountType = order?.discount_type || '';
+  const discountValue = order?.discount_value || 0;
   const depositAmount = order ? Math.round(order.total_amount * 0.5) : 0;
   const remainingAmount = order ? order.total_amount - depositAmount : 0;
   const isDepositPaid = order ? (order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID') : false;
@@ -110,6 +96,24 @@ const FoodInvoice = () => {
     } catch {
       toast({ title: isVi ? 'Không thể sao chép' : 'Cannot copy', variant: 'destructive' });
     }
+  };
+
+  // Group items by category
+  const groupedItems = orderItems.reduce<Record<string, OrderItem[]>>((acc, item) => {
+    const cat = item.menu_items?.category || 'other';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {});
+
+  const categoryLabels: Record<string, string> = {
+    breakfast: isVi ? '🌅 Ăn sáng' : '🌅 Breakfast',
+    main: isVi ? '🍚 Cơm / Món chính' : '🍚 Main dishes',
+    seafood: isVi ? '🦐 Hải sản' : '🦐 Seafood',
+    hotpot: isVi ? '🍲 Lẩu' : '🍲 Hotpot',
+    combo: isVi ? '🍱 Combo / Set' : '🍱 Combo / Set',
+    drink: isVi ? '🥤 Đồ uống' : '🥤 Drinks',
+    other: isVi ? '🍽️ Khác' : '🍽️ Others',
   };
 
   if (loading) {
@@ -132,6 +136,8 @@ const FoodInvoice = () => {
       </div>
     );
   }
+
+  const totalItemsCount = orderItems.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
     <div className="min-h-screen bg-secondary py-10 px-4 print:bg-white print:py-0">
@@ -176,39 +182,41 @@ const FoodInvoice = () => {
               <p className="text-xs text-muted-foreground mt-1">{isVi ? 'Lưu mã này để tra cứu đơn hàng' : 'Save this code'}</p>
             </div>
 
-            {/* Status */}
-            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
-              <span className="font-semibold text-muted-foreground">{isVi ? 'Trạng thái' : 'Status'}</span>
-              <span className={`font-bold px-3 py-1 rounded-full text-xs ${isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-chart-4/20 text-chart-4'}`}>
-                {isDepositPaid ? (isVi ? '✓ Đã xác nhận' : '✓ Confirmed') : (isVi ? '⏳ Chờ xác nhận' : '⏳ Pending')}
-              </span>
-            </div>
-
-            {/* Payment status */}
-            <div className="flex items-center justify-between p-3 bg-secondary rounded-xl">
-              <span className="font-semibold text-muted-foreground">{isVi ? 'Thanh toán' : 'Payment'}</span>
-              <span className={`font-bold px-3 py-1 rounded-full text-xs ${isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-amber-100 text-amber-700'}`}>
-                {isDepositPaid ? (isVi ? '✅ Đã cọc 50%' : '✅ Deposit paid') : (isVi ? '⏳ Chưa thanh toán' : '⏳ Unpaid')}
-              </span>
+            {/* Status grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-secondary rounded-xl text-center">
+                <p className="text-xs text-muted-foreground mb-1">{isVi ? 'Trạng thái' : 'Status'}</p>
+                <span className={`font-bold px-3 py-1 rounded-full text-xs ${isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-chart-4/20 text-chart-4'}`}>
+                  {isDepositPaid ? (isVi ? '✓ Đã xác nhận' : '✓ Confirmed') : (isVi ? '⏳ Chờ xác nhận' : '⏳ Pending')}
+                </span>
+              </div>
+              <div className="p-3 bg-secondary rounded-xl text-center">
+                <p className="text-xs text-muted-foreground mb-1">{isVi ? 'Thanh toán' : 'Payment'}</p>
+                <span className={`font-bold px-3 py-1 rounded-full text-xs ${isDepositPaid ? 'bg-chart-2/20 text-chart-2' : 'bg-amber-100 text-amber-700'}`}>
+                  {isDepositPaid ? (isVi ? '✅ Đã cọc 50%' : '✅ Deposit paid') : (isVi ? '⏳ Chưa thanh toán' : '⏳ Unpaid')}
+                </span>
+              </div>
             </div>
 
             {/* Discount info */}
             {hasDiscount && discountCode && (
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm">🎟️</span>
                   <span className="font-semibold text-foreground text-sm">{isVi ? 'Ưu đãi đã áp dụng' : 'Discount Applied'}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {isVi ? 'Mã giảm giá' : 'Code'}: <strong>{discountCode}</strong> (-{formatPrice(discountAmountVal)})
+                <p className="text-xs text-muted-foreground">
+                  {isVi ? 'Mã giảm giá' : 'Code'}: <strong>{discountCode}</strong>
+                  {' '}({discountType === 'percent' ? `${discountValue}%` : formatPrice(discountValue)})
+                  {' → '}-{formatPrice(discountAmountVal)}
                 </p>
               </div>
             )}
 
             {/* Customer Info */}
             <div>
-              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
-                {isVi ? 'Thông tin khách' : 'Guest Info'}
+              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2 flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" /> {isVi ? 'Thông tin khách hàng' : 'Customer Info'}
               </h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -219,6 +227,12 @@ const FoodInvoice = () => {
                   <span className="text-muted-foreground">{isVi ? 'SĐT:' : 'Phone:'}</span>
                   <span className="font-medium">{order.phone}</span>
                 </div>
+                {order.guest_email && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="font-medium">{order.guest_email}</span>
+                  </div>
+                )}
                 {order.room_number && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{isVi ? 'Phòng:' : 'Room:'}</span>
@@ -234,30 +248,46 @@ const FoodInvoice = () => {
               </div>
             </div>
 
-            {/* Order Items */}
+            {/* Order Items - grouped by category */}
             <div>
-              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
-                {isVi ? 'Chi tiết đơn hàng' : 'Order Details'}
+              <h3 className="font-display font-semibold text-base mb-3 border-b-2 border-primary/30 pb-2 flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4 text-primary" /> {isVi ? `Chi tiết đơn hàng (${totalItemsCount} món)` : `Order Details (${totalItemsCount} items)`}
               </h3>
-              <div className="space-y-2">
-                {orderItems.map(item => (
-                  <div key={item.id} className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <span className="font-medium">
-                        {isVi ? item.menu_items?.name_vi : item.menu_items?.name_en}
-                      </span>
-                      <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+              
+              {Object.entries(groupedItems).map(([category, items]) => {
+                const categoryTotal = items.reduce((sum, i) => sum + i.price_vnd * i.quantity, 0);
+                return (
+                  <div key={category} className="mb-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1.5">
+                      {categoryLabels[category] || category}
+                    </p>
+                    <div className="bg-secondary/50 rounded-lg p-3 space-y-1.5">
+                      {items.map((item, idx) => (
+                        <div key={item.id} className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <span className="text-xs text-muted-foreground mr-1">{idx + 1}.</span>
+                            <span className="font-medium text-sm">
+                              {isVi ? item.menu_items?.name_vi : item.menu_items?.name_en}
+                            </span>
+                            <span className="text-muted-foreground ml-1.5 text-xs">×{item.quantity}</span>
+                          </div>
+                          <span className="font-medium text-sm ml-2">{formatPrice(item.price_vnd * item.quantity)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between border-t border-border/50 pt-1 text-xs">
+                        <span className="text-muted-foreground">{isVi ? 'Nhóm:' : 'Subtotal:'}</span>
+                        <span className="font-semibold">{formatPrice(categoryTotal)}</span>
+                      </div>
                     </div>
-                    <span className="font-medium">{formatPrice(item.price_vnd * item.quantity)}</span>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
 
             {/* Totals */}
             <div>
-              <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
-                {isVi ? 'Chi phí' : 'Payment'}
+              <h3 className="font-display font-semibold text-base mb-3 border-b-2 border-primary/30 pb-2">
+                💰 {isVi ? 'Tổng hợp chi phí' : 'Payment Summary'}
               </h3>
               <div className="space-y-2">
                 {hasDiscount && (
@@ -266,40 +296,48 @@ const FoodInvoice = () => {
                       <span className="text-muted-foreground">{isVi ? 'Tạm tính:' : 'Subtotal:'}</span>
                       <span className="font-medium line-through text-muted-foreground">{formatPrice(originalAmount)}</span>
                     </div>
-                    <div className="flex justify-between text-primary">
-                      <span>{isVi ? 'Giảm giá:' : 'Discount:'}</span>
+                    <div className="flex justify-between text-chart-2">
+                      <span>🎟️ {isVi ? 'Giảm giá' : 'Discount'} ({discountCode}):</span>
                       <span className="font-medium">-{formatPrice(discountAmountVal)}</span>
                     </div>
                   </>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{isVi ? 'Tổng tiền:' : 'Total:'}</span>
-                  <span className="font-bold text-primary text-base">{formatPrice(order.total_amount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{isVi ? 'Tiền cọc (50%):' : 'Deposit (50%):'}</span>
-                  <span className={`font-bold ${isDepositPaid ? 'text-chart-2' : 'text-amber-600'}`}>{formatPrice(depositAmount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{isVi ? 'Đã thanh toán:' : 'Paid:'}</span>
-                  <span className={`font-medium ${isDepositPaid ? 'text-chart-2' : ''}`}>
-                    {isDepositPaid ? formatPrice(depositAmount) : '0₫'}
+
+                <div className="flex justify-between border-t-2 border-primary/30 pt-2">
+                  <span className="font-bold text-foreground text-base">
+                    {isVi ? `TỔNG CỘNG${hasDiscount ? ' (sau giảm)' : ''}:` : `TOTAL${hasDiscount ? ' (after discount)' : ''}:`}
                   </span>
+                  <span className="font-bold text-primary text-lg">{formatPrice(order.total_amount)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{isVi ? 'Còn lại:' : 'Remaining:'}</span>
-                  <span className="font-bold text-primary">
-                    {isDepositPaid ? formatPrice(remainingAmount) : formatPrice(order.total_amount)}
-                  </span>
+
+                {/* Payment breakdown */}
+                <div className="bg-secondary rounded-xl p-3 mt-2 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{isVi ? 'Tiền cọc (50%):' : 'Deposit (50%):'}</span>
+                    <span className={`font-bold ${isDepositPaid ? 'text-chart-2' : 'text-amber-600'}`}>{formatPrice(depositAmount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{isVi ? 'Đã thanh toán:' : 'Paid:'}</span>
+                    <span className={`font-semibold ${isDepositPaid ? 'text-chart-2' : ''}`}>
+                      {isDepositPaid ? formatPrice(depositAmount) : '0₫'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-1">
+                    <span className="text-muted-foreground font-semibold">{isVi ? 'Còn lại khi nhận đồ:' : 'Remaining on delivery:'}</span>
+                    <span className="font-bold text-primary">
+                      {isDepositPaid ? formatPrice(remainingAmount) : formatPrice(order.total_amount)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* QR Payment - only show if not paid */}
+            {/* QR Payment */}
             {!isDepositPaid && (
               <div className="border-2 border-dashed border-amber-400 rounded-xl p-5 bg-amber-50 print:border-amber-300">
-                <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">💳 {isVi ? 'THANH TOÁN ĐẶT CỌC' : 'DEPOSIT PAYMENT'}</h3>
-                
+                <h3 className="font-display font-semibold text-base mb-4 text-center text-amber-900">
+                  💳 {isVi ? 'THANH TOÁN ĐẶT CỌC' : 'DEPOSIT PAYMENT'}
+                </h3>
                 <div className="bg-white rounded-lg p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">🏦 {isVi ? 'Ngân hàng:' : 'Bank:'}</span>
@@ -317,38 +355,34 @@ const FoodInvoice = () => {
                     ⚠️ {isVi ? 'Chỉ chuyển khoản qua tài khoản ảo (VA) hoặc quét mã QR bên dưới.' : 'Transfer via VA or scan QR below.'}
                   </p>
                 </div>
-
                 <div className="flex justify-center mb-4">
                   <img src={qrUrl} alt="QR Payment" className="w-64 rounded-lg shadow-md bg-white" />
                 </div>
-
                 <div className="text-center space-y-3">
                   <div>
-                    <p className="text-xs text-amber-700 font-semibold uppercase">📌 {isVi ? 'Nội dung chuyển khoản:' : 'Transfer content:'}</p>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">
+                      📌 {isVi ? 'Nội dung chuyển khoản:' : 'Transfer content:'}
+                    </p>
                     <p className="font-display text-xl font-bold text-primary tracking-widest mt-1">{order.food_order_id}</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => handleCopy(order.food_order_id)}
-                    >
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => handleCopy(order.food_order_id)}>
                       {copied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
                       {copied ? (isVi ? 'Đã sao chép' : 'Copied') : (isVi ? 'Sao chép' : 'Copy')}
                     </Button>
                   </div>
                   <div>
-                    <p className="text-xs text-amber-700 font-semibold uppercase">💰 {isVi ? 'Số tiền cần chuyển:' : 'Amount:'}</p>
+                    <p className="text-xs text-amber-700 font-semibold uppercase">
+                      💰 {isVi ? 'Số tiền cần chuyển:' : 'Amount:'}
+                    </p>
                     <p className="text-2xl font-bold text-destructive mt-1">{formatPrice(depositAmount)}</p>
                   </div>
                 </div>
-
                 <p className="text-xs text-amber-700 text-center mt-3">
                   ⚡ {isVi ? 'Quét QR để tự điền số tiền và nội dung. Trạng thái tự động cập nhật sau chuyển khoản.' : 'Scan QR to auto-fill. Status updates automatically.'}
                 </p>
               </div>
             )}
 
-            {/* Deposit paid confirmation */}
+            {/* Deposit paid */}
             {isDepositPaid && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -367,11 +401,19 @@ const FoodInvoice = () => {
             {order.notes && (
               <div>
                 <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">
-                  {isVi ? 'Ghi chú' : 'Notes'}
+                  📝 {isVi ? 'Ghi chú' : 'Notes'}
                 </h3>
                 <p className="text-foreground bg-secondary rounded-lg p-3">{order.notes}</p>
               </div>
             )}
+
+            {/* Timestamp */}
+            <div className="bg-secondary/50 rounded-lg p-3 text-center">
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {isVi ? 'Thời gian đặt:' : 'Order time:'} {format(new Date(order.created_at), 'HH:mm - EEEE, dd/MM/yyyy', { locale: viLocale })}
+              </p>
+            </div>
 
             {/* Footer */}
             <div className="border-t border-border pt-4 space-y-3 text-xs text-muted-foreground">
@@ -386,11 +428,6 @@ const FoodInvoice = () => {
                 <p>📧 tuandatluxuryflc36hotel@gmail.com</p>
               </div>
             </div>
-
-            {/* Timestamp */}
-            <p className="text-xs text-muted-foreground text-center pt-2">
-              {isVi ? 'Thời gian đặt:' : 'Order time:'} {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: viLocale })}
-            </p>
           </div>
         </motion.div>
 
