@@ -124,7 +124,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange }: Props) 
               >
                 Tất cả
               </Button>
-              {categories.map(cat => (
+              {categories.map((cat: string) => (
                 <Button
                   key={cat}
                   variant={selectedCat === cat ? 'default' : 'outline'}
