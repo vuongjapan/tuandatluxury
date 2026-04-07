@@ -23,26 +23,28 @@ interface Props {
 }
 
 const IndividualFoodSelector = ({ open, onClose, items, onItemsChange }: Props) => {
-  const { menuItems, loading } = useMenuItems();
+  const { allItems, loading } = useMenuItems();
   const { formatPrice } = useLanguage();
   const [search, setSearch] = useState('');
 
+  const activeItems = useMemo(() => allItems.filter(m => m.price_vnd > 0), [allItems]);
+
   const categories = useMemo(() => {
-    const cats = new Set(menuItems.filter(m => m.is_active && m.price_vnd > 0).map(m => m.category));
+    const cats = new Set(activeItems.map(m => m.category));
     return Array.from(cats);
-  }, [menuItems]);
+  }, [activeItems]);
 
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
 
   const filteredItems = useMemo(() => {
-    let list = menuItems.filter(m => m.is_active && m.price_vnd > 0);
+    let list = activeItems;
     if (selectedCat) list = list.filter(m => m.category === selectedCat);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(m => m.name_vi.toLowerCase().includes(q) || m.name_en.toLowerCase().includes(q));
     }
     return list;
-  }, [menuItems, selectedCat, search]);
+  }, [activeItems, selectedCat, search]);
 
   const addItem = (menuItem: any) => {
     const existing = items.find(i => i.id === menuItem.id);
