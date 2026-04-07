@@ -177,7 +177,35 @@ serve(async (req) => {
       .eq("id", room_id)
       .single();
 
-    // Send booking emails
+    // Fetch combo dishes for email
+    const combosWithDishes: any[] = [];
+    for (const combo of comboDetails) {
+      const parts = combo.combo_name?.split(' – ') || [];
+      const menuName = parts.length > 1 ? parts.slice(1).join(' – ') : '';
+      let dishes: any[] = [];
+      if (menuName && combo.dining_item_id) {
+        const { data: menus } = await supabase
+          .from("combo_menus")
+          .select("id, name_vi, name_en")
+          .eq("combo_package_id", combo.dining_item_id)
+          .eq("is_active", true);
+        const matchedMenu = menus?.find((m: any) => m.name_vi === menuName || m.name_en === menuName);
+        if (matchedMenu) {
+          const { data: dishData } = await supabase
+            .from("combo_menu_dishes")
+            .select("name_vi, sort_order")
+            .eq("combo_menu_id", matchedMenu.id)
+            .order("sort_order");
+          dishes = dishData || [];
+        }
+      }
+      combosWithDishes.push({
+        ...combo,
+        dishes,
+      });
+    }
+
+    // Send booking emails with full data
     try {
       const emailUrl = `${supabaseUrl}/functions/v1/send-booking-email`;
       await fetch(emailUrl, {
@@ -190,8 +218,8 @@ serve(async (req) => {
           booking,
           room_name: room?.name_vi || room_id,
           invoice_number: bookingCode,
-          combos: combos || [],
-          combo_total: combo_total || 0,
+          combos_with_dishes: combosWithDishes,
+          food_items: foodItemDetails,
         }),
       });
     } catch (emailErr) {
