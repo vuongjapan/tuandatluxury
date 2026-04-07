@@ -107,11 +107,50 @@ export type Database = {
           },
         ]
       }
+      booking_food_items: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          menu_item_id: string
+          name: string
+          price_vnd: number
+          quantity: number
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          menu_item_id: string
+          name?: string
+          price_vnd?: number
+          quantity?: number
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          menu_item_id?: string
+          name?: string
+          price_vnd?: number
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_food_items_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_code: string
           check_in: string
           check_out: string
+          combo_notes: string | null
           company_name: string | null
           created_at: string
           decoration_notes: string | null
@@ -120,6 +159,8 @@ export type Database = {
           discount_code_amount: number | null
           discount_code_type: string | null
           discount_code_value: number | null
+          extra_person_count: number | null
+          extra_person_surcharge: number | null
           group_size: number | null
           guest_email: string | null
           guest_name: string
@@ -127,6 +168,7 @@ export type Database = {
           guest_phone: string
           guests_count: number
           id: string
+          individual_food_total: number | null
           language: string | null
           member_discount_amount: number | null
           member_discount_percent: number | null
@@ -151,6 +193,7 @@ export type Database = {
           booking_code: string
           check_in: string
           check_out: string
+          combo_notes?: string | null
           company_name?: string | null
           created_at?: string
           decoration_notes?: string | null
@@ -159,6 +202,8 @@ export type Database = {
           discount_code_amount?: number | null
           discount_code_type?: string | null
           discount_code_value?: number | null
+          extra_person_count?: number | null
+          extra_person_surcharge?: number | null
           group_size?: number | null
           guest_email?: string | null
           guest_name: string
@@ -166,6 +211,7 @@ export type Database = {
           guest_phone: string
           guests_count?: number
           id?: string
+          individual_food_total?: number | null
           language?: string | null
           member_discount_amount?: number | null
           member_discount_percent?: number | null
@@ -190,6 +236,7 @@ export type Database = {
           booking_code?: string
           check_in?: string
           check_out?: string
+          combo_notes?: string | null
           company_name?: string | null
           created_at?: string
           decoration_notes?: string | null
@@ -198,6 +245,8 @@ export type Database = {
           discount_code_amount?: number | null
           discount_code_type?: string | null
           discount_code_value?: number | null
+          extra_person_count?: number | null
+          extra_person_surcharge?: number | null
           group_size?: number | null
           guest_email?: string | null
           guest_name?: string
@@ -205,6 +254,7 @@ export type Database = {
           guest_phone?: string
           guests_count?: number
           id?: string
+          individual_food_total?: number | null
           language?: string | null
           member_discount_amount?: number | null
           member_discount_percent?: number | null

@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain } from 'lucide-react';
+import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
+import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,13 +37,13 @@ const TIER_DISCOUNT: Record<MemberTier, number> = {
   super_vip: 15,
 };
 
-interface SelectedCombo {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
+// Guest limits per room type
+const ROOM_GUEST_LIMITS: Record<string, number> = {
+  standard: 2,  // Phòng đơn: max 2
+  deluxe: 4,    // Phòng đôi: max 4
+  family: 4,    // Phòng đôi VIP: max 4
+};
+const EXTRA_PERSON_SURCHARGE_PERCENT = 0.3; // 30% per extra person
 
 const Booking = () => {
   const [searchParams] = useSearchParams();
@@ -72,8 +73,10 @@ const Booking = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
-  const [selectedCombos, setSelectedCombos] = useState<SelectedCombo[]>([]);
-  const [comboSelection, setComboSelection] = useState<ComboSelection | null>(null);
+  const [comboSelections, setComboSelections] = useState<ComboSelection[]>([]);
+  const [comboNotes, setComboNotes] = useState('');
+  const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
+  const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
   const [appliedDiscountCode, setAppliedDiscountCode] = useState<DiscountCode | null>(null);
 
   // Promotion-specific fields
@@ -94,6 +97,15 @@ const Booking = () => {
   const room = rooms.find((r) => r.id === roomId) || rooms[0];
   const nightCount = checkIn && checkOut ? Math.max(differenceInDays(checkOut, checkIn), 1) : 0;
   const calendarLocale = localeMap[language] || vi;
+  const guestCount = parseInt(guests) || 2;
+
+  // Guest limit & surcharge
+  const standardCapacity = useMemo(() => {
+    if (!room) return 2;
+    return (ROOM_GUEST_LIMITS[room.id] || room.capacity || 2) * quantity;
+  }, [room, quantity]);
+
+  const extraPersonCount = useMemo(() => Math.max(0, guestCount - standardCapacity), [guestCount, standardCapacity]);
 
   // Active promotion
   const activePromo = useMemo(() => {
@@ -103,12 +115,6 @@ const Booking = () => {
 
   const isGroupPromo = promoType === 'group' || (activePromo as any)?.promo_type === 'group';
   const isCouplePromo = promoType === 'couple' || (activePromo as any)?.promo_type === 'couple';
-
-  // Filter combo items from dining
-  const comboItems = useMemo(() => 
-    diningItems.filter(item => item.is_combo && item.is_active),
-    [diningItems]
-  );
 
   // Check if combo is required for selected dates
   const comboRequired = useMemo(() => {
@@ -127,10 +133,12 @@ const Booking = () => {
   }, [checkIn, checkOut, nightCount, room, isDateAvailable]);
 
   const comboTotal = useMemo(() => {
-    const oldTotal = selectedCombos.reduce((sum, c) => sum + c.price * c.quantity, 0);
-    const newTotal = comboSelection ? comboSelection.pricePerPerson * comboSelection.quantity : 0;
-    return oldTotal + newTotal;
-  }, [selectedCombos, comboSelection]);
+    return comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0);
+  }, [comboSelections]);
+
+  const individualFoodTotal = useMemo(() => {
+    return individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0);
+  }, [individualFoods]);
 
   const roomTotal = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0 || !room) return 0;
@@ -143,7 +151,13 @@ const Booking = () => {
     return total * quantity;
   }, [checkIn, checkOut, nightCount, room, getRoomPrice, quantity]);
 
-  // === FLASH SALE: Check if current room has an active flash sale ===
+  // Extra person surcharge = 30% of room price per extra person
+  const extraPersonSurcharge = useMemo(() => {
+    if (extraPersonCount <= 0 || roomTotal <= 0) return 0;
+    return Math.round(roomTotal * EXTRA_PERSON_SURCHARGE_PERCENT * extraPersonCount / quantity);
+  }, [extraPersonCount, roomTotal, quantity]);
+
+  // === FLASH SALE ===
   const activeFlashSaleItem = useMemo(() => {
     if (!roomId || flashSales.length === 0) return null;
     for (const sale of flashSales) {
@@ -155,18 +169,16 @@ const Booking = () => {
 
   const flashSaleDiscount = useMemo(() => {
     if (!activeFlashSaleItem || roomTotal <= 0) return 0;
-    // Flash sale replaces room price per night with sale_price
     const originalPerNight = activeFlashSaleItem.original_price;
     const salePerNight = activeFlashSaleItem.sale_price;
     if (originalPerNight <= 0) return 0;
-    const discountPerNight = originalPerNight - salePerNight;
-    return discountPerNight * nightCount * quantity;
+    return (originalPerNight - salePerNight) * nightCount * quantity;
   }, [activeFlashSaleItem, roomTotal, nightCount, quantity]);
 
-  // === GLOBAL DISCOUNT: Check active global discounts for rooms ===
+  // === GLOBAL DISCOUNT ===
   const activeGlobalDiscount = useMemo(() => {
     return globalDiscounts.find(gd => {
-      if (gd.applies_to === 'food') return false; // skip food-only
+      if (gd.applies_to === 'food') return false;
       const items = (gd as any).applies_to_items || [];
       if (items.length > 0 && !items.includes(roomId)) return false;
       return true;
@@ -178,7 +190,7 @@ const Booking = () => {
     return Math.round(roomTotal * activeGlobalDiscount.discount_percent / 100);
   }, [activeGlobalDiscount, roomTotal]);
 
-  // === SMART PRICING: Check active rules ===
+  // === SMART PRICING ===
   const activeSmartRule = useMemo(() => {
     if (!checkIn || smartRules.length === 0) return null;
     const now = new Date();
@@ -190,13 +202,8 @@ const Booking = () => {
       const items = (rule as any).applies_to_items || [];
       if (items.length > 0 && !items.includes(roomId)) continue;
 
-      if (rule.rule_type === 'early_bird' && rule.min_days_advance && daysAdvance >= rule.min_days_advance) {
-        return rule;
-      }
-      if (rule.rule_type === 'day_of_week' && rule.day_of_week !== null && checkInDay === rule.day_of_week) {
-        return rule;
-      }
-      // occupancy type would need availability data - skip for now
+      if (rule.rule_type === 'early_bird' && rule.min_days_advance && daysAdvance >= rule.min_days_advance) return rule;
+      if (rule.rule_type === 'day_of_week' && rule.day_of_week !== null && checkInDay === rule.day_of_week) return rule;
     }
     return null;
   }, [checkIn, smartRules, roomId]);
@@ -212,8 +219,6 @@ const Booking = () => {
   const promoDiscountPercent = useMemo(() => {
     if (!activePromo) return 0;
     let base = activePromo.discount_percent || 0;
-    
-    // For group promos, add tier-based discount from group_discount_tiers
     if (isGroupPromo && groupSize) {
       const size = parseInt(groupSize) || 0;
       const tiers = (activePromo as any).group_discount_tiers || [];
@@ -227,29 +232,26 @@ const Booking = () => {
     return base;
   }, [activePromo, isGroupPromo, groupSize]);
 
-  // Discount code calculation - respect applies_to setting
+  // Discount code calculation
   const discountCodeAmount = useMemo(() => {
     if (!appliedDiscountCode) return 0;
-    let base = roomTotal + comboTotal;
-    if (appliedDiscountCode.applies_to === 'room') {
-      base = roomTotal;
-    } else if (appliedDiscountCode.applies_to === 'food') {
-      base = comboTotal;
-    }
+    let base = roomTotal + comboTotal + individualFoodTotal;
+    if (appliedDiscountCode.applies_to === 'room') base = roomTotal;
+    else if (appliedDiscountCode.applies_to === 'food') base = comboTotal + individualFoodTotal;
     if (appliedDiscountCode.discount_type === 'percent') {
       return Math.round(base * appliedDiscountCode.discount_value / 100);
     }
     return Math.min(appliedDiscountCode.discount_value, base);
-  }, [appliedDiscountCode, roomTotal, comboTotal]);
+  }, [appliedDiscountCode, roomTotal, comboTotal, individualFoodTotal]);
 
   const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
-  const originalPrice = roomTotal + comboTotal;
+  const originalPrice = roomTotal + extraPersonSurcharge + comboTotal + individualFoodTotal;
   const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
   const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount;
   const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
   const totalPrice = Math.max(0, originalPrice - discountAmount);
 
-  // Collect all applied promotions for display and invoice
+  // Applied promotions for display
   const appliedPromotions = useMemo(() => {
     const list: { name: string; amount: number; badge?: string }[] = [];
     if (flashSaleDiscount > 0 && activeFlashSaleItem) {
@@ -264,24 +266,13 @@ const Booking = () => {
     return list;
   }, [flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
-  const hasSelectedCombo = selectedCombos.length > 0 && selectedCombos.some(c => c.quantity > 0) || comboSelection !== null;
+  // Combo validation
+  const totalComboServings = comboSelections.reduce((s, c) => s + c.quantity, 0);
+  const hasSelectedCombo = comboSelections.length > 0;
+  const comboServingsMatch = totalComboServings === guestCount;
+  const comboServingsError = hasSelectedCombo && !comboServingsMatch;
   const comboValidationError = comboRequired && !hasSelectedCombo;
-
-  const toggleCombo = (item: typeof comboItems[0]) => {
-    setSelectedCombos(prev => {
-      const existing = prev.find(c => c.id === item.id);
-      if (existing) {
-        return prev.filter(c => c.id !== item.id);
-      }
-      return [...prev, { id: item.id, name: item.name_vi, price: item.price_vnd, quantity: 1 }];
-    });
-  };
-
-  const updateComboQty = (id: string, delta: number) => {
-    setSelectedCombos(prev => prev.map(c => 
-      c.id === id ? { ...c, quantity: Math.max(1, c.quantity + delta) } : c
-    ));
-  };
+  const multiComboNeedsNotes = comboSelections.length >= 2 && !comboNotes.trim();
 
   const availableServices = [
     { id: 'dining', label: 'Ăn uống / Tiệc', labelEn: 'Dining / Banquet' },
@@ -293,50 +284,51 @@ const Booking = () => {
   ];
 
   const toggleService = (serviceId: string) => {
-    setSpecialServices(prev => 
-      prev.includes(serviceId) ? prev.filter(s => s !== serviceId) : [...prev, serviceId]
-    );
+    setSpecialServices(prev => prev.includes(serviceId) ? prev.filter(s => s !== serviceId) : [...prev, serviceId]);
   };
 
   const [submitting, setSubmitting] = useState(false);
 
+  const canSubmit = useMemo(() => {
+    if (!name || !phone || !checkIn || !checkOut) return false;
+    if (!allNightsAvailable) return false;
+    if (comboValidationError) return false;
+    if (comboServingsError) return false;
+    if (multiComboNeedsNotes) return false;
+    if (isGroupPromo && !companyName) return false;
+    return true;
+  }, [name, phone, checkIn, checkOut, allNightsAvailable, comboValidationError, comboServingsError, multiComboNeedsNotes, isGroupPromo, companyName]);
+
   const handleSubmit = async () => {
-    if (!name || !phone || !checkIn || !checkOut) {
+    if (!canSubmit) {
+      if (comboServingsError) {
+        toast({ title: `Tổng số suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' });
+        return;
+      }
+      if (multiComboNeedsNotes) {
+        toast({ title: 'Vui lòng nhập ghi chú yêu cầu ăn uống khi chọn nhiều loại combo', variant: 'destructive' });
+        return;
+      }
       toast({ title: 'Vui lòng điền đầy đủ thông tin', variant: 'destructive' });
-      return;
-    }
-    if (!allNightsAvailable) {
-      toast({ title: 'Một số đêm đã đóng bán, vui lòng chọn ngày khác', variant: 'destructive' });
-      return;
-    }
-    if (comboValidationError) {
-      toast({ title: 'Ngày bạn chọn yêu cầu chọn ít nhất 1 combo ăn uống', variant: 'destructive' });
-      return;
-    }
-    if (isGroupPromo && !companyName) {
-      toast({ title: 'Vui lòng nhập tên công ty/đoàn', variant: 'destructive' });
       return;
     }
     setSubmitting(true);
     try {
-      const combosPayload = selectedCombos.filter(c => c.quantity > 0).map(c => ({
-        dining_item_id: c.id,
-        combo_name: c.name,
-        price_vnd: c.price,
+      const combosPayload = comboSelections.map(c => ({
+        dining_item_id: c.packageId,
+        combo_name: `${c.packageName} – ${c.menuName}`,
+        price_vnd: c.pricePerPerson,
         quantity: c.quantity,
       }));
 
-      // Add new combo selection to payload
-      if (comboSelection) {
-        combosPayload.push({
-          dining_item_id: comboSelection.packageId,
-          combo_name: `${comboSelection.packageName} – ${comboSelection.menuName}`,
-          price_vnd: comboSelection.pricePerPerson,
-          quantity: comboSelection.quantity,
-        });
-      }
+      const foodItemsPayload = individualFoods.map(f => ({
+        menu_item_id: f.id,
+        name: f.name,
+        price_vnd: f.price,
+        quantity: f.quantity,
+      }));
 
-      const serviceLabels = specialServices.map(id => 
+      const serviceLabels = specialServices.map(id =>
         availableServices.find(s => s.id === id)?.label || id
       ).join(', ');
 
@@ -352,16 +344,21 @@ const Booking = () => {
           guest_email: email,
           guest_phone: phone,
           guest_notes: notes,
-          check_in: format(checkIn, 'yyyy-MM-dd'),
-          check_out: format(checkOut, 'yyyy-MM-dd'),
-          guests_count: parseInt(guests),
+          check_in: format(checkIn!, 'yyyy-MM-dd'),
+          check_out: format(checkOut!, 'yyyy-MM-dd'),
+          guests_count: guestCount,
           total_price_vnd: totalPrice,
           original_price_vnd: originalPrice,
           room_quantity: quantity,
           language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: comboTotal > 0 ? comboTotal : undefined,
-          // Promotion data
+          combo_notes: comboNotes || undefined,
+          food_items: foodItemsPayload.length > 0 ? foodItemsPayload : undefined,
+          individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
+          extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
+          extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
+          // Promotions
           promotion_id: activePromo?.id || undefined,
           promotion_name: [
             activePromo ? (activePromo.title_vi || activePromo.title_en) : null,
@@ -394,6 +391,9 @@ const Booking = () => {
   if (!room) return null;
 
   const isVi = language === 'vi';
+
+  // Max guests for select
+  const maxGuestsForRoom = (ROOM_GUEST_LIMITS[roomId] || 4) * quantity + 4; // Allow up to 4 extra
 
   return (
     <div className="min-h-screen bg-background">
@@ -432,15 +432,12 @@ const Booking = () => {
 
           {/* Member discount banner */}
           {!activePromo && user && memberDiscountPercent > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
               <p className="text-sm text-foreground">
-                ⭐ {isVi 
+                ⭐ {isVi
                   ? `Bạn đang được giảm ${memberDiscountPercent}% (Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'})`
-                  : `${memberDiscountPercent}% discount (${user.tier.replace('_',' ').toUpperCase()})`}
+                  : `${memberDiscountPercent}% discount (${user.tier.replace('_', ' ').toUpperCase()})`}
               </p>
             </motion.div>
           )}
@@ -452,7 +449,7 @@ const Booking = () => {
               transition={{ delay: 0.2 }}
               className="lg:col-span-2 space-y-6"
             >
-              {/* Flash Sale banner for selected room */}
+              {/* Flash Sale banner */}
               {activeFlashSaleItem && (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-300 dark:border-orange-700 rounded-xl p-4 flex items-center gap-3">
@@ -523,8 +520,8 @@ const Booking = () => {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6].map((n) => (
-                          <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                        {Array.from({ length: maxGuestsForRoom }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n} người lớn</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -542,6 +539,23 @@ const Booking = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Extra person surcharge notice */}
+                {extraPersonCount > 0 && (
+                  <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                    className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 flex items-start gap-2">
+                    <UserPlus className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-amber-800 dark:text-amber-300">
+                        Phụ thu thêm {extraPersonCount} người
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                        Phòng {room.name[language]} tối đa {ROOM_GUEST_LIMITS[roomId] || room.capacity} người/phòng. 
+                        Phụ thu 30% giá phòng cho mỗi người vượt = <strong>{formatPrice(extraPersonSurcharge)}</strong>
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
               </div>
 
               {/* Group/Corporate promo form */}
@@ -553,8 +567,8 @@ const Booking = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Tên công ty / đoàn *' : 'Company / Group Name *'}</label>
-                      <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder={isVi ? 'Công ty ABC' : 'ABC Company'} />
+                      <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Tên công ty / đoàn *' : 'Company *'}</label>
+                      <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Công ty ABC" />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Số lượng người *' : 'Group Size *'}</label>
@@ -562,22 +576,17 @@ const Booking = () => {
                     </div>
                   </div>
                   {groupSize && promoDiscountPercent > 0 && (
-                    <p className="text-sm text-primary font-medium">
-                      🎉 {isVi ? `Đoàn ${groupSize} người → Giảm ${promoDiscountPercent}%` : `Group of ${groupSize} → ${promoDiscountPercent}% off`}
-                    </p>
+                    <p className="text-sm text-primary font-medium">🎉 Đoàn {groupSize} người → Giảm {promoDiscountPercent}%</p>
                   )}
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">{isVi ? 'Nhu cầu dịch vụ' : 'Service Needs'}</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Nhu cầu dịch vụ</label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {availableServices.map(service => (
                         <label key={service.id} className={cn(
                           "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
                           specialServices.includes(service.id) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                         )}>
-                          <Checkbox 
-                            checked={specialServices.includes(service.id)} 
-                            onCheckedChange={() => toggleService(service.id)} 
-                          />
+                          <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
                           {isVi ? service.label : service.labelEn}
                         </label>
                       ))}
@@ -594,21 +603,18 @@ const Booking = () => {
                     <h2 className="font-display text-xl font-semibold">{isVi ? 'Ưu đãi cặp đôi / gia đình' : 'Couple / Family Offer'}</h2>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Yêu cầu trang trí' : 'Decoration Requests'}</label>
-                    <Textarea value={decorationNotes} onChange={e => setDecorationNotes(e.target.value)} rows={2} placeholder={isVi ? 'VD: Trang trí hoa, nến, bóng bay...' : 'E.g.: Flowers, candles, balloons...'} />
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu trang trí</label>
+                    <Textarea value={decorationNotes} onChange={e => setDecorationNotes(e.target.value)} rows={2} placeholder="VD: Trang trí hoa, nến, bóng bay..." />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">{isVi ? 'Dịch vụ đi kèm' : 'Additional Services'}</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Dịch vụ đi kèm</label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {availableServices.map(service => (
                         <label key={service.id} className={cn(
                           "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
                           specialServices.includes(service.id) ? "border-pink-400 bg-pink-50 dark:bg-pink-900/20" : "border-border hover:border-pink-300"
                         )}>
-                          <Checkbox 
-                            checked={specialServices.includes(service.id)} 
-                            onCheckedChange={() => toggleService(service.id)} 
-                          />
+                          <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
                           {isVi ? service.label : service.labelEn}
                         </label>
                       ))}
@@ -618,12 +624,22 @@ const Booking = () => {
               )}
 
               {/* Combo ăn uống section */}
-              {/* New Combo Selector */}
               <ComboSelector
                 required={comboRequired}
-                selection={comboSelection}
-                onSelect={setComboSelection}
-                guestCount={parseInt(guests)}
+                selections={comboSelections}
+                onSelectionsChange={setComboSelections}
+                guestCount={guestCount}
+                comboNotes={comboNotes}
+                onComboNotesChange={setComboNotes}
+                onOpenFoodOrder={() => setFoodSelectorOpen(true)}
+              />
+
+              {/* Individual Food Selector modal */}
+              <IndividualFoodSelector
+                open={foodSelectorOpen}
+                onClose={() => setFoodSelectorOpen(false)}
+                items={individualFoods}
+                onItemsChange={setIndividualFoods}
               />
 
               {/* Guest info */}
@@ -683,7 +699,7 @@ const Booking = () => {
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('search.guests')}</span>
-                    <span className="font-medium">{guests}</span>
+                    <span className="font-medium">{guestCount} người lớn</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.rooms_count')}</span>
@@ -691,35 +707,57 @@ const Booking = () => {
                   </div>
                   {roomTotal > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tiền phòng</span>
+                      <span className="text-muted-foreground">🏨 Tiền phòng</span>
                       <span className="font-medium">{formatPrice(roomTotal)}</span>
+                    </div>
+                  )}
+                  {extraPersonSurcharge > 0 && (
+                    <div className="flex justify-between text-amber-700 dark:text-amber-400">
+                      <span>👤 Phụ thu thêm {extraPersonCount} người</span>
+                      <span className="font-medium">+{formatPrice(extraPersonSurcharge)}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Combos in summary */}
-                {(selectedCombos.some(c => c.quantity > 0) || comboSelection) && (
+                {/* Combo summary */}
+                {comboSelections.length > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
                     <h4 className="font-semibold text-sm flex items-center gap-1">
-                      <UtensilsCrossed className="h-3.5 w-3.5 text-primary" /> Combo ăn uống
+                      <UtensilsCrossed className="h-3.5 w-3.5 text-primary" /> Suất ăn (combo)
                     </h4>
-                    {selectedCombos.filter(c => c.quantity > 0).map(c => (
-                      <div key={c.id} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{c.name} ×{c.quantity}</span>
-                        <span className="font-medium">{formatPrice(c.price * c.quantity)}</span>
+                    {comboSelections.map((c, i) => (
+                      <div key={i} className="text-sm space-y-0.5">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground truncate mr-2">{c.packageName} – {c.menuName} ×{c.quantity}</span>
+                          <span className="font-medium shrink-0">{formatPrice(c.pricePerPerson * c.quantity)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground pl-2 line-clamp-1">{c.dishes.slice(0, 4).join(', ')}...</p>
                       </div>
                     ))}
-                    {comboSelection && (
-                      <div className="text-sm space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">{comboSelection.packageName} – {comboSelection.menuName} ×{comboSelection.quantity}</span>
-                          <span className="font-medium">{formatPrice(comboSelection.pricePerPerson * comboSelection.quantity)}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{comboSelection.dishes.slice(0, 5).join(', ')}...</p>
-                      </div>
-                    )}
                   </div>
                 )}
+
+                {/* Individual food summary */}
+                <div className="border-t border-border pt-3 space-y-2">
+                  <h4 className="font-semibold text-sm flex items-center gap-1">
+                    <ShoppingBag className="h-3.5 w-3.5 text-primary" /> Món ăn riêng
+                  </h4>
+                  {individualFoods.length > 0 ? (
+                    <>
+                      {individualFoods.map(f => (
+                        <div key={f.id} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground truncate mr-2">{f.name} ×{f.quantity}</span>
+                          <span className="font-medium shrink-0">{formatPrice(f.price * f.quantity)}</span>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Chưa chọn</p>
+                  )}
+                  <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setFoodSelectorOpen(true)}>
+                    <ShoppingBag className="h-3 w-3 mr-1" /> Đặt món riêng
+                  </Button>
+                </div>
 
                 {/* Promotion info in summary */}
                 {(isGroupPromo || isCouplePromo) && (
@@ -742,7 +780,7 @@ const Booking = () => {
                 {/* Discount code input */}
                 {originalPrice > 0 && (
                   <div className="border-t border-border pt-3">
-                    <h4 className="font-semibold text-sm mb-2">{isVi ? '🎟️ Mã giảm giá' : '🎟️ Discount Code'}</h4>
+                    <h4 className="font-semibold text-sm mb-2">🎟️ Mã giảm giá</h4>
                     <DiscountCodeInput
                       orderType="room"
                       orderAmount={originalPrice}
@@ -753,10 +791,10 @@ const Booking = () => {
                   </div>
                 )}
 
-                {/* Auto-applied promotions banner */}
+                {/* Auto-applied promotions */}
                 {appliedPromotions.length > 0 && (
                   <div className="border-t border-border pt-3 space-y-2">
-                    <h4 className="font-semibold text-sm flex items-center gap-1">🎁 {isVi ? 'Ưu đãi tự động áp dụng' : 'Auto-applied offers'}</h4>
+                    <h4 className="font-semibold text-sm flex items-center gap-1">🎁 Ưu đãi tự động áp dụng</h4>
                     {appliedPromotions.map((p, i) => (
                       <div key={i} className="flex items-center justify-between text-sm bg-primary/5 rounded-lg px-3 py-1.5">
                         <div className="flex items-center gap-2 min-w-0">
@@ -825,12 +863,22 @@ const Booking = () => {
 
                 {!allNightsAvailable && nightCount > 0 && (
                   <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                    Một số đêm trong khoảng ngày đã chọn đang đóng bán. Vui lòng chọn ngày khác.
+                    Một số đêm trong khoảng ngày đã chọn đang đóng bán.
                   </div>
                 )}
                 {comboValidationError && (
                   <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-300 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
                     ⚠️ Vui lòng chọn ít nhất 1 combo ăn uống.
+                  </div>
+                )}
+                {comboServingsError && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+                    ⚠️ Tổng suất combo ({totalComboServings}) phải bằng số người lớn ({guestCount}).
+                  </div>
+                )}
+                {multiComboNeedsNotes && (
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 rounded-lg p-3 text-sm text-amber-700">
+                    ⚠️ Vui lòng nhập ghi chú ăn uống khi chọn nhiều loại combo.
                   </div>
                 )}
                 <div className="border-t border-border pt-4">
@@ -845,7 +893,7 @@ const Booking = () => {
                     </div>
                   )}
                 </div>
-                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting || !allNightsAvailable || comboValidationError}>
+                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting || !canSubmit}>
                   {submitting ? t('booking.processing') : t('booking.confirm')}
                 </Button>
               </div>

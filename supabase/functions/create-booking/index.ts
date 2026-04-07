@@ -28,8 +28,9 @@ serve(async (req) => {
     const { 
       room_id, guest_name, guest_email, guest_phone, guest_notes, 
       check_in, check_out, guests_count, total_price_vnd, room_quantity, 
-      language, combos, combo_total,
-      // New promotion fields
+      language, combos, combo_total, combo_notes,
+      food_items, individual_food_total,
+      extra_person_count, extra_person_surcharge,
       promotion_id, promotion_name, promotion_discount_percent, promotion_discount_amount,
       member_discount_percent, member_discount_amount,
       company_name, group_size, special_services, decoration_notes,
@@ -49,7 +50,6 @@ serve(async (req) => {
 
     // Generate booking code
     const prefix = generateBookingCodePrefix();
-    
     const { data: lastBookings } = await supabase
       .from("bookings")
       .select("booking_code")
@@ -59,22 +59,17 @@ serve(async (req) => {
 
     let nextNumber = 1;
     if (lastBookings && lastBookings.length > 0) {
-      const lastCode = lastBookings[0].booking_code;
-      const lastNum = parseInt(lastCode.slice(-5));
-      if (!isNaN(lastNum)) {
-        nextNumber = lastNum + 1;
-      }
+      const lastNum = parseInt(lastBookings[0].booking_code.slice(-5));
+      if (!isNaN(lastNum)) nextNumber = lastNum + 1;
     }
 
     const bookingCode = `${prefix}${String(nextNumber).padStart(5, '0')}`;
-
     const totalPrice = total_price_vnd || 0;
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
-
     const sepayQrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(bookingCode)}`;
 
-    // Insert booking with promotion data
+    // Insert booking
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -98,7 +93,6 @@ serve(async (req) => {
         sepay_va: VA_ACCOUNT,
         sepay_bank: VA_BANK,
         sepay_qr_url: sepayQrUrl,
-        // Promotion fields
         promotion_id: promotion_id || null,
         promotion_name: promotion_name || null,
         promotion_discount_percent: promotion_discount_percent || 0,
@@ -113,13 +107,17 @@ serve(async (req) => {
         discount_code_amount: discount_code_amount || 0,
         discount_code_type: discount_code_type || null,
         discount_code_value: discount_code_value || 0,
+        extra_person_count: extra_person_count || 0,
+        extra_person_surcharge: extra_person_surcharge || 0,
+        individual_food_total: individual_food_total || 0,
+        combo_notes: combo_notes || null,
       })
       .select()
       .single();
 
     if (bookingError) throw bookingError;
 
-    // Insert booking combos if any
+    // Insert booking combos
     let comboDetails: any[] = [];
     if (combos && Array.isArray(combos) && combos.length > 0) {
       const comboInserts = combos.map((c: any) => ({
@@ -129,17 +127,30 @@ serve(async (req) => {
         price_vnd: c.price_vnd,
         quantity: c.quantity,
       }));
-
       const { data: insertedCombos, error: comboError } = await supabase
         .from("booking_combos")
         .insert(comboInserts)
         .select();
+      if (comboError) console.error("Combo insert error:", comboError);
+      else comboDetails = insertedCombos || [];
+    }
 
-      if (comboError) {
-        console.error("Combo insert error:", comboError);
-      } else {
-        comboDetails = insertedCombos || [];
-      }
+    // Insert individual food items
+    let foodItemDetails: any[] = [];
+    if (food_items && Array.isArray(food_items) && food_items.length > 0) {
+      const foodInserts = food_items.map((f: any) => ({
+        booking_id: booking.id,
+        menu_item_id: f.menu_item_id,
+        name: f.name,
+        price_vnd: f.price_vnd,
+        quantity: f.quantity,
+      }));
+      const { data: insertedFoods, error: foodError } = await supabase
+        .from("booking_food_items")
+        .insert(foodInserts)
+        .select();
+      if (foodError) console.error("Food items insert error:", foodError);
+      else foodItemDetails = insertedFoods || [];
     }
 
     // Create invoice
@@ -183,7 +194,6 @@ serve(async (req) => {
           combo_total: combo_total || 0,
         }),
       });
-      console.log("Email function called successfully");
     } catch (emailErr) {
       console.error("Email send error (non-blocking):", emailErr);
     }
@@ -195,6 +205,7 @@ serve(async (req) => {
         invoice,
         booking_code: bookingCode,
         combos: comboDetails,
+        food_items: foodItemDetails,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
