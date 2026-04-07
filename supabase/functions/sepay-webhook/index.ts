@@ -278,44 +278,40 @@ serve(async (req) => {
 
     // Send confirmation email
     try {
-      const smtpPassword = Deno.env.get("SMTP_PASSWORD");
-      if (smtpPassword) {
-        const { data: inv } = await supabase
-          .from("invoices")
-          .select("invoice_number")
-          .eq("booking_id", booking.id)
-          .maybeSingle();
+      const { data: inv } = await supabase
+        .from("invoices")
+        .select("invoice_number")
+        .eq("booking_id", booking.id)
+        .maybeSingle();
 
-        const updatedBooking = { ...booking, payment_status: "DEPOSIT_PAID" };
-        const roomName = booking.rooms?.name_vi || booking.room_id;
-        const invoiceNumber = inv?.invoice_number || booking.booking_code;
-        const emailHtml = buildDepositConfirmHtml(updatedBooking, roomName, invoiceNumber);
+      const updatedBooking = { ...booking, payment_status: "DEPOSIT_PAID" };
+      const roomName = booking.rooms?.name_vi || booking.room_id;
+      const invoiceNumber = inv?.invoice_number || booking.booking_code;
 
-        const transporter = nodemailer.createTransport({
-          host: SMTP_HOST,
-          port: SMTP_PORT,
-          secure: false,
-          auth: { user: SMTP_EMAIL, pass: smtpPassword },
-        });
+      // Fetch combos with dishes and food items
+      const combosWithDishes = await fetchCombosWithDishes(supabase, booking.id);
+      const { data: foodItems } = await supabase
+        .from("booking_food_items")
+        .select("*")
+        .eq("booking_id", booking.id);
 
-        if (booking.guest_email) {
-          await transporter.sendMail({
-            from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
-            to: booking.guest_email,
-            subject: `Hóa đơn ${booking.booking_code} - Đã cọc 50%`,
-            html: emailHtml,
-          });
-          console.log("Deposit confirmation email sent to guest");
-        }
-
-        await transporter.sendMail({
-          from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
-          to: ADMIN_EMAIL,
-          subject: `✅ Đã nhận cọc ${booking.booking_code} - ${booking.guest_name}`,
-          html: emailHtml,
-        });
-        console.log("Deposit confirmation email sent to admin");
-      }
+      const supabaseFunctionsUrl = `${supabaseUrl}/functions/v1`;
+      await fetch(`${supabaseFunctionsUrl}/send-booking-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          type: 'deposit_paid',
+          booking: updatedBooking,
+          room_name: roomName,
+          invoice_number: invoiceNumber,
+          combos_with_dishes: combosWithDishes,
+          food_items: foodItems || [],
+        }),
+      });
+      console.log("Deposit confirmation email triggered via send-booking-email");
     } catch (emailErr) {
       console.error("Email error (non-blocking):", emailErr);
     }
