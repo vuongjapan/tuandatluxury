@@ -14,6 +14,7 @@ interface RoomCardProps {
 const RoomCard = ({ room, index }: RoomCardProps) => {
   const { language, t, formatPrice } = useLanguage();
   const navigate = useNavigate();
+  const { highlights } = useRoomAmenities();
   const imgSrc = optimizeImageUrl(room.image, { width: 640, quality: 70 });
 
   return (
