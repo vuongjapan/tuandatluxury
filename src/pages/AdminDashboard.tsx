@@ -31,8 +31,9 @@ import AdminCombo from '@/components/AdminCombo';
 import AdminSpecialPrices from '@/components/AdminSpecialPrices';
 import AdminCuisineMedia from '@/components/admin/AdminCuisineMedia';
 import AdminPromotionSystem from '@/components/admin/AdminPromotionSystem';
+import AdminAmenities from '@/components/admin/AdminAmenities';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'settings' | 'trash';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
