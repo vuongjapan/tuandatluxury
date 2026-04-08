@@ -3,7 +3,7 @@ import { Users, Maximize2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
-import { AMENITY_ICONS } from '@/data/rooms';
+import { useRoomAmenities } from '@/hooks/useRoomAmenities';
 import { optimizeImageUrl } from '@/lib/optimizeImage';
 
 interface RoomCardProps {
@@ -14,6 +14,7 @@ interface RoomCardProps {
 const RoomCard = ({ room, index }: RoomCardProps) => {
   const { language, t, formatPrice } = useLanguage();
   const navigate = useNavigate();
+  const { highlights } = useRoomAmenities();
   const imgSrc = optimizeImageUrl(room.image, { width: 640, quality: 70 });
 
   return (
@@ -51,15 +52,11 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
 
           {/* Amenities */}
           <div className="flex flex-wrap gap-2 mb-5">
-            {room.amenities.slice(0, 5).map((a) => {
-              const amenity = AMENITY_ICONS[a];
-              const label = amenity ? amenity.label[language] || amenity.label['vi'] : a;
-              return (
-                <span key={a} className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/80 px-3 py-1.5 rounded-full border border-border/50 font-medium">
-                  {label}
-                </span>
-              );
-            })}
+            {highlights.map((h) => (
+              <span key={h.id} className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/80 px-3 py-1.5 rounded-full border border-border/50 font-medium">
+                {h.icon} {language === 'vi' ? h.name_vi : h.name_en || h.name_vi}
+              </span>
+            ))}
           </div>
 
           {/* Capacity & Size */}

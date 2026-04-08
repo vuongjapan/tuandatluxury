@@ -1171,6 +1171,42 @@ export type Database = {
         }
         Relationships: []
       }
+      room_amenities: {
+        Row: {
+          category: string
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          name_en: string
+          name_vi: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_vi: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_vi?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       room_daily_availability: {
         Row: {
           created_at: string

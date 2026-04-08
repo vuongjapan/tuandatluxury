@@ -31,8 +31,9 @@ import AdminCombo from '@/components/AdminCombo';
 import AdminSpecialPrices from '@/components/AdminSpecialPrices';
 import AdminCuisineMedia from '@/components/admin/AdminCuisineMedia';
 import AdminPromotionSystem from '@/components/admin/AdminPromotionSystem';
+import AdminAmenities from '@/components/admin/AdminAmenities';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'settings' | 'trash';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'settings' | 'trash';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -165,6 +166,7 @@ const AdminDashboard = () => {
       items: [
         { id: 'bookings', icon: CalendarRange, label: 'Đơn đặt phòng', badge: pendingCount },
         { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
+        { id: 'amenities', icon: Sparkles, label: 'Tiện nghi phòng' },
         { id: 'special-prices', icon: Flame, label: 'Giá đặc biệt' },
       ],
     },
@@ -360,6 +362,7 @@ const AdminDashboard = () => {
           {tab === 'combos' && <AdminCombo />}
           {tab === 'special-prices' && <AdminSpecialPrices />}
           {tab === 'cuisine-media' && <AdminCuisineMedia />}
+          {tab === 'amenities' && <AdminAmenities />}
           {tab === 'settings' && <AdminSettings onBackup={handleBackup} onRestore={handleRestore} />}
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
         </div>
