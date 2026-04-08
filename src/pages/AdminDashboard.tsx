@@ -166,6 +166,7 @@ const AdminDashboard = () => {
       items: [
         { id: 'bookings', icon: CalendarRange, label: 'Đơn đặt phòng', badge: pendingCount },
         { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
+        { id: 'amenities', icon: Sparkles, label: 'Tiện nghi phòng' },
         { id: 'special-prices', icon: Flame, label: 'Giá đặc biệt' },
       ],
     },
