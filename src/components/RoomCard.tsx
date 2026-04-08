@@ -3,7 +3,7 @@ import { Users, Maximize2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Room } from '@/data/rooms';
-import { AMENITY_ICONS } from '@/data/rooms';
+import { useRoomAmenities } from '@/hooks/useRoomAmenities';
 import { optimizeImageUrl } from '@/lib/optimizeImage';
 
 interface RoomCardProps {
