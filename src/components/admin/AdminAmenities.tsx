@@ -31,7 +31,7 @@ const AdminAmenities = () => {
     if (!newItem.name_vi.trim()) return;
     try {
       await upsertAmenity.mutateAsync({
-        category: activeCategory,
+        category: activeCategory as RoomAmenity['category'],
         name_vi: newItem.name_vi,
         name_en: newItem.name_en,
         icon: newItem.icon || '✓',
