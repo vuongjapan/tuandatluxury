@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, Minus, Plus, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus } from 'lucide-react';
+import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
+import BookingRoomCard from '@/components/BookingRoomCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { type DiscountCode, useFlashSales, useGlobalDiscounts, useSmartPricing } from '@/hooks/usePromotionSystem';
@@ -37,13 +38,18 @@ const TIER_DISCOUNT: Record<MemberTier, number> = {
   super_vip: 15,
 };
 
-// Guest limits per room type
 const ROOM_GUEST_LIMITS: Record<string, number> = {
-  standard: 2,  // Phòng đơn: max 2
-  deluxe: 4,    // Phòng đôi: max 4
-  family: 4,    // Phòng đôi VIP: max 4
+  standard: 2,
+  deluxe: 4,
+  family: 4,
 };
-const EXTRA_PERSON_SURCHARGE_PERCENT = 0.3; // 30% per extra person
+const EXTRA_PERSON_SURCHARGE_PERCENT = 0.3;
+
+// Multi-room cart type
+interface RoomCartItem {
+  roomId: string;
+  quantity: number;
+}
 
 const Booking = () => {
   const [searchParams] = useSearchParams();
@@ -58,17 +64,23 @@ const Booking = () => {
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
 
-  const preselectedRoom = searchParams.get('room') || (rooms[0]?.id ?? '');
+  const preselectedRoom = searchParams.get('room') || '';
   const preCheckin = searchParams.get('checkin');
   const preCheckout = searchParams.get('checkout');
   const promoId = searchParams.get('promo');
   const promoType = searchParams.get('promo_type');
 
-  const [roomId, setRoomId] = useState(preselectedRoom);
+  // Multi-room cart
+  const [roomCart, setRoomCart] = useState<RoomCartItem[]>(() => {
+    if (preselectedRoom) {
+      return [{ roomId: preselectedRoom, quantity: 1 }];
+    }
+    return [];
+  });
+
   const [checkIn, setCheckIn] = useState<Date | undefined>(preCheckin ? new Date(preCheckin + 'T00:00:00') : undefined);
   const [checkOut, setCheckOut] = useState<Date | undefined>(preCheckout ? new Date(preCheckout + 'T00:00:00') : undefined);
   const [guests, setGuests] = useState(searchParams.get('guests') || '2');
-  const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -85,7 +97,6 @@ const Booking = () => {
   const [specialServices, setSpecialServices] = useState<string[]>([]);
   const [decorationNotes, setDecorationNotes] = useState('');
 
-  // Auto-fill user info
   useEffect(() => {
     if (user) {
       if (!name) setName(user.fullName);
@@ -94,16 +105,32 @@ const Booking = () => {
     }
   }, [user]);
 
-  const room = rooms.find((r) => r.id === roomId) || rooms[0];
+  // Derived values from cart
+  const selectedRooms = useMemo(() => {
+    return roomCart.filter(item => item.quantity > 0).map(item => ({
+      ...item,
+      room: rooms.find(r => r.id === item.roomId),
+    })).filter(item => item.room);
+  }, [roomCart, rooms]);
+
+  const totalRoomQuantity = useMemo(() => selectedRooms.reduce((s, r) => s + r.quantity, 0), [selectedRooms]);
+  const hasRooms = totalRoomQuantity > 0;
+
+  // Primary room (first selected) for backward compat
+  const primaryRoom = selectedRooms[0]?.room || rooms[0];
+  const primaryRoomId = primaryRoom?.id || '';
+
   const nightCount = checkIn && checkOut ? Math.max(differenceInDays(checkOut, checkIn), 1) : 0;
   const calendarLocale = localeMap[language] || vi;
   const guestCount = parseInt(guests) || 2;
 
-  // Guest limit & surcharge
+  // Standard capacity = sum of all room capacities
   const standardCapacity = useMemo(() => {
-    if (!room) return 2;
-    return (ROOM_GUEST_LIMITS[room.id] || room.capacity || 2) * quantity;
-  }, [room, quantity]);
+    return selectedRooms.reduce((sum, item) => {
+      const limit = ROOM_GUEST_LIMITS[item.roomId] || item.room!.capacity || 2;
+      return sum + limit * item.quantity;
+    }, 0);
+  }, [selectedRooms]);
 
   const extraPersonCount = useMemo(() => Math.max(0, guestCount - standardCapacity), [guestCount, standardCapacity]);
 
@@ -116,74 +143,77 @@ const Booking = () => {
   const isGroupPromo = promoType === 'group' || (activePromo as any)?.promo_type === 'group';
   const isCouplePromo = promoType === 'couple' || (activePromo as any)?.promo_type === 'couple';
 
-  // Check if combo is required for selected dates
   const comboRequired = useMemo(() => {
-    if (!checkIn || !checkOut || !room) return false;
-    return hasComboRequiredDays(room.id, checkIn, checkOut);
-  }, [checkIn, checkOut, room, hasComboRequiredDays]);
+    if (!checkIn || !checkOut) return false;
+    return selectedRooms.some(item => hasComboRequiredDays(item.roomId, checkIn!, checkOut!));
+  }, [checkIn, checkOut, selectedRooms, hasComboRequiredDays]);
 
   const allNightsAvailable = useMemo(() => {
-    if (!checkIn || !checkOut || nightCount <= 0 || !room) return true;
-    const d = new Date(checkIn);
-    for (let i = 0; i < nightCount; i++) {
-      if (!isDateAvailable(room.id, d)) return false;
-      d.setDate(d.getDate() + 1);
+    if (!checkIn || !checkOut || nightCount <= 0) return true;
+    for (const item of selectedRooms) {
+      const d = new Date(checkIn);
+      for (let i = 0; i < nightCount; i++) {
+        if (!isDateAvailable(item.roomId, d)) return false;
+        d.setDate(d.getDate() + 1);
+      }
     }
     return true;
-  }, [checkIn, checkOut, nightCount, room, isDateAvailable]);
+  }, [checkIn, checkOut, nightCount, selectedRooms, isDateAvailable]);
 
-  const comboTotal = useMemo(() => {
-    return comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0);
-  }, [comboSelections]);
+  const comboTotal = useMemo(() => comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0), [comboSelections]);
+  const individualFoodTotal = useMemo(() => individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0), [individualFoods]);
 
-  const individualFoodTotal = useMemo(() => {
-    return individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0);
-  }, [individualFoods]);
+  // Room total for each room type
+  const roomTotals = useMemo(() => {
+    if (!checkIn || !checkOut || nightCount <= 0) return [];
+    return selectedRooms.map(item => {
+      let total = 0;
+      const d = new Date(checkIn);
+      for (let i = 0; i < nightCount; i++) {
+        total += getRoomPrice(item.room!, d);
+        d.setDate(d.getDate() + 1);
+      }
+      return { roomId: item.roomId, room: item.room!, quantity: item.quantity, totalPerRoom: total, subtotal: total * item.quantity };
+    });
+  }, [checkIn, checkOut, nightCount, selectedRooms, getRoomPrice]);
 
-  const roomTotal = useMemo(() => {
-    if (!checkIn || !checkOut || nightCount <= 0 || !room) return 0;
-    let total = 0;
-    const d = new Date(checkIn);
-    for (let i = 0; i < nightCount; i++) {
-      total += getRoomPrice(room, d);
-      d.setDate(d.getDate() + 1);
-    }
-    return total * quantity;
-  }, [checkIn, checkOut, nightCount, room, getRoomPrice, quantity]);
+  const roomTotal = useMemo(() => roomTotals.reduce((s, r) => s + r.subtotal, 0), [roomTotals]);
 
-  // Extra person surcharge = 30% of room price per extra person
+  // Extra person surcharge = 30% of room price per extra person (averaged)
   const extraPersonSurcharge = useMemo(() => {
     if (extraPersonCount <= 0 || roomTotal <= 0) return 0;
-    return Math.round(roomTotal * EXTRA_PERSON_SURCHARGE_PERCENT * extraPersonCount / quantity);
-  }, [extraPersonCount, roomTotal, quantity]);
+    return Math.round(roomTotal * EXTRA_PERSON_SURCHARGE_PERCENT * extraPersonCount / totalRoomQuantity);
+  }, [extraPersonCount, roomTotal, totalRoomQuantity]);
 
   // === FLASH SALE ===
   const activeFlashSaleItem = useMemo(() => {
-    if (!roomId || flashSales.length === 0) return null;
+    if (flashSales.length === 0 || selectedRooms.length === 0) return null;
     for (const sale of flashSales) {
-      const item = (sale.items || []).find(i => i.item_type === 'room' && i.item_id === roomId && i.quantity_sold < i.quantity_limit);
-      if (item) return { ...item, saleName: sale.title_vi };
+      for (const sr of selectedRooms) {
+        const item = (sale.items || []).find(i => i.item_type === 'room' && i.item_id === sr.roomId && i.quantity_sold < i.quantity_limit);
+        if (item) return { ...item, saleName: sale.title_vi };
+      }
     }
     return null;
-  }, [roomId, flashSales]);
+  }, [selectedRooms, flashSales]);
 
   const flashSaleDiscount = useMemo(() => {
     if (!activeFlashSaleItem || roomTotal <= 0) return 0;
     const originalPerNight = activeFlashSaleItem.original_price;
     const salePerNight = activeFlashSaleItem.sale_price;
     if (originalPerNight <= 0) return 0;
-    return (originalPerNight - salePerNight) * nightCount * quantity;
-  }, [activeFlashSaleItem, roomTotal, nightCount, quantity]);
+    return (originalPerNight - salePerNight) * nightCount;
+  }, [activeFlashSaleItem, roomTotal, nightCount]);
 
   // === GLOBAL DISCOUNT ===
   const activeGlobalDiscount = useMemo(() => {
     return globalDiscounts.find(gd => {
       if (gd.applies_to === 'food') return false;
       const items = (gd as any).applies_to_items || [];
-      if (items.length > 0 && !items.includes(roomId)) return false;
+      if (items.length > 0 && !selectedRooms.some(sr => items.includes(sr.roomId))) return false;
       return true;
     }) || null;
-  }, [globalDiscounts, roomId]);
+  }, [globalDiscounts, selectedRooms]);
 
   const globalDiscountAmount = useMemo(() => {
     if (!activeGlobalDiscount || roomTotal <= 0) return 0;
@@ -200,13 +230,12 @@ const Booking = () => {
     for (const rule of smartRules) {
       if (rule.applies_to === 'food') continue;
       const items = (rule as any).applies_to_items || [];
-      if (items.length > 0 && !items.includes(roomId)) continue;
-
+      if (items.length > 0 && !selectedRooms.some(sr => items.includes(sr.roomId))) continue;
       if (rule.rule_type === 'early_bird' && rule.min_days_advance && daysAdvance >= rule.min_days_advance) return rule;
       if (rule.rule_type === 'day_of_week' && rule.day_of_week !== null && checkInDay === rule.day_of_week) return rule;
     }
     return null;
-  }, [checkIn, smartRules, roomId]);
+  }, [checkIn, smartRules, selectedRooms]);
 
   const smartPricingAmount = useMemo(() => {
     if (!activeSmartRule || roomTotal <= 0) return 0;
@@ -232,7 +261,6 @@ const Booking = () => {
     return base;
   }, [activePromo, isGroupPromo, groupSize]);
 
-  // Discount code calculation
   const discountCodeAmount = useMemo(() => {
     if (!appliedDiscountCode) return 0;
     let base = roomTotal + comboTotal + individualFoodTotal;
@@ -251,7 +279,6 @@ const Booking = () => {
   const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
   const totalPrice = Math.max(0, originalPrice - discountAmount);
 
-  // Applied promotions for display
   const appliedPromotions = useMemo(() => {
     const list: { name: string; amount: number; badge?: string }[] = [];
     if (flashSaleDiscount > 0 && activeFlashSaleItem) {
@@ -291,16 +318,33 @@ const Booking = () => {
 
   const canSubmit = useMemo(() => {
     if (!name || !phone || !checkIn || !checkOut) return false;
+    if (!hasRooms) return false;
     if (!allNightsAvailable) return false;
     if (comboValidationError) return false;
     if (comboServingsError) return false;
     if (multiComboNeedsNotes) return false;
     if (isGroupPromo && !companyName) return false;
     return true;
-  }, [name, phone, checkIn, checkOut, allNightsAvailable, comboValidationError, comboServingsError, multiComboNeedsNotes, isGroupPromo, companyName]);
+  }, [name, phone, checkIn, checkOut, hasRooms, allNightsAvailable, comboValidationError, comboServingsError, multiComboNeedsNotes, isGroupPromo, companyName]);
+
+  const updateRoomQuantity = (roomId: string, qty: number) => {
+    setRoomCart(prev => {
+      const existing = prev.find(item => item.roomId === roomId);
+      if (existing) {
+        if (qty <= 0) return prev.filter(item => item.roomId !== roomId);
+        return prev.map(item => item.roomId === roomId ? { ...item, quantity: qty } : item);
+      }
+      if (qty > 0) return [...prev, { roomId, quantity: qty }];
+      return prev;
+    });
+  };
 
   const handleSubmit = async () => {
     if (!canSubmit) {
+      if (!hasRooms) {
+        toast({ title: 'Vui lòng chọn ít nhất 1 phòng', variant: 'destructive' });
+        return;
+      }
       if (comboServingsError) {
         toast({ title: `Tổng số suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' });
         return;
@@ -332,6 +376,14 @@ const Booking = () => {
         availableServices.find(s => s.id === id)?.label || id
       ).join(', ');
 
+      // For multi-room, use primary room as room_id (backward compat)
+      // Include room_details for full breakdown
+      const roomDetails = selectedRooms.map(sr => ({
+        room_id: sr.roomId,
+        room_name: sr.room!.name[language],
+        quantity: sr.quantity,
+      }));
+
       const resp = await fetch(BOOKING_URL, {
         method: 'POST',
         headers: {
@@ -339,7 +391,7 @@ const Booking = () => {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
-          room_id: roomId,
+          room_id: primaryRoomId,
           guest_name: name,
           guest_email: email,
           guest_phone: phone,
@@ -349,7 +401,7 @@ const Booking = () => {
           guests_count: guestCount,
           total_price_vnd: totalPrice,
           original_price_vnd: originalPrice,
-          room_quantity: quantity,
+          room_quantity: totalRoomQuantity,
           language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: comboTotal > 0 ? comboTotal : undefined,
@@ -358,7 +410,6 @@ const Booking = () => {
           individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
-          // Promotions
           promotion_id: activePromo?.id || undefined,
           promotion_name: [
             activePromo ? (activePromo.title_vi || activePromo.title_en) : null,
@@ -376,6 +427,7 @@ const Booking = () => {
           group_size: groupSize ? parseInt(groupSize) : undefined,
           special_services: serviceLabels || undefined,
           decoration_notes: decorationNotes || undefined,
+          room_details: roomDetails.length > 1 ? roomDetails : undefined,
         }),
       });
       const data = await resp.json();
@@ -388,12 +440,10 @@ const Booking = () => {
     }
   };
 
-  if (!room) return null;
+  if (!rooms.length) return null;
 
   const isVi = language === 'vi';
-
-  // Max guests for select
-  const maxGuestsForRoom = (ROOM_GUEST_LIMITS[roomId] || 4) * quantity + 4; // Allow up to 4 extra
+  const maxGuestsTotal = standardCapacity + 6;
 
   return (
     <div className="min-h-screen bg-background">
@@ -410,11 +460,8 @@ const Booking = () => {
 
           {/* Active promotion banner */}
           {activePromo && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3"
-            >
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
               <Gift className="h-6 w-6 text-primary shrink-0" />
               <div className="flex-1">
                 <p className="font-semibold text-foreground text-sm">
@@ -468,21 +515,41 @@ const Booking = () => {
                 </motion.div>
               )}
 
-              {/* Room selection */}
+              {/* Multi-Room Selection */}
               <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                <h2 className="font-display text-xl font-semibold">{t('nav.rooms')}</h2>
-                <Select value={roomId} onValueChange={setRoomId}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {rooms.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.name[language]} - {formatPrice(r.priceVND)}{t('room.per_night')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                  🏨 {isVi ? 'Chọn phòng' : 'Select Rooms'}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {isVi ? 'Bạn có thể chọn nhiều loại phòng trong cùng 1 đơn đặt' : 'You can select multiple room types in one booking'}
+                </p>
+                <div className="space-y-3">
+                  {rooms.map(room => {
+                    const cartItem = roomCart.find(c => c.roomId === room.id);
+                    const qty = cartItem?.quantity || 0;
+                    return (
+                      <BookingRoomCard
+                        key={room.id}
+                        room={room}
+                        quantity={qty}
+                        onQuantityChange={(newQty) => updateRoomQuantity(room.id, newQty)}
+                        nightlyPrice={formatPrice(room.priceVND)}
+                      />
+                    );
+                  })}
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {!hasRooms && (
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-300 text-center">
+                    ⚠️ {isVi ? 'Vui lòng chọn ít nhất 1 phòng để tiếp tục' : 'Please select at least 1 room to continue'}
+                  </div>
+                )}
+              </div>
+
+              {/* Date & Guests */}
+              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                <h2 className="font-display text-xl font-semibold">📅 {isVi ? 'Ngày & Số khách' : 'Dates & Guests'}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
                     <Popover>
@@ -520,23 +587,11 @@ const Booking = () => {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: maxGuestsForRoom }, (_, i) => i + 1).map((n) => (
-                          <SelectItem key={n} value={String(n)}>{n} người lớn</SelectItem>
+                        {Array.from({ length: Math.max(maxGuestsTotal, 1) }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người lớn' : 'adults'}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.rooms_count')}</label>
-                    <div className="flex items-center gap-2 h-10">
-                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="flex-1 text-center font-semibold text-lg">{quantity}</span>
-                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setQuantity(quantity + 1)}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
                 </div>
 
@@ -547,11 +602,13 @@ const Booking = () => {
                     <UserPlus className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-semibold text-amber-800 dark:text-amber-300">
-                        Phụ thu thêm {extraPersonCount} người
+                        {isVi ? `Phụ thu thêm ${extraPersonCount} người` : `Surcharge for ${extraPersonCount} extra guests`}
                       </p>
                       <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                        Phòng {room.name[language]} tối đa {ROOM_GUEST_LIMITS[roomId] || room.capacity} người/phòng. 
-                        Phụ thu 30% giá phòng cho mỗi người vượt = <strong>{formatPrice(extraPersonSurcharge)}</strong>
+                        {isVi
+                          ? `Tổng sức chứa tiêu chuẩn: ${standardCapacity} người. Phụ thu 30% giá phòng mỗi người vượt = `
+                          : `Standard capacity: ${standardCapacity}. 30% surcharge per extra guest = `}
+                        <strong>{formatPrice(extraPersonSurcharge)}</strong>
                       </p>
                     </div>
                   </motion.div>
@@ -623,7 +680,7 @@ const Booking = () => {
                 </div>
               )}
 
-              {/* Combo ăn uống section */}
+              {/* Combo section */}
               <ComboSelector
                 required={comboRequired}
                 selections={comboSelections}
@@ -634,7 +691,6 @@ const Booking = () => {
                 onOpenFoodOrder={() => setFoodSelectorOpen(true)}
               />
 
-              {/* Individual Food Selector modal */}
               <IndividualFoodSelector
                 open={foodSelectorOpen}
                 onClose={() => setFoodSelectorOpen(false)}
@@ -674,10 +730,24 @@ const Booking = () => {
             >
               <div className="bg-card rounded-xl border border-border p-6 sticky top-24 space-y-4">
                 <h2 className="font-display text-xl font-semibold">{t('booking.summary')}</h2>
-                <div className="rounded-lg overflow-hidden">
-                  <img src={room.image} alt={room.name[language]} className="w-full h-40 object-cover" />
-                </div>
-                <h3 className="font-display text-lg font-semibold">{room.name[language]}</h3>
+
+                {/* Room summary */}
+                {selectedRooms.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedRooms.map(sr => (
+                      <div key={sr.roomId} className="flex items-center gap-3">
+                        <img src={sr.room!.image} alt="" className="w-16 h-12 object-cover rounded-lg shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{sr.room!.name[language]}</p>
+                          <p className="text-xs text-muted-foreground">×{sr.quantity} {isVi ? 'phòng' : 'rooms'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">{isVi ? 'Chưa chọn phòng' : 'No rooms selected'}</p>
+                )}
+
                 <div className="space-y-2 text-sm">
                   {checkIn && (
                     <div className="flex justify-between">
@@ -699,21 +769,35 @@ const Booking = () => {
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('search.guests')}</span>
-                    <span className="font-medium">{guestCount} người lớn</span>
+                    <span className="font-medium">{guestCount} {isVi ? 'người lớn' : 'adults'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('booking.rooms_count')}</span>
-                    <span className="font-medium">{quantity}</span>
+                    <span className="text-muted-foreground">{isVi ? 'Tổng phòng' : 'Total rooms'}</span>
+                    <span className="font-medium">{totalRoomQuantity}</span>
                   </div>
-                  {roomTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">🏨 Tiền phòng</span>
-                      <span className="font-medium">{formatPrice(roomTotal)}</span>
+
+                  {/* Room price breakdown */}
+                  {roomTotals.length > 0 && (
+                    <div className="border-t border-border pt-2 space-y-1">
+                      <h4 className="font-semibold text-xs">🏨 {isVi ? 'Tiền phòng' : 'Room charges'}</h4>
+                      {roomTotals.map(rt => (
+                        <div key={rt.roomId} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{rt.room.name[language]} ×{rt.quantity}</span>
+                          <span className="font-medium">{formatPrice(rt.subtotal)}</span>
+                        </div>
+                      ))}
+                      {roomTotals.length > 1 && (
+                        <div className="flex justify-between text-sm font-medium pt-1">
+                          <span className="text-muted-foreground">{isVi ? 'Tổng phòng' : 'Room subtotal'}</span>
+                          <span>{formatPrice(roomTotal)}</span>
+                        </div>
+                      )}
                     </div>
                   )}
+
                   {extraPersonSurcharge > 0 && (
                     <div className="flex justify-between text-amber-700 dark:text-amber-400">
-                      <span>👤 Phụ thu thêm {extraPersonCount} người</span>
+                      <span>👤 Phụ thu +{extraPersonCount} người</span>
                       <span className="font-medium">+{formatPrice(extraPersonSurcharge)}</span>
                     </div>
                   )}
