@@ -1,6 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface MenuItemPrice {
+  id: string;
+  menu_item_id: string;
+  label_vi: string;
+  label_en: string;
+  price_vnd: number;
+  sort_order: number;
+}
+
 export interface MenuItem {
   id: string;
   name_vi: string;
@@ -12,6 +21,7 @@ export interface MenuItem {
   image_url: string | null;
   is_popular: boolean;
   sort_order: number;
+  price_variants?: MenuItemPrice[];
 }
 
 const PAGE_SIZE = 20;
@@ -33,12 +43,21 @@ export function useMenuItems() {
         return;
       }
       setLoading(true);
-      const { data } = await supabase
-        .from('menu_items')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-      const items = (data as MenuItem[]) || [];
+      const [{ data: menuData }, { data: priceData }] = await Promise.all([
+        supabase.from('menu_items').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('menu_item_prices').select('*').eq('is_active', true).order('sort_order'),
+      ]);
+      const prices = (priceData || []) as MenuItemPrice[];
+      const priceMap = new Map<string, MenuItemPrice[]>();
+      prices.forEach(p => {
+        const list = priceMap.get(p.menu_item_id) || [];
+        list.push(p);
+        priceMap.set(p.menu_item_id, list);
+      });
+      const items = ((menuData || []) as MenuItem[]).map(item => ({
+        ...item,
+        price_variants: priceMap.get(item.id) || [],
+      }));
       cacheRef.current = items;
       setAllItems(items);
       setLoading(false);
@@ -95,6 +114,10 @@ export function useMenuItems() {
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [search, category, priceRange]);
 
+  const invalidateCache = useCallback(() => {
+    cacheRef.current = null;
+  }, []);
+
   return {
     items: paginated,
     allItems: filtered,
@@ -107,5 +130,6 @@ export function useMenuItems() {
     hasMore, loadMore,
     clearFilters,
     totalCount: filtered.length,
+    invalidateCache,
   };
 }
