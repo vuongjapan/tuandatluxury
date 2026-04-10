@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import {
   Plus, Save, Trash2, Upload, Pencil, Eye, EyeOff,
-  Search, X, Star, StarOff, ImageIcon
+  Search, X, Star, StarOff, ImageIcon, DollarSign
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 
@@ -68,6 +68,10 @@ const AdminFoodMenu = () => {
   const [newItem, setNewItem] = useState<Omit<MenuItem, 'id'>>(EMPTY_ITEM);
   const [uploading, setUploading] = useState(false);
   const [bulkUploading, setBulkUploading] = useState<string | null>(null);
+  // Price variants
+  const [priceEditingId, setPriceEditingId] = useState<string | null>(null);
+  const [priceVariants, setPriceVariants] = useState<any[]>([]);
+  const [priceLoading, setPriceLoading] = useState(false);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -270,6 +274,54 @@ const AdminFoodMenu = () => {
     return acc;
   }, {} as Record<string, number>);
 
+  // Price variant functions
+  const fetchPriceVariants = async (menuItemId: string) => {
+    setPriceLoading(true);
+    const { data } = await supabase
+      .from('menu_item_prices')
+      .select('*')
+      .eq('menu_item_id', menuItemId)
+      .order('sort_order');
+    setPriceVariants(data || []);
+    setPriceLoading(false);
+  };
+
+  const handleOpenPriceEditor = async (itemId: string) => {
+    if (priceEditingId === itemId) {
+      setPriceEditingId(null);
+      return;
+    }
+    setPriceEditingId(itemId);
+    await fetchPriceVariants(itemId);
+  };
+
+  const handleAddPriceVariant = async () => {
+    if (!priceEditingId) return;
+    const { error } = await supabase.from('menu_item_prices').insert({
+      menu_item_id: priceEditingId,
+      label_vi: 'Mới',
+      label_en: 'New',
+      price_vnd: 0,
+      sort_order: priceVariants.length,
+    });
+    if (error) {
+      toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
+      return;
+    }
+    await fetchPriceVariants(priceEditingId);
+  };
+
+  const handleUpdatePriceVariant = async (id: string, updates: any) => {
+    await supabase.from('menu_item_prices').update(updates).eq('id', id);
+    if (priceEditingId) await fetchPriceVariants(priceEditingId);
+  };
+
+  const handleDeletePriceVariant = async (id: string) => {
+    if (!confirm('Xóa mức giá này?')) return;
+    await supabase.from('menu_item_prices').delete().eq('id', id);
+    if (priceEditingId) await fetchPriceVariants(priceEditingId);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -351,10 +403,10 @@ const AdminFoodMenu = () => {
           <p className="text-sm text-muted-foreground">Hiển thị {filtered.length} / {items.length} món</p>
           <div className="grid gap-2">
             {filtered.map(item => (
-              <div
-                key={item.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${!item.is_active ? 'opacity-50 bg-muted' : 'bg-card hover:shadow-sm'}`}
-              >
+              <div key={item.id} className="space-y-0">
+                <div
+                  className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${!item.is_active ? 'opacity-50 bg-muted' : 'bg-card hover:shadow-sm'}`}
+                >
                 {/* Image */}
                 <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-secondary shrink-0 group">
                   {item.image_url ? (
@@ -364,7 +416,6 @@ const AdminFoodMenu = () => {
                       <ImageIcon className="h-5 w-5 text-muted-foreground" />
                     </div>
                   )}
-                  {/* Quick upload overlay */}
                   <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center">
                     {bulkUploading === item.id ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -398,6 +449,9 @@ const AdminFoodMenu = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenPriceEditor(item.id)} title="Quản lý mức giá">
+                    <DollarSign className={`h-4 w-4 ${priceEditingId === item.id ? 'text-primary' : ''}`} />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleTogglePopular(item)} title={item.is_popular ? 'Bỏ phổ biến' : 'Đánh dấu phổ biến'}>
                     {item.is_popular ? <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> : <StarOff className="h-4 w-4" />}
                   </Button>
@@ -411,6 +465,66 @@ const AdminFoodMenu = () => {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+
+              {/* Price variants editor */}
+              {priceEditingId === item.id && (
+                <div className="mt-2 p-3 bg-secondary/50 rounded-lg border border-border space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" /> Mức giá cho &quot;{item.name_vi}&quot;
+                    </h4>
+                    <Button size="sm" variant="outline" onClick={handleAddPriceVariant} className="gap-1 text-xs">
+                      <Plus className="h-3 w-3" /> Thêm giá
+                    </Button>
+                  </div>
+                  {priceLoading ? (
+                    <div className="text-center py-2 text-xs text-muted-foreground">Đang tải...</div>
+                  ) : priceVariants.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2">Chưa có mức giá. Món sẽ dùng giá mặc định ({formatPrice(item.price_vnd)}).</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {priceVariants.map((v: any) => (
+                        <div key={v.id} className="flex items-center gap-2">
+                          <Input
+                            value={v.label_vi}
+                            onChange={e => {
+                              setPriceVariants(prev => prev.map(p => p.id === v.id ? { ...p, label_vi: e.target.value } : p));
+                            }}
+                            onBlur={() => handleUpdatePriceVariant(v.id, { label_vi: v.label_vi })}
+                            placeholder="Tên VN (VD: Nhỏ)"
+                            className="h-8 text-xs flex-1"
+                          />
+                          <Input
+                            value={v.label_en}
+                            onChange={e => {
+                              setPriceVariants(prev => prev.map(p => p.id === v.id ? { ...p, label_en: e.target.value } : p));
+                            }}
+                            onBlur={() => handleUpdatePriceVariant(v.id, { label_en: v.label_en })}
+                            placeholder="Tên EN (VD: Small)"
+                            className="h-8 text-xs flex-1"
+                          />
+                          <Input
+                            type="number"
+                            value={v.price_vnd}
+                            onChange={e => {
+                              const val = parseInt(e.target.value) || 0;
+                              setPriceVariants(prev => prev.map(p => p.id === v.id ? { ...p, price_vnd: val } : p));
+                            }}
+                            onBlur={() => handleUpdatePriceVariant(v.id, { price_vnd: v.price_vnd })}
+                            placeholder="Giá"
+                            className="h-8 text-xs w-28"
+                          />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => handleDeletePriceVariant(v.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">💡 Khi có mức giá, khách phải chọn mức giá trước khi thêm vào giỏ. Mỗi mức giá = 1 dòng riêng.</p>
+                </div>
+              )}
               </div>
             ))}
           </div>

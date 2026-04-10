@@ -366,8 +366,8 @@ const Booking = () => {
       }));
 
       const foodItemsPayload = individualFoods.map(f => ({
-        menu_item_id: f.id,
-        name: f.name,
+        menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+        name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
         price_vnd: f.price,
         quantity: f.quantity,
       }));
@@ -830,7 +830,7 @@ const Booking = () => {
                     <>
                       {individualFoods.map(f => (
                         <div key={f.id} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground truncate mr-2">{f.name} ×{f.quantity}</span>
+                          <span className="text-muted-foreground truncate mr-2">{f.name}{f.priceLabel ? ` (${f.priceLabel})` : ''} ×{f.quantity}</span>
                           <span className="font-medium shrink-0">{formatPrice(f.price * f.quantity)}</span>
                         </div>
                       ))}
