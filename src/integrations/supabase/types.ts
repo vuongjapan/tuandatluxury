@@ -985,6 +985,47 @@ export type Database = {
           },
         ]
       }
+      menu_item_prices: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label_en: string
+          label_vi: string
+          menu_item_id: string
+          price_vnd: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label_en?: string
+          label_vi?: string
+          menu_item_id: string
+          price_vnd?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label_en?: string
+          label_vi?: string
+          menu_item_id?: string
+          price_vnd?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_prices_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           category: string
