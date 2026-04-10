@@ -359,7 +359,10 @@ const Booking = () => {
     setSubmitting(true);
     try {
       const combosPayload = comboSelections.map(c => ({
-        dining_item_id: c.packageId,
+        combo_package_id: c.packageId,
+        combo_menu_id: c.menuId,
+        combo_package_name: c.packageName,
+        combo_menu_name: c.menuName,
         combo_name: `${c.packageName} – ${c.menuName}`,
         price_vnd: c.pricePerPerson,
         quantity: c.quantity,
@@ -384,6 +387,14 @@ const Booking = () => {
         quantity: sr.quantity,
       }));
 
+      const roomBreakdown = roomTotals.map(rt => ({
+        room_id: rt.roomId,
+        room_name: rt.room.name[language],
+        quantity: rt.quantity,
+        subtotal: rt.subtotal,
+        average_nightly_rate: rt.totalPerRoom,
+      }));
+
       const resp = await fetch(BOOKING_URL, {
         method: 'POST',
         headers: {
@@ -401,6 +412,7 @@ const Booking = () => {
           guests_count: guestCount,
           total_price_vnd: totalPrice,
           original_price_vnd: originalPrice,
+          room_subtotal: roomTotal,
           room_quantity: totalRoomQuantity,
           language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
@@ -427,7 +439,8 @@ const Booking = () => {
           group_size: groupSize ? parseInt(groupSize) : undefined,
           special_services: serviceLabels || undefined,
           decoration_notes: decorationNotes || undefined,
-          room_details: roomDetails.length > 1 ? roomDetails : undefined,
+          room_details: roomDetails,
+          room_breakdown: roomBreakdown,
         }),
       });
       const data = await resp.json();

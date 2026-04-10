@@ -56,6 +56,58 @@ interface EmailData {
   isPaid?: boolean;
 }
 
+interface RoomBreakdownItem {
+  room_id?: string;
+  room_name?: string;
+  quantity?: number;
+  subtotal?: number;
+  average_nightly_rate?: number;
+}
+
+function getArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function getRoomBreakdown(
+  booking: any,
+  fallbackRoomName: string,
+  fallbackSubtotal: number,
+  nights: number,
+  roomQty: number,
+): RoomBreakdownItem[] {
+  const breakdown = getArray<any>(booking.room_breakdown).filter(item => item && typeof item === 'object');
+
+  if (breakdown.length > 0) {
+    return breakdown.map((item) => {
+      const quantity = Number(item.quantity) || 1;
+      const subtotal = Number(item.subtotal) || 0;
+
+      return {
+        room_id: item.room_id,
+        room_name: item.room_name || fallbackRoomName,
+        quantity,
+        subtotal,
+        average_nightly_rate: Number(item.average_nightly_rate)
+          || (nights > 0 && quantity > 0 ? Math.round(subtotal / (nights * quantity)) : 0),
+      };
+    });
+  }
+
+  return [{
+    room_id: booking.room_id,
+    room_name: fallbackRoomName,
+    quantity: roomQty,
+    subtotal: fallbackSubtotal,
+    average_nightly_rate: nights > 0 && roomQty > 0 ? Math.round(fallbackSubtotal / (nights * roomQty)) : 0,
+  }];
+}
+
+function getComboDishes(combo: any) {
+  const snapshotDishes = getArray<any>(combo?.dishes_snapshot);
+  if (snapshotDishes.length > 0) return snapshotDishes;
+  return getArray<any>(combo?.dishes);
+}
+
 function buildBookingInvoiceHtml(data: EmailData): string {
   const { booking, roomName, invoiceNumber, combos, foodItems, isPaid } = data;
   const checkIn = formatDate(booking.check_in);
@@ -64,13 +116,13 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
   const roomQty = booking.room_quantity || 1;
-  const comboTotal = combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity, 0);
+  const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity, 0);
   const indFoodTotal = foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity, 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
-  const roomSubtotal = Math.max(0, originalPrice - comboTotal - indFoodTotal - extraSurcharge);
-  const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomSubtotal / nights / roomQty) : 0;
+  const roomSubtotal = booking.room_subtotal || Math.max(0, originalPrice - comboTotal - indFoodTotal - extraSurcharge);
+  const roomBreakdown = getRoomBreakdown(booking, roomName, roomSubtotal, nights, roomQty);
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
@@ -115,19 +167,20 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     let comboRows = '';
     combos.forEach((c, idx) => {
       const parts = c.combo_name?.split(' – ') || [c.combo_name];
-      const packageName = parts[0] || '';
-      const menuName = parts.length > 1 ? parts.slice(1).join(' – ') : '';
+      const packageName = c.combo_package_name || parts[0] || '';
+      const menuName = c.combo_menu_name || (parts.length > 1 ? parts.slice(1).join(' – ') : '');
       const comboItemTotal = c.price_vnd * c.quantity;
+      const comboDishes = getComboDishes(c);
       
       let dishesHtml = '';
-      if (c.dishes && c.dishes.length > 0) {
-        const dishRows = c.dishes.map((d, i) =>
-          `<tr><td style="padding:2px 0 2px 16px;font-size:12px;color:#666;">${i + 1}. ${d.name_vi} × ${c.quantity}</td></tr>`
+      if (comboDishes.length > 0) {
+        const dishRows = comboDishes.map((d, i) =>
+          `<tr><td style="padding:2px 0 2px 16px;font-size:12px;color:#666;">${i + 1}. ${d.name_vi || d.name_en || d.name || ''} × ${c.quantity}</td></tr>`
         ).join('');
         dishesHtml = `
         <tr><td colspan="2" style="padding:4px 0 0;">
           <table style="width:100%;">
-            <tr><td style="padding:4px 0 2px;font-size:11px;font-weight:600;color:#888;">🍽️ Thực đơn (${c.dishes.length} món × ${c.quantity} suất):</td></tr>
+            <tr><td style="padding:4px 0 2px;font-size:11px;font-weight:600;color:#888;">🍽️ Thực đơn (${comboDishes.length} món × ${c.quantity} suất):</td></tr>
             ${dishRows}
           </table>
         </td></tr>`;
@@ -198,7 +251,25 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   }
 
   // === BUILD COST SUMMARY ===
-  let costRows = `<tr><td style="color:#888;padding:4px 0;">🏨 Tiền phòng (${roomQty} phòng × ${nights} đêm):</td><td style="text-align:right;padding:4px 0;font-weight:500;">${fmt(roomSubtotal)}</td></tr>`;
+  const roomBreakdownHtml = roomBreakdown.map((room, index) => {
+    const quantity = room.quantity || 1;
+    const subtotal = room.subtotal || 0;
+    const nightlyRate = room.average_nightly_rate || 0;
+
+    return `
+    <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:${index === 0 ? '8px' : '6px'};">
+      <table style="width:100%;font-size:12px;">
+        <tr><td style="font-weight:600;color:#333;">${room.room_name || room.room_id || roomName}</td><td style="text-align:right;font-weight:700;">${fmt(subtotal)}</td></tr>
+        <tr><td style="color:#888;">Giá phòng / đêm:</td><td style="text-align:right;font-weight:500;">${fmt(nightlyRate)}</td></tr>
+        <tr><td style="color:#888;">Tính:</td><td style="text-align:right;font-weight:500;">${fmt(nightlyRate)} × ${nights} đêm × ${quantity} phòng</td></tr>
+      </table>
+    </div>`;
+  }).join('');
+
+  let costRows = roomBreakdown.length > 1
+    ? `${roomBreakdown.map((room) => `<tr><td style="color:#888;padding:4px 0;">🏨 ${room.room_name || room.room_id || roomName} × ${room.quantity || 1} phòng:</td><td style="text-align:right;padding:4px 0;font-weight:500;">${fmt(room.subtotal || 0)}</td></tr>`).join('')}
+       <tr><td style="color:#888;padding:6px 0;border-top:1px solid #eee;font-weight:600;">🏨 Tổng tiền phòng:</td><td style="text-align:right;padding:6px 0;border-top:1px solid #eee;font-weight:600;">${fmt(roomSubtotal)}</td></tr>`
+    : `<tr><td style="color:#888;padding:4px 0;">🏨 Tiền phòng (${roomQty} phòng × ${nights} đêm):</td><td style="text-align:right;padding:4px 0;font-weight:500;">${fmt(roomSubtotal)}</td></tr>`;
   if (extraSurcharge > 0) {
     costRows += `<tr><td style="color:#d97706;padding:4px 0;">👤 Phụ thu thêm ${extraCount} người (30%):</td><td style="text-align:right;padding:4px 0;font-weight:500;color:#d97706;">+${fmt(extraSurcharge)}</td></tr>`;
   }
@@ -304,13 +375,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       <tr><td style="color:#888;">📅 Trả phòng:</td><td style="font-weight:500;text-align:right;">${checkOut}</td></tr>
       <tr><td style="color:#888;">Tổng số đêm:</td><td style="font-weight:600;color:#8B6914;text-align:right;">${nights} đêm</td></tr>
     </table>
-    <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;">
-      <table style="width:100%;font-size:12px;">
-        <tr><td style="color:#888;">Giá phòng / đêm:</td><td style="text-align:right;font-weight:500;">${fmt(pricePerNight)}</td></tr>
-        <tr><td style="color:#888;">Tính:</td><td style="text-align:right;font-weight:500;">${fmt(pricePerNight)} × ${nights} đêm × ${roomQty} phòng</td></tr>
-        <tr><td style="padding-top:6px;border-top:1px solid #e8e4d8;font-weight:600;color:#888;">Thành tiền phòng:</td><td style="text-align:right;padding-top:6px;border-top:1px solid #e8e4d8;font-weight:700;">${fmt(roomSubtotal)}</td></tr>
-      </table>
-    </div>
+    ${roomBreakdownHtml}
     ${extraPersonHtml}
 
     ${comboHtml}

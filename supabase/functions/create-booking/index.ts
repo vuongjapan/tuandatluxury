@@ -35,6 +35,7 @@ serve(async (req) => {
       member_discount_percent, member_discount_amount,
       company_name, group_size, special_services, decoration_notes,
       original_price_vnd, discount_code, discount_code_amount, discount_code_type, discount_code_value,
+      room_details, room_breakdown, room_subtotal,
     } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
@@ -84,9 +85,13 @@ serve(async (req) => {
         guests_count: guests_count || 2,
         total_price_vnd: totalPrice,
         original_price_vnd: original_price_vnd || totalPrice,
+        room_subtotal: room_subtotal || Math.max(0, (original_price_vnd || totalPrice) - (combo_total || 0) - (individual_food_total || 0) - (extra_person_surcharge || 0)),
+        combo_total: combo_total || 0,
         deposit_amount: depositAmount,
         remaining_amount: remainingAmount,
         room_quantity: room_quantity || 1,
+        room_details: room_details || [],
+        room_breakdown: room_breakdown || [],
         payment_status: "PENDING",
         status: "pending",
         language: language || "vi",
@@ -120,13 +125,37 @@ serve(async (req) => {
     // Insert booking combos
     let comboDetails: any[] = [];
     if (combos && Array.isArray(combos) && combos.length > 0) {
-      const comboInserts = combos.map((c: any) => ({
-        booking_id: booking.id,
-        dining_item_id: c.dining_item_id,
-        combo_name: c.combo_name,
-        price_vnd: c.price_vnd,
-        quantity: c.quantity,
-      }));
+      const comboInserts = [];
+
+      for (const c of combos) {
+        let dishesSnapshot: any[] = [];
+
+        if (c.combo_menu_id) {
+          const { data: dishData } = await supabase
+            .from("combo_menu_dishes")
+            .select("name_vi, name_en, sort_order")
+            .eq("combo_menu_id", c.combo_menu_id)
+            .order("sort_order");
+
+          dishesSnapshot = dishData || [];
+        }
+
+        const comboNameParts = c.combo_name?.split(' – ') || [];
+
+        comboInserts.push({
+          booking_id: booking.id,
+          dining_item_id: c.dining_item_id || null,
+          combo_package_id: c.combo_package_id || null,
+          combo_menu_id: c.combo_menu_id || null,
+          combo_package_name: c.combo_package_name || comboNameParts[0] || null,
+          combo_menu_name: c.combo_menu_name || (comboNameParts.length > 1 ? comboNameParts.slice(1).join(' – ') : null),
+          combo_name: c.combo_name,
+          price_vnd: c.price_vnd,
+          quantity: c.quantity,
+          dishes_snapshot: dishesSnapshot,
+        });
+      }
+
       const { data: insertedCombos, error: comboError } = await supabase
         .from("booking_combos")
         .insert(comboInserts)
@@ -180,25 +209,35 @@ serve(async (req) => {
     // Fetch combo dishes for email
     const combosWithDishes: any[] = [];
     for (const combo of comboDetails) {
-      const parts = combo.combo_name?.split(' – ') || [];
-      const menuName = parts.length > 1 ? parts.slice(1).join(' – ') : '';
-      let dishes: any[] = [];
-      if (menuName && combo.dining_item_id) {
-        const { data: menus } = await supabase
-          .from("combo_menus")
-          .select("id, name_vi, name_en")
-          .eq("combo_package_id", combo.dining_item_id)
-          .eq("is_active", true);
-        const matchedMenu = menus?.find((m: any) => m.name_vi === menuName || m.name_en === menuName);
-        if (matchedMenu) {
+      let dishes: any[] = Array.isArray(combo.dishes_snapshot) ? combo.dishes_snapshot : [];
+
+      if (dishes.length === 0) {
+        const menuName = combo.combo_menu_name || combo.combo_name?.split(' – ').slice(1).join(' – ') || '';
+        if (combo.combo_menu_id) {
           const { data: dishData } = await supabase
             .from("combo_menu_dishes")
-            .select("name_vi, sort_order")
-            .eq("combo_menu_id", matchedMenu.id)
+            .select("name_vi, name_en, sort_order")
+            .eq("combo_menu_id", combo.combo_menu_id)
             .order("sort_order");
           dishes = dishData || [];
+        } else if (menuName && (combo.combo_package_id || combo.dining_item_id)) {
+          const { data: menus } = await supabase
+            .from("combo_menus")
+            .select("id, name_vi, name_en")
+            .eq("combo_package_id", combo.combo_package_id || combo.dining_item_id)
+            .eq("is_active", true);
+          const matchedMenu = menus?.find((m: any) => m.name_vi === menuName || m.name_en === menuName);
+          if (matchedMenu) {
+            const { data: dishData } = await supabase
+              .from("combo_menu_dishes")
+              .select("name_vi, name_en, sort_order")
+              .eq("combo_menu_id", matchedMenu.id)
+              .order("sort_order");
+            dishes = dishData || [];
+          }
         }
       }
+
       combosWithDishes.push({
         ...combo,
         dishes,
