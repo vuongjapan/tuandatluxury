@@ -450,6 +450,9 @@ const AdminFoodMenu = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenPriceEditor(item.id)} title="Quản lý mức giá">
+                    <DollarSign className={`h-4 w-4 ${priceEditingId === item.id ? 'text-primary' : ''}`} />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleTogglePopular(item)} title={item.is_popular ? 'Bỏ phổ biến' : 'Đánh dấu phổ biến'}>
                     {item.is_popular ? <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> : <StarOff className="h-4 w-4" />}
                   </Button>
@@ -464,6 +467,66 @@ const AdminFoodMenu = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Price variants editor */}
+              {priceEditingId === item.id && (
+                <div className="mt-2 p-3 bg-secondary/50 rounded-lg border border-border space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" /> Mức giá cho "{item.name_vi}"
+                    </h4>
+                    <Button size="sm" variant="outline" onClick={handleAddPriceVariant} className="gap-1 text-xs">
+                      <Plus className="h-3 w-3" /> Thêm giá
+                    </Button>
+                  </div>
+                  {priceLoading ? (
+                    <div className="text-center py-2 text-xs text-muted-foreground">Đang tải...</div>
+                  ) : priceVariants.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2">Chưa có mức giá. Món sẽ dùng giá mặc định ({formatPrice(item.price_vnd)}).</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {priceVariants.map((v: any) => (
+                        <div key={v.id} className="flex items-center gap-2">
+                          <Input
+                            value={v.label_vi}
+                            onChange={e => {
+                              setPriceVariants(prev => prev.map(p => p.id === v.id ? { ...p, label_vi: e.target.value } : p));
+                            }}
+                            onBlur={() => handleUpdatePriceVariant(v.id, { label_vi: v.label_vi })}
+                            placeholder="Tên VN (VD: Nhỏ)"
+                            className="h-8 text-xs flex-1"
+                          />
+                          <Input
+                            value={v.label_en}
+                            onChange={e => {
+                              setPriceVariants(prev => prev.map(p => p.id === v.id ? { ...p, label_en: e.target.value } : p));
+                            }}
+                            onBlur={() => handleUpdatePriceVariant(v.id, { label_en: v.label_en })}
+                            placeholder="Tên EN (VD: Small)"
+                            className="h-8 text-xs flex-1"
+                          />
+                          <Input
+                            type="number"
+                            value={v.price_vnd}
+                            onChange={e => {
+                              const val = parseInt(e.target.value) || 0;
+                              setPriceVariants(prev => prev.map(p => p.id === v.id ? { ...p, price_vnd: val } : p));
+                            }}
+                            onBlur={() => handleUpdatePriceVariant(v.id, { price_vnd: v.price_vnd })}
+                            placeholder="Giá"
+                            className="h-8 text-xs w-28"
+                          />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => handleDeletePriceVariant(v.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">💡 Khi có mức giá, khách phải chọn mức giá trước khi thêm vào giỏ. Mỗi mức giá = 1 dòng riêng.</p>
+                </div>
+              )}
+            </div>
             ))}
           </div>
         </div>
