@@ -68,6 +68,10 @@ const AdminFoodMenu = () => {
   const [newItem, setNewItem] = useState<Omit<MenuItem, 'id'>>(EMPTY_ITEM);
   const [uploading, setUploading] = useState(false);
   const [bulkUploading, setBulkUploading] = useState<string | null>(null);
+  // Price variants
+  const [priceEditingId, setPriceEditingId] = useState<string | null>(null);
+  const [priceVariants, setPriceVariants] = useState<any[]>([]);
+  const [priceLoading, setPriceLoading] = useState(false);
 
   const fetchItems = async () => {
     setLoading(true);
