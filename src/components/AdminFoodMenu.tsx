@@ -274,6 +274,54 @@ const AdminFoodMenu = () => {
     return acc;
   }, {} as Record<string, number>);
 
+  // Price variant functions
+  const fetchPriceVariants = async (menuItemId: string) => {
+    setPriceLoading(true);
+    const { data } = await supabase
+      .from('menu_item_prices')
+      .select('*')
+      .eq('menu_item_id', menuItemId)
+      .order('sort_order');
+    setPriceVariants(data || []);
+    setPriceLoading(false);
+  };
+
+  const handleOpenPriceEditor = async (itemId: string) => {
+    if (priceEditingId === itemId) {
+      setPriceEditingId(null);
+      return;
+    }
+    setPriceEditingId(itemId);
+    await fetchPriceVariants(itemId);
+  };
+
+  const handleAddPriceVariant = async () => {
+    if (!priceEditingId) return;
+    const { error } = await supabase.from('menu_item_prices').insert({
+      menu_item_id: priceEditingId,
+      label_vi: 'Mới',
+      label_en: 'New',
+      price_vnd: 0,
+      sort_order: priceVariants.length,
+    });
+    if (error) {
+      toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
+      return;
+    }
+    await fetchPriceVariants(priceEditingId);
+  };
+
+  const handleUpdatePriceVariant = async (id: string, updates: any) => {
+    await supabase.from('menu_item_prices').update(updates).eq('id', id);
+    if (priceEditingId) await fetchPriceVariants(priceEditingId);
+  };
+
+  const handleDeletePriceVariant = async (id: string) => {
+    if (!confirm('Xóa mức giá này?')) return;
+    await supabase.from('menu_item_prices').delete().eq('id', id);
+    if (priceEditingId) await fetchPriceVariants(priceEditingId);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
