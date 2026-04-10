@@ -403,10 +403,10 @@ const AdminFoodMenu = () => {
           <p className="text-sm text-muted-foreground">Hiển thị {filtered.length} / {items.length} món</p>
           <div className="grid gap-2">
             {filtered.map(item => (
-              <div
-                key={item.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${!item.is_active ? 'opacity-50 bg-muted' : 'bg-card hover:shadow-sm'}`}
-              >
+              <div key={item.id} className="space-y-0">
+                <div
+                  className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${!item.is_active ? 'opacity-50 bg-muted' : 'bg-card hover:shadow-sm'}`}
+                >
                 {/* Image */}
                 <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-secondary shrink-0 group">
                   {item.image_url ? (
@@ -416,7 +416,6 @@ const AdminFoodMenu = () => {
                       <ImageIcon className="h-5 w-5 text-muted-foreground" />
                     </div>
                   )}
-                  {/* Quick upload overlay */}
                   <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center">
                     {bulkUploading === item.id ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -473,7 +472,7 @@ const AdminFoodMenu = () => {
                 <div className="mt-2 p-3 bg-secondary/50 rounded-lg border border-border space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" /> Mức giá cho "{item.name_vi}"
+                      <DollarSign className="h-4 w-4" /> Mức giá cho &quot;{item.name_vi}&quot;
                     </h4>
                     <Button size="sm" variant="outline" onClick={handleAddPriceVariant} className="gap-1 text-xs">
                       <Plus className="h-3 w-3" /> Thêm giá
@@ -526,7 +525,7 @@ const AdminFoodMenu = () => {
                   <p className="text-xs text-muted-foreground">💡 Khi có mức giá, khách phải chọn mức giá trước khi thêm vào giỏ. Mỗi mức giá = 1 dòng riêng.</p>
                 </div>
               )}
-            </div>
+              </div>
             ))}
           </div>
         </div>
