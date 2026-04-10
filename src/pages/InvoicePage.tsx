@@ -46,19 +46,36 @@ const InvoicePage = () => {
       if (comboList.length > 0) {
         const dishMap: Record<string, any[]> = {};
         for (const combo of comboList) {
+          const snapshotDishes = Array.isArray(combo.dishes_snapshot) ? combo.dishes_snapshot : [];
+          if (snapshotDishes.length > 0) {
+            dishMap[combo.id] = snapshotDishes;
+            continue;
+          }
+
           const parts = combo.combo_name?.split(' – ') || [];
-          const menuName = parts.length > 1 ? parts.slice(1).join(' – ') : '';
-          if (menuName && combo.dining_item_id) {
+          const menuName = combo.combo_menu_name || (parts.length > 1 ? parts.slice(1).join(' – ') : '');
+          if (combo.combo_menu_id) {
+            const { data: dishes } = await supabase
+              .from('combo_menu_dishes')
+              .select('name_vi, name_en, sort_order')
+              .eq('combo_menu_id', combo.combo_menu_id)
+              .order('sort_order');
+            dishMap[combo.id] = dishes || [];
+            continue;
+          }
+
+          const comboPackageId = combo.combo_package_id || combo.dining_item_id;
+          if (menuName && comboPackageId) {
             const { data: menus } = await supabase
               .from('combo_menus')
               .select('id, name_vi, name_en')
-              .eq('combo_package_id', combo.dining_item_id)
+              .eq('combo_package_id', comboPackageId)
               .eq('is_active', true);
             const matchedMenu = menus?.find(m => m.name_vi === menuName || m.name_en === menuName);
             if (matchedMenu) {
               const { data: dishes } = await supabase
                 .from('combo_menu_dishes')
-                .select('name_vi, sort_order')
+                .select('name_vi, name_en, sort_order')
                 .eq('combo_menu_id', matchedMenu.id)
                 .order('sort_order');
               dishMap[combo.id] = dishes || [];
@@ -117,15 +134,27 @@ const InvoicePage = () => {
 
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
   const roomQty = booking.room_quantity || 1;
-  const comboTotal = combos.reduce((sum: number, c: any) => sum + (c.price_vnd * c.quantity), 0);
+  const comboTotal = booking.combo_total || combos.reduce((sum: number, c: any) => sum + (c.price_vnd * c.quantity), 0);
   const indFoodTotal = foodItems.reduce((sum: number, f: any) => sum + (f.price_vnd * f.quantity), 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
-  const roomSubtotal = Math.max(0, originalPrice - comboTotal - indFoodTotal - extraSurcharge);
+  const roomSubtotal = booking.room_subtotal || Math.max(0, originalPrice - comboTotal - indFoodTotal - extraSurcharge);
   const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomSubtotal / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
+  const roomDetails = Array.isArray(booking.room_details) && booking.room_details.length > 0
+    ? booking.room_details
+    : [{ room_id: booking.room_id, room_name: booking.rooms?.name_vi || booking.room_id, quantity: roomQty }];
+  const roomBreakdown = Array.isArray(booking.room_breakdown) && booking.room_breakdown.length > 0
+    ? booking.room_breakdown
+    : [{
+        room_id: booking.room_id,
+        room_name: booking.rooms?.name_vi || booking.room_id,
+        quantity: roomQty,
+        subtotal: roomSubtotal,
+        average_nightly_rate: pricePerNight,
+      }];
   const isDepositPaid = booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID';
   
   const promotionDiscount = booking.promotion_discount_amount || 0;
@@ -294,7 +323,16 @@ const InvoicePage = () => {
                 <BedDouble className="h-4 w-4 text-primary" /> Chi tiết đặt phòng
               </h3>
               <div className="space-y-2">
-                <div className="flex justify-between"><span className="text-muted-foreground">Loại phòng:</span><span className="font-semibold">{booking.rooms?.name_vi || booking.room_id}</span></div>
+                <div className="flex justify-between items-start gap-4">
+                  <span className="text-muted-foreground">Loại phòng:</span>
+                  <div className="text-right space-y-1">
+                    {roomDetails.map((room: any, index: number) => (
+                      <p key={`${room.room_id || room.room_name}-${index}`} className="font-semibold">
+                        {room.room_name || room.room_id} × {room.quantity || 1} phòng
+                      </p>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Số lượng phòng:</span><span className="font-medium">{roomQty} phòng</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Số khách:</span><span className="font-medium">{booking.guests_count} người lớn</span></div>
                 <div className="flex justify-between items-center">
@@ -307,10 +345,26 @@ const InvoicePage = () => {
                 </div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Tổng số đêm:</span><span className="font-semibold text-primary">{nights} đêm</span></div>
               </div>
-              <div className="mt-3 bg-secondary/70 rounded-lg p-3 space-y-1">
-                <div className="flex justify-between text-xs"><span className="text-muted-foreground">Giá phòng / đêm:</span><span className="font-medium">{fmt(pricePerNight)}</span></div>
-                <div className="flex justify-between text-xs"><span className="text-muted-foreground">Tính:</span><span className="font-medium">{fmt(pricePerNight)} × {nights} đêm × {roomQty} phòng</span></div>
-                <div className="flex justify-between font-semibold text-sm border-t border-border pt-1 mt-1"><span className="text-muted-foreground">Thành tiền phòng:</span><span>{fmt(roomSubtotal)}</span></div>
+              <div className="mt-3 bg-secondary/70 rounded-lg p-3 space-y-3">
+                {roomBreakdown.map((room: any, index: number) => {
+                  const nightlyRate = room.average_nightly_rate || 0;
+                  const quantity = room.quantity || 1;
+                  const subtotal = room.subtotal || 0;
+
+                  return (
+                    <div key={`${room.room_id || room.room_name}-${index}`} className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-foreground">{room.room_name || room.room_id}</span>
+                        <span>{fmt(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs"><span className="text-muted-foreground">Giá / đêm:</span><span className="font-medium">{fmt(nightlyRate)}</span></div>
+                      <div className="flex justify-between text-xs"><span className="text-muted-foreground">Tính:</span><span className="font-medium">{fmt(nightlyRate)} × {nights} đêm × {quantity} phòng</span></div>
+                    </div>
+                  );
+                })}
+                {roomBreakdown.length > 1 && (
+                  <div className="flex justify-between font-semibold text-sm border-t border-border pt-1 mt-1"><span className="text-muted-foreground">Tổng tiền phòng:</span><span>{fmt(roomSubtotal)}</span></div>
+                )}
               </div>
 
               {/* Extra person surcharge */}
@@ -342,10 +396,10 @@ const InvoicePage = () => {
                     const dishes = comboDishes[c.id] || [];
                     const comboItemTotal = c.price_vnd * c.quantity;
                     return (
-                      <div key={c.id} className="bg-secondary/50 rounded-xl p-4 border border-border/50">
+                    <div key={c.id} className="bg-secondary/50 rounded-xl p-4 border border-border/50">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <p className="font-semibold">{idx + 1}. {packageName}</p>
+                            <p className="font-semibold">{idx + 1}. {c.combo_package_name || packageName}</p>
                             {menuName && <p className="text-xs text-primary font-medium mt-0.5">📋 {menuName}</p>}
                           </div>
                           <span className="font-bold text-primary text-sm">{fmt(comboItemTotal)}</span>

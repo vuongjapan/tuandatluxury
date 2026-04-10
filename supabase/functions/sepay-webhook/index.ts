@@ -37,20 +37,34 @@ async function fetchCombosWithDishes(supabase: any, bookingId: string) {
   const result: any[] = [];
 
   for (const combo of comboList) {
+    const snapshotDishes = Array.isArray(combo.dishes_snapshot) ? combo.dishes_snapshot : [];
+    if (snapshotDishes.length > 0) {
+      result.push({ ...combo, dishes: snapshotDishes });
+      continue;
+    }
+
     const parts = combo.combo_name?.split(' – ') || [];
-    const menuName = parts.length > 1 ? parts.slice(1).join(' – ') : '';
+    const menuName = combo.combo_menu_name || (parts.length > 1 ? parts.slice(1).join(' – ') : '');
     let dishes: any[] = [];
-    if (menuName && combo.dining_item_id) {
+
+    if (combo.combo_menu_id) {
+      const { data: dishData } = await supabase
+        .from("combo_menu_dishes")
+        .select("name_vi, name_en, sort_order")
+        .eq("combo_menu_id", combo.combo_menu_id)
+        .order("sort_order");
+      dishes = dishData || [];
+    } else if (menuName && (combo.combo_package_id || combo.dining_item_id)) {
       const { data: menus } = await supabase
         .from("combo_menus")
         .select("id, name_vi, name_en")
-        .eq("combo_package_id", combo.dining_item_id)
+        .eq("combo_package_id", combo.combo_package_id || combo.dining_item_id)
         .eq("is_active", true);
       const matchedMenu = menus?.find((m: any) => m.name_vi === menuName || m.name_en === menuName);
       if (matchedMenu) {
         const { data: dishData } = await supabase
           .from("combo_menu_dishes")
-          .select("name_vi, sort_order")
+          .select("name_vi, name_en, sort_order")
           .eq("combo_menu_id", matchedMenu.id)
           .order("sort_order");
         dishes = dishData || [];

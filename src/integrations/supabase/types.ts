@@ -65,27 +65,42 @@ export type Database = {
       booking_combos: {
         Row: {
           booking_id: string
+          combo_menu_id: string | null
+          combo_menu_name: string | null
           combo_name: string
+          combo_package_id: string | null
+          combo_package_name: string | null
           created_at: string
-          dining_item_id: string
+          dining_item_id: string | null
+          dishes_snapshot: Json
           id: string
           price_vnd: number
           quantity: number
         }
         Insert: {
           booking_id: string
+          combo_menu_id?: string | null
+          combo_menu_name?: string | null
           combo_name?: string
+          combo_package_id?: string | null
+          combo_package_name?: string | null
           created_at?: string
-          dining_item_id: string
+          dining_item_id?: string | null
+          dishes_snapshot?: Json
           id?: string
           price_vnd?: number
           quantity?: number
         }
         Update: {
           booking_id?: string
+          combo_menu_id?: string | null
+          combo_menu_name?: string | null
           combo_name?: string
+          combo_package_id?: string | null
+          combo_package_name?: string | null
           created_at?: string
-          dining_item_id?: string
+          dining_item_id?: string | null
+          dishes_snapshot?: Json
           id?: string
           price_vnd?: number
           quantity?: number
@@ -96,6 +111,20 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_combos_combo_menu_id_fkey"
+            columns: ["combo_menu_id"]
+            isOneToOne: false
+            referencedRelation: "combo_menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_combos_combo_package_id_fkey"
+            columns: ["combo_package_id"]
+            isOneToOne: false
+            referencedRelation: "combo_packages"
             referencedColumns: ["id"]
           },
           {
@@ -151,6 +180,7 @@ export type Database = {
           check_in: string
           check_out: string
           combo_notes: string | null
+          combo_total: number
           company_name: string | null
           created_at: string
           decoration_notes: string | null
@@ -179,8 +209,11 @@ export type Database = {
           promotion_id: string | null
           promotion_name: string | null
           remaining_amount: number
+          room_breakdown: Json
+          room_details: Json
           room_id: string
           room_quantity: number
+          room_subtotal: number
           sepay_bank: string | null
           sepay_qr_url: string | null
           sepay_va: string | null
@@ -194,6 +227,7 @@ export type Database = {
           check_in: string
           check_out: string
           combo_notes?: string | null
+          combo_total?: number
           company_name?: string | null
           created_at?: string
           decoration_notes?: string | null
@@ -222,8 +256,11 @@ export type Database = {
           promotion_id?: string | null
           promotion_name?: string | null
           remaining_amount?: number
+          room_breakdown?: Json
+          room_details?: Json
           room_id: string
           room_quantity?: number
+          room_subtotal?: number
           sepay_bank?: string | null
           sepay_qr_url?: string | null
           sepay_va?: string | null
@@ -237,6 +274,7 @@ export type Database = {
           check_in?: string
           check_out?: string
           combo_notes?: string | null
+          combo_total?: number
           company_name?: string | null
           created_at?: string
           decoration_notes?: string | null
@@ -265,8 +303,11 @@ export type Database = {
           promotion_id?: string | null
           promotion_name?: string | null
           remaining_amount?: number
+          room_breakdown?: Json
+          room_details?: Json
           room_id?: string
           room_quantity?: number
+          room_subtotal?: number
           sepay_bank?: string | null
           sepay_qr_url?: string | null
           sepay_va?: string | null
