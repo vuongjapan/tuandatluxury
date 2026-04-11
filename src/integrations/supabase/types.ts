@@ -1442,12 +1442,14 @@ export type Database = {
       rooms: {
         Row: {
           amenities: string[] | null
+          bed_type: string
           capacity: number
           created_at: string
           description_en: string | null
           description_ja: string | null
           description_vi: string | null
           description_zh: string | null
+          has_balcony: boolean
           id: string
           image_url: string | null
           is_active: boolean | null
@@ -1458,17 +1460,21 @@ export type Database = {
           peak_multiplier: number | null
           price_vnd: number
           size_sqm: number
+          total_rooms: number
           updated_at: string
+          view_type: string
           weekend_multiplier: number | null
         }
         Insert: {
           amenities?: string[] | null
+          bed_type?: string
           capacity?: number
           created_at?: string
           description_en?: string | null
           description_ja?: string | null
           description_vi?: string | null
           description_zh?: string | null
+          has_balcony?: boolean
           id: string
           image_url?: string | null
           is_active?: boolean | null
@@ -1479,17 +1485,21 @@ export type Database = {
           peak_multiplier?: number | null
           price_vnd?: number
           size_sqm?: number
+          total_rooms?: number
           updated_at?: string
+          view_type?: string
           weekend_multiplier?: number | null
         }
         Update: {
           amenities?: string[] | null
+          bed_type?: string
           capacity?: number
           created_at?: string
           description_en?: string | null
           description_ja?: string | null
           description_vi?: string | null
           description_zh?: string | null
+          has_balcony?: boolean
           id?: string
           image_url?: string | null
           is_active?: boolean | null
@@ -1500,7 +1510,9 @@ export type Database = {
           peak_multiplier?: number | null
           price_vnd?: number
           size_sqm?: number
+          total_rooms?: number
           updated_at?: string
+          view_type?: string
           weekend_multiplier?: number | null
         }
         Relationships: []

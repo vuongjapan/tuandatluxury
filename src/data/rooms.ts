@@ -14,12 +14,16 @@ export interface Room {
   images?: string[];
   weekendMultiplier: number;
   peakMultiplier: number;
+  totalRooms: number;
+  bedType: string;
+  viewType: string;
+  hasBalcony: boolean;
 }
 
 export const rooms: Room[] = [
   {
     id: 'standard',
-    name: { vi: 'Phòng Standard', en: 'Standard Room', ja: 'スタンダードルーム', zh: '标准间' },
+    name: { vi: 'Phòng Đơn Deluxe Double', en: 'Deluxe Double Room', ja: 'デラックスダブルルーム', zh: '豪华双人房' },
     description: {
       vi: 'Phòng tiêu chuẩn thoải mái với đầy đủ tiện nghi, tầm nhìn thành phố.',
       en: 'Comfortable standard room with full amenities and city view.',
@@ -28,45 +32,57 @@ export const rooms: Room[] = [
     },
     priceVND: 800000,
     capacity: 2,
-    size: 25,
+    size: 30,
     amenities: ['wifi', 'ac', 'tv', 'minibar', 'safe'],
     image: roomStandard,
     weekendMultiplier: 1.3,
     peakMultiplier: 1.5,
+    totalRooms: 4,
+    bedType: '1 giường đôi lớn',
+    viewType: 'View thành phố',
+    hasBalcony: false,
   },
   {
     id: 'deluxe',
-    name: { vi: 'Phòng Deluxe', en: 'Deluxe Room', ja: 'デラックスルーム', zh: '豪华间' },
+    name: { vi: 'Phòng Đôi Deluxe Twin', en: 'Deluxe Twin Room', ja: 'デラックスツインルーム', zh: '豪华双床房' },
     description: {
-      vi: 'Phòng sang trọng với ban công riêng, tầm nhìn biển tuyệt đẹp.',
-      en: 'Luxurious room with private balcony and stunning ocean view.',
+      vi: 'Phòng tiêu chuẩn thoải mái với đầy đủ tiện nghi, tầm nhìn thành phố.',
+      en: 'Comfortable room with full amenities and city view.',
+      ja: '快適なツインルーム、市街の眺め。',
+      zh: '舒适的双床房，配有完整设施和城市景观。',
+    },
+    priceVND: 800000,
+    capacity: 4,
+    size: 30,
+    amenities: ['wifi', 'ac', 'tv', 'minibar', 'safe'],
+    image: roomDeluxe,
+    weekendMultiplier: 1.3,
+    peakMultiplier: 1.5,
+    totalRooms: 8,
+    bedType: '2 giường đôi lớn',
+    viewType: 'View thành phố',
+    hasBalcony: false,
+  },
+  {
+    id: 'family',
+    name: { vi: 'Phòng Đôi VIP', en: 'VIP Twin Room', ja: 'VIPツインルーム', zh: 'VIP双床房' },
+    description: {
+      vi: 'Phòng sang trọng với ban công riêng, tầm nhìn biển và thành phố tuyệt đẹp.',
+      en: 'Luxurious room with private balcony and stunning ocean & city view.',
       ja: '専用バルコニー付きの豪華な客室、海の絶景。',
       zh: '豪华客房，配有私人阳台和壮丽海景。',
     },
     priceVND: 1800000,
-    capacity: 2,
-    size: 35,
-    amenities: ['wifi', 'ac', 'tv', 'minibar', 'safe', 'balcony', 'bathtub', 'ocean_view'],
-    image: roomDeluxe,
-    weekendMultiplier: 1.3,
-    peakMultiplier: 1.6,
-  },
-  {
-    id: 'family',
-    name: { vi: 'Phòng Family', en: 'Family Room', ja: 'ファミリールーム', zh: '家庭房' },
-    description: {
-      vi: 'Phòng rộng rãi dành cho gia đình, 2 giường, không gian vui chơi cho trẻ.',
-      en: 'Spacious family room with 2 beds and kids play area.',
-      ja: '2ベッド、キッズエリア付きの広々ファミリールーム。',
-      zh: '宽敞的家庭房，配有2张床和儿童游乐区。',
-    },
-    priceVND: 2000000,
     capacity: 4,
-    size: 45,
-    amenities: ['wifi', 'ac', 'tv', 'minibar', 'safe', 'balcony', 'kids_area', 'extra_bed'],
+    size: 35,
+    amenities: ['wifi', 'ac', 'tv', 'minibar', 'safe', 'balcony', 'ocean_view'],
     image: roomFamily,
     weekendMultiplier: 1.3,
-    peakMultiplier: 1.5,
+    peakMultiplier: 1.6,
+    totalRooms: 7,
+    bedType: '2 giường lớn',
+    viewType: 'View biển + thành phố',
+    hasBalcony: true,
   },
 ];
 

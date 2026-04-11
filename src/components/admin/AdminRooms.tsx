@@ -146,6 +146,10 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
       description_en: editingRoom.description_en, description_ja: editingRoom.description_ja,
       description_zh: editingRoom.description_zh, is_active: editingRoom.is_active,
       amenities: editingRoom.amenities, image_url: editingRoom.image_url,
+      total_rooms: editingRoom.total_rooms || 1,
+      bed_type: editingRoom.bed_type || '',
+      view_type: editingRoom.view_type || '',
+      has_balcony: editingRoom.has_balcony || false,
     }).eq('id', editingRoom.id);
     if (error) { toast({ title: 'Lỗi lưu phòng', variant: 'destructive' }); return; }
     toast({ title: 'Đã lưu thông tin phòng ✓' });
@@ -266,6 +270,22 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
               <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Diện tích (m²)</label>
               <Input type="number" value={editingRoom.size_sqm} onChange={e => setEditingRoom({ ...editingRoom, size_sqm: +e.target.value })} />
             </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Số lượng phòng</label>
+              <Input type="number" value={editingRoom.total_rooms || 1} onChange={e => setEditingRoom({ ...editingRoom, total_rooms: +e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Loại giường</label>
+              <Input value={editingRoom.bed_type || ''} onChange={e => setEditingRoom({ ...editingRoom, bed_type: e.target.value })} placeholder="VD: 2 giường đôi lớn" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">View</label>
+              <Input value={editingRoom.view_type || ''} onChange={e => setEditingRoom({ ...editingRoom, view_type: e.target.value })} placeholder="VD: View biển + thành phố" />
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={editingRoom.has_balcony || false} onChange={e => setEditingRoom({ ...editingRoom, has_balcony: e.target.checked })} />
+              <label className="text-sm">Có ban công</label>
+            </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={editingRoom.is_active} onChange={e => setEditingRoom({ ...editingRoom, is_active: e.target.checked })} />
               <label className="text-sm">Hiển thị phòng</label>
@@ -321,16 +341,8 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
               </div>
             </div>
             <div className="bg-secondary rounded-lg p-2 mb-3 text-center">
-              <p className="text-xs text-muted-foreground">Giá cơ bản</p>
+              <p className="text-xs text-muted-foreground">{room.total_rooms || 1} phòng | {room.bed_type || '—'} | {room.size_sqm}m²</p>
               <p className="font-bold text-primary text-sm">{room.price_vnd?.toLocaleString('vi')}₫/đêm</p>
-            </div>
-            <div className="flex flex-wrap gap-1 mb-3">
-              {(room.amenities || []).slice(0, 3).map((a: string) => (
-                <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                  {AMENITY_ICONS[a]?.label.vi || a}
-                </span>
-              ))}
-              {(room.amenities || []).length > 3 && <span className="text-[10px] text-muted-foreground">+{(room.amenities || []).length - 3}</span>}
             </div>
             <Button variant="outline" size="sm" className="w-full" onClick={() => setEditingRoom(room)}>
               <Pencil className="h-3.5 w-3.5 mr-1.5" />Chỉnh sửa
