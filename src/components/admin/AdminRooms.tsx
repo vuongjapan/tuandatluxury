@@ -270,6 +270,22 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
               <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Diện tích (m²)</label>
               <Input type="number" value={editingRoom.size_sqm} onChange={e => setEditingRoom({ ...editingRoom, size_sqm: +e.target.value })} />
             </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Số lượng phòng</label>
+              <Input type="number" value={editingRoom.total_rooms || 1} onChange={e => setEditingRoom({ ...editingRoom, total_rooms: +e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Loại giường</label>
+              <Input value={editingRoom.bed_type || ''} onChange={e => setEditingRoom({ ...editingRoom, bed_type: e.target.value })} placeholder="VD: 2 giường đôi lớn" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">View</label>
+              <Input value={editingRoom.view_type || ''} onChange={e => setEditingRoom({ ...editingRoom, view_type: e.target.value })} placeholder="VD: View biển + thành phố" />
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={editingRoom.has_balcony || false} onChange={e => setEditingRoom({ ...editingRoom, has_balcony: e.target.checked })} />
+              <label className="text-sm">Có ban công</label>
+            </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={editingRoom.is_active} onChange={e => setEditingRoom({ ...editingRoom, is_active: e.target.checked })} />
               <label className="text-sm">Hiển thị phòng</label>
