@@ -146,6 +146,10 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
       description_en: editingRoom.description_en, description_ja: editingRoom.description_ja,
       description_zh: editingRoom.description_zh, is_active: editingRoom.is_active,
       amenities: editingRoom.amenities, image_url: editingRoom.image_url,
+      total_rooms: editingRoom.total_rooms || 1,
+      bed_type: editingRoom.bed_type || '',
+      view_type: editingRoom.view_type || '',
+      has_balcony: editingRoom.has_balcony || false,
     }).eq('id', editingRoom.id);
     if (error) { toast({ title: 'Lỗi lưu phòng', variant: 'destructive' }); return; }
     toast({ title: 'Đã lưu thông tin phòng ✓' });
