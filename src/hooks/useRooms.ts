@@ -64,6 +64,10 @@ export interface DBRoom {
   weekend_multiplier: number | null;
   peak_multiplier: number | null;
   is_active: boolean | null;
+  total_rooms: number;
+  bed_type: string;
+  view_type: string;
+  has_balcony: boolean;
 }
 
 function dbRoomToRoom(db: DBRoom, staticFallback?: Room, images?: RoomImage[]): Room {
@@ -82,6 +86,10 @@ function dbRoomToRoom(db: DBRoom, staticFallback?: Room, images?: RoomImage[]): 
     images: images?.map(img => img.image_url) || [],
     weekendMultiplier: db.weekend_multiplier || 1.3,
     peakMultiplier: db.peak_multiplier || 1.5,
+    totalRooms: db.total_rooms || 1,
+    bedType: db.bed_type || staticFallback?.bedType || '',
+    viewType: db.view_type || staticFallback?.viewType || '',
+    hasBalcony: db.has_balcony || false,
   };
 }
 
