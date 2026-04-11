@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Maximize2, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, BedDouble, Eye, ChevronDown } from 'lucide-react';
+import { Users, Maximize2, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, BedDouble, Eye, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,46 +9,22 @@ import PriceCalendar from '@/components/PriceCalendar';
 import { useRooms } from '@/hooks/useRooms';
 import { useRoomAmenities } from '@/hooks/useRoomAmenities';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useState } from 'react';
 
-const ROOM_SPECS: Record<string, { area: string; beds: string; view: string; balcony?: boolean; bathroom: string[] }> = {
-  standard: {
-    area: '30m²',
-    beds: '1 giường đôi',
-    view: 'View thành phố',
-    bathroom: ['Vòi sen', 'Máy sấy tóc', 'Khăn & dép', 'Đồ vệ sinh miễn phí'],
-  },
-  deluxe: {
-    area: '30m²',
-    beds: '2 giường đôi',
-    view: 'View thành phố',
-    bathroom: ['Vòi sen', 'Máy sấy tóc', 'Khăn & dép', 'Đồ vệ sinh miễn phí'],
-  },
-  family: {
-    area: '35m²',
-    beds: '2 giường đôi',
-    view: 'View biển + thành phố',
-    balcony: true,
-    bathroom: ['Vòi sen', 'Máy sấy tóc', 'Khăn & dép', 'Đồ vệ sinh miễn phí'],
-  },
-};
+const BATHROOM_ITEMS = ['Vòi sen', 'Máy sấy tóc', 'Khăn & dép', 'Đồ vệ sinh miễn phí'];
 
 const RoomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { language, t, formatPrice } = useLanguage();
+  const { language, t } = useLanguage();
   const { rooms, getRoomPrice, getAvailability, isSpecialDate } = useRooms();
   const { roomFeatures, benefits, highlights } = useRoomAmenities();
-  const { settings } = useSiteSettings();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showDetails, setShowDetails] = useState(false);
 
   const room = rooms.find((r) => r.id === id);
   if (!room) return <div className="pt-20 text-center">Room not found</div>;
 
-  const specs = ROOM_SPECS[room.id] || ROOM_SPECS.standard;
   const allImages = [room.image, ...(room.images || [])].filter(Boolean);
   const uniqueImages = [...new Set(allImages)];
 
@@ -106,34 +82,40 @@ const RoomDetail = () => {
                 <p className="text-muted-foreground text-lg leading-relaxed">{room.description[language]}</p>
               </div>
 
-              <div className="bg-secondary rounded-xl p-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-primary">{formatPrice(room.priceVND)}</span>
-                  <span className="text-muted-foreground">{t('room.per_night')}</span>
-                </div>
+              {/* Dynamic price message */}
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                <p className="text-sm text-primary font-medium">
+                  💰 Giá thay đổi theo ngày – chọn ngày trên lịch để xem giá chính xác
+                </p>
               </div>
 
-              {/* Room specs */}
+              {/* Room specs from DB */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="flex items-center gap-2 text-foreground bg-secondary px-3 py-2 rounded-lg">
                   <Maximize2 className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-sm">{specs.area}</span>
+                  <span className="text-sm">{room.size}m²</span>
                 </div>
                 <div className="flex items-center gap-2 text-foreground bg-secondary px-3 py-2 rounded-lg">
                   <BedDouble className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-sm">{specs.beds}</span>
+                  <span className="text-sm">{room.bedType}</span>
                 </div>
                 <div className="flex items-center gap-2 text-foreground bg-secondary px-3 py-2 rounded-lg">
                   <Eye className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-sm">{specs.view}</span>
+                  <span className="text-sm">{room.viewType}</span>
                 </div>
                 <div className="flex items-center gap-2 text-foreground bg-secondary px-3 py-2 rounded-lg">
                   <Users className="h-4 w-4 text-primary shrink-0" />
                   <span className="text-sm">{room.capacity} {t('room.capacity')}</span>
                 </div>
+                {room.hasBalcony && (
+                  <div className="flex items-center gap-2 text-primary bg-primary/10 px-3 py-2 rounded-lg font-medium">
+                    <Waves className="h-4 w-4 shrink-0" />
+                    <span className="text-sm">Có ban công</span>
+                  </div>
+                )}
               </div>
 
-              {/* Highlights (default visible) */}
+              {/* Highlights */}
               {highlights.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {highlights.map(h => (
@@ -144,58 +126,45 @@ const RoomDetail = () => {
                 </div>
               )}
 
-              {/* Expandable details */}
-              <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="w-full flex items-center justify-center gap-2 text-sm text-primary font-medium py-2 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
-              >
-                {showDetails ? 'Thu gọn' : '🔍 Xem chi tiết phòng'}
-                <ChevronDown className={`h-4 w-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showDetails && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4">
-                  {/* Room features */}
-                  {roomFeatures.length > 0 && (
-                    <div>
-                      <h3 className="font-display text-sm font-semibold mb-2">🧰 Trang thiết bị trong phòng</h3>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {roomFeatures.map(f => (
-                          <span key={f.id} className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
-                            {f.icon} {language === 'vi' ? f.name_vi : f.name_en || f.name_vi}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Benefits */}
-                  {benefits.length > 0 && (
-                    <div>
-                      <h3 className="font-display text-sm font-semibold mb-2">🎁 Ưu đãi dành cho khách</h3>
-                      <div className="grid grid-cols-1 gap-1">
-                        {benefits.map(b => (
-                          <span key={b.id} className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1">
-                            {b.icon} {language === 'vi' ? b.name_vi : b.name_en || b.name_vi}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Bathroom */}
-                  <div>
-                    <h3 className="font-display text-sm font-semibold mb-2">🚿 Phòng tắm</h3>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {specs.bathroom.map((item, i) => (
-                        <span key={i} className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
-                          ✓ {item}
-                        </span>
-                      ))}
-                    </div>
+              {/* Room features */}
+              {roomFeatures.length > 0 && (
+                <div>
+                  <h3 className="font-display text-sm font-semibold mb-2">🧰 Trang thiết bị trong phòng</h3>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {roomFeatures.map(f => (
+                      <span key={f.id} className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
+                        {f.icon} {language === 'vi' ? f.name_vi : f.name_en || f.name_vi}
+                      </span>
+                    ))}
                   </div>
-                </motion.div>
+                </div>
               )}
+
+              {/* Benefits */}
+              {benefits.length > 0 && (
+                <div>
+                  <h3 className="font-display text-sm font-semibold mb-2">🎁 Ưu đãi dành cho khách</h3>
+                  <div className="grid grid-cols-1 gap-1">
+                    {benefits.map(b => (
+                      <span key={b.id} className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1">
+                        {b.icon} {language === 'vi' ? b.name_vi : b.name_en || b.name_vi}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Bathroom */}
+              <div>
+                <h3 className="font-display text-sm font-semibold mb-2">🚿 Phòng tắm</h3>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {BATHROOM_ITEMS.map((item, i) => (
+                    <span key={i} className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
+                      ✓ {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
 
               <PriceCalendar room={room} selectedDate={selectedDate} onSelectDate={setSelectedDate} getRoomPrice={getRoomPrice} getAvailability={getAvailability} isSpecialDate={isSpecialDate} />
 
@@ -210,7 +179,7 @@ const RoomDetail = () => {
                   </a>
                 </Button>
                 <Button variant="outline" className="flex-1 gap-2" asChild>
-                  <a href="https://www.agoda.com/vi-vn/tuan-dat-luxury-hotel-flc/hotel/thanh-hoa-sam-son-beach-vn.html?cid=1844104&ds=eOSBCifZS4w0QBRo" target="_blank" rel="noopener noreferrer">
+                  <a href="https://www.agoda.com/vi-vn/tuan-dat-luxury-hotel-flc/hotel/thanh-hoa-sam-son-beach-vn.html" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" /> Agoda
                   </a>
                 </Button>

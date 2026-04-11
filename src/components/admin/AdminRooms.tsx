@@ -341,16 +341,8 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
               </div>
             </div>
             <div className="bg-secondary rounded-lg p-2 mb-3 text-center">
-              <p className="text-xs text-muted-foreground">Giá cơ bản</p>
+              <p className="text-xs text-muted-foreground">{room.total_rooms || 1} phòng | {room.bed_type || '—'} | {room.size_sqm}m²</p>
               <p className="font-bold text-primary text-sm">{room.price_vnd?.toLocaleString('vi')}₫/đêm</p>
-            </div>
-            <div className="flex flex-wrap gap-1 mb-3">
-              {(room.amenities || []).slice(0, 3).map((a: string) => (
-                <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                  {AMENITY_ICONS[a]?.label.vi || a}
-                </span>
-              ))}
-              {(room.amenities || []).length > 3 && <span className="text-[10px] text-muted-foreground">+{(room.amenities || []).length - 3}</span>}
             </div>
             <Button variant="outline" size="sm" className="w-full" onClick={() => setEditingRoom(room)}>
               <Pencil className="h-3.5 w-3.5 mr-1.5" />Chỉnh sửa
