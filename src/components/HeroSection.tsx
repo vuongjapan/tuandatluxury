@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,11 +18,13 @@ const HeroSection = () => {
   const [visible, setVisible] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  useEffect(() => { setVisible(true); }, []);
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
 
   return (
     <section id="overview" className="relative h-screen min-h-[600px] flex flex-col overflow-hidden">
-      {/* Background - Video or Image */}
+      {/* Background */}
       <div className="absolute inset-0">
         {heroVideo ? (
           <>
@@ -34,117 +35,85 @@ const HeroSection = () => {
               muted
               loop
               playsInline
+              preload="metadata"
               onLoadedData={() => setVideoLoaded(true)}
               className={`w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
               style={{ transform: 'scale(1.05)' }}
             />
-            {/* Fallback image while video loads */}
             {!videoLoaded && (
-              <img
-                src={heroImage}
-                alt="Tuấn Đạt Luxury Hotel"
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="eager"
-              />
+              <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="absolute inset-0 w-full h-full object-cover" loading="eager" width={1920} height={1080} />
             )}
           </>
         ) : (
-          <img
-            src={heroImage}
-            alt="Tuấn Đạt Luxury Hotel"
-            className="w-full h-full object-cover"
-            loading="eager"
-            decoding="async"
-          />
+          <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="w-full h-full object-cover" loading="eager" decoding="async" width={1920} height={1080} />
         )}
-        {/* Cinematic gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,10%,0.55)] via-[hsl(220,25%,10%,0.35)] to-[hsl(220,25%,10%,0.80)]" />
-        {/* Left vignette */}
         <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,25%,10%,0.4)] to-transparent" />
       </div>
 
       {/* Decorative gold lines */}
-      <div className="absolute left-8 sm:left-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/60 to-transparent hidden lg:block" />
-      <div className="absolute right-8 sm:right-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/60 to-transparent hidden lg:block" />
+      <div className="absolute left-8 sm:left-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/40 to-transparent hidden lg:block" />
+      <div className="absolute right-8 sm:right-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/40 to-transparent hidden lg:block" />
 
-      {/* Main hero content */}
+      {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 pt-24">
-        <AnimatePresence>
-          {visible && (
-            <>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2 }}
-                className="text-primary font-display text-xs sm:text-sm tracking-[0.4em] uppercase mb-4 sm:mb-5"
-              >
-                {isVi ? '✦  Chào mừng đến với  ✦' : '✦  Welcome to  ✦'}
-              </motion.p>
+        <p
+          className={`text-primary font-display text-xs sm:text-sm tracking-[0.4em] uppercase mb-5 transition-all duration-1000 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: '200ms' }}
+        >
+          {isVi ? 'Chào mừng đến với' : 'Welcome to'}
+        </p>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.9, delay: 0.4 }}
-                className="font-display font-bold text-primary-foreground drop-shadow-2xl leading-tight mb-4"
-                style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}
-              >
-                {settings.hero_title || t('hero.title')}
-              </motion.h1>
+        <h1
+          className={`font-display font-bold text-primary-foreground drop-shadow-2xl leading-tight mb-5 transition-all duration-1000 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+          style={{ fontSize: 'clamp(2.2rem, 7vw, 5.5rem)', transitionDelay: '400ms', letterSpacing: '-0.02em' }}
+        >
+          {settings.hero_title || t('hero.title')}
+        </h1>
 
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 0.8, delay: 0.8 }}
-                className="w-32 h-[1px] bg-primary mx-auto mb-5"
-              />
+        <div
+          className={`w-32 h-[1px] bg-primary mx-auto mb-6 transition-all duration-1000 ease-out ${visible ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}`}
+          style={{ transitionDelay: '700ms' }}
+        />
 
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 1.0 }}
-                className="text-primary-foreground/80 font-light tracking-widest text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-8 sm:mb-10"
-              >
-                {settings.hero_subtitle || t('hero.subtitle')}
-              </motion.p>
+        <p
+          className={`text-primary-foreground/80 font-light tracking-widest text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-10 transition-all duration-1000 ease-out ${visible ? 'opacity-100' : 'opacity-0'}`}
+          style={{ transitionDelay: '900ms' }}
+        >
+          {settings.hero_subtitle || t('hero.subtitle')}
+        </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 1.2 }}
-                className="flex flex-col sm:flex-row items-center gap-3"
-              >
-                <Button
-                  variant="hero"
-                  size="lg"
-                  onClick={() => navigate('/booking')}
-                  className="text-sm px-10 py-5 tracking-widest uppercase font-semibold"
-                >
-                  {t('hero.book_now')}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="text-sm px-8 py-5 tracking-widest uppercase font-medium text-primary-foreground border-primary-foreground/40 hover:bg-primary-foreground/10 hover:border-primary-foreground/70 bg-transparent"
-                >
-                  {isVi ? 'Khám phá phòng' : 'Explore Rooms'}
-                </Button>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        <div
+          className={`flex flex-col sm:flex-row items-center gap-3 transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: '1100ms' }}
+        >
+          <Button
+            variant="hero"
+            size="lg"
+            onClick={() => navigate('/booking')}
+            className="text-sm px-10 py-5 tracking-widest uppercase font-semibold"
+          >
+            {t('hero.book_now')}
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
+            className="text-sm px-8 py-5 tracking-widest uppercase font-medium text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10 hover:border-primary-foreground/60 bg-transparent"
+          >
+            {isVi ? 'Khám phá phòng' : 'Explore Rooms'}
+          </Button>
+        </div>
       </div>
 
-      {/* Bottom stats bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 1.4 }}
-        className="relative z-10 w-full"
+      {/* Stats bar */}
+      <div
+        className={`relative z-10 w-full transition-all duration-800 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        style={{ transitionDelay: '1400ms' }}
       >
-        <div className="bg-foreground/80 backdrop-blur-md border-t border-primary/30">
+        <div className="bg-foreground/80 backdrop-blur-md border-t border-primary/20">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-3 sm:grid-cols-3 divide-x divide-primary/30">
+            <div className="grid grid-cols-3 divide-x divide-primary/20">
               {[
                 { numVi: '19+', labelVi: 'Phòng sang trọng', numEn: '19+', labelEn: 'Luxury Rooms' },
                 { numVi: '9.4', labelVi: 'Điểm Agoda / 10', numEn: '9.4', labelEn: 'Agoda Score / 10' },
@@ -162,17 +131,12 @@ const HeroSection = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 2, delay: 2, repeat: Infinity }}
-        className="absolute bottom-[72px] sm:bottom-[76px] left-1/2 -translate-x-1/2 z-10"
-      >
+      <div className={`absolute bottom-[72px] sm:bottom-[76px] left-1/2 -translate-x-1/2 z-10 animate-bounce ${visible ? 'opacity-60' : 'opacity-0'}`}>
         <ChevronDown className="h-5 w-5 text-primary/80" />
-      </motion.div>
+      </div>
     </section>
   );
 };
