@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPriceShort } from '@/lib/utils';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import type { Room } from '@/data/rooms';
 import type { SpecialDatePrice } from '@/hooks/useRooms';
 
@@ -16,6 +17,8 @@ interface PriceCalendarProps {
 
 const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvailability, isSpecialDate }: PriceCalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const { settings } = useSiteSettings();
+  const webDiscountPercent = parseInt(settings.web_discount_percent || '0', 10);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -27,20 +30,20 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
   const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
   const cells = useMemo(() => {
-    const result: { date: Date | null; price: number; basePrice: number; isPast: boolean; status: string; isSpecial: boolean; specialNote: string | null }[] = [];
-    for (let i = 0; i < firstDay; i++) result.push({ date: null, price: 0, basePrice: 0, isPast: true, status: 'open', isSpecial: false, specialNote: null });
+    const result: { date: Date | null; price: number; webPrice: number; isPast: boolean; status: string; isSpecial: boolean; specialNote: string | null }[] = [];
+    for (let i = 0; i < firstDay; i++) result.push({ date: null, price: 0, webPrice: 0, isPast: true, status: 'open', isSpecial: false, specialNote: null });
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const isPast = date < today;
       const price = getRoomPrice ? getRoomPrice(room, date) : room.priceVND;
-      const basePrice = room.priceVND;
+      const webPrice = webDiscountPercent > 0 ? Math.round(price * (100 - webDiscountPercent) / 100) : price;
       const avail = getAvailability ? getAvailability(room.id, date) : null;
       const status = avail?.status || 'open';
       const special = isSpecialDate ? isSpecialDate(date) : null;
-      result.push({ date, price, basePrice, isPast, status, isSpecial: !!special, specialNote: special?.note || null });
+      result.push({ date, price, webPrice, isPast, status, isSpecial: !!special, specialNote: special?.note || null });
     }
     return result;
-  }, [year, month, room, firstDay, daysInMonth, getRoomPrice, getAvailability, isSpecialDate]);
+  }, [year, month, room, firstDay, daysInMonth, getRoomPrice, getAvailability, isSpecialDate, webDiscountPercent]);
 
   const monthNames = [
     'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
@@ -49,6 +52,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
 
   return (
     <div className="bg-card rounded-xl border border-border p-3 sm:p-4">
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(new Date(year, month - 1))}>
           <ChevronLeft className="h-4 w-4" />
@@ -61,12 +65,24 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
         </Button>
       </div>
 
+      {/* Web discount banner */}
+      {webDiscountPercent > 0 && (
+        <div className="mb-3 flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2">
+          <Globe className="h-4 w-4 text-green-600 shrink-0" />
+          <span className="text-xs font-medium text-green-700 dark:text-green-300">
+            Giảm {webDiscountPercent}% khi đặt qua website
+          </span>
+        </div>
+      )}
+
+      {/* Day names */}
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
         {dayNames.map((d) => (
-          <div key={d} className="text-center text-[10px] sm:text-xs font-semibold text-muted-foreground py-1">{d}</div>
+          <div key={d} className="text-center text-[11px] sm:text-xs font-semibold text-muted-foreground py-1">{d}</div>
         ))}
       </div>
 
+      {/* Cells */}
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {cells.map((cell, i) => {
           if (!cell.date) return <div key={i} />;
@@ -77,7 +93,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
           const isWeekend = cell.date.getDay() === 5 || cell.date.getDay() === 6;
           const isSunday = cell.date.getDay() === 0;
           const disabled = cell.isPast || isClosed;
-          const hasDiscount = !cell.isPast && !isClosed && cell.price < cell.basePrice;
+          const hasWebDiscount = !cell.isPast && !isClosed && webDiscountPercent > 0;
 
           return (
             <button
@@ -86,7 +102,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
               onClick={() => onSelectDate?.(cell.date!)}
               title={cell.isSpecial ? (cell.specialNote || 'Giá đặc biệt') : undefined}
               className={`
-                relative p-0.5 sm:p-1 rounded-lg text-center transition-all duration-200 min-h-[48px] sm:min-h-[56px] flex flex-col items-center justify-center
+                relative p-0.5 sm:p-1 rounded-lg text-center transition-all duration-200 min-h-[54px] sm:min-h-[64px] flex flex-col items-center justify-center
                 ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-secondary cursor-pointer'}
                 ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : ''}
                 ${isClosed ? 'bg-destructive/10 line-through' : ''}
@@ -97,18 +113,18 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
                 ${isSunday && !disabled && !isCombo && !cell.isSpecial ? 'bg-orange-50 dark:bg-orange-900/20' : ''}
               `}
             >
-              <span className="text-xs sm:text-sm font-medium text-foreground">{cell.date.getDate()}</span>
+              <span className="text-xs sm:text-sm font-semibold text-foreground">{cell.date.getDate()}</span>
               {!cell.isPast && !isClosed && (
-                <div className="flex flex-col items-center leading-none">
-                  {hasDiscount && (
-                    <span className="text-[8px] sm:text-[9px] text-muted-foreground line-through">
-                      {formatPriceShort(cell.basePrice)}
+                <div className="flex flex-col items-center leading-none mt-0.5">
+                  {hasWebDiscount && (
+                    <span className="text-[9px] sm:text-[10px] text-muted-foreground line-through leading-tight">
+                      {formatPriceShort(cell.price)}
                     </span>
                   )}
-                  <span className={`text-[10px] sm:text-[11px] font-bold leading-tight ${
-                    cell.isSpecial ? 'text-destructive' : hasDiscount ? 'text-green-600 dark:text-green-400' : 'text-primary'
+                  <span className={`text-[11px] sm:text-xs font-bold leading-tight ${
+                    cell.isSpecial ? 'text-destructive' : hasWebDiscount ? 'text-green-600 dark:text-green-400' : 'text-primary'
                   }`}>
-                    {formatPriceShort(cell.price)}
+                    {formatPriceShort(hasWebDiscount ? cell.webPrice : cell.price)}
                   </span>
                 </div>
               )}
@@ -116,17 +132,21 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
                 <Flame className="h-2.5 w-2.5 text-destructive absolute top-0.5 right-0.5" />
               )}
               {isClosed && !cell.isPast && (
-                <span className="text-[8px] sm:text-[9px] font-medium text-destructive">Đóng</span>
+                <span className="text-[9px] sm:text-[10px] font-medium text-destructive">Đóng</span>
               )}
               {isCombo && !cell.isPast && (
-                <span className="text-[8px] sm:text-[9px] font-medium text-purple-600">Combo</span>
+                <span className="text-[9px] sm:text-[10px] font-medium text-purple-600">Combo</span>
               )}
             </button>
           );
         })}
       </div>
 
+      {/* Legend */}
       <div className="flex flex-wrap gap-2 sm:gap-3 mt-3 text-[10px] sm:text-xs text-muted-foreground">
+        {webDiscountPercent > 0 && (
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-green-100 dark:bg-green-900/30 border border-green-400" /> Giá web</span>
+        )}
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-red-50 dark:bg-red-900/30 border border-red-400" /> Giá đặc biệt</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-accent/20" /> Cuối tuần</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-orange-100 dark:bg-orange-900/30" /> Chủ nhật</span>
