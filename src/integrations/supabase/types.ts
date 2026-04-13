@@ -1809,6 +1809,51 @@ export type Database = {
         }
         Relationships: []
       }
+      voucher_codes: {
+        Row: {
+          campaign_name: string
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          end_date: string
+          id: string
+          start_date: string
+          status: string
+          updated_at: string
+          usage_limit: number
+          used_count: number
+        }
+        Insert: {
+          campaign_name?: string
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          end_date: string
+          id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          usage_limit?: number
+          used_count?: number
+        }
+        Update: {
+          campaign_name?: string
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          usage_limit?: number
+          used_count?: number
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           amount: number
