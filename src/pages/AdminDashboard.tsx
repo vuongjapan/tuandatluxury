@@ -367,6 +367,8 @@ const AdminDashboard = () => {
           {tab === 'special-prices' && <AdminSpecialPrices />}
           {tab === 'cuisine-media' && <AdminCuisineMedia />}
           {tab === 'amenities' && <AdminAmenities />}
+          {tab === 'web-discount' && <AdminWebDiscount />}
+          {tab === 'vouchers' && <AdminVouchers />}
           {tab === 'settings' && <AdminSettings onBackup={handleBackup} onRestore={handleRestore} />}
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
         </div>
