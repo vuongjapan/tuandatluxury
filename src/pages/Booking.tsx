@@ -19,6 +19,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useDining } from '@/hooks/useDining';
 import { usePromotions } from '@/hooks/usePromotions';
 import { useAuth, MemberTier } from '@/contexts/AuthContext';
@@ -63,6 +64,8 @@ const Booking = () => {
   const { flashSales } = useFlashSales();
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
+  const { settings } = useSiteSettings();
+  const webDiscountPercent = parseInt(settings.web_discount_percent || '0', 10);
 
   const preselectedRoom = searchParams.get('room') || '';
   const preCheckin = searchParams.get('checkin');
@@ -272,15 +275,23 @@ const Booking = () => {
     return Math.min(appliedDiscountCode.discount_value, base);
   }, [appliedDiscountCode, roomTotal, comboTotal, individualFoodTotal]);
 
+  const webDiscountAmount = useMemo(() => {
+    if (webDiscountPercent <= 0 || roomTotal <= 0) return 0;
+    return Math.round(roomTotal * webDiscountPercent / 100);
+  }, [webDiscountPercent, roomTotal]);
+
   const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
   const originalPrice = roomTotal + extraPersonSurcharge + comboTotal + individualFoodTotal;
   const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
-  const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount;
+  const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount + webDiscountAmount;
   const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
   const totalPrice = Math.max(0, originalPrice - discountAmount);
 
   const appliedPromotions = useMemo(() => {
     const list: { name: string; amount: number; badge?: string }[] = [];
+    if (webDiscountAmount > 0) {
+      list.push({ name: `🌐 Giảm giá đặt qua web (-${webDiscountPercent}%)`, amount: webDiscountAmount, badge: 'Web' });
+    }
     if (flashSaleDiscount > 0 && activeFlashSaleItem) {
       list.push({ name: `⚡ Flash Sale: ${(activeFlashSaleItem as any).saleName}`, amount: flashSaleDiscount, badge: 'Flash Sale' });
     }
@@ -291,7 +302,7 @@ const Booking = () => {
       list.push({ name: `🧠 ${activeSmartRule.title_vi} (-${activeSmartRule.discount_percent}%)`, amount: smartPricingAmount, badge: activeSmartRule.badge_text_vi || 'Smart Price' });
     }
     return list;
-  }, [flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
+  }, [webDiscountAmount, webDiscountPercent, flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
   // Combo validation
   const totalComboServings = comboSelections.reduce((s, c) => s + c.quantity, 0);
