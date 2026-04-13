@@ -64,6 +64,8 @@ const Booking = () => {
   const { flashSales } = useFlashSales();
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
+  const { settings } = useSiteSettings();
+  const webDiscountPercent = parseInt(settings.web_discount_percent || '0', 10);
 
   const preselectedRoom = searchParams.get('room') || '';
   const preCheckin = searchParams.get('checkin');
