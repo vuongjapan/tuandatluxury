@@ -186,6 +186,8 @@ const AdminDashboard = () => {
       items: [
         { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
         { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
+        { id: 'web-discount', icon: MapPin, label: 'Giảm giá web' },
+        { id: 'vouchers', icon: Gift, label: 'Voucher QR' },
         { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
         { id: 'members', icon: Users, label: 'Khách & Thành viên' },
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
