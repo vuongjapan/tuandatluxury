@@ -7,6 +7,7 @@ import { useRooms } from '@/hooks/useRooms';
 import { optimizeImageUrl } from '@/lib/optimizeImage';
 import type { Room } from '@/data/rooms';
 import PriceCalendar from '@/components/PriceCalendar';
+import ExpandableList from '@/components/ExpandableList';
 
 const ROOM_GUEST_LIMITS: Record<string, number> = {
   standard: 2,
@@ -22,40 +23,50 @@ interface BookingRoomCardProps {
 }
 
 const BookingRoomCard = ({ room, quantity, onQuantityChange, nightlyPrice }: BookingRoomCardProps) => {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const { roomFeatures, benefits, highlights } = useRoomAmenities();
   const { getRoomPrice, getAvailability, isSpecialDate } = useRooms();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const maxGuests = ROOM_GUEST_LIMITS[room.id] || room.capacity;
   const imgSrc = optimizeImageUrl(room.image, { width: 400, quality: 70 });
 
+  const featureItems = roomFeatures.map(f => (
+    <span key={f.id} className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-secondary px-2 py-1 rounded">
+      {f.icon} {language === 'vi' ? f.name_vi : f.name_en || f.name_vi}
+    </span>
+  ));
+
+  const benefitItems = benefits.map(b => (
+    <span key={b.id} className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-secondary px-2 py-1 rounded">
+      {b.icon} {language === 'vi' ? b.name_vi : b.name_en || b.name_vi}
+    </span>
+  ));
+
   return (
     <div className={`bg-card rounded-xl border-2 overflow-hidden transition-all ${quantity > 0 ? 'border-primary shadow-lg' : 'border-border'}`}>
-      {/* Header: image + basic info */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row">
-        <div className="sm:w-48 shrink-0 relative">
+        <div className="sm:w-44 shrink-0 relative">
           <img
             src={imgSrc}
             alt={room.name[language]}
-            className="w-full h-36 sm:h-full object-cover"
+            className="w-full h-32 sm:h-full object-cover"
             loading="lazy"
             onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
           />
-          <div className="absolute top-2 left-2 bg-foreground/70 text-background px-2 py-1 rounded text-[10px] font-semibold backdrop-blur-sm">
+          <div className="absolute top-2 left-2 bg-foreground/70 text-background px-2 py-0.5 rounded text-[10px] font-semibold backdrop-blur-sm">
             {room.totalRooms} phòng
           </div>
         </div>
 
-        <div className="flex-1 p-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="font-display text-lg font-semibold text-foreground">{room.name[language]}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{room.description[language]}</p>
-            </div>
+        <div className="flex-1 p-3 sm:p-4 space-y-2.5">
+          <div>
+            <h3 className="font-display text-lg font-semibold text-foreground">{room.name[language]}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{room.description[language]}</p>
           </div>
 
           {/* Specs */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <span className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-md">
               <Maximize2 className="h-3 w-3" /> {room.size}m²
             </span>
@@ -71,63 +82,43 @@ const BookingRoomCard = ({ room, quantity, onQuantityChange, nightlyPrice }: Boo
           </div>
 
           {room.hasBalcony && (
-            <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
+            <div className="flex items-center gap-1 text-xs text-primary font-medium">
               <Waves className="h-3 w-3" /> Có ban công riêng
             </div>
           )}
 
-          {/* Highlights */}
           {highlights.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {highlights.map(h => (
-                <span key={h.id} className="inline-flex items-center gap-1 text-[11px] bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+            <div className="flex flex-wrap gap-1">
+              {highlights.slice(0, 3).map(h => (
+                <span key={h.id} className="inline-flex items-center gap-1 text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
                   {h.icon} {language === 'vi' ? h.name_vi : h.name_en || h.name_vi}
                 </span>
               ))}
             </div>
           )}
-
-          {/* Dynamic price message */}
-          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
-            <p className="text-xs text-primary font-medium">
-              💰 Giá thay đổi theo ngày – xem lịch bên dưới
-            </p>
-          </div>
         </div>
       </div>
 
-      {/* Amenities */}
-      <div className="px-4 pb-3 space-y-3">
+      {/* Amenities - collapsible */}
+      <div className="px-3 sm:px-4 pb-2 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {roomFeatures.length > 0 && (
+          {featureItems.length > 0 && (
             <div>
-              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">🧰 Trang thiết bị</h4>
-              <div className="grid grid-cols-2 gap-1">
-                {roomFeatures.map(f => (
-                  <span key={f.id} className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-secondary px-2 py-1 rounded">
-                    {f.icon} {language === 'vi' ? f.name_vi : f.name_en || f.name_vi}
-                  </span>
-                ))}
-              </div>
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Trang thiết bị</h4>
+              <ExpandableList items={featureItems} defaultCount={4} mobileCount={3} />
             </div>
           )}
-          {benefits.length > 0 && (
+          {benefitItems.length > 0 && (
             <div>
-              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">🎁 Ưu đãi</h4>
-              <div className="grid grid-cols-1 gap-0.5">
-                {benefits.map(b => (
-                  <span key={b.id} className="flex items-center gap-1.5 text-[11px] text-muted-foreground px-1 py-0.5">
-                    {b.icon} {language === 'vi' ? b.name_vi : b.name_en || b.name_vi}
-                  </span>
-                ))}
-              </div>
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Ưu đãi</h4>
+              <ExpandableList items={benefitItems} defaultCount={4} mobileCount={3} />
             </div>
           )}
         </div>
       </div>
 
       {/* Calendar */}
-      <div className="px-4 pb-3">
+      <div className="px-3 sm:px-4 pb-2">
         <PriceCalendar
           room={room}
           selectedDate={selectedDate}
@@ -139,14 +130,14 @@ const BookingRoomCard = ({ room, quantity, onQuantityChange, nightlyPrice }: Boo
       </div>
 
       {/* Quantity controls */}
-      <div className="px-4 pb-4 flex items-center justify-between gap-3 pt-3 border-t border-border">
+      <div className="px-3 sm:px-4 pb-3 flex items-center justify-between gap-3 pt-2 border-t border-border">
         <span className="text-sm font-medium text-foreground">Chọn số phòng:</span>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => onQuantityChange(Math.max(0, quantity - 1))}>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onQuantityChange(Math.max(0, quantity - 1))}>
             <Minus className="h-4 w-4" />
           </Button>
-          <span className="w-10 text-center font-bold text-xl">{quantity}</span>
-          <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => onQuantityChange(quantity + 1)}>
+          <span className="w-8 text-center font-bold text-lg">{quantity}</span>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onQuantityChange(quantity + 1)}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
