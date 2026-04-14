@@ -1060,6 +1060,29 @@ const Booking = () => {
       </div>
       <Footer />
       <FloatingButtons />
+
+      {/* Sticky bottom bar - Vinpearl style */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.1)] print:hidden">
+        <div className="container mx-auto px-4 max-w-5xl py-3 flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">{isVi ? 'Tổng cộng:' : 'Total:'}</p>
+            <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">
+              {totalPrice > 0 ? formatPrice(totalPrice) : '—'}
+            </p>
+            {totalPrice > 0 && discountAmount > 0 && (
+              <p className="text-[11px] text-muted-foreground line-through">{formatPrice(originalPrice)}</p>
+            )}
+          </div>
+          <Button
+            variant="gold"
+            className="px-8 py-6 text-sm font-bold rounded-lg shrink-0"
+            onClick={handleSubmit}
+            disabled={submitting || !canSubmit}
+          >
+            {submitting ? (isVi ? 'Đang xử lý...' : 'Processing...') : (isVi ? 'Đặt phòng' : 'Book Now')}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
