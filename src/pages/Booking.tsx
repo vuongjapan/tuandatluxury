@@ -326,6 +326,7 @@ const Booking = () => {
   };
 
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const canSubmit = useMemo(() => {
     if (!name || !phone || !checkIn || !checkOut) return false;
