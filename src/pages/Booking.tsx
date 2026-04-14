@@ -588,8 +588,8 @@ const Booking = () => {
                 </motion.div>
               )}
 
-              {/* Step 1: Multi-Room Selection */}
-              <div className={currentStep === 1 ? '' : 'hidden'}><div className="bg-card rounded-xl border border-border p-6 space-y-4">
+              {/* Multi-Room Selection */}
+              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="font-display text-xl font-semibold flex items-center gap-2">
                   🏨 {isVi ? 'Chọn phòng' : 'Select Rooms'}
                 </h2>
