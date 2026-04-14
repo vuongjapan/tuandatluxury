@@ -465,6 +465,8 @@ const Booking = () => {
     }
   };
 
+  const isVi = language === 'vi';
+
   const STEPS = [
     { num: 1, label: isVi ? 'Chọn phòng' : 'Select Room', icon: '🏨' },
     { num: 2, label: isVi ? 'Dịch vụ thêm' : 'Add-ons', icon: '🍽️' },
