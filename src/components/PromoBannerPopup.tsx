@@ -60,7 +60,7 @@ const PromoBannerPopup = () => {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[100] bg-foreground/60 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 z-[100] bg-background/60 backdrop-blur-sm animate-fade-in"
         onClick={handleDismiss}
       />
 
