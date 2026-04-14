@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus } from 'lucide-react';
+import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
@@ -326,6 +326,7 @@ const Booking = () => {
   };
 
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const canSubmit = useMemo(() => {
     if (!name || !phone || !checkIn || !checkOut) return false;
@@ -464,16 +465,67 @@ const Booking = () => {
     }
   };
 
+  const isVi = language === 'vi';
+
+  const STEPS = [
+    { num: 1, label: isVi ? 'Chọn phòng' : 'Select Room', icon: '🏨' },
+    { num: 2, label: isVi ? 'Dịch vụ thêm' : 'Add-ons', icon: '🍽️' },
+    { num: 3, label: isVi ? 'Thông tin' : 'Info', icon: '📝' },
+    { num: 4, label: isVi ? 'Xác nhận' : 'Confirm', icon: '✅' },
+  ];
+
+  const canGoStep2 = hasRooms && !!checkIn && !!checkOut && nightCount > 0 && allNightsAvailable;
+  const canGoStep3 = canGoStep2;
+  const canGoStep4 = canGoStep3 && !!name && !!phone;
+
+  const nextStep = () => {
+    if (currentStep === 1 && !canGoStep2) {
+      toast({ title: isVi ? 'Vui lòng chọn phòng và ngày' : 'Please select rooms and dates', variant: 'destructive' });
+      return;
+    }
+    if (currentStep < 4) setCurrentStep(currentStep + 1);
+  };
+  const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
+
   if (!rooms.length) return null;
 
-  const isVi = language === 'vi';
   const maxGuestsTotal = standardCapacity + 6;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       <Header />
-      <div className="pt-24 pb-16">
+      <div className="pt-24 lg:pt-28 pb-8">
         <div className="container mx-auto px-4 max-w-5xl">
+
+          {/* Step indicator - Vinpearl style */}
+          <div className="flex items-center justify-center gap-0 mb-8">
+            {STEPS.map((step, i) => (
+              <div key={step.num} className="flex items-center">
+                <button
+                  onClick={() => {
+                    if (step.num <= currentStep) setCurrentStep(step.num);
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                    step.num === currentStep
+                      ? 'bg-primary text-primary-foreground'
+                      : step.num < currentStep
+                      ? 'bg-primary/20 text-primary cursor-pointer'
+                      : 'bg-secondary text-muted-foreground'
+                  }`}
+                >
+                  {step.num < currentStep ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <span className="text-xs">{step.num}</span>
+                  )}
+                  <span className="hidden sm:inline">{step.label}</span>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <div className={`w-8 sm:w-12 h-0.5 mx-1 ${step.num < currentStep ? 'bg-primary' : 'bg-border'}`} />
+                )}
+              </div>
+            ))}
+          </div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -514,10 +566,7 @@ const Booking = () => {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
+            <div
               className="lg:col-span-2 space-y-6"
             >
               {/* Flash Sale banner */}
@@ -744,7 +793,7 @@ const Booking = () => {
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Summary sidebar */}
             <motion.div
@@ -1011,6 +1060,29 @@ const Booking = () => {
       </div>
       <Footer />
       <FloatingButtons />
+
+      {/* Sticky bottom bar - Vinpearl style */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.1)] print:hidden">
+        <div className="container mx-auto px-4 max-w-5xl py-3 flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">{isVi ? 'Tổng cộng:' : 'Total:'}</p>
+            <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">
+              {totalPrice > 0 ? formatPrice(totalPrice) : '—'}
+            </p>
+            {totalPrice > 0 && discountAmount > 0 && (
+              <p className="text-[11px] text-muted-foreground line-through">{formatPrice(originalPrice)}</p>
+            )}
+          </div>
+          <Button
+            variant="gold"
+            className="px-8 py-6 text-sm font-bold rounded-lg shrink-0"
+            onClick={handleSubmit}
+            disabled={submitting || !canSubmit}
+          >
+            {submitting ? (isVi ? 'Đang xử lý...' : 'Processing...') : (isVi ? 'Đặt phòng' : 'Book Now')}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

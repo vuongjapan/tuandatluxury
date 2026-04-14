@@ -157,7 +157,7 @@ const Header = () => {
           scrolled ? 'bg-card/98 shadow-md' : 'bg-card/90'
         }`}>
           <div className={`container mx-auto px-4 transition-all duration-300 ${
-            scrolled ? 'h-14' : 'h-16 lg:h-20'
+            scrolled ? 'h-16' : 'h-20 lg:h-24'
           }`}>
             {/* Desktop: 3-column layout */}
             <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] items-center h-full gap-2">
@@ -180,7 +180,7 @@ const Header = () => {
                   src={settings.header_logo_url || logoImg}
                   alt="Tuấn Đạt Luxury Hotel"
                   className={`w-auto object-contain transition-all duration-300 ${
-                    scrolled ? 'h-10' : 'h-14 xl:h-16'
+                    scrolled ? 'h-12' : 'h-16 xl:h-20'
                   }`}
                 />
               </Link>
@@ -236,7 +236,7 @@ const Header = () => {
                   src={settings.header_logo_url || logoImg}
                   alt="Tuấn Đạt Luxury Hotel"
                   className={`w-auto object-contain transition-all duration-300 ${
-                    scrolled ? 'h-8' : 'h-10'
+                    scrolled ? 'h-10' : 'h-14'
                   }`}
                 />
               </Link>
