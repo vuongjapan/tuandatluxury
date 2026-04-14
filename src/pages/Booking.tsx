@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus } from 'lucide-react';
+import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
