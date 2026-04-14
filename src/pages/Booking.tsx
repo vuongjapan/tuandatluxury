@@ -793,7 +793,7 @@ const Booking = () => {
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Summary sidebar */}
             <motion.div
