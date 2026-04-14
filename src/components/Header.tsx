@@ -180,7 +180,7 @@ const Header = () => {
                   src={settings.header_logo_url || logoImg}
                   alt="Tuấn Đạt Luxury Hotel"
                   className={`w-auto object-contain transition-all duration-300 ${
-                    scrolled ? 'h-10' : 'h-14 xl:h-16'
+                    scrolled ? 'h-12' : 'h-16 xl:h-20'
                   }`}
                 />
               </Link>
@@ -236,7 +236,7 @@ const Header = () => {
                   src={settings.header_logo_url || logoImg}
                   alt="Tuấn Đạt Luxury Hotel"
                   className={`w-auto object-contain transition-all duration-300 ${
-                    scrolled ? 'h-8' : 'h-10'
+                    scrolled ? 'h-10' : 'h-14'
                   }`}
                 />
               </Link>
