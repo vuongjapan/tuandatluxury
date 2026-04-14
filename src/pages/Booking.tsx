@@ -465,16 +465,65 @@ const Booking = () => {
     }
   };
 
+  const STEPS = [
+    { num: 1, label: isVi ? 'Chọn phòng' : 'Select Room', icon: '🏨' },
+    { num: 2, label: isVi ? 'Dịch vụ thêm' : 'Add-ons', icon: '🍽️' },
+    { num: 3, label: isVi ? 'Thông tin' : 'Info', icon: '📝' },
+    { num: 4, label: isVi ? 'Xác nhận' : 'Confirm', icon: '✅' },
+  ];
+
+  const canGoStep2 = hasRooms && !!checkIn && !!checkOut && nightCount > 0 && allNightsAvailable;
+  const canGoStep3 = canGoStep2;
+  const canGoStep4 = canGoStep3 && !!name && !!phone;
+
+  const nextStep = () => {
+    if (currentStep === 1 && !canGoStep2) {
+      toast({ title: isVi ? 'Vui lòng chọn phòng và ngày' : 'Please select rooms and dates', variant: 'destructive' });
+      return;
+    }
+    if (currentStep < 4) setCurrentStep(currentStep + 1);
+  };
+  const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
+
   if (!rooms.length) return null;
 
-  const isVi = language === 'vi';
   const maxGuestsTotal = standardCapacity + 6;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       <Header />
-      <div className="pt-24 pb-16">
+      <div className="pt-24 lg:pt-28 pb-8">
         <div className="container mx-auto px-4 max-w-5xl">
+
+          {/* Step indicator - Vinpearl style */}
+          <div className="flex items-center justify-center gap-0 mb-8">
+            {STEPS.map((step, i) => (
+              <div key={step.num} className="flex items-center">
+                <button
+                  onClick={() => {
+                    if (step.num <= currentStep) setCurrentStep(step.num);
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                    step.num === currentStep
+                      ? 'bg-primary text-primary-foreground'
+                      : step.num < currentStep
+                      ? 'bg-primary/20 text-primary cursor-pointer'
+                      : 'bg-secondary text-muted-foreground'
+                  }`}
+                >
+                  {step.num < currentStep ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <span className="text-xs">{step.num}</span>
+                  )}
+                  <span className="hidden sm:inline">{step.label}</span>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <div className={`w-8 sm:w-12 h-0.5 mx-1 ${step.num < currentStep ? 'bg-primary' : 'bg-border'}`} />
+                )}
+              </div>
+            ))}
+          </div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
