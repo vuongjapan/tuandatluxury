@@ -157,7 +157,7 @@ const Header = () => {
           scrolled ? 'bg-card/98 shadow-md' : 'bg-card/90'
         }`}>
           <div className={`container mx-auto px-4 transition-all duration-300 ${
-            scrolled ? 'h-14' : 'h-16 lg:h-20'
+            scrolled ? 'h-16' : 'h-20 lg:h-24'
           }`}>
             {/* Desktop: 3-column layout */}
             <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] items-center h-full gap-2">
