@@ -130,13 +130,17 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
         />
       </div>
 
+      {/* Price note */}
+      <div className="px-4 sm:px-5 pb-2">
+        <p className="text-xs text-muted-foreground text-center italic">
+          {language === 'vi' ? 'Giá thay đổi theo ngày – chọn ngày để xem giá chính xác' : 'Prices vary by date – select a date for exact pricing'}
+        </p>
+      </div>
+
       {/* Actions */}
-      <div className="px-4 sm:px-5 pb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
-        <Button variant="gold-outline" size="sm" onClick={() => navigate(`/room/${room.id}`)} className="gap-1.5">
+      <div className="px-4 sm:px-5 pb-4 flex items-center justify-center">
+        <Button variant="gold-outline" size="sm" onClick={() => navigate(`/room/${room.id}`)} className="gap-1.5 group/btn">
           {t('room.view_detail')}
-        </Button>
-        <Button variant="gold" size="sm" onClick={() => navigate(`/booking?room=${room.id}`)} className="gap-1.5 group/btn">
-          {t('room.book')}
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
         </Button>
       </div>

@@ -28,6 +28,9 @@ const Seafood = lazy(() => import("./pages/Seafood"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Promotions = lazy(() => import("./pages/Promotions"));
 
+// Auto-apply voucher code redirect
+const ApplyVoucher = lazy(() => import("./pages/ApplyVoucher"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -96,6 +99,7 @@ const App = () => (
                   <Route path="/promotions" element={<Promotions />} />
                   <Route path="/member" element={<MemberAuth />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/apply" element={<ApplyVoucher />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

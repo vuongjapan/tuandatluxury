@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check, Search, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
+import PriceCalendar from '@/components/PriceCalendar';
 import { useRooms } from '@/hooks/useRooms';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useDining } from '@/hooks/useDining';
@@ -46,7 +47,6 @@ const ROOM_GUEST_LIMITS: Record<string, number> = {
 };
 const EXTRA_PERSON_SURCHARGE_PERCENT = 0.3;
 
-// Multi-room cart type
 interface RoomCartItem {
   roomId: string;
   quantity: number;
@@ -57,7 +57,7 @@ const Booking = () => {
   const navigate = useNavigate();
   const { language, t, formatPrice } = useLanguage();
   const { toast } = useToast();
-  const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays } = useRooms();
+  const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays, getAvailability, isSpecialDate } = useRooms();
   const { items: diningItems, loading: diningLoading } = useDining();
   const { promotions } = usePromotions();
   const { user } = useAuth();
@@ -73,11 +73,8 @@ const Booking = () => {
   const promoId = searchParams.get('promo');
   const promoType = searchParams.get('promo_type');
 
-  // Multi-room cart
   const [roomCart, setRoomCart] = useState<RoomCartItem[]>(() => {
-    if (preselectedRoom) {
-      return [{ roomId: preselectedRoom, quantity: 1 }];
-    }
+    if (preselectedRoom) return [{ roomId: preselectedRoom, quantity: 1 }];
     return [];
   });
 
@@ -93,12 +90,14 @@ const Booking = () => {
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
   const [appliedDiscountCode, setAppliedDiscountCode] = useState<DiscountCode | null>(null);
-
-  // Promotion-specific fields
   const [companyName, setCompanyName] = useState('');
   const [groupSize, setGroupSize] = useState('');
   const [specialServices, setSpecialServices] = useState<string[]>([]);
   const [decorationNotes, setDecorationNotes] = useState('');
+  const [specialRequests, setSpecialRequests] = useState('');
+  const [country, setCountry] = useState('');
+  const [address, setAddress] = useState('');
+  const [searchDone, setSearchDone] = useState(!!preselectedRoom);
 
   useEffect(() => {
     if (user) {
@@ -108,7 +107,7 @@ const Booking = () => {
     }
   }, [user]);
 
-  // Derived values from cart
+  // Derived values
   const selectedRooms = useMemo(() => {
     return roomCart.filter(item => item.quantity > 0).map(item => ({
       ...item,
@@ -118,8 +117,6 @@ const Booking = () => {
 
   const totalRoomQuantity = useMemo(() => selectedRooms.reduce((s, r) => s + r.quantity, 0), [selectedRooms]);
   const hasRooms = totalRoomQuantity > 0;
-
-  // Primary room (first selected) for backward compat
   const primaryRoom = selectedRooms[0]?.room || rooms[0];
   const primaryRoomId = primaryRoom?.id || '';
 
@@ -127,7 +124,6 @@ const Booking = () => {
   const calendarLocale = localeMap[language] || vi;
   const guestCount = parseInt(guests) || 2;
 
-  // Standard capacity = sum of all room capacities
   const standardCapacity = useMemo(() => {
     return selectedRooms.reduce((sum, item) => {
       const limit = ROOM_GUEST_LIMITS[item.roomId] || item.room!.capacity || 2;
@@ -137,7 +133,6 @@ const Booking = () => {
 
   const extraPersonCount = useMemo(() => Math.max(0, guestCount - standardCapacity), [guestCount, standardCapacity]);
 
-  // Active promotion
   const activePromo = useMemo(() => {
     if (!promoId) return null;
     return promotions.find(p => p.id === promoId && p.is_active) || null;
@@ -166,7 +161,6 @@ const Booking = () => {
   const comboTotal = useMemo(() => comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0), [comboSelections]);
   const individualFoodTotal = useMemo(() => individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0), [individualFoods]);
 
-  // Room total for each room type
   const roomTotals = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return [];
     return selectedRooms.map(item => {
@@ -182,7 +176,6 @@ const Booking = () => {
 
   const roomTotal = useMemo(() => roomTotals.reduce((s, r) => s + r.subtotal, 0), [roomTotals]);
 
-  // Extra person surcharge = 30% of room price per extra person (averaged)
   const extraPersonSurcharge = useMemo(() => {
     if (extraPersonCount <= 0 || roomTotal <= 0) return 0;
     return Math.round(roomTotal * EXTRA_PERSON_SURCHARGE_PERCENT * extraPersonCount / totalRoomQuantity);
@@ -229,7 +222,6 @@ const Booking = () => {
     const now = new Date();
     const daysAdvance = differenceInDays(checkIn, now);
     const checkInDay = checkIn.getDay();
-
     for (const rule of smartRules) {
       if (rule.applies_to === 'food') continue;
       const items = (rule as any).applies_to_items || [];
@@ -245,9 +237,6 @@ const Booking = () => {
     return Math.round(roomTotal * activeSmartRule.discount_percent / 100);
   }, [activeSmartRule, roomTotal]);
 
-  // Calculate discounts
-  const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
-
   const promoDiscountPercent = useMemo(() => {
     if (!activePromo) return 0;
     let base = activePromo.discount_percent || 0;
@@ -255,23 +244,20 @@ const Booking = () => {
       const size = parseInt(groupSize) || 0;
       const tiers = (activePromo as any).group_discount_tiers || [];
       for (const tier of tiers) {
-        if (size >= tier.min && size <= tier.max) {
-          base += tier.discount;
-          break;
-        }
+        if (size >= tier.min && size <= tier.max) { base += tier.discount; break; }
       }
     }
     return base;
   }, [activePromo, isGroupPromo, groupSize]);
+
+  const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
 
   const discountCodeAmount = useMemo(() => {
     if (!appliedDiscountCode) return 0;
     let base = roomTotal + comboTotal + individualFoodTotal;
     if (appliedDiscountCode.applies_to === 'room') base = roomTotal;
     else if (appliedDiscountCode.applies_to === 'food') base = comboTotal + individualFoodTotal;
-    if (appliedDiscountCode.discount_type === 'percent') {
-      return Math.round(base * appliedDiscountCode.discount_value / 100);
-    }
+    if (appliedDiscountCode.discount_type === 'percent') return Math.round(base * appliedDiscountCode.discount_value / 100);
     return Math.min(appliedDiscountCode.discount_value, base);
   }, [appliedDiscountCode, roomTotal, comboTotal, individualFoodTotal]);
 
@@ -289,22 +275,13 @@ const Booking = () => {
 
   const appliedPromotions = useMemo(() => {
     const list: { name: string; amount: number; badge?: string }[] = [];
-    if (webDiscountAmount > 0) {
-      list.push({ name: `🌐 Giảm giá đặt qua web (-${webDiscountPercent}%)`, amount: webDiscountAmount, badge: 'Web' });
-    }
-    if (flashSaleDiscount > 0 && activeFlashSaleItem) {
-      list.push({ name: `⚡ Flash Sale: ${(activeFlashSaleItem as any).saleName}`, amount: flashSaleDiscount, badge: 'Flash Sale' });
-    }
-    if (globalDiscountAmount > 0 && activeGlobalDiscount) {
-      list.push({ name: `🎉 ${activeGlobalDiscount.title_vi} (-${activeGlobalDiscount.discount_percent}%)`, amount: globalDiscountAmount, badge: 'Giảm giá chung' });
-    }
-    if (smartPricingAmount > 0 && activeSmartRule) {
-      list.push({ name: `🧠 ${activeSmartRule.title_vi} (-${activeSmartRule.discount_percent}%)`, amount: smartPricingAmount, badge: activeSmartRule.badge_text_vi || 'Smart Price' });
-    }
+    if (webDiscountAmount > 0) list.push({ name: `🌐 Giảm giá đặt qua web (-${webDiscountPercent}%)`, amount: webDiscountAmount, badge: 'Web' });
+    if (flashSaleDiscount > 0 && activeFlashSaleItem) list.push({ name: `⚡ Flash Sale: ${(activeFlashSaleItem as any).saleName}`, amount: flashSaleDiscount, badge: 'Flash Sale' });
+    if (globalDiscountAmount > 0 && activeGlobalDiscount) list.push({ name: `🎉 ${activeGlobalDiscount.title_vi} (-${activeGlobalDiscount.discount_percent}%)`, amount: globalDiscountAmount, badge: 'Giảm giá chung' });
+    if (smartPricingAmount > 0 && activeSmartRule) list.push({ name: `🧠 ${activeSmartRule.title_vi} (-${activeSmartRule.discount_percent}%)`, amount: smartPricingAmount, badge: activeSmartRule.badge_text_vi || 'Smart Price' });
     return list;
   }, [webDiscountAmount, webDiscountPercent, flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
-  // Combo validation
   const totalComboServings = comboSelections.reduce((s, c) => s + c.quantity, 0);
   const hasSelectedCombo = comboSelections.length > 0;
   const comboServingsMatch = totalComboServings === guestCount;
@@ -353,80 +330,40 @@ const Booking = () => {
 
   const handleSubmit = async () => {
     if (!canSubmit) {
-      if (!hasRooms) {
-        toast({ title: 'Vui lòng chọn ít nhất 1 phòng', variant: 'destructive' });
-        return;
-      }
-      if (comboServingsError) {
-        toast({ title: `Tổng số suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' });
-        return;
-      }
-      if (multiComboNeedsNotes) {
-        toast({ title: 'Vui lòng nhập ghi chú yêu cầu ăn uống khi chọn nhiều loại combo', variant: 'destructive' });
-        return;
-      }
-      toast({ title: 'Vui lòng điền đầy đủ thông tin', variant: 'destructive' });
-      return;
+      if (!hasRooms) { toast({ title: 'Vui lòng chọn ít nhất 1 phòng', variant: 'destructive' }); return; }
+      if (comboServingsError) { toast({ title: `Tổng số suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' }); return; }
+      if (multiComboNeedsNotes) { toast({ title: 'Vui lòng nhập ghi chú yêu cầu ăn uống khi chọn nhiều loại combo', variant: 'destructive' }); return; }
+      toast({ title: 'Vui lòng điền đầy đủ thông tin', variant: 'destructive' }); return;
     }
     setSubmitting(true);
     try {
       const combosPayload = comboSelections.map(c => ({
-        combo_package_id: c.packageId,
-        combo_menu_id: c.menuId,
-        combo_package_name: c.packageName,
-        combo_menu_name: c.menuName,
+        combo_package_id: c.packageId, combo_menu_id: c.menuId,
+        combo_package_name: c.packageName, combo_menu_name: c.menuName,
         combo_name: `${c.packageName} – ${c.menuName}`,
-        price_vnd: c.pricePerPerson,
-        quantity: c.quantity,
+        price_vnd: c.pricePerPerson, quantity: c.quantity,
       }));
-
       const foodItemsPayload = individualFoods.map(f => ({
         menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
         name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-        price_vnd: f.price,
-        quantity: f.quantity,
+        price_vnd: f.price, quantity: f.quantity,
       }));
-
-      const serviceLabels = specialServices.map(id =>
-        availableServices.find(s => s.id === id)?.label || id
-      ).join(', ');
-
-      // For multi-room, use primary room as room_id (backward compat)
-      // Include room_details for full breakdown
-      const roomDetails = selectedRooms.map(sr => ({
-        room_id: sr.roomId,
-        room_name: sr.room!.name[language],
-        quantity: sr.quantity,
-      }));
-
+      const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
+      const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
       const roomBreakdown = roomTotals.map(rt => ({
-        room_id: rt.roomId,
-        room_name: rt.room.name[language],
-        quantity: rt.quantity,
-        subtotal: rt.subtotal,
-        average_nightly_rate: rt.totalPerRoom,
+        room_id: rt.roomId, room_name: rt.room.name[language],
+        quantity: rt.quantity, subtotal: rt.subtotal, average_nightly_rate: rt.totalPerRoom,
       }));
 
       const resp = await fetch(BOOKING_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({
-          room_id: primaryRoomId,
-          guest_name: name,
-          guest_email: email,
-          guest_phone: phone,
-          guest_notes: notes,
-          check_in: format(checkIn!, 'yyyy-MM-dd'),
-          check_out: format(checkOut!, 'yyyy-MM-dd'),
-          guests_count: guestCount,
-          total_price_vnd: totalPrice,
-          original_price_vnd: originalPrice,
-          room_subtotal: roomTotal,
-          room_quantity: totalRoomQuantity,
-          language,
+          room_id: primaryRoomId, guest_name: name, guest_email: email, guest_phone: phone,
+          guest_notes: [notes, specialRequests].filter(Boolean).join('\n---\n'),
+          check_in: format(checkIn!, 'yyyy-MM-dd'), check_out: format(checkOut!, 'yyyy-MM-dd'),
+          guests_count: guestCount, total_price_vnd: totalPrice, original_price_vnd: originalPrice,
+          room_subtotal: roomTotal, room_quantity: totalRoomQuantity, language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: comboTotal > 0 ? comboTotal : undefined,
           combo_notes: comboNotes || undefined,
@@ -435,10 +372,7 @@ const Booking = () => {
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
           promotion_id: activePromo?.id || undefined,
-          promotion_name: [
-            activePromo ? (activePromo.title_vi || activePromo.title_en) : null,
-            ...appliedPromotions.map(p => p.name),
-          ].filter(Boolean).join(' | ') || undefined,
+          promotion_name: [activePromo ? (activePromo.title_vi || activePromo.title_en) : null, ...appliedPromotions.map(p => p.name)].filter(Boolean).join(' | ') || undefined,
           promotion_discount_percent: promoDiscountPercent > 0 ? promoDiscountPercent : undefined,
           promotion_discount_amount: (promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : 0) + allAutoDiscounts || undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
@@ -451,8 +385,7 @@ const Booking = () => {
           group_size: groupSize ? parseInt(groupSize) : undefined,
           special_services: serviceLabels || undefined,
           decoration_notes: decorationNotes || undefined,
-          room_details: roomDetails,
-          room_breakdown: roomBreakdown,
+          room_details: roomDetails, room_breakdown: roomBreakdown,
         }),
       });
       const data = await resp.json();
@@ -469,23 +402,41 @@ const Booking = () => {
 
   const STEPS = [
     { num: 1, label: isVi ? 'Chọn phòng' : 'Select Room', icon: '🏨' },
-    { num: 2, label: isVi ? 'Dịch vụ thêm' : 'Add-ons', icon: '🍽️' },
-    { num: 3, label: isVi ? 'Thông tin' : 'Info', icon: '📝' },
-    { num: 4, label: isVi ? 'Xác nhận' : 'Confirm', icon: '✅' },
+    { num: 2, label: isVi ? 'Dịch vụ' : 'Services', icon: '🍽️' },
+    { num: 3, label: isVi ? 'Yêu cầu' : 'Requests', icon: '📝' },
+    { num: 4, label: isVi ? 'Thông tin' : 'Info', icon: '👤' },
+    { num: 5, label: isVi ? 'Xác nhận' : 'Confirm', icon: '✅' },
   ];
 
   const canGoStep2 = hasRooms && !!checkIn && !!checkOut && nightCount > 0 && allNightsAvailable;
   const canGoStep3 = canGoStep2;
-  const canGoStep4 = canGoStep3 && !!name && !!phone;
+  const canGoStep4 = canGoStep3;
+  const canGoStep5 = canGoStep4 && !!name && !!phone;
 
   const nextStep = () => {
     if (currentStep === 1 && !canGoStep2) {
-      toast({ title: isVi ? 'Vui lòng chọn phòng và ngày' : 'Please select rooms and dates', variant: 'destructive' });
+      if (!checkIn || !checkOut) { toast({ title: isVi ? 'Vui lòng chọn ngày nhận & trả phòng' : 'Please select check-in & check-out dates', variant: 'destructive' }); return; }
+      if (!hasRooms) { toast({ title: isVi ? 'Vui lòng chọn ít nhất 1 phòng' : 'Please select at least 1 room', variant: 'destructive' }); return; }
       return;
     }
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    if (currentStep === 2) {
+      if (comboServingsError) { toast({ title: `Tổng suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' }); return; }
+      if (multiComboNeedsNotes) { toast({ title: 'Vui lòng nhập ghi chú ăn uống', variant: 'destructive' }); return; }
+    }
+    if (currentStep === 4 && !canGoStep5) {
+      toast({ title: isVi ? 'Vui lòng điền họ tên và số điện thoại' : 'Please fill in name and phone', variant: 'destructive' }); return;
+    }
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
   };
   const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
+
+  const handleSearchRooms = () => {
+    if (!checkIn || !checkOut) {
+      toast({ title: isVi ? 'Vui lòng chọn ngày nhận và trả phòng' : 'Please select dates', variant: 'destructive' });
+      return;
+    }
+    setSearchDone(true);
+  };
 
   if (!rooms.length) return null;
 
@@ -497,551 +448,507 @@ const Booking = () => {
       <div className="pt-24 lg:pt-28 pb-8">
         <div className="container mx-auto px-4 max-w-5xl">
 
-          {/* Step indicator - Vinpearl style */}
-          <div className="flex items-center justify-center gap-0 mb-8">
+          {/* Step indicator */}
+          <div className="flex items-center justify-center gap-0 mb-8 overflow-x-auto">
             {STEPS.map((step, i) => (
-              <div key={step.num} className="flex items-center">
+              <div key={step.num} className="flex items-center shrink-0">
                 <button
-                  onClick={() => {
-                    if (step.num <= currentStep) setCurrentStep(step.num);
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
-                    step.num === currentStep
-                      ? 'bg-primary text-primary-foreground'
-                      : step.num < currentStep
-                      ? 'bg-primary/20 text-primary cursor-pointer'
-                      : 'bg-secondary text-muted-foreground'
-                  }`}
-                >
-                  {step.num < currentStep ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <span className="text-xs">{step.num}</span>
+                  onClick={() => { if (step.num <= currentStep) setCurrentStep(step.num); }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all",
+                    step.num === currentStep ? 'bg-primary text-primary-foreground' :
+                    step.num < currentStep ? 'bg-primary/20 text-primary cursor-pointer' :
+                    'bg-secondary text-muted-foreground'
                   )}
-                  <span className="hidden sm:inline">{step.label}</span>
+                >
+                  {step.num < currentStep ? <Check className="h-4 w-4" /> : <span className="text-xs">{step.icon}</span>}
+                  <span className="hidden sm:inline text-xs">{step.label}</span>
                 </button>
-                {i < STEPS.length - 1 && (
-                  <div className={`w-8 sm:w-12 h-0.5 mx-1 ${step.num < currentStep ? 'bg-primary' : 'bg-border'}`} />
-                )}
+                {i < STEPS.length - 1 && <div className={cn("w-6 sm:w-10 h-0.5 mx-1", step.num < currentStep ? 'bg-primary' : 'bg-border')} />}
               </div>
             ))}
           </div>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-display text-4xl font-bold text-foreground mb-8 text-center"
-          >
-            {t('booking.title')}
-          </motion.h1>
 
-          {/* Active promotion banner */}
+          {/* Promo banners */}
           {activePromo && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
               <Gift className="h-6 w-6 text-primary shrink-0" />
               <div className="flex-1">
-                <p className="font-semibold text-foreground text-sm">
-                  {isVi ? `Đang áp dụng: ${activePromo.title_vi}` : `Applied: ${activePromo.title_en}`}
-                </p>
+                <p className="font-semibold text-foreground text-sm">{isVi ? `Đang áp dụng: ${activePromo.title_vi}` : `Applied: ${activePromo.title_en}`}</p>
                 <p className="text-xs text-muted-foreground">
                   {promoDiscountPercent > 0 && `Giảm ${promoDiscountPercent}%`}
                   {memberDiscountPercent > 0 && ` + Thành viên ${memberDiscountPercent}%`}
-                  {totalDiscountPercent > 0 && ` = Tổng giảm ${totalDiscountPercent}%`}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => navigate('/booking')}>✕</Button>
             </motion.div>
           )}
-
-          {/* Member discount banner */}
           {!activePromo && user && memberDiscountPercent > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
-              <p className="text-sm text-foreground">
-                ⭐ {isVi
-                  ? `Bạn đang được giảm ${memberDiscountPercent}% (Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'})`
-                  : `${memberDiscountPercent}% discount (${user.tier.replace('_', ' ').toUpperCase()})`}
-              </p>
+              <p className="text-sm text-foreground">⭐ {isVi ? `Giảm ${memberDiscountPercent}% (Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'})` : `${memberDiscountPercent}% discount`}</p>
             </motion.div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div
-              className="lg:col-span-2 space-y-6"
-            >
-              {/* Flash Sale banner */}
-              {activeFlashSaleItem && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-300 dark:border-orange-700 rounded-xl p-4 flex items-center gap-3">
-                  <Zap className="h-6 w-6 text-orange-500 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">⚡ {(activeFlashSaleItem as any).saleName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isVi ? 'Giá Flash Sale: ' : 'Flash Sale Price: '}
-                      <span className="line-through">{formatPrice(activeFlashSaleItem.original_price)}</span>
-                      {' → '}
-                      <span className="font-bold text-primary">{formatPrice(activeFlashSaleItem.sale_price)}</span>
-                      /đêm · Còn {activeFlashSaleItem.quantity_limit - activeFlashSaleItem.quantity_sold} suất
-                    </p>
-                  </div>
-                  <Badge className="bg-orange-500 text-white shrink-0">-{Math.round((1 - activeFlashSaleItem.sale_price / activeFlashSaleItem.original_price) * 100)}%</Badge>
-                </motion.div>
-              )}
-
-              {/* Multi-Room Selection */}
-              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                <h2 className="font-display text-xl font-semibold flex items-center gap-2">
-                  🏨 {isVi ? 'Chọn phòng' : 'Select Rooms'}
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  {isVi ? 'Bạn có thể chọn nhiều loại phòng trong cùng 1 đơn đặt' : 'You can select multiple room types in one booking'}
-                </p>
-                <div className="space-y-3">
-                  {rooms.map(room => {
-                    const cartItem = roomCart.find(c => c.roomId === room.id);
-                    const qty = cartItem?.quantity || 0;
-                    return (
-                      <BookingRoomCard
-                        key={room.id}
-                        room={room}
-                        quantity={qty}
-                        onQuantityChange={(newQty) => updateRoomQuantity(room.id, newQty)}
-                        nightlyPrice={formatPrice(room.priceVND)}
-                      />
-                    );
-                  })}
-                </div>
-
-                {!hasRooms && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-300 text-center">
-                    ⚠️ {isVi ? 'Vui lòng chọn ít nhất 1 phòng để tiếp tục' : 'Please select at least 1 room to continue'}
-                  </div>
-                )}
-              </div>
-
-              {/* Date & Guests */}
-              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                <h2 className="font-display text-xl font-semibold">📅 {isVi ? 'Ngày & Số khách' : 'Dates & Guests'}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start", !checkIn && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {checkIn ? format(checkIn, 'dd/MM/yyyy') : t('search.checkin')}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkout')}</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start", !checkOut && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {checkOut ? format(checkOut, 'dd/MM/yyyy') : t('search.checkout')}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < (checkIn || new Date())} />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.guests')}</label>
-                    <Select value={guests} onValueChange={setGuests}>
-                      <SelectTrigger>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" /><SelectValue />
+            {/* Main content */}
+            <div className="lg:col-span-2 space-y-6">
+              <AnimatePresence mode="wait">
+                {/* ===== STEP 1: Date + Guests + Rooms ===== */}
+                {currentStep === 1 && (
+                  <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {/* Search bar */}
+                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                      <h2 className="font-display text-xl font-semibold flex items-center gap-2">📅 {isVi ? 'Chọn ngày & số khách' : 'Select Dates & Guests'}</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className={cn("w-full justify-start", !checkIn && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {checkIn ? format(checkIn, 'dd/MM/yyyy') : t('search.checkin')}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={checkIn} onSelect={(d) => { setCheckIn(d); setSearchDone(false); }} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
+                            </PopoverContent>
+                          </Popover>
                         </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: Math.max(maxGuestsTotal, 1) }, (_, i) => i + 1).map((n) => (
-                          <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người lớn' : 'adults'}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkout')}</label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className={cn("w-full justify-start", !checkOut && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {checkOut ? format(checkOut, 'dd/MM/yyyy') : t('search.checkout')}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={checkOut} onSelect={(d) => { setCheckOut(d); setSearchDone(false); }} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < (checkIn || new Date())} />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.guests')}</label>
+                          <Select value={guests} onValueChange={setGuests}>
+                            <SelectTrigger>
+                              <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người' : 'guests'}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <Button variant="gold" className="w-full gap-2" onClick={handleSearchRooms} disabled={!checkIn || !checkOut}>
+                        <Search className="h-4 w-4" /> {isVi ? 'Tìm phòng' : 'Search Rooms'}
+                      </Button>
+                    </div>
 
-                {/* Extra person surcharge notice */}
-                {extraPersonCount > 0 && (
-                  <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                    className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 flex items-start gap-2">
-                    <UserPlus className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-semibold text-amber-800 dark:text-amber-300">
-                        {isVi ? `Phụ thu thêm ${extraPersonCount} người` : `Surcharge for ${extraPersonCount} extra guests`}
-                      </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                        {isVi
-                          ? `Tổng sức chứa tiêu chuẩn: ${standardCapacity} người. Phụ thu 30% giá phòng mỗi người vượt = `
-                          : `Standard capacity: ${standardCapacity}. 30% surcharge per extra guest = `}
-                        <strong>{formatPrice(extraPersonSurcharge)}</strong>
-                      </p>
+                    {/* Extra person surcharge */}
+                    {extraPersonCount > 0 && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 flex items-start gap-2">
+                        <UserPlus className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-semibold text-amber-800 dark:text-amber-300">{isVi ? `Phụ thu thêm ${extraPersonCount} người` : `Surcharge for ${extraPersonCount} extra guests`}</p>
+                          <p className="text-xs text-amber-700 dark:text-amber-400">30% = <strong>{formatPrice(extraPersonSurcharge)}</strong></p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Flash Sale banner */}
+                    {activeFlashSaleItem && (
+                      <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-300 dark:border-orange-700 rounded-xl p-4 flex items-center gap-3">
+                        <Zap className="h-6 w-6 text-orange-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">⚡ {(activeFlashSaleItem as any).saleName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            <span className="line-through">{formatPrice(activeFlashSaleItem.original_price)}</span>{' → '}
+                            <span className="font-bold text-primary">{formatPrice(activeFlashSaleItem.sale_price)}</span>/đêm
+                          </p>
+                        </div>
+                        <Badge className="bg-orange-500 text-white shrink-0">-{Math.round((1 - activeFlashSaleItem.sale_price / activeFlashSaleItem.original_price) * 100)}%</Badge>
+                      </div>
+                    )}
+
+                    {/* Room list - only after search */}
+                    {searchDone && (
+                      <div className="space-y-4">
+                        <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                          🏨 {isVi ? 'Chọn phòng' : 'Select Rooms'}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">{isVi ? 'Chọn số lượng phòng mong muốn' : 'Select the number of rooms you want'}</p>
+                        {rooms.map(room => {
+                          const cartItem = roomCart.find(c => c.roomId === room.id);
+                          const qty = cartItem?.quantity || 0;
+                          return (
+                            <div key={room.id} className="bg-card rounded-xl border border-border overflow-hidden">
+                              <BookingRoomCard
+                                room={room}
+                                quantity={qty}
+                                onQuantityChange={(newQty) => updateRoomQuantity(room.id, newQty)}
+                                nightlyPrice={formatPrice(room.priceVND)}
+                              />
+                              {/* Mini price calendar */}
+                              <div className="px-4 pb-4">
+                                <PriceCalendar
+                                  room={room}
+                                  selectedDate={checkIn}
+                                  onSelectDate={() => {}}
+                                  getRoomPrice={getRoomPrice}
+                                  getAvailability={getAvailability}
+                                  isSpecialDate={isSpecialDate}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {!hasRooms && (
+                          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-300 text-center">
+                            ⚠️ {isVi ? 'Vui lòng chọn ít nhất 1 phòng để tiếp tục' : 'Please select at least 1 room'}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {!searchDone && (
+                      <div className="bg-secondary/50 rounded-xl p-8 text-center">
+                        <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground">{isVi ? 'Chọn ngày và nhấn "Tìm phòng" để xem phòng trống' : 'Select dates and click "Search Rooms" to see availability'}</p>
+                      </div>
+                    )}
+
+                    {/* Group/Corporate promo form */}
+                    {isGroupPromo && (
+                      <div className="bg-card rounded-xl border-2 border-primary/30 p-6 space-y-4">
+                        <div className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" /><h2 className="font-display text-xl font-semibold">{isVi ? 'Thông tin đoàn / công ty' : 'Group Info'}</h2></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Tên công ty *' : 'Company *'}</label>
+                            <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Công ty ABC" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Số lượng người *' : 'Group Size *'}</label>
+                            <Input type="number" value={groupSize} onChange={e => setGroupSize(e.target.value)} placeholder="20" min="1" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {isCouplePromo && (
+                      <div className="bg-card rounded-xl border-2 border-pink-300 p-6 space-y-4">
+                        <div className="flex items-center gap-2"><Heart className="h-5 w-5 text-pink-500" /><h2 className="font-display text-xl font-semibold">{isVi ? 'Ưu đãi cặp đôi / gia đình' : 'Couple/Family'}</h2></div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu trang trí</label>
+                          <Textarea value={decorationNotes} onChange={e => setDecorationNotes(e.target.value)} rows={2} placeholder="VD: Hoa, nến, bóng bay..." />
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* ===== STEP 2: Services ===== */}
+                {currentStep === 2 && (
+                  <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    <h2 className="font-display text-2xl font-bold text-center">🍽️ {isVi ? 'Thêm dịch vụ' : 'Add Services'}</h2>
+
+                    <ComboSelector
+                      required={comboRequired}
+                      selections={comboSelections}
+                      onSelectionsChange={setComboSelections}
+                      guestCount={guestCount}
+                      comboNotes={comboNotes}
+                      onComboNotesChange={setComboNotes}
+                      onOpenFoodOrder={() => setFoodSelectorOpen(true)}
+                    />
+
+                    <IndividualFoodSelector
+                      open={foodSelectorOpen}
+                      onClose={() => setFoodSelectorOpen(false)}
+                      items={individualFoods}
+                      onItemsChange={setIndividualFoods}
+                    />
+
+                    {/* Service checkboxes */}
+                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                      <h3 className="font-display text-lg font-semibold flex items-center gap-2">🛎️ {isVi ? 'Dịch vụ bổ sung' : 'Additional Services'}</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {availableServices.map(service => (
+                          <label key={service.id} className={cn(
+                            "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
+                            specialServices.includes(service.id) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                          )}>
+                            <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
+                            {isVi ? service.label : service.labelEn}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setFoodSelectorOpen(true)}>
+                      <ShoppingBag className="h-4 w-4 mr-1" /> {isVi ? 'Đặt món ăn riêng' : 'Order Individual Dishes'}
+                    </Button>
+                  </motion.div>
+                )}
+
+                {/* ===== STEP 3: Special Requests ===== */}
+                {currentStep === 3 && (
+                  <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    <h2 className="font-display text-2xl font-bold text-center">📝 {isVi ? 'Yêu cầu đặc biệt' : 'Special Requests'}</h2>
+                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                      <p className="text-sm text-muted-foreground">{isVi ? 'Không bắt buộc – nhập yêu cầu riêng của bạn (giờ check-in sớm, tầng cao, phòng liền kề, v.v.)' : 'Optional – enter any special requests'}</p>
+                      <Textarea
+                        value={specialRequests}
+                        onChange={(e) => setSpecialRequests(e.target.value)}
+                        rows={5}
+                        placeholder={isVi ? 'VD: Check-in sớm 12h, phòng tầng cao, cần nôi em bé...' : 'E.g. Early check-in, high floor, baby crib...'}
+                      />
                     </div>
                   </motion.div>
                 )}
-              </div>
 
-              {/* Group/Corporate promo form */}
-              {isGroupPromo && (
-                <div className="bg-card rounded-xl border-2 border-primary/30 p-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-primary" />
-                    <h2 className="font-display text-xl font-semibold">{isVi ? 'Thông tin đoàn / công ty' : 'Group / Company Info'}</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Tên công ty / đoàn *' : 'Company *'}</label>
-                      <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Công ty ABC" />
+                {/* ===== STEP 4: Guest Info ===== */}
+                {currentStep === 4 && (
+                  <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    <h2 className="font-display text-2xl font-bold text-center">👤 {isVi ? 'Thông tin khách hàng' : 'Guest Information'}</h2>
+                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.full_name')} *</label>
+                          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={isVi ? 'Họ và tên' : 'Full name'} />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.phone')} *</label>
+                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0xxx xxx xxx" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.email')}</label>
+                          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Quốc gia' : 'Country'}</label>
+                          <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={isVi ? 'Việt Nam' : 'Vietnam'} />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Địa chỉ' : 'Address'}</label>
+                          <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={isVi ? 'Địa chỉ (không bắt buộc)' : 'Address (optional)'} />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.notes')}</label>
+                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder={isVi ? 'Ghi chú thêm...' : 'Additional notes...'} />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Số lượng người *' : 'Group Size *'}</label>
-                      <Input type="number" value={groupSize} onChange={e => setGroupSize(e.target.value)} placeholder="20" min="1" />
-                    </div>
-                  </div>
-                  {groupSize && promoDiscountPercent > 0 && (
-                    <p className="text-sm text-primary font-medium">🎉 Đoàn {groupSize} người → Giảm {promoDiscountPercent}%</p>
-                  )}
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Nhu cầu dịch vụ</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {availableServices.map(service => (
-                        <label key={service.id} className={cn(
-                          "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
-                          specialServices.includes(service.id) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                        )}>
-                          <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
-                          {isVi ? service.label : service.labelEn}
-                        </label>
+                  </motion.div>
+                )}
+
+                {/* ===== STEP 5: Confirm & Pay ===== */}
+                {currentStep === 5 && (
+                  <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    <h2 className="font-display text-2xl font-bold text-center">✅ {isVi ? 'Xác nhận đặt phòng' : 'Confirm Booking'}</h2>
+
+                    {/* Room summary */}
+                    <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+                      <h3 className="font-semibold flex items-center gap-2">🏨 {isVi ? 'Phòng' : 'Rooms'}</h3>
+                      {selectedRooms.map(sr => (
+                        <div key={sr.roomId} className="flex items-center gap-3 bg-secondary/30 rounded-lg p-3">
+                          <img src={sr.room!.image} alt="" className="w-16 h-12 object-cover rounded-lg" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm">{sr.room!.name[language]}</p>
+                            <p className="text-xs text-muted-foreground">×{sr.quantity} {isVi ? 'phòng' : 'rooms'} · {nightCount} {isVi ? 'đêm' : 'nights'}</p>
+                          </div>
+                          {roomTotals.find(rt => rt.roomId === sr.roomId) && (
+                            <span className="font-bold text-primary">{formatPrice(roomTotals.find(rt => rt.roomId === sr.roomId)!.subtotal)}</span>
+                          )}
+                        </div>
                       ))}
+                      <div className="flex justify-between text-sm pt-2 border-t border-border">
+                        <span>{isVi ? 'Check-in' : 'Check-in'}</span>
+                        <span className="font-medium">{checkIn ? format(checkIn, 'dd/MM/yyyy') : '—'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>{isVi ? 'Check-out' : 'Check-out'}</span>
+                        <span className="font-medium">{checkOut ? format(checkOut, 'dd/MM/yyyy') : '—'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>{isVi ? 'Số khách' : 'Guests'}</span>
+                        <span className="font-medium">{guestCount} {isVi ? 'người' : 'guests'}</span>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
 
-              {/* Couple/Family promo form */}
-              {isCouplePromo && (
-                <div className="bg-card rounded-xl border-2 border-pink-300 p-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Heart className="h-5 w-5 text-pink-500" />
-                    <h2 className="font-display text-xl font-semibold">{isVi ? 'Ưu đãi cặp đôi / gia đình' : 'Couple / Family Offer'}</h2>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu trang trí</label>
-                    <Textarea value={decorationNotes} onChange={e => setDecorationNotes(e.target.value)} rows={2} placeholder="VD: Trang trí hoa, nến, bóng bay..." />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Dịch vụ đi kèm</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {availableServices.map(service => (
-                        <label key={service.id} className={cn(
-                          "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
-                          specialServices.includes(service.id) ? "border-pink-400 bg-pink-50 dark:bg-pink-900/20" : "border-border hover:border-pink-300"
-                        )}>
-                          <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
-                          {isVi ? service.label : service.labelEn}
-                        </label>
-                      ))}
+                    {/* Combo summary */}
+                    {comboSelections.length > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+                        <h3 className="font-semibold flex items-center gap-2">🍽️ Combo</h3>
+                        {comboSelections.map((c, i) => (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span>{c.packageName} – {c.menuName} ×{c.quantity}</span>
+                              <span className="font-medium">{formatPrice(c.pricePerPerson * c.quantity)}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground pl-2">{c.dishes.slice(0, 5).join(', ')}...</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Individual food */}
+                    {individualFoods.length > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+                        <h3 className="font-semibold flex items-center gap-2">🍤 {isVi ? 'Món ăn riêng' : 'Individual Dishes'}</h3>
+                        {individualFoods.map(f => (
+                          <div key={f.id} className="flex justify-between text-sm">
+                            <span>{f.name}{f.priceLabel ? ` (${f.priceLabel})` : ''} ×{f.quantity}</span>
+                            <span className="font-medium">{formatPrice(f.price * f.quantity)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Services */}
+                    {specialServices.length > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5 space-y-2">
+                        <h3 className="font-semibold flex items-center gap-2">🛎️ {isVi ? 'Dịch vụ' : 'Services'}</h3>
+                        {specialServices.map(id => (
+                          <p key={id} className="text-sm text-muted-foreground">✓ {availableServices.find(s => s.id === id)?.[isVi ? 'label' : 'labelEn']}</p>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Guest info summary */}
+                    <div className="bg-card rounded-xl border border-border p-5 space-y-2">
+                      <h3 className="font-semibold flex items-center gap-2">👤 {isVi ? 'Thông tin khách' : 'Guest Info'}</h3>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span className="text-muted-foreground">{isVi ? 'Họ tên' : 'Name'}</span><span className="font-medium">{name}</span>
+                        <span className="text-muted-foreground">{isVi ? 'SĐT' : 'Phone'}</span><span className="font-medium">{phone}</span>
+                        {email && <><span className="text-muted-foreground">Email</span><span className="font-medium">{email}</span></>}
+                        {country && <><span className="text-muted-foreground">{isVi ? 'Quốc gia' : 'Country'}</span><span className="font-medium">{country}</span></>}
+                      </div>
+                      {(specialRequests || notes) && (
+                        <div className="pt-2 border-t border-border">
+                          <p className="text-xs text-muted-foreground">{specialRequests || notes}</p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </div>
-              )}
 
-              {/* Combo section */}
-              <ComboSelector
-                required={comboRequired}
-                selections={comboSelections}
-                onSelectionsChange={setComboSelections}
-                guestCount={guestCount}
-                comboNotes={comboNotes}
-                onComboNotesChange={setComboNotes}
-                onOpenFoodOrder={() => setFoodSelectorOpen(true)}
-              />
+                    {/* Price breakdown */}
+                    <div className="bg-card rounded-xl border-2 border-primary/30 p-5 space-y-3">
+                      <h3 className="font-semibold flex items-center gap-2">💰 {isVi ? 'Chi tiết thanh toán' : 'Payment Details'}</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between"><span>🏨 {isVi ? 'Tiền phòng' : 'Room'}</span><span className="font-medium">{formatPrice(roomTotal)}</span></div>
+                        {extraPersonSurcharge > 0 && <div className="flex justify-between"><span>👤 {isVi ? 'Phụ thu' : 'Surcharge'}</span><span>+{formatPrice(extraPersonSurcharge)}</span></div>}
+                        {comboTotal > 0 && <div className="flex justify-between"><span>🍽️ Combo</span><span>{formatPrice(comboTotal)}</span></div>}
+                        {individualFoodTotal > 0 && <div className="flex justify-between"><span>🍤 {isVi ? 'Món riêng' : 'Dishes'}</span><span>{formatPrice(individualFoodTotal)}</span></div>}
+                        <div className="flex justify-between border-t border-border pt-2"><span className="font-medium">{isVi ? 'Tổng trước giảm' : 'Subtotal'}</span><span className="font-medium">{formatPrice(originalPrice)}</span></div>
+                        {discountAmount > 0 && (
+                          <>
+                            {appliedPromotions.map((p, i) => (
+                              <div key={i} className="flex justify-between text-primary"><span>{p.name}</span><span>-{formatPrice(p.amount)}</span></div>
+                            ))}
+                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>⭐ Thành viên ({memberDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span></div>}
+                            {promoDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🎉 Ưu đãi ({promoDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span></div>}
+                            {discountCodeAmount > 0 && appliedDiscountCode && <div className="flex justify-between text-primary"><span>🎟️ Mã {appliedDiscountCode.code}</span><span>-{formatPrice(discountCodeAmount)}</span></div>}
+                          </>
+                        )}
+                        <div className="flex justify-between border-t-2 border-primary/30 pt-3 text-lg">
+                          <span className="font-bold">{isVi ? 'Tổng thanh toán' : 'Total'}</span>
+                          <span className="font-bold text-primary">{formatPrice(totalPrice)}</span>
+                        </div>
+                        {totalPrice > 0 && (
+                          <div className="flex justify-between text-sm bg-primary/5 rounded-lg px-3 py-2">
+                            <span>💳 {isVi ? 'Đặt cọc 50%' : 'Deposit 50%'}</span>
+                            <span className="font-bold text-primary">{formatPrice(Math.round(totalPrice * 0.5))}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-              <IndividualFoodSelector
-                open={foodSelectorOpen}
-                onClose={() => setFoodSelectorOpen(false)}
-                items={individualFoods}
-                onItemsChange={setIndividualFoods}
-              />
-
-              {/* Guest info */}
-              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                <h2 className="font-display text-xl font-semibold">{t('booking.guest_info')}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.full_name')} *</label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.email')}</label>
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.phone')} *</label>
-                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.notes')}</label>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-                </div>
-              </div>
+                    {/* Discount code */}
+                    {originalPrice > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5">
+                        <h4 className="font-semibold text-sm mb-2">🎟️ {isVi ? 'Mã giảm giá' : 'Discount Code'}</h4>
+                        <DiscountCodeInput
+                          orderType="room"
+                          orderAmount={originalPrice}
+                          onApply={setAppliedDiscountCode}
+                          onRemove={() => setAppliedDiscountCode(null)}
+                          appliedCode={appliedDiscountCode}
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Summary sidebar */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="bg-card rounded-xl border border-border p-6 sticky top-24 space-y-4">
-                <h2 className="font-display text-xl font-semibold">{t('booking.summary')}</h2>
+            {/* Sidebar summary */}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+              <div className="bg-card rounded-xl border border-border p-5 sticky top-24 space-y-4">
+                <h2 className="font-display text-lg font-semibold">{t('booking.summary')}</h2>
 
-                {/* Room summary */}
                 {selectedRooms.length > 0 ? (
                   <div className="space-y-2">
                     {selectedRooms.map(sr => (
                       <div key={sr.roomId} className="flex items-center gap-3">
-                        <img src={sr.room!.image} alt="" className="w-16 h-12 object-cover rounded-lg shrink-0" />
+                        <img src={sr.room!.image} alt="" className="w-14 h-10 object-cover rounded-lg shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{sr.room!.name[language]}</p>
-                          <p className="text-xs text-muted-foreground">×{sr.quantity} {isVi ? 'phòng' : 'rooms'}</p>
+                          <p className="text-xs text-muted-foreground">×{sr.quantity}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">{isVi ? 'Chưa chọn phòng' : 'No rooms selected'}</p>
+                  <p className="text-sm text-muted-foreground italic">{isVi ? 'Chưa chọn phòng' : 'No rooms'}</p>
                 )}
 
-                <div className="space-y-2 text-sm">
-                  {checkIn && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('search.checkin')}</span>
-                      <span className="font-medium">{format(checkIn, 'dd/MM/yyyy')}</span>
-                    </div>
-                  )}
-                  {checkOut && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('search.checkout')}</span>
-                      <span className="font-medium">{format(checkOut, 'dd/MM/yyyy')}</span>
-                    </div>
-                  )}
-                  {nightCount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('booking.nights')}</span>
-                      <span className="font-medium">{nightCount}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('search.guests')}</span>
-                    <span className="font-medium">{guestCount} {isVi ? 'người lớn' : 'adults'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{isVi ? 'Tổng phòng' : 'Total rooms'}</span>
-                    <span className="font-medium">{totalRoomQuantity}</span>
-                  </div>
-
-                  {/* Room price breakdown */}
-                  {roomTotals.length > 0 && (
-                    <div className="border-t border-border pt-2 space-y-1">
-                      <h4 className="font-semibold text-xs">🏨 {isVi ? 'Tiền phòng' : 'Room charges'}</h4>
-                      {roomTotals.map(rt => (
-                        <div key={rt.roomId} className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">{rt.room.name[language]} ×{rt.quantity}</span>
-                          <span className="font-medium">{formatPrice(rt.subtotal)}</span>
-                        </div>
-                      ))}
-                      {roomTotals.length > 1 && (
-                        <div className="flex justify-between text-sm font-medium pt-1">
-                          <span className="text-muted-foreground">{isVi ? 'Tổng phòng' : 'Room subtotal'}</span>
-                          <span>{formatPrice(roomTotal)}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {extraPersonSurcharge > 0 && (
-                    <div className="flex justify-between text-amber-700 dark:text-amber-400">
-                      <span>👤 Phụ thu +{extraPersonCount} người</span>
-                      <span className="font-medium">+{formatPrice(extraPersonSurcharge)}</span>
-                    </div>
-                  )}
+                <div className="space-y-1 text-sm">
+                  {checkIn && <div className="flex justify-between"><span className="text-muted-foreground">Check-in</span><span className="font-medium">{format(checkIn, 'dd/MM/yyyy')}</span></div>}
+                  {checkOut && <div className="flex justify-between"><span className="text-muted-foreground">Check-out</span><span className="font-medium">{format(checkOut, 'dd/MM/yyyy')}</span></div>}
+                  {nightCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{isVi ? 'Số đêm' : 'Nights'}</span><span className="font-medium">{nightCount}</span></div>}
+                  <div className="flex justify-between"><span className="text-muted-foreground">{isVi ? 'Khách' : 'Guests'}</span><span className="font-medium">{guestCount}</span></div>
                 </div>
 
-                {/* Combo summary */}
-                {comboSelections.length > 0 && (
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <h4 className="font-semibold text-sm flex items-center gap-1">
-                      <UtensilsCrossed className="h-3.5 w-3.5 text-primary" /> Suất ăn (combo)
-                    </h4>
-                    {comboSelections.map((c, i) => (
-                      <div key={i} className="text-sm space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground truncate mr-2">{c.packageName} – {c.menuName} ×{c.quantity}</span>
-                          <span className="font-medium shrink-0">{formatPrice(c.pricePerPerson * c.quantity)}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground pl-2 line-clamp-1">{c.dishes.slice(0, 4).join(', ')}...</p>
+                {roomTotals.length > 0 && (
+                  <div className="border-t border-border pt-2 space-y-1">
+                    {roomTotals.map(rt => (
+                      <div key={rt.roomId} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{rt.room.name[language]} ×{rt.quantity}</span>
+                        <span className="font-medium">{formatPrice(rt.subtotal)}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Individual food summary */}
-                <div className="border-t border-border pt-3 space-y-2">
-                  <h4 className="font-semibold text-sm flex items-center gap-1">
-                    <ShoppingBag className="h-3.5 w-3.5 text-primary" /> Món ăn riêng
-                  </h4>
-                  {individualFoods.length > 0 ? (
-                    <>
-                      {individualFoods.map(f => (
-                        <div key={f.id} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground truncate mr-2">{f.name}{f.priceLabel ? ` (${f.priceLabel})` : ''} ×{f.quantity}</span>
-                          <span className="font-medium shrink-0">{formatPrice(f.price * f.quantity)}</span>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">Chưa chọn</p>
-                  )}
-                  <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setFoodSelectorOpen(true)}>
-                    <ShoppingBag className="h-3 w-3 mr-1" /> Đặt món riêng
-                  </Button>
-                </div>
-
-                {/* Promotion info in summary */}
-                {(isGroupPromo || isCouplePromo) && (
-                  <div className="border-t border-border pt-3 space-y-1">
-                    {isGroupPromo && companyName && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Công ty:</span>
-                        <span className="font-medium">{companyName}</span>
-                      </div>
-                    )}
-                    {groupSize && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Số người:</span>
-                        <span className="font-medium">{groupSize}</span>
-                      </div>
-                    )}
+                {comboTotal > 0 && (
+                  <div className="flex justify-between text-xs border-t border-border pt-2">
+                    <span className="text-muted-foreground">🍽️ Combo</span>
+                    <span className="font-medium">{formatPrice(comboTotal)}</span>
+                  </div>
+                )}
+                {individualFoodTotal > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">🍤 Món riêng</span>
+                    <span className="font-medium">{formatPrice(individualFoodTotal)}</span>
                   </div>
                 )}
 
-                {/* Discount code input */}
-                {originalPrice > 0 && (
-                  <div className="border-t border-border pt-3">
-                    <h4 className="font-semibold text-sm mb-2">🎟️ Mã giảm giá</h4>
-                    <DiscountCodeInput
-                      orderType="room"
-                      orderAmount={originalPrice}
-                      onApply={setAppliedDiscountCode}
-                      onRemove={() => setAppliedDiscountCode(null)}
-                      appliedCode={appliedDiscountCode}
-                    />
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-xs text-primary border-t border-border pt-2">
+                    <span>{isVi ? 'Giảm giá' : 'Discount'}</span>
+                    <span>-{formatPrice(discountAmount)}</span>
                   </div>
                 )}
 
-                {/* Auto-applied promotions */}
-                {appliedPromotions.length > 0 && (
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <h4 className="font-semibold text-sm flex items-center gap-1">🎁 Ưu đãi tự động áp dụng</h4>
-                    {appliedPromotions.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm bg-primary/5 rounded-lg px-3 py-1.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Badge variant="outline" className="text-xs shrink-0">{p.badge}</Badge>
-                          <span className="text-xs truncate">{p.name}</span>
-                        </div>
-                        <span className="text-primary font-medium shrink-0">-{formatPrice(p.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Discounts */}
-                {(totalDiscountPercent > 0 || discountCodeAmount > 0 || allAutoDiscounts > 0) && originalPrice > 0 && (
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Giá gốc</span>
-                      <span className="font-medium line-through text-muted-foreground">{formatPrice(originalPrice)}</span>
-                    </div>
-                    {memberDiscountPercent > 0 && (
-                      <div className="flex justify-between text-sm text-primary">
-                        <span>⭐ Giảm thành viên ({memberDiscountPercent}%)</span>
-                        <span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span>
-                      </div>
-                    )}
-                    {promoDiscountPercent > 0 && (
-                      <div className="flex justify-between text-sm text-primary">
-                        <span>🎉 Giảm ưu đãi ({promoDiscountPercent}%)</span>
-                        <span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span>
-                      </div>
-                    )}
-                    {flashSaleDiscount > 0 && (
-                      <div className="flex justify-between text-sm text-primary">
-                        <span>⚡ Flash Sale</span>
-                        <span>-{formatPrice(flashSaleDiscount)}</span>
-                      </div>
-                    )}
-                    {globalDiscountAmount > 0 && activeGlobalDiscount && (
-                      <div className="flex justify-between text-sm text-primary">
-                        <span>🎉 {activeGlobalDiscount.title_vi} ({activeGlobalDiscount.discount_percent}%)</span>
-                        <span>-{formatPrice(globalDiscountAmount)}</span>
-                      </div>
-                    )}
-                    {smartPricingAmount > 0 && activeSmartRule && (
-                      <div className="flex justify-between text-sm text-primary">
-                        <span>🧠 {activeSmartRule.title_vi} ({activeSmartRule.discount_percent}%)</span>
-                        <span>-{formatPrice(smartPricingAmount)}</span>
-                      </div>
-                    )}
-                    {discountCodeAmount > 0 && appliedDiscountCode && (
-                      <div className="flex justify-between text-sm text-primary">
-                        <span>🎟️ Mã {appliedDiscountCode.code} ({appliedDiscountCode.discount_type === 'percent' ? `${appliedDiscountCode.discount_value}%` : formatPrice(appliedDiscountCode.discount_value)}
-                          {appliedDiscountCode.applies_to === 'room' ? ' - chỉ phòng' : appliedDiscountCode.applies_to === 'food' ? ' - chỉ đồ ăn' : ''}
-                        )</span>
-                        <span>-{formatPrice(discountCodeAmount)}</span>
-                      </div>
-                    )}
-                    {discountAmount > 0 && (
-                      <div className="flex justify-between text-sm font-semibold text-primary border-t border-border pt-2 mt-2">
-                        <span>Tổng tiết kiệm</span>
-                        <span>-{formatPrice(discountAmount)}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!allNightsAvailable && nightCount > 0 && (
-                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                    Một số đêm trong khoảng ngày đã chọn đang đóng bán.
-                  </div>
-                )}
-                {comboValidationError && (
-                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-300 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
-                    ⚠️ Vui lòng chọn ít nhất 1 combo ăn uống.
-                  </div>
-                )}
-                {comboServingsError && (
-                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                    ⚠️ Tổng suất combo ({totalComboServings}) phải bằng số người lớn ({guestCount}).
-                  </div>
-                )}
-                {multiComboNeedsNotes && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 rounded-lg p-3 text-sm text-amber-700">
-                    ⚠️ Vui lòng nhập ghi chú ăn uống khi chọn nhiều loại combo.
-                  </div>
-                )}
-                <div className="border-t border-border pt-4">
+                <div className="border-t border-border pt-3">
                   <div className="flex justify-between items-baseline">
-                    <span className="font-display text-lg font-semibold">{t('booking.total')}</span>
-                    <span className="text-2xl font-bold text-primary">{totalPrice > 0 ? formatPrice(totalPrice) : '—'}</span>
+                    <span className="font-display text-base font-semibold">{t('booking.total')}</span>
+                    <span className="text-xl font-bold text-primary">{totalPrice > 0 ? formatPrice(totalPrice) : '—'}</span>
                   </div>
                   {totalPrice > 0 && (
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
@@ -1050,37 +957,52 @@ const Booking = () => {
                     </div>
                   )}
                 </div>
-                <Button variant="hero" className="w-full" onClick={handleSubmit} disabled={submitting || !canSubmit}>
-                  {submitting ? t('booking.processing') : t('booking.confirm')}
-                </Button>
+
+                {/* Validation warnings */}
+                {!allNightsAvailable && nightCount > 0 && <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">Một số đêm đang đóng bán.</div>}
+                {comboValidationError && <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-300 rounded-lg p-2 text-xs text-purple-700">⚠️ Chọn combo ăn uống.</div>}
+                {comboServingsError && <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">⚠️ Suất combo ({totalComboServings}) ≠ số khách ({guestCount}).</div>}
               </div>
             </motion.div>
+          </div>
+
+          {/* Step navigation buttons */}
+          <div className="flex items-center justify-between mt-8">
+            <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="gap-2">
+              <ArrowLeft className="h-4 w-4" /> {isVi ? 'Quay lại' : 'Back'}
+            </Button>
+            {currentStep < 5 ? (
+              <Button variant="gold" onClick={nextStep} className="gap-2">
+                {isVi ? 'Tiếp tục' : 'Continue'} <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button variant="gold" onClick={handleSubmit} disabled={submitting || !canSubmit} className="gap-2 px-8">
+                {submitting ? (isVi ? 'Đang xử lý...' : 'Processing...') : (isVi ? '🎉 Đặt phòng ngay' : '🎉 Book Now')}
+              </Button>
+            )}
           </div>
         </div>
       </div>
       <Footer />
       <FloatingButtons />
 
-      {/* Sticky bottom bar - Vinpearl style */}
+      {/* Sticky bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.1)] print:hidden">
         <div className="container mx-auto px-4 max-w-5xl py-3 flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground">{isVi ? 'Tổng cộng:' : 'Total:'}</p>
-            <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">
-              {totalPrice > 0 ? formatPrice(totalPrice) : '—'}
-            </p>
-            {totalPrice > 0 && discountAmount > 0 && (
-              <p className="text-[11px] text-muted-foreground line-through">{formatPrice(originalPrice)}</p>
-            )}
+            <p className="text-xs text-muted-foreground">{STEPS[currentStep - 1]?.label} ({currentStep}/5)</p>
+            <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">{totalPrice > 0 ? formatPrice(totalPrice) : '—'}</p>
+            {totalPrice > 0 && discountAmount > 0 && <p className="text-[11px] text-muted-foreground line-through">{formatPrice(originalPrice)}</p>}
           </div>
-          <Button
-            variant="gold"
-            className="px-8 py-6 text-sm font-bold rounded-lg shrink-0"
-            onClick={handleSubmit}
-            disabled={submitting || !canSubmit}
-          >
-            {submitting ? (isVi ? 'Đang xử lý...' : 'Processing...') : (isVi ? 'Đặt phòng' : 'Book Now')}
-          </Button>
+          {currentStep < 5 ? (
+            <Button variant="gold" className="px-8 py-6 text-sm font-bold rounded-lg shrink-0" onClick={nextStep}>
+              {isVi ? 'Tiếp tục' : 'Continue'} →
+            </Button>
+          ) : (
+            <Button variant="gold" className="px-8 py-6 text-sm font-bold rounded-lg shrink-0" onClick={handleSubmit} disabled={submitting || !canSubmit}>
+              {submitting ? '...' : (isVi ? 'Đặt phòng' : 'Book Now')}
+            </Button>
+          )}
         </div>
       </div>
     </div>
