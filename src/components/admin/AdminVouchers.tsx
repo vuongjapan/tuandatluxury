@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { formatPriceFull } from '@/lib/utils';
-import { Plus, Download, QrCode, Trash2, Filter } from 'lucide-react';
+import { Plus, Download, QrCode, Trash2, Filter, Eye } from 'lucide-react';
+import QRCode from 'qrcode';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface VoucherCode {
   id: string;
@@ -21,13 +23,13 @@ interface VoucherCode {
   created_at: string;
 }
 
+const SITE_URL = window.location.origin;
+
 const AdminVouchers = () => {
   const { toast } = useToast();
   const [vouchers, setVouchers] = useState<VoucherCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  
-  // Batch creation form
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [batchCount, setBatchCount] = useState(10);
   const [batchType, setBatchType] = useState('percent');
@@ -35,13 +37,11 @@ const AdminVouchers = () => {
   const [batchCampaign, setBatchCampaign] = useState('');
   const [batchEndDate, setBatchEndDate] = useState('');
   const [creating, setCreating] = useState(false);
+  const [qrDialog, setQrDialog] = useState<{ open: boolean; code: string; dataUrl: string }>({ open: false, code: '', dataUrl: '' });
 
   const fetchVouchers = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('voucher_codes')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('voucher_codes').select('*').order('created_at', { ascending: false });
     setVouchers((data as any as VoucherCode[]) || []);
     setLoading(false);
   };
@@ -55,6 +55,11 @@ const AdminVouchers = () => {
     return code;
   };
 
+  const generateQRDataUrl = async (code: string): Promise<string> => {
+    const url = `${SITE_URL}/apply?code=${code}`;
+    return QRCode.toDataURL(url, { width: 200, margin: 1, color: { dark: '#000000', light: '#ffffff' } });
+  };
+
   const handleBatchCreate = async () => {
     if (!batchCampaign || !batchEndDate) {
       toast({ title: 'Vui lòng nhập đầy đủ thông tin', variant: 'destructive' });
@@ -63,23 +68,16 @@ const AdminVouchers = () => {
     setCreating(true);
     const codes: any[] = [];
     const existingCodes = new Set(vouchers.map(v => v.code));
-    
     for (let i = 0; i < batchCount; i++) {
       let code: string;
       do { code = generateCode(); } while (existingCodes.has(code));
       existingCodes.add(code);
       codes.push({
-        code,
-        discount_type: batchType,
-        discount_value: batchValue,
-        campaign_name: batchCampaign,
-        end_date: new Date(batchEndDate).toISOString(),
-        usage_limit: 1,
-        used_count: 0,
-        status: 'active',
+        code, discount_type: batchType, discount_value: batchValue,
+        campaign_name: batchCampaign, end_date: new Date(batchEndDate).toISOString(),
+        usage_limit: 1, used_count: 0, status: 'active',
       });
     }
-
     const { error } = await supabase.from('voucher_codes').insert(codes as any);
     if (error) {
       toast({ title: 'Lỗi tạo mã', description: error.message, variant: 'destructive' });
@@ -97,14 +95,25 @@ const AdminVouchers = () => {
     fetchVouchers();
   };
 
+  const handleShowQR = async (code: string) => {
+    const dataUrl = await generateQRDataUrl(code);
+    setQrDialog({ open: true, code, dataUrl });
+  };
+
   const handleExportPDF = async () => {
     const activeVouchers = filteredVouchers.filter(v => v.status === 'active');
     if (activeVouchers.length === 0) {
       toast({ title: 'Không có mã active để xuất', variant: 'destructive' });
       return;
     }
-    
-    // Generate a simple printable HTML for PDF
+
+    // Generate QR codes for all vouchers
+    const qrPromises = activeVouchers.map(async v => {
+      const dataUrl = await generateQRDataUrl(v.code);
+      return { ...v, qrDataUrl: dataUrl };
+    });
+    const vouchersWithQR = await Promise.all(qrPromises);
+
     const html = `
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8">
@@ -124,15 +133,16 @@ const AdminVouchers = () => {
   .voucher .code { font-size: 22px; font-weight: bold; letter-spacing: 3px; color: #b8860b; background: #fff8e1; padding: 8px 16px; border-radius: 8px; margin: 8px 0; display: inline-block; }
   .voucher .value { font-size: 16px; font-weight: bold; color: #d32f2f; }
   .voucher .expiry { font-size: 11px; color: #666; margin-top: 6px; }
-  .qr { width: 80px; height: 80px; margin: 8px auto; background: #f5f5f5; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; }
+  .qr { width: 100px; height: 100px; margin: 8px auto; }
+  .qr img { width: 100%; height: 100%; }
   @media print { .no-print { display: none; } }
 </style>
 </head><body>
 <div class="no-print" style="margin-bottom:20px">
   <button onclick="window.print()" style="padding:10px 20px;background:#b8860b;color:white;border:none;border-radius:8px;cursor:pointer;font-size:16px">🖨️ In PDF</button>
 </div>
-${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => {
-  const pageVouchers = activeVouchers.slice(pageIdx * 10, (pageIdx + 1) * 10);
+${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => {
+  const pageVouchers = vouchersWithQR.slice(pageIdx * 10, (pageIdx + 1) * 10);
   return `<div class="page"><div class="grid">${pageVouchers.map(v => `
     <div class="voucher">
       <h2>VOUCHER GIẢM GIÁ</h2>
@@ -140,9 +150,9 @@ ${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => 
       <div class="label">Mã voucher</div>
       <div class="code">${v.code}</div>
       <div class="value">Giảm ${v.discount_type === 'percent' ? v.discount_value + '%' : formatPriceFull(v.discount_value)}</div>
-      <div class="qr">[QR: ${v.code}]</div>
+      <div class="qr"><img src="${v.qrDataUrl}" alt="QR ${v.code}" /></div>
       <div class="expiry">HSD: ${new Date(v.end_date).toLocaleDateString('vi-VN')}</div>
-      <div class="label" style="margin-top:4px">Chỉ sử dụng 1 lần · Không quy đổi tiền mặt</div>
+      <div class="label" style="margin-top:4px">Quét QR để sử dụng · Chỉ dùng 1 lần</div>
     </div>
   `).join('')}</div></div>`;
 }).join('')}
@@ -151,25 +161,24 @@ ${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => 
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
-    toast({ title: 'Đã mở trang in PDF ✓' });
+    toast({ title: 'Đã mở trang in PDF với QR Code ✓' });
   };
 
   const filteredVouchers = filterStatus === 'all' ? vouchers : vouchers.filter(v => v.status === filterStatus);
 
   const getStatusBadge = (v: VoucherCode) => {
-    if (v.used_count >= v.usage_limit) return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Đã dùng</span>;
-    if (new Date(v.end_date) < new Date()) return <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600">Hết hạn</span>;
-    if (v.status === 'active') return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Active</span>;
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{v.status}</span>;
+    if (v.used_count >= v.usage_limit) return <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Đã dùng</span>;
+    if (new Date(v.end_date) < new Date()) return <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">Hết hạn</span>;
+    if (v.status === 'active') return <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Active</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{v.status}</span>;
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-bold">Quản lý Voucher</h2>
-          <p className="text-sm text-muted-foreground">Tạo mã giảm giá hàng loạt, xuất PDF, theo dõi sử dụng</p>
+          <p className="text-sm text-muted-foreground">Tạo mã giảm giá hàng loạt, QR Code, xuất PDF</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-1.5">
@@ -181,7 +190,6 @@ ${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => 
         </div>
       </div>
 
-      {/* Batch creation form */}
       {showBatchForm && (
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <h3 className="font-semibold">Tạo mã voucher hàng loạt</h3>
@@ -222,7 +230,6 @@ ${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => 
         </div>
       )}
 
-      {/* Filter */}
       <div className="flex items-center gap-3">
         <Filter className="h-4 w-4 text-muted-foreground" />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -236,7 +243,6 @@ ${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => 
         <span className="text-sm text-muted-foreground">{filteredVouchers.length} mã</span>
       </div>
 
-      {/* Table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -264,14 +270,17 @@ ${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => 
                   <td className="p-3 font-semibold text-destructive">
                     {v.discount_type === 'percent' ? `${v.discount_value}%` : formatPriceFull(v.discount_value)}
                   </td>
-                  <td className="p-3 text-muted-foreground text-xs">
-                    {new Date(v.end_date).toLocaleDateString('vi-VN')}
-                  </td>
+                  <td className="p-3 text-muted-foreground text-xs">{new Date(v.end_date).toLocaleDateString('vi-VN')}</td>
                   <td className="p-3">{getStatusBadge(v)}</td>
                   <td className="p-3 text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(v.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleShowQR(v.code)} title="Xem QR">
+                        <QrCode className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(v.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -279,6 +288,21 @@ ${Array.from({ length: Math.ceil(activeVouchers.length / 10) }, (_, pageIdx) => 
           </table>
         </div>
       </div>
+
+      {/* QR Dialog */}
+      <Dialog open={qrDialog.open} onOpenChange={(open) => setQrDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-sm text-center">
+          <DialogHeader>
+            <DialogTitle>QR Code: {qrDialog.code}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {qrDialog.dataUrl && <img src={qrDialog.dataUrl} alt={`QR ${qrDialog.code}`} className="w-48 h-48" />}
+            <p className="text-xs text-muted-foreground">Quét để tự động áp dụng mã giảm giá</p>
+            <code className="bg-primary/10 text-primary px-4 py-2 rounded-lg font-bold text-lg tracking-wider">{qrDialog.code}</code>
+            <p className="text-xs text-muted-foreground break-all">{SITE_URL}/apply?code={qrDialog.code}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
