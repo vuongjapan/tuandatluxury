@@ -1,1 +1,0 @@
-import{r as o}from"./vendor-react-_lwZ1dJe.js";import{s as c}from"./index-BTQwKX7U.js";const u=()=>{const[r,e]=o.useState([]),[a,t]=o.useState(!0),s=async()=>{t(!0);const{data:n}=await c.from("promotions").select("*").order("sort_order");e(n||[]),t(!1)};return o.useEffect(()=>{s()},[]),{promotions:r,loading:a,refetch:s}};export{u};
