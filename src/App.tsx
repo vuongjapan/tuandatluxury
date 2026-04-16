@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -73,45 +73,55 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <CartProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ScrollToHash />
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/room/:id" element={<RoomDetail />} />
-                  <Route path="/booking" element={<Booking />} />
-                  <Route path="/dining" element={<Dining />} />
-                  <Route path="/cuisine" element={<Cuisine />} />
-                  <Route path="/services" element={<Services />} />
-                  <Route path="/food-order" element={<FoodOrder />} />
-                  <Route path="/food-invoice/:foodOrderId" element={<FoodInvoice />} />
-                  <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
-                  <Route path="/blog" element={<Blog />} />
-                  <Route path="/blog/:slug" element={<BlogPost />} />
-                  <Route path="/seafood" element={<Seafood />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/promotions" element={<Promotions />} />
-                  <Route path="/member" element={<MemberAuth />} />
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/apply" element={<ApplyVoucher />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
-        </CartProvider>
-      </AuthProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <AuthProvider>
+          <CartProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ScrollToHash />
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/room/:id" element={<RoomDetail />} />
+                    <Route path="/booking" element={<Booking />} />
+                    <Route path="/dining" element={<Dining />} />
+                    <Route path="/cuisine" element={<Cuisine />} />
+                    <Route path="/services" element={<Services />} />
+                    <Route path="/food-order" element={<FoodOrder />} />
+                    <Route path="/food-invoice/:foodOrderId" element={<FoodInvoice />} />
+                    <Route path="/invoice/:bookingCode" element={<InvoicePage />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:slug" element={<BlogPost />} />
+                    <Route path="/seafood" element={<Seafood />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/promotions" element={<Promotions />} />
+                    <Route path="/member" element={<MemberAuth />} />
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/apply" element={<ApplyVoucher />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
+          </CartProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

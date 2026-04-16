@@ -35,15 +35,30 @@ const PhotoGallery = () => {
 
   useEffect(() => {
     const fetchImages = async () => {
-      const { data } = await supabase
-        .from('gallery_images')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-      setImages((data as GalleryImage[]) || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('gallery_images')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        setImages(Array.isArray(data) ? (data as GalleryImage[]) : []);
+      } catch (error) {
+        console.warn('Failed to fetch gallery images:', error);
+        setImages([]);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchImages();
+
+    void fetchImages();
+
+    const handleFocus = () => {
+      void fetchImages();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const filtered = images.filter(img => img.category === activeCategory);

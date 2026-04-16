@@ -67,6 +67,9 @@ const Index = () => {
   const { settings: siteSettings } = useSiteSettings();
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
+  const safeRooms = Array.isArray(rooms) ? rooms : [];
+  const safeAmenities = Array.isArray(amenities) ? amenities : [];
+  const safeAttractions = Array.isArray(attractions) ? attractions : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,10 +85,10 @@ const Index = () => {
             title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
           />
           <div className="space-y-8 sm:space-y-10">
-            {roomsLoading && rooms.length === 0 ? (
+            {roomsLoading && safeRooms.length === 0 ? (
               <><RoomSkeleton /><RoomSkeleton /><RoomSkeleton /></>
             ) : (
-              rooms.map((room, i) => (
+              safeRooms.map((room, i) => (
                 <FadeIn key={room.id} delay={i * 100}>
                   <RoomCard room={room} index={i} />
                 </FadeIn>
@@ -240,7 +243,7 @@ const Index = () => {
             title={isVi ? 'Điểm tham quan lân cận' : 'Nearby Attractions'}
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-5xl mx-auto">
-            {attractions.map((place, idx) => (
+            {safeAttractions.map((place, idx) => (
               <FadeIn key={place.id} delay={idx * 60}>
                 <div className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-300">
                   {place.image_url ? (
@@ -276,7 +279,7 @@ const Index = () => {
             title={t('nav.services')}
           />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
-            {amenities.slice(0, 6).map((s, idx) => (
+            {safeAmenities.slice(0, 6).map((s, idx) => (
               <FadeIn key={s.id} delay={idx * 80}>
                 <div className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 border border-border group">
                   {s.image_url ? (

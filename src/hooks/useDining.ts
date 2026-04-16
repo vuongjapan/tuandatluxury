@@ -36,16 +36,40 @@ export function useDining() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [{ data: cats }, { data: its }] = await Promise.all([
-      supabase.from('dining_categories').select('*').order('sort_order'),
-      supabase.from('dining_items').select('*').order('sort_order'),
-    ]);
-    setCategories((cats as DiningCategory[]) || []);
-    setItems((its as DiningItem[]) || []);
-    setLoading(false);
+    try {
+      const [catsResult, itemsResult] = await Promise.allSettled([
+        supabase.from('dining_categories').select('*').order('sort_order'),
+        supabase.from('dining_items').select('*').order('sort_order'),
+      ]);
+
+      const cats = catsResult.status === 'fulfilled' && Array.isArray(catsResult.value.data)
+        ? (catsResult.value.data as DiningCategory[])
+        : [];
+      const its = itemsResult.status === 'fulfilled' && Array.isArray(itemsResult.value.data)
+        ? (itemsResult.value.data as DiningItem[])
+        : [];
+
+      setCategories(cats);
+      setItems(its);
+    } catch (error) {
+      console.warn('Failed to fetch dining data:', error);
+      setCategories([]);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    void fetchAll();
+
+    const handleFocus = () => {
+      void fetchAll();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
 
   const getItemsByCategory = (categoryId: string) =>
     items.filter(i => i.category_id === categoryId);
