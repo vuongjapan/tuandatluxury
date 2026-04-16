@@ -34,8 +34,10 @@ const ApplyVoucher = lazy(() => import("./pages/ApplyVoucher"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000, // 2 min
+      staleTime: 30 * 1000, // 30s – keep data fresh
+      gcTime: 5 * 60 * 1000, // garbage collect after 5 min
       retry: 1,
+      refetchOnWindowFocus: true, // refetch when tab regains focus
     },
   },
 });
