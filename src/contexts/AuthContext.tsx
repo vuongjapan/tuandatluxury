@@ -48,12 +48,7 @@ const STORAGE_KEY = 'tdl_auth_user';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -64,48 +59,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const fetchUserData = useCallback(async (sbUser: User) => {
-    // Get profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, phone')
-      .eq('user_id', sbUser.id)
-      .maybeSingle();
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, phone')
+        .eq('user_id', sbUser.id)
+        .maybeSingle();
 
-    // Count completed bookings by email
-    const email = sbUser.email || '';
-    const { count } = await supabase
-      .from('bookings')
-      .select('id', { count: 'exact', head: true })
-      .eq('guest_email', email)
-      .eq('status', 'confirmed');
+      const email = sbUser.email || '';
+      const { count } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('guest_email', email)
+        .eq('status', 'confirmed');
 
-    const bookingCount = count || 0;
+      const bookingCount = count || 0;
 
-    const authUser: AuthUser = {
-      id: sbUser.id,
-      email,
-      fullName: profile?.full_name || email.split('@')[0],
-      phone: profile?.phone || undefined,
-      bookingCount,
-      tier: getTier(bookingCount),
-    };
+      const authUser: AuthUser = {
+        id: sbUser.id,
+        email,
+        fullName: profile?.full_name || email.split('@')[0],
+        phone: profile?.phone || undefined,
+        bookingCount,
+        tier: getTier(bookingCount),
+      };
 
-    persistUser(authUser);
+      persistUser(authUser);
 
-    // Check admin
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', sbUser.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-    setIsAdmin(!!roleData);
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', sbUser.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      setIsAdmin(!!roleData);
+    } catch (err) {
+      console.warn('Failed to fetch user data:', err);
+      persistUser(null);
+      setIsAdmin(false);
+    }
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Try to restore cached user while loading
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setUser(JSON.parse(saved));
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const sbUser = session?.user ?? null;
       setSupabaseUser(sbUser);
+
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+        // Full cleanup on logout
+        persistUser(null);
+        setIsAdmin(false);
+        localStorage.removeItem(STORAGE_KEY);
+        setLoading(false);
+        return;
+      }
+
       if (sbUser) {
         await fetchUserData(sbUser);
       } else {
@@ -119,8 +135,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const sbUser = session?.user ?? null;
       setSupabaseUser(sbUser);
       if (sbUser) {
-        fetchUserData(sbUser);
+        fetchUserData(sbUser).finally(() => setLoading(false));
       } else {
+        persistUser(null);
         setLoading(false);
       }
     });
@@ -138,7 +155,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
     if (error) return { error: error.message };
-    // Update profile with phone
     const { data: { user: newUser } } = await supabase.auth.getUser();
     if (newUser) {
       await supabase.from('profiles').update({ phone, full_name: fullName, email }).eq('user_id', newUser.id);
@@ -147,6 +163,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
+    // Clean stale state before login
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem('voucher_code');
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     return {};
@@ -154,8 +174,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Full cleanup
     persistUser(null);
     setIsAdmin(false);
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.clear();
   };
 
   const refreshUser = async () => {
