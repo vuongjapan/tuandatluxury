@@ -136,10 +136,12 @@ export function useRooms() {
   const { data, isLoading: loading, refetch } = useQuery({
     queryKey: ['rooms-data'],
     queryFn: fetchRoomsData,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    staleTime: 0,
+    gcTime: 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    refetchOnReconnect: true,
+    retry: 1,
   });
 
   const dbRooms = data?.dbRooms || [];

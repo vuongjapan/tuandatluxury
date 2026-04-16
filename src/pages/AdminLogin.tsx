@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
+import { clearAppClientState, resetApp } from '@/lib/appState';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -19,6 +20,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      clearAppClientState({ preserveAuth: false, preserveVersion: true, nextRole: 'guest' });
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       
@@ -36,7 +38,7 @@ const AdminLogin = () => {
       }
       
       toast({ title: 'Đăng nhập thành công', description: 'Chào mừng Admin!' });
-      navigate('/admin');
+      resetApp({ preserveAuth: true, nextRole: 'admin', redirectTo: '/admin' });
     } catch (err: any) {
       toast({ title: 'Lỗi đăng nhập', description: err.message, variant: 'destructive' });
     } finally {

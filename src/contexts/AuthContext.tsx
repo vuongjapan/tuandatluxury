@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { clearAppClientState, resetApp, syncStoredRole } from '@/lib/appState';
 
 export type MemberTier = 'normal' | 'vip' | 'super_vip';
 
@@ -45,6 +46,11 @@ export const TIER_COLORS: Record<MemberTier, string> = {
 };
 
 const STORAGE_KEY = 'tdl_auth_user';
+
+function isInvalidSessionError(error: unknown) {
+  const status = (error as { status?: number } | null)?.status;
+  return status === 401 || status === 403;
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
@@ -92,9 +98,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', sbUser.id)
         .eq('role', 'admin')
         .maybeSingle();
+
+      const nextRole = roleData ? 'admin' : 'user';
+      if (syncStoredRole(nextRole, true)) return;
+
       setIsAdmin(!!roleData);
     } catch (err) {
       console.warn('Failed to fetch user data:', err);
+
+      if (isInvalidSessionError(err)) {
+        resetApp({ preserveAuth: false, nextRole: 'guest', redirectTo: '/member' });
+        return;
+      }
+
       persistUser(null);
       setIsAdmin(false);
     }
@@ -109,26 +125,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(STORAGE_KEY);
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const sbUser = session?.user ?? null;
+
       setSupabaseUser(sbUser);
 
-      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
-        // Full cleanup on logout
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         persistUser(null);
         setIsAdmin(false);
-        localStorage.removeItem(STORAGE_KEY);
+        syncStoredRole('guest', false);
         setLoading(false);
         return;
       }
 
-      if (sbUser) {
-        await fetchUserData(sbUser);
-      } else {
+      if (!sbUser) {
         persistUser(null);
         setIsAdmin(false);
+        syncStoredRole('guest', false);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      void fetchUserData(sbUser).finally(() => setLoading(false));
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -138,6 +156,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchUserData(sbUser).finally(() => setLoading(false));
       } else {
         persistUser(null);
+        setIsAdmin(false);
+        syncStoredRole('guest', false);
         setLoading(false);
       }
     });
@@ -163,22 +183,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    // Clean stale state before login
-    localStorage.removeItem(STORAGE_KEY);
-    sessionStorage.removeItem('voucher_code');
+    clearAppClientState({ preserveAuth: false, preserveVersion: true, nextRole: 'guest' });
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
+
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', data.user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    resetApp({ preserveAuth: true, nextRole: roleData ? 'admin' : 'user' });
     return {};
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    // Full cleanup
     persistUser(null);
+    setSupabaseUser(null);
     setIsAdmin(false);
-    localStorage.removeItem(STORAGE_KEY);
-    sessionStorage.clear();
+    resetApp({ preserveAuth: false, nextRole: 'guest', redirectTo: '/' });
   };
 
   const refreshUser = async () => {

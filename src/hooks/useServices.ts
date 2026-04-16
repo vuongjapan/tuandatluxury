@@ -31,17 +31,29 @@ export const useServices = () => {
   const { data: services = [], isLoading, refetch } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('sort_order');
-      if (error) throw error;
-      return (data || []) as unknown as Service[];
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .order('sort_order');
+        if (error) throw error;
+        return Array.isArray(data) ? (data as unknown as Service[]) : [];
+      } catch (error) {
+        console.warn('Failed to fetch services:', error);
+        return [] as Service[];
+      }
     },
+    staleTime: 0,
+    gcTime: 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    refetchOnReconnect: true,
+    retry: 1,
   });
 
-  const amenities = services.filter(s => s.category === 'amenity');
-  const shuttles = services.filter(s => s.category === 'shuttle');
+  const safeServices = Array.isArray(services) ? services : [];
+  const amenities = safeServices.filter(s => s.category === 'amenity');
+  const shuttles = safeServices.filter(s => s.category === 'shuttle');
 
-  return { services, amenities, shuttles, isLoading, refetch };
+  return { services: safeServices, amenities, shuttles, isLoading, refetch };
 };
