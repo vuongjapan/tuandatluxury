@@ -21,26 +21,28 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
   const { roomFeatures, benefits, highlights } = useRoomAmenities();
   const { getRoomPrice, getAvailability, isSpecialDate } = useRooms();
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const imgSrc = optimizeImageUrl(room.image, { width: 640, quality: 70 });
+  const imgSrc = optimizeImageUrl(room.image, { width: 720, quality: 75 });
+  const isVi = language === 'vi';
 
   const featureItems = roomFeatures.map(f => (
-    <span key={f.id} className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary px-2.5 py-1.5 rounded-md">
-      {f.icon} {language === 'vi' ? f.name_vi : f.name_en || f.name_vi}
+    <span key={f.id} className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary px-2 py-1 rounded">
+      {f.icon} {isVi ? f.name_vi : f.name_en || f.name_vi}
     </span>
   ));
 
   const benefitItems = benefits.map(b => (
-    <span key={b.id} className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary px-2.5 py-1.5 rounded-md">
-      {b.icon} {language === 'vi' ? b.name_vi : b.name_en || b.name_vi}
+    <span key={b.id} className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary px-2 py-1 rounded">
+      {b.icon} {isVi ? b.name_vi : b.name_en || b.name_vi}
     </span>
   ));
 
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden">
-      {/* Top: Image + Info */}
-      <div className="flex flex-col lg:flex-row">
-        <div className="relative w-full lg:w-[340px] shrink-0 overflow-hidden">
-          <div className="aspect-video lg:aspect-auto lg:h-full">
+    <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden hover:shadow-lg transition-shadow">
+      {/* Top: 2 columns – Image + Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2">
+        {/* Image (left) */}
+        <div className="relative overflow-hidden">
+          <div className="aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[280px]">
             <img
               src={imgSrc}
               alt={room.name[language]}
@@ -51,98 +53,101 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
             />
           </div>
           <div className="absolute top-3 left-3 bg-foreground/70 text-background px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur-sm">
-            {room.totalRooms} phòng
+            {room.totalRooms} {isVi ? 'phòng' : 'rooms'}
           </div>
+          {room.hasBalcony && (
+            <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground px-2.5 py-1 rounded-md text-[11px] font-semibold backdrop-blur-sm flex items-center gap-1">
+              <Waves className="h-3 w-3" /> {isVi ? 'Ban công riêng' : 'Private balcony'}
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 p-4 sm:p-5 space-y-3">
-          <div>
-            <h3 className="font-display text-xl sm:text-2xl font-semibold text-foreground mb-1">
-              {room.name[language]}
-            </h3>
-            <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
-              {room.description[language]}
-            </p>
-          </div>
-
-          {/* Quick specs - always visible */}
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            <span className="flex items-center gap-1.5 text-xs bg-secondary px-2.5 py-1.5 rounded-lg">
-              <Maximize2 className="h-3.5 w-3.5 text-primary" /> {room.size}m²
-            </span>
-            <span className="flex items-center gap-1.5 text-xs bg-secondary px-2.5 py-1.5 rounded-lg">
-              <BedDouble className="h-3.5 w-3.5 text-primary" /> {room.bedType}
-            </span>
-            <span className="flex items-center gap-1.5 text-xs bg-secondary px-2.5 py-1.5 rounded-lg">
-              <Eye className="h-3.5 w-3.5 text-primary" /> {room.viewType}
-            </span>
-            <span className="flex items-center gap-1.5 text-xs bg-secondary px-2.5 py-1.5 rounded-lg">
-              <Users className="h-3.5 w-3.5 text-primary" /> {room.capacity} người
-            </span>
-          </div>
-
-          {room.hasBalcony && (
-            <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-              <Waves className="h-3.5 w-3.5" /> Có ban công riêng
-            </div>
-          )}
-
-          {/* Highlights */}
-          {highlights.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {highlights.slice(0, 4).map((h) => (
-                <span key={h.id} className="flex items-center gap-1 text-[11px] bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                  {h.icon} {language === 'vi' ? h.name_vi : h.name_en || h.name_vi}
-                </span>
-              ))}
-            </div>
-          )}
+        {/* Calendar (right) */}
+        <div className="p-3 sm:p-4 bg-secondary/20">
+          <PriceCalendar
+            room={room}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            getRoomPrice={getRoomPrice}
+            getAvailability={getAvailability}
+            isSpecialDate={isSpecialDate}
+          />
         </div>
       </div>
 
-      {/* Amenities - collapsible */}
-      <div className="px-4 sm:px-5 pb-3 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Info (compact) */}
+      <div className="p-4 sm:p-5 space-y-3 border-t border-border">
+        <div>
+          <h3 className="font-display text-xl sm:text-2xl font-semibold text-foreground mb-1">
+            {room.name[language]}
+          </h3>
+          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
+            {room.description[language]}
+          </p>
+        </div>
+
+        {/* Quick specs */}
+        <div className="flex flex-wrap gap-1.5">
+          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+            <Maximize2 className="h-3 w-3 text-primary" /> {room.size}m²
+          </span>
+          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+            <BedDouble className="h-3 w-3 text-primary" /> {room.bedType}
+          </span>
+          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+            <Eye className="h-3 w-3 text-primary" /> {room.viewType}
+          </span>
+          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+            <Users className="h-3 w-3 text-primary" /> {room.capacity} {isVi ? 'người' : 'guests'}
+          </span>
+        </div>
+
+        {/* Highlights (compact) */}
+        {highlights.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {highlights.slice(0, 3).map((h) => (
+              <span key={h.id} className="flex items-center gap-1 text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                {h.icon} {isVi ? h.name_vi : h.name_en || h.name_vi}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Amenities – very compact, expandable */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {featureItems.length > 0 && (
             <div>
-              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Trang thiết bị</h4>
-              <ExpandableList items={featureItems} defaultCount={6} mobileCount={4} />
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                {isVi ? 'Trang thiết bị' : 'Equipment'}
+              </h4>
+              <ExpandableList items={featureItems} defaultCount={3} mobileCount={3} />
             </div>
           )}
           {benefitItems.length > 0 && (
             <div>
-              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Ưu đãi</h4>
-              <ExpandableList items={benefitItems} defaultCount={6} mobileCount={4} />
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                {isVi ? 'Ưu đãi' : 'Benefits'}
+              </h4>
+              <ExpandableList items={benefitItems} defaultCount={2} mobileCount={2} />
             </div>
           )}
         </div>
-      </div>
 
-      {/* Price calendar */}
-      <div className="px-4 sm:px-5 pb-3">
-        <PriceCalendar
-          room={room}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-          getRoomPrice={getRoomPrice}
-          getAvailability={getAvailability}
-          isSpecialDate={isSpecialDate}
-        />
-      </div>
-
-      {/* Price note */}
-      <div className="px-4 sm:px-5 pb-2">
-        <p className="text-xs text-muted-foreground text-center italic">
-          {language === 'vi' ? 'Giá thay đổi theo ngày – chọn ngày để xem giá chính xác' : 'Prices vary by date – select a date for exact pricing'}
+        {/* Price note */}
+        <p className="text-[11px] text-muted-foreground italic">
+          {isVi ? 'Giá thay đổi theo ngày – chọn ngày để xem giá chính xác' : 'Prices vary by date – select for exact pricing'}
         </p>
-      </div>
 
-      {/* Actions */}
-      <div className="px-4 sm:px-5 pb-4 flex items-center justify-center">
-        <Button variant="gold-outline" size="sm" onClick={() => navigate(`/room/${room.id}`)} className="gap-1.5 group/btn">
-          {t('room.view_detail')}
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
-        </Button>
+        {/* Actions – right aligned */}
+        <div className="flex items-center justify-end pt-2 border-t border-border gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(`/room/${room.id}`)} className="gap-1.5">
+            {t('room.view_detail')}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="gold" size="sm" onClick={() => navigate(`/booking?room=${room.id}`)}>
+            {isVi ? 'Đặt ngay' : 'Book now'}
+          </Button>
+        </div>
       </div>
     </div>
   );
