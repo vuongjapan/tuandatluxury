@@ -84,7 +84,7 @@ const Index = () => {
             tagline={isVi ? 'Hạng phòng' : 'Accommodation'}
             title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
           />
-          <div className="space-y-8 sm:space-y-10">
+          <div className="space-y-4 sm:space-y-5">
             {roomsLoading && safeRooms.length === 0 ? (
               <><RoomSkeleton /><RoomSkeleton /><RoomSkeleton /></>
             ) : (
