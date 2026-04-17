@@ -176,21 +176,62 @@ export const useSmartPricing = () => {
   return { rules, loading, refetch: fetch };
 };
 
-// Validate a discount code
-export const validateDiscountCode = async (code: string, orderType: 'room' | 'food', orderAmount: number): Promise<{ valid: boolean; discount?: DiscountCode; message?: string }> => {
-  const { data } = await supabase
+// Validate a discount code – check both `discount_codes` (admin promotions) and `voucher_codes` (batch QR)
+export const validateDiscountCode = async (
+  code: string,
+  orderType: 'room' | 'food',
+  orderAmount: number,
+): Promise<{ valid: boolean; discount?: DiscountCode; message?: string }> => {
+  const upper = code.toUpperCase().trim();
+  const now = new Date();
+
+  // 1) Try discount_codes (admin-defined promotions)
+  const { data: dc } = await supabase
     .from('discount_codes' as any)
     .select('*')
-    .eq('code', code.toUpperCase())
+    .eq('code', upper)
     .eq('is_active', true)
-    .single();
+    .maybeSingle();
 
-  if (!data) return { valid: false, message: 'Mã không hợp lệ' };
-  const d = data as any as DiscountCode;
-  const now = new Date();
-  if (now < new Date(d.start_date) || now > new Date(d.end_date)) return { valid: false, message: 'Mã đã hết hạn' };
-  if (d.used_count >= d.max_uses) return { valid: false, message: 'Mã đã hết lượt sử dụng' };
-  if (d.applies_to !== 'all' && d.applies_to !== orderType) return { valid: false, message: `Mã chỉ áp dụng cho ${d.applies_to === 'room' ? 'đặt phòng' : 'đồ ăn'}` };
-  if (orderAmount < d.min_order_amount) return { valid: false, message: `Đơn tối thiểu ${d.min_order_amount.toLocaleString()}₫` };
-  return { valid: true, discount: d };
+  if (dc) {
+    const d = dc as any as DiscountCode;
+    if (now < new Date(d.start_date) || now > new Date(d.end_date)) return { valid: false, message: 'Mã đã hết hạn' };
+    if (d.used_count >= d.max_uses) return { valid: false, message: 'Mã đã hết lượt sử dụng' };
+    if (d.applies_to !== 'all' && d.applies_to !== orderType) return { valid: false, message: `Mã chỉ áp dụng cho ${d.applies_to === 'room' ? 'đặt phòng' : 'đồ ăn'}` };
+    if (orderAmount < d.min_order_amount) return { valid: false, message: `Đơn tối thiểu ${d.min_order_amount.toLocaleString()}₫` };
+    return { valid: true, discount: d };
+  }
+
+  // 2) Fallback: voucher_codes (batch-generated QR vouchers like TDLUX-XXXX)
+  const { data: vc } = await supabase
+    .from('voucher_codes' as any)
+    .select('*')
+    .eq('code', upper)
+    .maybeSingle();
+
+  if (!vc) return { valid: false, message: 'Mã không tồn tại' };
+  const v = vc as any;
+  if (v.status !== 'active') return { valid: false, message: 'Mã không còn hiệu lực' };
+  if (now < new Date(v.start_date)) return { valid: false, message: 'Mã chưa đến ngày sử dụng' };
+  if (now > new Date(v.end_date)) return { valid: false, message: 'Mã đã hết hạn' };
+  if (v.used_count >= v.usage_limit) return { valid: false, message: 'Mã đã được sử dụng' };
+
+  // Map voucher_codes → DiscountCode shape so DiscountCodeInput can render & Booking flow can apply
+  const mapped: DiscountCode = {
+    id: v.id,
+    code: v.code,
+    title_vi: v.campaign_name || `Voucher ${v.code}`,
+    title_en: v.campaign_name || `Voucher ${v.code}`,
+    discount_type: v.discount_type,
+    discount_value: Number(v.discount_value),
+    min_order_amount: 0,
+    applies_to: 'all',
+    max_uses: v.usage_limit,
+    used_count: v.used_count,
+    max_uses_per_user: 1,
+    start_date: v.start_date,
+    end_date: v.end_date,
+    is_active: true,
+  };
+  return { valid: true, discount: mapped };
 };

@@ -586,24 +586,13 @@ const Booking = () => {
                           const cartItem = roomCart.find(c => c.roomId === room.id);
                           const qty = cartItem?.quantity || 0;
                           return (
-                            <div key={room.id} className="bg-card rounded-xl border border-border overflow-hidden">
+                            <div key={room.id}>
                               <BookingRoomCard
                                 room={room}
                                 quantity={qty}
                                 onQuantityChange={(newQty) => updateRoomQuantity(room.id, newQty)}
                                 nightlyPrice={formatPrice(room.priceVND)}
                               />
-                              {/* Mini price calendar */}
-                              <div className="px-4 pb-4">
-                                <PriceCalendar
-                                  room={room}
-                                  selectedDate={checkIn}
-                                  onSelectDate={() => {}}
-                                  getRoomPrice={getRoomPrice}
-                                  getAvailability={getAvailability}
-                                  isSpecialDate={isSpecialDate}
-                                />
-                              </div>
                             </div>
                           );
                         })}
