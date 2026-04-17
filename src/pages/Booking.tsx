@@ -89,7 +89,7 @@ const Booking = () => {
   const [comboNotes, setComboNotes] = useState('');
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
-  const [appliedDiscountCode, setAppliedDiscountCode] = useState<DiscountCode | null>(null);
+  const [appliedDiscountCodes, setAppliedDiscountCodes] = useState<DiscountCode[]>([]);
   const [companyName, setCompanyName] = useState('');
   const [groupSize, setGroupSize] = useState('');
   const [specialServices, setSpecialServices] = useState<string[]>([]);
@@ -252,14 +252,22 @@ const Booking = () => {
 
   const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
 
+  // Sum of all applied discount codes (multi-voucher support).
   const discountCodeAmount = useMemo(() => {
-    if (!appliedDiscountCode) return 0;
-    let base = roomTotal + comboTotal + individualFoodTotal;
-    if (appliedDiscountCode.applies_to === 'room') base = roomTotal;
-    else if (appliedDiscountCode.applies_to === 'food') base = comboTotal + individualFoodTotal;
-    if (appliedDiscountCode.discount_type === 'percent') return Math.round(base * appliedDiscountCode.discount_value / 100);
-    return Math.min(appliedDiscountCode.discount_value, base);
-  }, [appliedDiscountCode, roomTotal, comboTotal, individualFoodTotal]);
+    if (appliedDiscountCodes.length === 0) return 0;
+    let total = 0;
+    for (const c of appliedDiscountCodes) {
+      let base = roomTotal + comboTotal + individualFoodTotal;
+      if (c.applies_to === 'room') base = roomTotal;
+      else if (c.applies_to === 'food') base = comboTotal + individualFoodTotal;
+      const amt = c.discount_type === 'percent'
+        ? Math.round(base * c.discount_value / 100)
+        : Math.min(c.discount_value, base);
+      total += amt;
+    }
+    // Cap at the original subtotal so we never go negative.
+    return Math.min(total, roomTotal + comboTotal + individualFoodTotal);
+  }, [appliedDiscountCodes, roomTotal, comboTotal, individualFoodTotal]);
 
   const webDiscountAmount = useMemo(() => {
     if (webDiscountPercent <= 0 || roomTotal <= 0) return 0;
@@ -377,10 +385,10 @@ const Booking = () => {
           promotion_discount_amount: (promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : 0) + allAutoDiscounts || undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
-          discount_code: appliedDiscountCode?.code || undefined,
+          discount_code: appliedDiscountCodes.length > 0 ? appliedDiscountCodes.map(c => c.code).join(',') : undefined,
           discount_code_amount: discountCodeAmount > 0 ? discountCodeAmount : undefined,
-          discount_code_type: appliedDiscountCode?.discount_type || undefined,
-          discount_code_value: appliedDiscountCode?.discount_value || undefined,
+          discount_code_type: appliedDiscountCodes.length === 1 ? appliedDiscountCodes[0].discount_type : (appliedDiscountCodes.length > 1 ? 'mixed' : undefined),
+          discount_code_value: appliedDiscountCodes.length === 1 ? appliedDiscountCodes[0].discount_value : undefined,
           company_name: companyName || undefined,
           group_size: groupSize ? parseInt(groupSize) : undefined,
           special_services: serviceLabels || undefined,
@@ -841,7 +849,12 @@ const Booking = () => {
                             ))}
                             {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>⭐ Thành viên ({memberDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span></div>}
                             {promoDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🎉 Ưu đãi ({promoDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span></div>}
-                            {discountCodeAmount > 0 && appliedDiscountCode && <div className="flex justify-between text-primary"><span>🎟️ Mã {appliedDiscountCode.code}</span><span>-{formatPrice(discountCodeAmount)}</span></div>}
+                            {discountCodeAmount > 0 && appliedDiscountCodes.length > 0 && (
+                              <div className="flex justify-between text-primary">
+                                <span>🎟️ {appliedDiscountCodes.length === 1 ? `Mã ${appliedDiscountCodes[0].code}` : `${appliedDiscountCodes.length} ${isVi ? 'mã' : 'codes'}: ${appliedDiscountCodes.map(c => c.code).join(', ')}`}</span>
+                                <span>-{formatPrice(discountCodeAmount)}</span>
+                              </div>
+                            )}
                           </>
                         )}
                         <div className="flex justify-between border-t-2 border-primary/30 pt-3 text-lg">
@@ -857,16 +870,18 @@ const Booking = () => {
                       </div>
                     </div>
 
-                    {/* Discount code */}
+                    {/* Multi-voucher input */}
                     {originalPrice > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5">
-                        <h4 className="font-semibold text-sm mb-2">🎟️ {isVi ? 'Mã giảm giá' : 'Discount Code'}</h4>
+                        <h4 className="font-semibold text-sm mb-2">
+                          🎟️ {isVi ? 'Mã giảm giá (có thể nhập nhiều mã)' : 'Discount Codes (multiple allowed)'}
+                        </h4>
                         <DiscountCodeInput
                           orderType="room"
                           orderAmount={originalPrice}
-                          onApply={setAppliedDiscountCode}
-                          onRemove={() => setAppliedDiscountCode(null)}
-                          appliedCode={appliedDiscountCode}
+                          appliedCodes={appliedDiscountCodes}
+                          onAdd={(d) => setAppliedDiscountCodes(prev => [...prev, d])}
+                          onRemoveCode={(code) => setAppliedDiscountCodes(prev => prev.filter(c => c.code !== code))}
                         />
                       </div>
                     )}

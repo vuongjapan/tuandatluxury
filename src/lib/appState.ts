@@ -1,3 +1,5 @@
+import { bumpImageVersion } from '@/lib/imageVersion';
+
 export const APP_VERSION = '3.0.1';
 
 const APP_VERSION_KEY = 'app_version';
@@ -54,6 +56,8 @@ export function clearAppClientState(options: ResetOptions = {}) {
   }
 
   clearStaleCacheData();
+  // Invalidate cached <img> URLs so post-login the browser re-fetches fresh ones.
+  bumpImageVersion();
 }
 
 export function resetApp(options: ResetOptions & { redirectTo?: string } = {}) {

@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Minus, Plus, Users, Maximize2, BedDouble, Eye, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRoomAmenities } from '@/hooks/useRoomAmenities';
 import { useRooms } from '@/hooks/useRooms';
-import { optimizeImageUrl } from '@/lib/optimizeImage';
 import type { Room } from '@/data/rooms';
 import PriceCalendar from '@/components/PriceCalendar';
 import ExpandableList from '@/components/ExpandableList';
+import SmartImage from '@/components/SmartImage';
 
 const ROOM_GUEST_LIMITS: Record<string, number> = {
   standard: 2,
@@ -22,14 +22,13 @@ interface BookingRoomCardProps {
   nightlyPrice: string;
 }
 
-const BookingRoomCard = ({ room, quantity, onQuantityChange }: BookingRoomCardProps) => {
+const BookingRoomCard = memo(function BookingRoomCard({ room, quantity, onQuantityChange }: BookingRoomCardProps) {
   const { language } = useLanguage();
   const isVi = language === 'vi';
   const { roomFeatures, benefits, highlights } = useRoomAmenities();
   const { getRoomPrice, getAvailability, isSpecialDate } = useRooms();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const maxGuests = ROOM_GUEST_LIMITS[room.id] || room.capacity;
-  const imgSrc = optimizeImageUrl(room.image, { width: 600, quality: 70 });
 
   const featureItems = roomFeatures.map(f => (
     <span key={f.id} className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary px-2 py-0.5 rounded">
@@ -45,29 +44,41 @@ const BookingRoomCard = ({ room, quantity, onQuantityChange }: BookingRoomCardPr
 
   return (
     <div className={`bg-card rounded-xl border-2 overflow-hidden transition-all ${quantity > 0 ? 'border-primary shadow-lg' : 'border-border'}`}>
-      {/* Top 2 columns: Image + Calendar */}
+      {/* Top section: Image (split into 2 halves) + Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-2">
-        <div className="relative">
-          <div className="aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[260px]">
-            <img
-              src={imgSrc}
-              alt={room.name[language]}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+        {/* Image column — split into 2 horizontal halves so a long image is easier to scan */}
+        <div className="relative grid grid-rows-2 gap-1 bg-muted">
+          {/* Upper half */}
+          <div className="relative overflow-hidden">
+            <SmartImage
+              src={room.image}
+              alt={`${room.name[language]} – ${isVi ? 'Phần trên' : 'Top'}`}
+              wrapperClassName="w-full h-full"
+              className="scale-[1.02] object-top"
+              eager
             />
-          </div>
-          <div className="absolute top-2 left-2 bg-foreground/70 text-background px-2 py-0.5 rounded text-[10px] font-semibold backdrop-blur-sm">
-            {room.totalRooms} {isVi ? 'phòng' : 'rooms'}
-          </div>
-          {room.hasBalcony && (
-            <div className="absolute bottom-2 left-2 bg-primary/90 text-primary-foreground px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
-              <Waves className="h-2.5 w-2.5" /> {isVi ? 'Ban công' : 'Balcony'}
+            <div className="absolute top-2 left-2 bg-foreground/70 text-background px-2 py-0.5 rounded text-[10px] font-semibold backdrop-blur-sm">
+              {room.totalRooms} {isVi ? 'phòng' : 'rooms'}
             </div>
-          )}
+          </div>
+          {/* Lower half */}
+          <div className="relative overflow-hidden">
+            <SmartImage
+              src={room.image}
+              alt={`${room.name[language]} – ${isVi ? 'Phần dưới' : 'Bottom'}`}
+              wrapperClassName="w-full h-full"
+              className="scale-[1.02] object-bottom"
+            />
+            {room.hasBalcony && (
+              <div className="absolute bottom-2 left-2 bg-primary/90 text-primary-foreground px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                <Waves className="h-2.5 w-2.5" /> {isVi ? 'Ban công' : 'Balcony'}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="p-3 bg-secondary/20">
+        {/* Calendar column */}
+        <div className="p-3 bg-secondary/20 lg:border-l border-border">
           <PriceCalendar
             room={room}
             selectedDate={selectedDate}
@@ -148,6 +159,6 @@ const BookingRoomCard = ({ room, quantity, onQuantityChange }: BookingRoomCardPr
       </div>
     </div>
   );
-};
+});
 
 export default BookingRoomCard;

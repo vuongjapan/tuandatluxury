@@ -1,10 +1,17 @@
-const MAX_FILE_SIZE_MB = 50; // Maximum allowed file size in MB before compression
+import imageCompression from 'browser-image-compression';
+
+const MAX_FILE_SIZE_MB = 50; // Hard reject above this
 
 /**
- * Validate and compress an image file before uploading.
- * - Rejects files larger than maxFileSizeMB (even non-images).
- * - Resizes to maxWidth/maxHeight and compresses to JPEG quality.
- * - If the result is still over targetMaxKB, iteratively reduces quality.
+ * Validate + compress an image file before uploading.
+ * - Hard-rejects files over `maxFileSizeMB` (default 50MB).
+ * - Resizes to maxWidthOrHeight, converts to WebP at target quality.
+ * - Skips non-images (returns original).
+ * - If output is larger than original, returns original.
+ *
+ * Backwards-compatible signature: existing callers that pass `maxWidth/maxHeight/quality`
+ * still work; the new implementation uses `browser-image-compression` under the hood
+ * with WebP for ~30-50% smaller files vs JPEG.
  */
 export async function compressImage(
   file: File,
@@ -24,7 +31,7 @@ export async function compressImage(
     targetMaxKB = 500,
   } = options;
 
-  // Hard limit: reject oversized files
+  // Hard limit
   const maxBytes = maxFileSizeMB * 1024 * 1024;
   if (file.size > maxBytes) {
     throw new Error(
@@ -32,66 +39,29 @@ export async function compressImage(
     );
   }
 
-  // Skip non-image files or SVGs
+  // Skip non-images and SVGs
   if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
     return file;
   }
 
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
+  try {
+    const compressed = await imageCompression(file, {
+      maxSizeMB: targetMaxKB / 1024,
+      maxWidthOrHeight: Math.max(maxWidth, maxHeight),
+      useWebWorker: true,
+      fileType: 'image/webp',
+      initialQuality: quality,
+      alwaysKeepResolution: false,
+    });
 
-    img.onload = async () => {
-      URL.revokeObjectURL(url);
+    // Wrap as File with .webp extension
+    const webpName = file.name.replace(/\.[^.]+$/, '.webp');
+    const finalFile = new File([compressed], webpName, { type: 'image/webp' });
 
-      let { width, height } = img;
-
-      // Only resize if larger than max dimensions
-      if (width > maxWidth || height > maxHeight) {
-        const ratio = Math.min(maxWidth / width, maxHeight / height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Iterative compression: reduce quality until under targetMaxKB
-      let currentQuality = quality;
-      const targetBytes = targetMaxKB * 1024;
-      let blob: Blob | null = null;
-
-      for (let attempt = 0; attempt < 5; attempt++) {
-        blob = await new Promise<Blob | null>((res) =>
-          canvas.toBlob((b) => res(b), 'image/jpeg', currentQuality)
-        );
-
-        if (!blob || blob.size <= targetBytes || currentQuality <= 0.3) break;
-        currentQuality -= 0.1;
-      }
-
-      if (blob) {
-        const compressed = new File(
-          [blob],
-          file.name.replace(/\.[^.]+$/, '.jpg'),
-          { type: 'image/jpeg' }
-        );
-        // Only use compressed if it's actually smaller
-        resolve(compressed.size < file.size ? compressed : file);
-      } else {
-        resolve(file);
-      }
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error(`Không thể đọc file ảnh "${file.name}". File có thể bị hỏng.`));
-    };
-
-    img.src = url;
-  });
+    // If compression somehow grew the file (rare for tiny inputs), keep original
+    return finalFile.size < file.size ? finalFile : file;
+  } catch (err) {
+    console.warn('Image compression failed, uploading original:', err);
+    return file;
+  }
 }
