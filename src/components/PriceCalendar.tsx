@@ -102,7 +102,7 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
               onClick={() => onSelectDate?.(cell.date!)}
               title={cell.isSpecial ? (cell.specialNote || 'Giá đặc biệt') : undefined}
               className={`
-                relative p-0.5 sm:p-1 rounded-lg text-center transition-all duration-200 min-h-[54px] sm:min-h-[64px] flex flex-col items-center justify-center
+                relative px-0.5 py-1 sm:p-1 rounded-lg text-center transition-all duration-200 min-h-[62px] sm:min-h-[68px] flex flex-col items-center justify-start gap-0.5
                 ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-secondary cursor-pointer'}
                 ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : ''}
                 ${isClosed ? 'bg-destructive/10 line-through' : ''}
@@ -113,15 +113,15 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
                 ${isSunday && !disabled && !isCombo && !cell.isSpecial ? 'bg-orange-50 dark:bg-orange-900/20' : ''}
               `}
             >
-              <span className="text-xs sm:text-sm font-semibold text-foreground">{cell.date.getDate()}</span>
+              <span className="text-[11px] sm:text-sm font-semibold text-foreground leading-none">{cell.date.getDate()}</span>
               {!cell.isPast && !isClosed && (
-                <div className="flex flex-col items-center leading-none mt-0.5">
+                <div className="flex flex-col items-center leading-none w-full overflow-hidden">
                   {hasWebDiscount && (
-                    <span className="text-[9px] sm:text-[10px] text-muted-foreground line-through leading-tight">
+                    <span className="text-[8px] sm:text-[10px] text-muted-foreground line-through leading-none truncate max-w-full">
                       {formatPriceShort(cell.price)}
                     </span>
                   )}
-                  <span className={`text-[11px] sm:text-xs font-bold leading-tight ${
+                  <span className={`text-[10px] sm:text-xs font-bold leading-tight truncate max-w-full ${
                     cell.isSpecial ? 'text-destructive' : hasWebDiscount ? 'text-green-600 dark:text-green-400' : 'text-primary'
                   }`}>
                     {formatPriceShort(hasWebDiscount ? cell.webPrice : cell.price)}
@@ -132,10 +132,10 @@ const PriceCalendar = ({ room, onSelectDate, selectedDate, getRoomPrice, getAvai
                 <Flame className="h-2.5 w-2.5 text-destructive absolute top-0.5 right-0.5" />
               )}
               {isClosed && !cell.isPast && (
-                <span className="text-[9px] sm:text-[10px] font-medium text-destructive">Đóng</span>
+                <span className="text-[8px] sm:text-[10px] font-medium text-destructive">Đóng</span>
               )}
               {isCombo && !cell.isPast && (
-                <span className="text-[9px] sm:text-[10px] font-medium text-purple-600">Combo</span>
+                <span className="text-[8px] sm:text-[10px] font-medium text-purple-600 leading-none">Combo</span>
               )}
             </button>
           );
