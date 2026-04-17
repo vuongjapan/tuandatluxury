@@ -182,7 +182,37 @@ serve(async (req) => {
       else foodItemDetails = insertedFoods || [];
     }
 
-    // Create invoice
+    // Increment voucher/discount usage if a code was applied
+    if (discount_code) {
+      const upper = String(discount_code).toUpperCase();
+      // Try discount_codes first
+      const { data: dcRow } = await supabase
+        .from("discount_codes")
+        .select("id, used_count")
+        .eq("code", upper)
+        .maybeSingle();
+      if (dcRow) {
+        await supabase
+          .from("discount_codes")
+          .update({ used_count: (dcRow.used_count || 0) + 1 })
+          .eq("id", dcRow.id);
+      } else {
+        // Fallback: voucher_codes (batch QR vouchers)
+        const { data: vcRow } = await supabase
+          .from("voucher_codes")
+          .select("id, used_count, usage_limit")
+          .eq("code", upper)
+          .maybeSingle();
+        if (vcRow) {
+          const newUsed = (vcRow.used_count || 0) + 1;
+          const newStatus = newUsed >= (vcRow.usage_limit || 1) ? "used" : "active";
+          await supabase
+            .from("voucher_codes")
+            .update({ used_count: newUsed, status: newStatus })
+            .eq("id", vcRow.id);
+        }
+      }
+    }
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .insert({

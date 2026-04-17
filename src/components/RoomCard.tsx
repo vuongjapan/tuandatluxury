@@ -138,14 +138,11 @@ const RoomCard = ({ room, index }: RoomCardProps) => {
           {isVi ? 'Giá thay đổi theo ngày – chọn ngày để xem giá chính xác' : 'Prices vary by date – select for exact pricing'}
         </p>
 
-        {/* Actions – right aligned */}
-        <div className="flex items-center justify-end pt-2 border-t border-border gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/room/${room.id}`)} className="gap-1.5">
+        {/* Actions – chỉ giữ "Xem chi tiết" */}
+        <div className="flex items-center justify-end pt-2 border-t border-border">
+          <Button variant="gold" size="sm" onClick={() => navigate(`/room/${room.id}`)} className="gap-1.5">
             {t('room.view_detail')}
             <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="gold" size="sm" onClick={() => navigate(`/booking?room=${room.id}`)}>
-            {isVi ? 'Đặt ngay' : 'Book now'}
           </Button>
         </div>
       </div>
