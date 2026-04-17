@@ -36,19 +36,20 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
     notes: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
+  const [appliedDiscounts, setAppliedDiscounts] = useState<DiscountCode[]>([]);
 
   const getName = (item: { name_vi: string; name_en: string }) => isVi ? item.name_vi : item.name_en;
 
-  // Calculate discount - respect applies_to setting
-  const discountCodeAmount = appliedDiscount
-    ? (appliedDiscount.applies_to === 'room' ? 0 : (
-        appliedDiscount.discount_type === 'percent'
-          ? Math.round(totalAmount * appliedDiscount.discount_value / 100)
-          : Math.min(appliedDiscount.discount_value, totalAmount)
-      ))
-    : 0;
-  const finalAmount = totalAmount - discountCodeAmount;
+  // Multi-voucher: sum all applied codes (food orders only count food-applicable codes).
+  const discountCodeAmount = appliedDiscounts.reduce((sum, c) => {
+    if (c.applies_to === 'room') return sum;
+    const amt = c.discount_type === 'percent'
+      ? Math.round(totalAmount * c.discount_value / 100)
+      : Math.min(c.discount_value, totalAmount);
+    return sum + amt;
+  }, 0);
+  const cappedDiscount = Math.min(discountCodeAmount, totalAmount);
+  const finalAmount = totalAmount - cappedDiscount;
   const depositAmount = Math.round(finalAmount * 0.5);
 
   const handleSubmit = async () => {
@@ -95,10 +96,10 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
           room_number: form.roomNumber || null,
           total_amount: finalAmount,
           original_amount: totalAmount,
-          discount_code: appliedDiscount?.code || null,
-          discount_type: appliedDiscount?.discount_type || null,
-          discount_value: appliedDiscount?.discount_value || 0,
-          discount_amount: discountCodeAmount,
+          discount_code: appliedDiscounts.length > 0 ? appliedDiscounts.map(c => c.code).join(',') : null,
+          discount_type: appliedDiscounts.length === 1 ? appliedDiscounts[0].discount_type : (appliedDiscounts.length > 1 ? 'mixed' : null),
+          discount_value: appliedDiscounts.length === 1 ? appliedDiscounts[0].discount_value : 0,
+          discount_amount: cappedDiscount,
           paid_amount: 0,
           status: 'pending',
           payment_status: 'PENDING',
@@ -205,15 +206,15 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                   ))}
                 </div>
                 <div className="mt-4 pt-3 border-t border-border space-y-2">
-                  {discountCodeAmount > 0 && (
+                  {cappedDiscount > 0 && (
                     <>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
                         <span className="font-medium line-through text-muted-foreground">{formatPrice(totalAmount)}</span>
                       </div>
                       <div className="flex justify-between text-sm text-primary">
-                        <span>Mã {appliedDiscount?.code}</span>
-                        <span>-{formatPrice(discountCodeAmount)}</span>
+                        <span>{appliedDiscounts.length === 1 ? `Mã ${appliedDiscounts[0].code}` : `${appliedDiscounts.length} ${isVi ? 'mã' : 'codes'}`}</span>
+                        <span>-{formatPrice(cappedDiscount)}</span>
                       </div>
                     </>
                   )}
@@ -272,15 +273,15 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
               <div className="bg-card rounded-xl border border-border p-4 sticky top-32">
                 <h3 className="font-display font-semibold mb-3">{isVi ? 'Tóm tắt' : 'Summary'}</h3>
                 <div className="space-y-2 text-sm">
-                  {discountCodeAmount > 0 ? (
+                  {cappedDiscount > 0 ? (
                     <>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
                         <span className="font-medium line-through text-muted-foreground">{formatPrice(totalAmount)}</span>
                       </div>
                       <div className="flex justify-between text-primary">
-                        <span>Mã {appliedDiscount?.code}</span>
-                        <span>-{formatPrice(discountCodeAmount)}</span>
+                        <span>{appliedDiscounts.length === 1 ? `Mã ${appliedDiscounts[0].code}` : `${appliedDiscounts.length} ${isVi ? 'mã' : 'codes'}`}</span>
+                        <span>-{formatPrice(cappedDiscount)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{isVi ? 'Tổng tiền' : 'Total'}</span>
@@ -303,14 +304,14 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                   </div>
                 </div>
 
-                {/* Discount code input */}
+                {/* Multi-voucher input */}
                 <div className="mt-3 pt-3 border-t border-border">
                   <DiscountCodeInput
                     orderType="food"
                     orderAmount={totalAmount}
-                    onApply={setAppliedDiscount}
-                    onRemove={() => setAppliedDiscount(null)}
-                    appliedCode={appliedDiscount}
+                    appliedCodes={appliedDiscounts}
+                    onAdd={(d) => setAppliedDiscounts(prev => [...prev, d])}
+                    onRemoveCode={(code) => setAppliedDiscounts(prev => prev.filter(c => c.code !== code))}
                   />
                 </div>
 
