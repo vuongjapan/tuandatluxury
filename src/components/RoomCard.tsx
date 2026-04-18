@@ -1,153 +1,141 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Users, Maximize2, ArrowRight, BedDouble, Eye, Waves } from 'lucide-react';
+import { useState, memo } from 'react';
+import { Users, Maximize2, BedDouble, Eye, Waves, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import SmartImage from '@/components/SmartImage';
+import RoomDetailPopup from '@/components/RoomDetailPopup';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { Room } from '@/data/rooms';
 import { useRoomAmenities } from '@/hooks/useRoomAmenities';
-import { useRooms } from '@/hooks/useRooms';
-import { optimizeImageUrl } from '@/lib/optimizeImage';
-import PriceCalendar from '@/components/PriceCalendar';
-import ExpandableList from '@/components/ExpandableList';
+import { useRoomPopupSettings } from '@/hooks/useRoomPopupSettings';
+import type { Room } from '@/data/rooms';
 
 interface RoomCardProps {
   room: Room;
   index: number;
 }
 
-const RoomCard = ({ room, index }: RoomCardProps) => {
-  const { language, t } = useLanguage();
-  const navigate = useNavigate();
-  const { roomFeatures, benefits, highlights } = useRoomAmenities();
-  const { getRoomPrice, getAvailability, isSpecialDate } = useRooms();
-  const [selectedDate, setSelectedDate] = useState<Date>();
-  const imgSrc = optimizeImageUrl(room.image, { width: 720, quality: 75 });
+/**
+ * Compact luxury room card.
+ * - 1 ảnh đẹp
+ * - Tên ở ĐẦU card
+ * - Specs ngắn + 4 highlights
+ * - 2 CTA: Xem thêm (mở popup) + Đặt ngay (chuyển booking)
+ * - KHÔNG hiển thị calendar trên trang chính.
+ */
+const RoomCard = memo(function RoomCard({ room, index }: RoomCardProps) {
+  const { language } = useLanguage();
   const isVi = language === 'vi';
+  const { highlights } = useRoomAmenities();
+  const { byRoomId } = useRoomPopupSettings();
+  const popup = byRoomId.get(room.id);
 
-  const featureItems = roomFeatures.map(f => (
-    <span key={f.id} className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary px-2 py-1 rounded">
-      {f.icon} {isVi ? f.name_vi : f.name_en || f.name_vi}
-    </span>
-  ));
+  const [popupOpen, setPopupOpen] = useState(false);
 
-  const benefitItems = benefits.map(b => (
-    <span key={b.id} className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary px-2 py-1 rounded">
-      {b.icon} {isVi ? b.name_vi : b.name_en || b.name_vi}
-    </span>
-  ));
+  const badgeText = isVi ? popup?.badge_vi : popup?.badge_en;
 
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden hover:shadow-lg transition-shadow">
-      {/* Top: 2 columns – Image + Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2">
-        {/* Image (left) */}
-        <div className="relative overflow-hidden">
-          <div className="aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[280px]">
-            <img
-              src={imgSrc}
+    <>
+      <article className="group bg-card rounded-2xl border border-border shadow-card overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col">
+        {/* Title FIRST */}
+        <header className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h3 className="font-display text-lg sm:text-xl font-semibold text-foreground tracking-tight uppercase">
+              {room.name[language]}
+            </h3>
+            {badgeText && (
+              <Badge className="bg-primary text-primary-foreground border-0 text-[10px] uppercase tracking-wider">
+                {badgeText}
+              </Badge>
+            )}
+            {!badgeText && room.hasBalcony && (
+              <Badge variant="outline" className="border-primary/40 text-primary gap-1 text-[10px]">
+                <Waves className="h-3 w-3" /> {isVi ? 'Sea view' : 'Sea view'}
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground line-clamp-1">
+            {room.viewType} • {room.bedType}
+          </p>
+        </header>
+
+        {/* Single image */}
+        <div className="relative mx-4 sm:mx-5 rounded-xl overflow-hidden">
+          <div className="aspect-[16/10]">
+            <SmartImage
+              src={room.image}
               alt={room.name[language]}
-              className="w-full h-full object-cover"
-              loading={index < 2 ? 'eager' : 'lazy'}
-              decoding="async"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+              wrapperClassName="w-full h-full"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              eager={index < 2}
             />
           </div>
-          <div className="absolute top-3 left-3 bg-foreground/70 text-background px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur-sm">
+          <div className="absolute top-2 left-2 bg-foreground/70 text-background px-2.5 py-1 rounded-md text-[10px] font-semibold backdrop-blur-sm">
             {room.totalRooms} {isVi ? 'phòng' : 'rooms'}
           </div>
-          {room.hasBalcony && (
-            <div className="absolute bottom-3 left-3 bg-primary/90 text-primary-foreground px-2.5 py-1 rounded-md text-[11px] font-semibold backdrop-blur-sm flex items-center gap-1">
-              <Waves className="h-3 w-3" /> {isVi ? 'Ban công riêng' : 'Private balcony'}
-            </div>
-          )}
         </div>
 
-        {/* Calendar (right) */}
-        <div className="p-3 sm:p-4 bg-secondary/20">
-          <PriceCalendar
-            room={room}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            getRoomPrice={getRoomPrice}
-            getAvailability={getAvailability}
-            isSpecialDate={isSpecialDate}
-          />
-        </div>
-      </div>
+        {/* Body */}
+        <div className="p-4 sm:p-5 pt-3 flex-1 flex flex-col gap-3">
+          {/* Short description */}
+          <p className="text-sm text-muted-foreground line-clamp-2">{room.description[language]}</p>
 
-      {/* Info (compact) */}
-      <div className="p-4 sm:p-5 space-y-3 border-t border-border">
-        <div>
-          <h3 className="font-display text-xl sm:text-2xl font-semibold text-foreground mb-1">
-            {room.name[language]}
-          </h3>
-          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
-            {room.description[language]}
-          </p>
-        </div>
-
-        {/* Quick specs */}
-        <div className="flex flex-wrap gap-1.5">
-          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
-            <Maximize2 className="h-3 w-3 text-primary" /> {room.size}m²
-          </span>
-          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
-            <BedDouble className="h-3 w-3 text-primary" /> {room.bedType}
-          </span>
-          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
-            <Eye className="h-3 w-3 text-primary" /> {room.viewType}
-          </span>
-          <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
-            <Users className="h-3 w-3 text-primary" /> {room.capacity} {isVi ? 'người' : 'guests'}
-          </span>
-        </div>
-
-        {/* Highlights (compact) */}
-        {highlights.length > 0 && (
+          {/* Quick specs */}
           <div className="flex flex-wrap gap-1.5">
-            {highlights.slice(0, 3).map((h) => (
-              <span key={h.id} className="flex items-center gap-1 text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                {h.icon} {isVi ? h.name_vi : h.name_en || h.name_vi}
-              </span>
-            ))}
+            <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+              <Maximize2 className="h-3 w-3 text-primary" /> {room.size}m²
+            </span>
+            <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+              <Users className="h-3 w-3 text-primary" /> {room.capacity}
+            </span>
+            <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+              <BedDouble className="h-3 w-3 text-primary" /> {isVi ? 'Giường lớn' : 'King'}
+            </span>
+            <span className="flex items-center gap-1 text-xs bg-secondary px-2.5 py-1 rounded-md">
+              <Eye className="h-3 w-3 text-primary" /> {room.viewType.split(' ').slice(-2).join(' ')}
+            </span>
           </div>
-        )}
 
-        {/* Amenities – very compact, expandable */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          {featureItems.length > 0 && (
-            <div>
-              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                {isVi ? 'Trang thiết bị' : 'Equipment'}
-              </h4>
-              <ExpandableList items={featureItems} defaultCount={3} mobileCount={3} />
+          {/* Top highlights (max 3) */}
+          {highlights.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {highlights.slice(0, 3).map((h) => (
+                <span
+                  key={h.id}
+                  className="inline-flex items-center gap-1 text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
+                >
+                  <Sparkles className="h-2.5 w-2.5" />
+                  {isVi ? h.name_vi : h.name_en || h.name_vi}
+                </span>
+              ))}
             </div>
           )}
-          {benefitItems.length > 0 && (
-            <div>
-              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                {isVi ? 'Ưu đãi' : 'Benefits'}
-              </h4>
-              <ExpandableList items={benefitItems} defaultCount={2} mobileCount={2} />
-            </div>
-          )}
-        </div>
 
-        {/* Price note */}
-        <p className="text-[11px] text-muted-foreground italic">
-          {isVi ? 'Giá thay đổi theo ngày – chọn ngày để xem giá chính xác' : 'Prices vary by date – select for exact pricing'}
-        </p>
-
-        {/* Actions – chỉ giữ "Xem chi tiết" */}
-        <div className="flex items-center justify-end pt-2 border-t border-border">
-          <Button variant="gold" size="sm" onClick={() => navigate(`/room/${room.id}`)} className="gap-1.5">
-            {t('room.view_detail')}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
+          {/* CTAs */}
+          <div className="flex items-center gap-2 mt-auto pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5"
+              onClick={() => setPopupOpen(true)}
+            >
+              {isVi ? 'Xem thêm' : 'View more'}
+            </Button>
+            <Button
+              variant="gold"
+              size="sm"
+              className="flex-1 gap-1.5"
+              onClick={() => setPopupOpen(true)}
+            >
+              {isVi ? 'Đặt ngay' : 'Book Now'}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </article>
+
+      <RoomDetailPopup room={room} open={popupOpen} onOpenChange={setPopupOpen} />
+    </>
   );
-};
+});
 
 export default RoomCard;

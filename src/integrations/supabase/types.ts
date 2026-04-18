@@ -1333,6 +1333,8 @@ export type Database = {
       room_images: {
         Row: {
           caption: string | null
+          caption_en: string | null
+          caption_vi: string | null
           created_at: string
           id: string
           image_url: string
@@ -1342,6 +1344,8 @@ export type Database = {
         }
         Insert: {
           caption?: string | null
+          caption_en?: string | null
+          caption_vi?: string | null
           created_at?: string
           id?: string
           image_url: string
@@ -1351,6 +1355,8 @@ export type Database = {
         }
         Update: {
           caption?: string | null
+          caption_en?: string | null
+          caption_vi?: string | null
           created_at?: string
           id?: string
           image_url?: string
@@ -1403,6 +1409,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      room_popup_settings: {
+        Row: {
+          badge_color: string | null
+          badge_en: string | null
+          badge_vi: string | null
+          created_at: string
+          cta_primary_en: string | null
+          cta_primary_vi: string | null
+          cta_secondary_en: string | null
+          cta_secondary_vi: string | null
+          highlights_en: string[] | null
+          highlights_vi: string[] | null
+          id: string
+          is_active: boolean
+          policy_en: string | null
+          policy_vi: string | null
+          room_id: string
+          short_pitch_en: string | null
+          short_pitch_vi: string | null
+          updated_at: string
+        }
+        Insert: {
+          badge_color?: string | null
+          badge_en?: string | null
+          badge_vi?: string | null
+          created_at?: string
+          cta_primary_en?: string | null
+          cta_primary_vi?: string | null
+          cta_secondary_en?: string | null
+          cta_secondary_vi?: string | null
+          highlights_en?: string[] | null
+          highlights_vi?: string[] | null
+          id?: string
+          is_active?: boolean
+          policy_en?: string | null
+          policy_vi?: string | null
+          room_id: string
+          short_pitch_en?: string | null
+          short_pitch_vi?: string | null
+          updated_at?: string
+        }
+        Update: {
+          badge_color?: string | null
+          badge_en?: string | null
+          badge_vi?: string | null
+          created_at?: string
+          cta_primary_en?: string | null
+          cta_primary_vi?: string | null
+          cta_secondary_en?: string | null
+          cta_secondary_vi?: string | null
+          highlights_en?: string[] | null
+          highlights_vi?: string[] | null
+          id?: string
+          is_active?: boolean
+          policy_en?: string | null
+          policy_vi?: string | null
+          room_id?: string
+          short_pitch_en?: string | null
+          short_pitch_vi?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       room_price_overrides: {
         Row: {
