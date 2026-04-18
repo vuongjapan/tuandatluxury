@@ -34,8 +34,9 @@ import AdminPromotionSystem from '@/components/admin/AdminPromotionSystem';
 import AdminAmenities from '@/components/admin/AdminAmenities';
 import AdminVouchers from '@/components/admin/AdminVouchers';
 import AdminWebDiscount from '@/components/admin/AdminWebDiscount';
+import AdminRoomPopup from '@/components/admin/AdminRoomPopup';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -168,6 +169,7 @@ const AdminDashboard = () => {
       items: [
         { id: 'bookings', icon: CalendarRange, label: 'Đơn đặt phòng', badge: pendingCount },
         { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
+        { id: 'room-popup', icon: Eye, label: 'Popup phòng' },
         { id: 'amenities', icon: Sparkles, label: 'Tiện nghi phòng' },
         { id: 'special-prices', icon: Flame, label: 'Giá đặc biệt' },
       ],
@@ -354,6 +356,7 @@ const AdminDashboard = () => {
             <AdminBookings bookings={bookings} setBookings={setBookings} onMoveToTrash={moveBookingToTrash} onRefresh={fetchData} />
           )}
           {tab === 'rooms' && <AdminRooms rooms={rooms} onRefresh={fetchData} />}
+          {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'dining' && <AdminDining />}
           {tab === 'promotions' && <AdminPromotions />}
