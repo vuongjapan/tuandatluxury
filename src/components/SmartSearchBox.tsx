@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Sparkles, Search, Loader2, Wallet, Heart, Users, Briefcase, Waves, Crown, Baby } from 'lucide-react';
+import { useState, useCallback, useRef } from 'react';
+import { Sparkles, Search, Loader2, Wallet, Heart, Users, Briefcase, Waves, Crown, Baby, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -22,12 +22,11 @@ export interface SearchIntent {
 }
 
 interface SmartSearchBoxProps {
-  /** Optional: rooms to filter immediately on home page (without redirect). */
   rooms?: Room[];
-  /** Called with the final filtered room ids + intent. */
   onResults?: (filteredIds: string[], intent: SearchIntent) => void;
-  /** Compact look (no big background gradient). */
   compact?: boolean;
+  /** Optional CSS selector to scroll to after a successful search (e.g. '#rooms') */
+  scrollTargetSelector?: string;
 }
 
 const BUDGET_OPTIONS: { tier: BudgetTier; labelVi: string; labelEn: string }[] = [
@@ -46,23 +45,32 @@ const VIBE_OPTIONS: { vibe: Vibe; labelVi: string; labelEn: string; Icon: typeof
   { vibe: 'business', labelVi: 'Công tác', labelEn: 'Business', Icon: Briefcase },
 ];
 
-/** Filter rooms based on intent (rule-based, no extra AI calls). */
+const SUGGESTIONS_VI = [
+  '4 người 5 triệu 2 đêm gần biển',
+  'Honeymoon cuối tuần phòng đẹp',
+  'Gia đình có trẻ nhỏ, ngân sách 2 triệu',
+  'Đoàn 20 người công ty',
+];
+const SUGGESTIONS_EN = [
+  '4 guests 5M 2 nights, sea view',
+  'Honeymoon weekend, beautiful room',
+  'Family with kids, budget 2M',
+  '20-person company group',
+];
+
 function applyIntentToRooms(rooms: Room[], intent: SearchIntent): Room[] {
   let result = [...rooms];
 
-  // Budget filter
   if (intent.budget_tier && intent.budget_tier !== 'any') {
     const max = { under_500k: 500_000, '500k_1m': 1_000_000, '1m_2m': 2_000_000, luxury: Infinity }[intent.budget_tier]!;
     const min = intent.budget_tier === 'luxury' ? 2_000_000 : 0;
     result = result.filter((r) => r.priceVND >= min && r.priceVND <= max);
   }
 
-  // Guest filter (allow up to capacity*1.5 for upsell)
   if (intent.guests && intent.guests > 0) {
     result = result.filter((r) => r.capacity >= intent.guests! - 1);
   }
 
-  // Vibe filter
   if (intent.vibes?.includes('sea_view')) {
     const seaRooms = result.filter((r) => /biển|sea|view/i.test(r.viewType) || r.hasBalcony);
     if (seaRooms.length > 0) result = seaRooms;
@@ -77,10 +85,10 @@ function applyIntentToRooms(rooms: Room[], intent: SearchIntent): Room[] {
     result.sort((a, b) => a.priceVND - b.priceVND);
   }
 
-  return result.length > 0 ? result : rooms;
+  return result;
 }
 
-const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchBoxProps) => {
+const SmartSearchBox = ({ rooms = [], onResults, compact = false, scrollTargetSelector }: SmartSearchBoxProps) => {
   const { language } = useLanguage();
   const { toast } = useToast();
   const isVi = language === 'vi';
@@ -90,6 +98,9 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
   const [vibes, setVibes] = useState<Set<Vibe>>(new Set());
   const [loading, setLoading] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
+  const [resultCount, setResultCount] = useState<number | null>(null);
+  const [hasFiltered, setHasFiltered] = useState(false);
+  const lastIntentRef = useRef<SearchIntent | null>(null);
 
   const toggleVibe = (v: Vibe) => {
     setVibes((prev) => {
@@ -99,15 +110,26 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
     });
   };
 
+  const hasActiveFilters = budgetTier !== 'any' || vibes.size > 0 || query.trim().length > 0;
+
+  const reset = useCallback(() => {
+    setQuery('');
+    setBudgetTier('any');
+    setVibes(new Set());
+    setExplanation(null);
+    setResultCount(null);
+    setHasFiltered(false);
+    lastIntentRef.current = null;
+    onResults?.([], { budget_tier: 'any', vibes: [], explanation: '' });
+  }, [onResults]);
+
   const runSearch = useCallback(async () => {
-    // Build base intent from chips
     let intent: SearchIntent = {
       budget_tier: budgetTier,
       vibes: Array.from(vibes),
       explanation: '',
     };
 
-    // If user typed something, parse via AI for richer intent
     if (query.trim().length >= 3) {
       setLoading(true);
       try {
@@ -120,7 +142,6 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
         } else if (data?.error === 'credits_exhausted') {
           toast({ variant: 'destructive', title: isVi ? 'Hết credit AI' : 'AI credits exhausted', description: isVi ? 'Liên hệ admin để nạp thêm' : 'Contact admin to top up' });
         } else if (data?.intent) {
-          // Merge AI intent (AI wins for fields it returned)
           const ai = data.intent as SearchIntent;
           intent = {
             ...intent,
@@ -140,14 +161,27 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
       setExplanation(null);
     }
 
-    // Apply to rooms locally
-    if (rooms.length > 0 && onResults) {
+    lastIntentRef.current = intent;
+    setHasFiltered(true);
+
+    if (rooms.length > 0) {
       const filtered = applyIntentToRooms(rooms, intent);
-      onResults(filtered.map((r) => r.id), intent);
-    } else if (onResults) {
-      onResults([], intent);
+      setResultCount(filtered.length);
+      onResults?.(filtered.length > 0 ? filtered.map((r) => r.id) : [], intent);
+
+      if (filtered.length > 0 && scrollTargetSelector) {
+        setTimeout(() => {
+          const el = document.querySelector(scrollTargetSelector);
+          if (el) {
+            const top = el.getBoundingClientRect().top + window.scrollY - 100;
+            window.scrollTo({ top, behavior: 'smooth' });
+          }
+        }, 150);
+      }
+    } else {
+      onResults?.([], intent);
     }
-  }, [query, budgetTier, vibes, rooms, onResults, isVi, toast]);
+  }, [query, budgetTier, vibes, rooms, onResults, isVi, toast, scrollTargetSelector]);
 
   return (
     <div
@@ -160,19 +194,22 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
         <div className="p-1.5 rounded-lg bg-primary/10">
           <Sparkles className="h-4 w-4 text-primary" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h3 className="font-display text-sm sm:text-base font-semibold text-foreground">
             {isVi ? 'Tìm phòng thông minh' : 'Smart Room Finder'}
           </h3>
           <p className="text-[10px] sm:text-xs text-muted-foreground">
-            {isVi
-              ? 'Mô tả nhu cầu của bạn — AI sẽ gợi ý phòng phù hợp'
-              : 'Describe your needs — AI will suggest matching rooms'}
+            {isVi ? 'Mô tả nhu cầu — AI sẽ gợi ý phòng phù hợp' : 'Describe your needs — AI will suggest matching rooms'}
           </p>
         </div>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={reset} className="h-7 text-[11px] gap-1">
+            <X className="h-3 w-3" />
+            {isVi ? 'Xoá bộ lọc' : 'Clear'}
+          </Button>
+        )}
       </div>
 
-      {/* NL input */}
       <div className="flex gap-2 mb-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -180,25 +217,31 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-            placeholder={
-              isVi
-                ? 'VD: 4 người 2 ngày, gần biển, ngân sách 5 triệu'
-                : 'e.g. 4 guests 2 nights, sea view, budget 5M'
-            }
+            placeholder={isVi ? 'VD: 4 người 2 đêm gần biển 5 triệu' : 'e.g. 4 guests 2 nights sea view 5M'}
             className="pl-9 h-11 text-sm"
             maxLength={500}
           />
         </div>
-        <Button
-          variant="gold"
-          onClick={runSearch}
-          disabled={loading}
-          className="h-11 px-5 gap-1.5"
-        >
+        <Button variant="gold" onClick={runSearch} disabled={loading} className="h-11 px-5 gap-1.5">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {isVi ? 'Tìm' : 'Find'}
+          <span className="hidden sm:inline">{isVi ? 'Tìm' : 'Find'}</span>
         </Button>
       </div>
+
+      {/* Quick suggestions */}
+      {!hasFiltered && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {(isVi ? SUGGESTIONS_VI : SUGGESTIONS_EN).map((s) => (
+            <button
+              key={s}
+              onClick={() => { setQuery(s); }}
+              className="text-[10px] px-2.5 py-1 rounded-full bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors border border-transparent hover:border-primary/30"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Budget chips */}
       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -221,7 +264,6 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
         ))}
       </div>
 
-      {/* Vibe chips */}
       <div className="flex flex-wrap gap-1.5">
         <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mr-1">
           <Heart className="h-3 w-3" /> {isVi ? 'Nhu cầu' : 'Vibe'}
@@ -243,13 +285,32 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false }: SmartSearchB
         ))}
       </div>
 
-      {/* AI explanation */}
-      {explanation && (
-        <div className="mt-3 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
-          <p className="text-xs text-foreground/80 leading-relaxed flex items-start gap-1.5">
-            <Sparkles className="h-3 w-3 text-primary mt-0.5 shrink-0" />
-            <span>{explanation}</span>
-          </p>
+      {/* Result banner */}
+      {hasFiltered && resultCount !== null && (
+        <div className={cn(
+          'mt-3 p-3 rounded-lg border flex items-start gap-2',
+          resultCount > 0
+            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300/50 dark:border-emerald-700/50'
+            : 'bg-amber-50 dark:bg-amber-900/20 border-amber-300/50 dark:border-amber-700/50',
+        )}>
+          {resultCount > 0 ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+          ) : (
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className={cn(
+              'text-xs font-semibold',
+              resultCount > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300',
+            )}>
+              {resultCount > 0
+                ? (isVi ? `Tìm thấy ${resultCount} phòng phù hợp` : `Found ${resultCount} matching rooms`)
+                : (isVi ? 'Không có phòng khớp — hiển thị tất cả phòng' : 'No exact match — showing all rooms')}
+            </p>
+            {explanation && (
+              <p className="text-[11px] text-foreground/70 mt-1 leading-relaxed">{explanation}</p>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -90,7 +90,11 @@ const Index = () => {
             title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
           />
           <FadeIn className="mb-8">
-            <SmartSearchBox rooms={safeRooms} onResults={(ids) => setSmartFilterIds(ids)} />
+            <SmartSearchBox
+              rooms={safeRooms}
+              onResults={(ids) => setSmartFilterIds(ids)}
+              scrollTargetSelector="#rooms"
+            />
           </FadeIn>
           <div className="space-y-4 sm:space-y-5">
             {roomsLoading && safeRooms.length === 0 ? (
