@@ -97,6 +97,8 @@ const Header = () => {
   return (
     <>
       <PromoBannerPopup />
+      {/* Spacer reserves the height of the fixed header so page content never sits underneath it. */}
+      <div aria-hidden className={`${scrolled ? 'h-16' : 'h-20 lg:h-28'}`} />
       <header className="fixed top-0 left-0 right-0 z-50">
         {/* Active promotion strip */}
         <ActivePromoBanner />
