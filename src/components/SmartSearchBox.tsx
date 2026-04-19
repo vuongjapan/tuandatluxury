@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { logSearch } from '@/lib/tracking';
 import type { Room } from '@/data/rooms';
 
 export type BudgetTier = 'any' | 'under_500k' | '500k_1m' | '1m_2m' | 'luxury';
@@ -168,6 +169,16 @@ const SmartSearchBox = ({ rooms = [], onResults, compact = false, scrollTargetSe
       const filtered = applyIntentToRooms(rooms, intent);
       setResultCount(filtered.length);
       onResults?.(filtered.length > 0 ? filtered.map((r) => r.id) : [], intent);
+
+      // Log search for analytics (fire-and-forget)
+      logSearch({
+        keyword: query.trim() || undefined,
+        budget: intent.budget_total,
+        people_count: intent.guests,
+        zone: intent.vibes?.includes('sea_view') ? 'gan_bien' : undefined,
+        vibes: intent.vibes,
+        result_count: filtered.length,
+      });
 
       if (filtered.length > 0 && scrollTargetSelector) {
         setTimeout(() => {
