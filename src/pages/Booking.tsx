@@ -7,6 +7,7 @@ import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
+import SmartSearchBox from '@/components/SmartSearchBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { type DiscountCode, useFlashSales, useGlobalDiscounts, useSmartPricing } from '@/hooks/usePromotionSystem';
@@ -98,6 +99,7 @@ const Booking = () => {
   const [country, setCountry] = useState('');
   const [address, setAddress] = useState('');
   const [searchDone, setSearchDone] = useState(!!preselectedRoom);
+  const [smartFilterIds, setSmartFilterIds] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -590,7 +592,15 @@ const Booking = () => {
                           🏨 {isVi ? 'Chọn phòng' : 'Select Rooms'}
                         </h2>
                         <p className="text-xs text-muted-foreground">{isVi ? 'Chọn số lượng phòng mong muốn' : 'Select the number of rooms you want'}</p>
-                        {rooms.map(room => {
+
+                        {/* Smart AI search to narrow down rooms */}
+                        <SmartSearchBox
+                          rooms={rooms}
+                          compact
+                          onResults={(ids) => setSmartFilterIds(ids)}
+                        />
+
+                        {(smartFilterIds && smartFilterIds.length > 0 ? rooms.filter(r => smartFilterIds.includes(r.id)) : rooms).map(room => {
                           const cartItem = roomCart.find(c => c.roomId === room.id);
                           const qty = cartItem?.quantity || 0;
                           return (
