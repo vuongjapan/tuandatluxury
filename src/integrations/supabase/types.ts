@@ -14,6 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_logs: {
+        Row: {
+          clicked_item: string | null
+          created_at: string
+          event_type: string
+          id: string
+          meta: Json | null
+          query: string | null
+          result_type: string | null
+          session_id: string | null
+        }
+        Insert: {
+          clicked_item?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          meta?: Json | null
+          query?: string | null
+          result_type?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          clicked_item?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          meta?: Json | null
+          query?: string | null
+          result_type?: string | null
+          session_id?: string | null
+        }
+        Relationships: []
+      }
+      attractions: {
+        Row: {
+          area: string | null
+          best_time: string | null
+          category: string | null
+          checkin: boolean | null
+          created_at: string
+          description: string | null
+          family: boolean | null
+          featured: boolean | null
+          free_or_paid: string | null
+          id: string
+          image_url: string | null
+          map_link: string | null
+          name: string
+          nightlife: boolean | null
+          slug: string
+          status: string | null
+          tags: string[] | null
+          ticket_price: number | null
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          area?: string | null
+          best_time?: string | null
+          category?: string | null
+          checkin?: boolean | null
+          created_at?: string
+          description?: string | null
+          family?: boolean | null
+          featured?: boolean | null
+          free_or_paid?: string | null
+          id?: string
+          image_url?: string | null
+          map_link?: string | null
+          name: string
+          nightlife?: boolean | null
+          slug: string
+          status?: string | null
+          tags?: string[] | null
+          ticket_price?: number | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          area?: string | null
+          best_time?: string | null
+          category?: string | null
+          checkin?: boolean | null
+          created_at?: string
+          description?: string | null
+          family?: boolean | null
+          featured?: boolean | null
+          free_or_paid?: string | null
+          id?: string
+          image_url?: string | null
+          map_link?: string | null
+          name?: string
+          nightlife?: boolean | null
+          slug?: string
+          status?: string | null
+          tags?: string[] | null
+          ticket_price?: number | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author: string | null
@@ -325,6 +427,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cafes: {
+        Row: {
+          area: string | null
+          avg_price: number | null
+          category: string | null
+          checkin: boolean | null
+          chill: boolean | null
+          created_at: string
+          description: string | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          map_link: string | null
+          name: string
+          night_open: boolean | null
+          sea_view: boolean | null
+          slug: string
+          status: string | null
+          tags: string[] | null
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          area?: string | null
+          avg_price?: number | null
+          category?: string | null
+          checkin?: boolean | null
+          chill?: boolean | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          map_link?: string | null
+          name: string
+          night_open?: boolean | null
+          sea_view?: boolean | null
+          slug: string
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          area?: string | null
+          avg_price?: number | null
+          category?: string | null
+          checkin?: boolean | null
+          chill?: boolean | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          map_link?: string | null
+          name?: string
+          night_open?: boolean | null
+          sea_view?: boolean | null
+          slug?: string
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Relationships: []
       }
       chat_messages: {
         Row: {
@@ -686,6 +854,99 @@ export type Database = {
         }
         Relationships: []
       }
+      external_hotels: {
+        Row: {
+          address: string | null
+          area: string | null
+          beach_zone: string | null
+          breakfast: boolean | null
+          couple_friendly: boolean | null
+          created_at: string
+          description: string | null
+          family_friendly: boolean | null
+          featured: boolean | null
+          group_friendly: boolean | null
+          id: string
+          image_url: string | null
+          luxury_level: string | null
+          map_link: string | null
+          name: string
+          near_beach: boolean | null
+          parking: boolean | null
+          phone: string | null
+          pool: boolean | null
+          price_from: number | null
+          price_to: number | null
+          slug: string
+          stars: number | null
+          status: string | null
+          tags: string[] | null
+          updated_at: string
+          website: string | null
+          zone: string | null
+        }
+        Insert: {
+          address?: string | null
+          area?: string | null
+          beach_zone?: string | null
+          breakfast?: boolean | null
+          couple_friendly?: boolean | null
+          created_at?: string
+          description?: string | null
+          family_friendly?: boolean | null
+          featured?: boolean | null
+          group_friendly?: boolean | null
+          id?: string
+          image_url?: string | null
+          luxury_level?: string | null
+          map_link?: string | null
+          name: string
+          near_beach?: boolean | null
+          parking?: boolean | null
+          phone?: string | null
+          pool?: boolean | null
+          price_from?: number | null
+          price_to?: number | null
+          slug: string
+          stars?: number | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+          zone?: string | null
+        }
+        Update: {
+          address?: string | null
+          area?: string | null
+          beach_zone?: string | null
+          breakfast?: boolean | null
+          couple_friendly?: boolean | null
+          created_at?: string
+          description?: string | null
+          family_friendly?: boolean | null
+          featured?: boolean | null
+          group_friendly?: boolean | null
+          id?: string
+          image_url?: string | null
+          luxury_level?: string | null
+          map_link?: string | null
+          name?: string
+          near_beach?: boolean | null
+          parking?: boolean | null
+          phone?: string | null
+          pool?: boolean | null
+          price_from?: number | null
+          price_to?: number | null
+          slug?: string
+          stars?: number | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
       flash_sale_items: {
         Row: {
           created_at: string
@@ -1026,6 +1287,57 @@ export type Database = {
           },
         ]
       }
+      itineraries: {
+        Row: {
+          audience: string | null
+          budget_level: string | null
+          content_json: Json | null
+          created_at: string
+          days: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          slug: string
+          sort_order: number | null
+          title: string
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience?: string | null
+          budget_level?: string | null
+          content_json?: Json | null
+          created_at?: string
+          days?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          slug: string
+          sort_order?: number | null
+          title: string
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience?: string | null
+          budget_level?: string | null
+          content_json?: Json | null
+          created_at?: string
+          days?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          slug?: string
+          sort_order?: number | null
+          title?: string
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_item_prices: {
         Row: {
           created_at: string
@@ -1250,6 +1562,78 @@ export type Database = {
           title_en?: string
           title_vi?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurants: {
+        Row: {
+          area: string | null
+          avg_price: number | null
+          category: string | null
+          created_at: string
+          description: string | null
+          family_friendly: boolean | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          local_famous: boolean | null
+          map_link: string | null
+          name: string
+          open_hours: string | null
+          price_tier: string | null
+          seafood: boolean | null
+          slug: string
+          specialties: string[] | null
+          status: string | null
+          tags: string[] | null
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          area?: string | null
+          avg_price?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          family_friendly?: boolean | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          local_famous?: boolean | null
+          map_link?: string | null
+          name: string
+          open_hours?: string | null
+          price_tier?: string | null
+          seafood?: boolean | null
+          slug: string
+          specialties?: string[] | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          area?: string | null
+          avg_price?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          family_friendly?: boolean | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          local_famous?: boolean | null
+          map_link?: string | null
+          name?: string
+          open_hours?: string | null
+          price_tier?: string | null
+          seafood?: boolean | null
+          slug?: string
+          specialties?: string[] | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          zone?: string | null
         }
         Relationships: []
       }
@@ -1583,6 +1967,42 @@ export type Database = {
           updated_at?: string
           view_type?: string
           weekend_multiplier?: number | null
+        }
+        Relationships: []
+      }
+      search_logs: {
+        Row: {
+          budget: number | null
+          created_at: string
+          id: string
+          keyword: string | null
+          people_count: number | null
+          result_count: number | null
+          session_id: string | null
+          vibes: string[] | null
+          zone: string | null
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          id?: string
+          keyword?: string | null
+          people_count?: number | null
+          result_count?: number | null
+          session_id?: string | null
+          vibes?: string[] | null
+          zone?: string | null
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          id?: string
+          keyword?: string | null
+          people_count?: number | null
+          result_count?: number | null
+          session_id?: string | null
+          vibes?: string[] | null
+          zone?: string | null
         }
         Relationships: []
       }
