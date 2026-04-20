@@ -76,7 +76,9 @@ const Header = () => {
     { key: 'nav.services', href: '/services' },
     { key: 'nav.offers', href: '/#offers' },
     { key: 'nav.promotions', href: '/promotions' },
-  ];
+    { labelVi: 'Đấu giá 🔥', labelEn: 'Auction 🔥', href: '/auction' },
+    { labelVi: 'Live 🔴', labelEn: 'Live 🔴', href: '/live' },
+  ] as any[];
 
   const moreItems = [
     { labelVi: 'Đặt đồ ăn', labelEn: 'Food Order', href: '/food-order' },

@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, Gavel, Radio
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -37,8 +37,10 @@ import AdminWebDiscount from '@/components/admin/AdminWebDiscount';
 import AdminRoomPopup from '@/components/admin/AdminRoomPopup';
 import AdminQuickImport from '@/components/admin/AdminQuickImport';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
+import AdminAuction from '@/components/admin/AdminAuction';
+import AdminLive from '@/components/admin/AdminLive';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -203,6 +205,13 @@ const AdminDashboard = () => {
       items: [
         { id: 'analytics', icon: BarChart3, label: 'Analytics AI' },
         { id: 'quick-import', icon: Database, label: 'Quick Import Sầm Sơn' },
+      ],
+    },
+    {
+      title: 'Đấu giá & Live',
+      items: [
+        { id: 'auction', icon: Gavel, label: 'Đấu giá 🔥' },
+        { id: 'live', icon: Radio, label: 'Livestream 🔴' },
       ],
     },
     {
@@ -385,6 +394,8 @@ const AdminDashboard = () => {
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
           {tab === 'quick-import' && <AdminQuickImport />}
           {tab === 'analytics' && <AdminAnalytics />}
+          {tab === 'auction' && <AdminAuction />}
+          {tab === 'live' && <AdminLive />}
         </div>
       </main>
     </div>
