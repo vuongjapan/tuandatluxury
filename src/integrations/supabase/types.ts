@@ -844,6 +844,7 @@ export type Database = {
           name_en: string
           name_vi: string
           price_vnd: number
+          show_price: boolean
           sort_order: number
           updated_at: string
         }
@@ -860,6 +861,7 @@ export type Database = {
           name_en: string
           name_vi: string
           price_vnd?: number
+          show_price?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -876,6 +878,7 @@ export type Database = {
           name_en?: string
           name_vi?: string
           price_vnd?: number
+          show_price?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -1433,12 +1436,111 @@ export type Database = {
         }
         Relationships: []
       }
+      live_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          session_id: string | null
+          user_name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          user_name?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_comments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_reactions: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_reactions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_recordings: {
+        Row: {
+          created_at: string
+          duration_sec: number | null
+          id: string
+          is_visible: boolean
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          video_url: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          is_visible?: boolean
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          video_url: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          is_visible?: boolean
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          video_url?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       live_sessions: {
         Row: {
           created_at: string
           cta_label: string
           cta_link: string | null
+          current_recording_id: string | null
           embed_url: string | null
+          ended_at: string | null
           id: string
           is_active: boolean
           mode: string
@@ -1447,14 +1549,19 @@ export type Database = {
           product_ref_id: string | null
           product_title: string | null
           product_type: string | null
+          recording_url: string | null
+          started_at: string | null
           title_vi: string
           updated_at: string
+          viewer_count: number
         }
         Insert: {
           created_at?: string
           cta_label?: string
           cta_link?: string | null
+          current_recording_id?: string | null
           embed_url?: string | null
+          ended_at?: string | null
           id?: string
           is_active?: boolean
           mode?: string
@@ -1463,14 +1570,19 @@ export type Database = {
           product_ref_id?: string | null
           product_title?: string | null
           product_type?: string | null
+          recording_url?: string | null
+          started_at?: string | null
           title_vi?: string
           updated_at?: string
+          viewer_count?: number
         }
         Update: {
           created_at?: string
           cta_label?: string
           cta_link?: string | null
+          current_recording_id?: string | null
           embed_url?: string | null
+          ended_at?: string | null
           id?: string
           is_active?: boolean
           mode?: string
@@ -1479,10 +1591,21 @@ export type Database = {
           product_ref_id?: string | null
           product_title?: string | null
           product_type?: string | null
+          recording_url?: string | null
+          started_at?: string | null
           title_vi?: string
           updated_at?: string
+          viewer_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "live_sessions_current_recording_id_fkey"
+            columns: ["current_recording_id"]
+            isOneToOne: false
+            referencedRelation: "live_recordings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       menu_item_prices: {
         Row: {
@@ -1534,10 +1657,12 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_combo: boolean
           is_popular: boolean
           name_en: string
           name_vi: string
           price_vnd: number
+          show_price: boolean
           sort_order: number
           updated_at: string
         }
@@ -1549,10 +1674,12 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_combo?: boolean
           is_popular?: boolean
           name_en?: string
           name_vi: string
           price_vnd?: number
+          show_price?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -1564,10 +1691,12 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_combo?: boolean
           is_popular?: boolean
           name_en?: string
           name_vi?: string
           price_vnd?: number
+          show_price?: boolean
           sort_order?: number
           updated_at?: string
         }
