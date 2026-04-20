@@ -116,6 +116,101 @@ export type Database = {
         }
         Relationships: []
       }
+      auction_bids: {
+        Row: {
+          auction_item_id: string
+          bid_amount: number
+          bidder_name: string
+          bidder_phone: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          auction_item_id: string
+          bid_amount: number
+          bidder_name: string
+          bidder_phone: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          auction_item_id?: string
+          bid_amount?: number
+          bidder_name?: string
+          bidder_phone?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_auction_item_id_fkey"
+            columns: ["auction_item_id"]
+            isOneToOne: false
+            referencedRelation: "auction_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auction_items: {
+        Row: {
+          bid_step: number
+          created_at: string
+          description_vi: string | null
+          end_time: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          item_type: string
+          list_price: number
+          ref_id: string | null
+          sort_order: number
+          start_price: number
+          start_time: string
+          title_en: string | null
+          title_vi: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          bid_step?: number
+          created_at?: string
+          description_vi?: string | null
+          end_time: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          item_type?: string
+          list_price?: number
+          ref_id?: string | null
+          sort_order?: number
+          start_price?: number
+          start_time?: string
+          title_en?: string | null
+          title_vi: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          bid_step?: number
+          created_at?: string
+          description_vi?: string | null
+          end_time?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          item_type?: string
+          list_price?: number
+          ref_id?: string | null
+          sort_order?: number
+          start_price?: number
+          start_time?: string
+          title_en?: string | null
+          title_vi?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author: string | null
@@ -1334,6 +1429,57 @@ export type Database = {
           sort_order?: number | null
           title?: string
           type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      live_sessions: {
+        Row: {
+          created_at: string
+          cta_label: string
+          cta_link: string | null
+          embed_url: string | null
+          id: string
+          is_active: boolean
+          mode: string
+          product_image: string | null
+          product_price: number
+          product_ref_id: string | null
+          product_title: string | null
+          product_type: string | null
+          title_vi: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string
+          cta_link?: string | null
+          embed_url?: string | null
+          id?: string
+          is_active?: boolean
+          mode?: string
+          product_image?: string | null
+          product_price?: number
+          product_ref_id?: string | null
+          product_title?: string | null
+          product_type?: string | null
+          title_vi?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string
+          cta_link?: string | null
+          embed_url?: string | null
+          id?: string
+          is_active?: boolean
+          mode?: string
+          product_image?: string | null
+          product_price?: number
+          product_ref_id?: string | null
+          product_title?: string | null
+          product_type?: string | null
+          title_vi?: string
           updated_at?: string
         }
         Relationships: []
