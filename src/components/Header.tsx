@@ -314,13 +314,13 @@ const Header = () => {
         {mobileOpen && (
           <div className="lg:hidden bg-card border-t border-border animate-fade-in">
             <nav className="container mx-auto py-4 px-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
-              {allMobileItems.map((item) => (
+              {allMobileItems.map((item: any) => (
                 <button
-                  key={item.key}
+                  key={item.key || item.href}
                   onClick={() => handleNavClick(item.href)}
                   className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors text-left"
                 >
-                  {t(item.key)}
+                  {item.key ? t(item.key) : (isVi ? item.labelVi : item.labelEn)}
                 </button>
               ))}
               {moreItems.filter(i => !allMobileItems.some(m => m.href === i.href)).map((item) => (
