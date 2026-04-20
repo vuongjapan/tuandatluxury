@@ -61,7 +61,7 @@ const Booking = () => {
   const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays, getAvailability, isSpecialDate } = useRooms();
   const { items: diningItems, loading: diningLoading } = useDining();
   const { promotions } = usePromotions();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { flashSales } = useFlashSales();
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
@@ -284,7 +284,6 @@ const Booking = () => {
   const computedTotal = Math.max(0, originalPrice - discountAmount);
 
   // Admin manual price override (only when admin is logged in)
-  const { isAdmin } = useAuth();
   const [adminOverridePrice, setAdminOverridePrice] = useState<number | null>(null);
   const totalPrice = isAdmin && adminOverridePrice !== null && adminOverridePrice >= 0 ? adminOverridePrice : computedTotal;
 
