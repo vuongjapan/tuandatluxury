@@ -24,6 +24,8 @@ interface MenuItem {
   image_url: string | null;
   is_popular: boolean;
   is_active: boolean;
+  is_combo: boolean;
+  show_price: boolean;
   sort_order: number;
 }
 
@@ -54,6 +56,8 @@ const EMPTY_ITEM: Omit<MenuItem, 'id'> = {
   image_url: null,
   is_popular: false,
   is_active: true,
+  is_combo: false,
+  show_price: true,
   sort_order: 0,
 };
 
@@ -207,7 +211,7 @@ const AdminFoodMenu = () => {
           <label className="text-sm font-medium text-muted-foreground">Thứ tự sắp xếp</label>
           <Input type="number" value={data.sort_order} onChange={e => onChange({ sort_order: parseInt(e.target.value) || 0 })} />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={data.is_popular} onCheckedChange={v => onChange({ is_popular: v })} />
             Món phổ biến
@@ -215,6 +219,14 @@ const AdminFoodMenu = () => {
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={data.is_active} onCheckedChange={v => onChange({ is_active: v })} />
             Hiển thị
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={(data as any).is_combo} onCheckedChange={v => onChange({ is_combo: v } as any)} />
+            Là combo
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={(data as any).show_price !== false} onCheckedChange={v => onChange({ show_price: v } as any)} />
+            Hiện giá
           </label>
         </div>
       </div>
