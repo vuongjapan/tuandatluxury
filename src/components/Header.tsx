@@ -191,13 +191,13 @@ const Header = () => {
 
               {/* Right nav */}
               <nav className="flex items-center justify-start gap-0.5">
-                {rightNavItems.map((item) => (
+                {rightNavItems.map((item: any) => (
                   <button
-                    key={item.key}
+                    key={item.key || item.href}
                     onClick={() => handleNavClick(item.href)}
                     className="px-3 xl:px-4 py-2 text-[11px] xl:text-xs font-semibold uppercase tracking-widest text-foreground/70 hover:text-primary transition-colors whitespace-nowrap"
                   >
-                    {t(item.key)}
+                    {item.key ? t(item.key) : (isVi ? item.labelVi : item.labelEn)}
                   </button>
                 ))}
 
