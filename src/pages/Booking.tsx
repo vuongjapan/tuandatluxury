@@ -281,7 +281,12 @@ const Booking = () => {
   const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
   const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount + webDiscountAmount;
   const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
-  const totalPrice = Math.max(0, originalPrice - discountAmount);
+  const computedTotal = Math.max(0, originalPrice - discountAmount);
+
+  // Admin manual price override (only when admin is logged in)
+  const { isAdmin } = useAuth();
+  const [adminOverridePrice, setAdminOverridePrice] = useState<number | null>(null);
+  const totalPrice = isAdmin && adminOverridePrice !== null && adminOverridePrice >= 0 ? adminOverridePrice : computedTotal;
 
   const appliedPromotions = useMemo(() => {
     const list: { name: string; amount: number; badge?: string }[] = [];
