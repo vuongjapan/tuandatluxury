@@ -393,14 +393,16 @@ const Booking = () => {
       const combosPayload = filledComboSlots.map(c => ({
         combo_package_id: c.packageId, combo_menu_id: c.menuId,
         combo_package_name: c.packageName, combo_menu_name: c.menuName,
-        combo_name: `${c.packageName} – ${c.menuName}`,
-        price_vnd: c.pricePerPerson, quantity: c.people,
-      }));
-      const foodItemsPayload = individualFoods.map(f => ({
-        menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
-        name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-        price_vnd: f.price, quantity: f.quantity,
-      }));
+          combo_name: `${c.packageName} – ${c.menuName}`,
+          price_vnd: c.pricePerPerson, quantity: c.people,
+          meal_time: mealTime, meal_multiplier: mealMultiplier,
+        }));
+        const foodItemsPayload = individualFoods.map(f => ({
+          menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+          name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+          price_vnd: f.price, quantity: f.quantity,
+          meal_time: mealTime, meal_multiplier: mealMultiplier,
+        }));
       const personalMealNote = personalMealSelections.length > 0
         ? '🍽️ SUẤT ĂN THEO SỐ NGƯỜI:\n' + personalMealSelections.map(m =>
             `• ${m.name} (${m.guest_count} người) ×${m.quantity} = ${(m.price * m.quantity).toLocaleString('vi-VN')}đ`
@@ -742,6 +744,18 @@ const Booking = () => {
 
                     {/* Banner explaining whether food is mandatory or optional */}
                     <MealRuleBanner rule={mandatoryComboRange} />
+
+                    {/* Meal time selector — applies × multiplier to all food totals */}
+                    <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
+                      <MealTimeSelector value={mealTime} onChange={setMealTime} />
+                      {mealTime === 'both' && (
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          {isVi
+                            ? 'Giá đồ ăn sẽ được tính × 2 (phục vụ cả bữa trưa và tối)'
+                            : 'Food price will be × 2 (both lunch and dinner served)'}
+                        </p>
+                      )}
+                    </div>
 
                     {/* === 1–4 GUESTS: SET MEAL ONLY === */}
                     {useSetMeals && (
