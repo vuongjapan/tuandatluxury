@@ -1747,6 +1747,57 @@ export type Database = {
         }
         Relationships: []
       }
+      offers: {
+        Row: {
+          category: string
+          conditions: string | null
+          content: string | null
+          cover_image_url: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          slug: string
+          sort_order: number
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          conditions?: string | null
+          content?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          slug: string
+          sort_order?: number
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          conditions?: string | null
+          content?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          slug?: string
+          sort_order?: number
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
