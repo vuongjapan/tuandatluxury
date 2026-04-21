@@ -127,20 +127,25 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm truncate">{sel.name}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {sel.guest_count} {isVi ? 'người' : 'guests'} · {sel.items.slice(0, 3).join(' • ')}
+                  {fixedMode
+                    ? (isVi ? `Trọn gói cho ${guestCount} người` : `Bundled for ${guestCount}`)
+                    : `${sel.guest_count} ${isVi ? 'người' : 'guests'}`}
+                  {sel.items.length > 0 && ` · ${sel.items.slice(0, 3).join(' • ')}`}
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, -1)}>
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <span className="font-bold text-sm w-6 text-center">{sel.quantity}</span>
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, 1)}>
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
+              {!fixedMode && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, -1)}>
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="font-bold text-sm w-6 text-center">{sel.quantity}</span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, 1)}>
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
               <span className="text-primary font-bold text-sm shrink-0 w-24 text-right">
-                {formatPrice(sel.price * sel.quantity)}
+                {formatPrice(sel.price * (fixedMode ? 1 : sel.quantity))}
               </span>
               <button onClick={() => removeAt(idx)} className="text-muted-foreground hover:text-destructive shrink-0 text-sm" aria-label="Remove">✕</button>
             </motion.div>
