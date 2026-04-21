@@ -43,8 +43,9 @@ import AdminLive from '@/components/admin/AdminLive';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminMemberDiscount from '@/components/admin/AdminMemberDiscount';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
+import AdminIntroSection from '@/components/admin/AdminIntroSection';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'offers' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'offers' | 'promotions' | 'promotion-system' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -201,6 +202,7 @@ const AdminDashboard = () => {
         { id: 'member-discount', icon: Sparkles, label: 'Ưu đãi TV & Combo/người' },
         { id: 'vouchers', icon: Gift, label: 'Voucher QR' },
         { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
+        { id: 'intro-section', icon: ImageIcon, label: 'Section Giới thiệu (Trang chủ)' },
         { id: 'members', icon: Users, label: 'Khách & Thành viên' },
         { id: 'reviews', icon: BookOpen, label: 'Đánh giá khách' },
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
@@ -408,6 +410,7 @@ const AdminDashboard = () => {
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'member-discount' && <AdminMemberDiscount />}
           {tab === 'about-images' && <AdminAboutImages />}
+          {tab === 'intro-section' && <AdminIntroSection />}
         </div>
       </main>
     </div>
