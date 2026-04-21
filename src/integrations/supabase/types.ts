@@ -1831,6 +1831,48 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_meal_plans: {
+        Row: {
+          created_at: string
+          guest_count: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          items: Json
+          name: string
+          note: string | null
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          guest_count: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          items?: Json
+          name: string
+          note?: string | null
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          guest_count?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          items?: Json
+          name?: string
+          note?: string | null
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
