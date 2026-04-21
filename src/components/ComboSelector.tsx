@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UtensilsCrossed, ArrowLeft, Check, ChevronRight, AlertTriangle, Minus, Plus, Info, ShoppingBag } from 'lucide-react';
+import { UtensilsCrossed, ArrowLeft, Check, ChevronRight, AlertTriangle, Minus, Plus, Info, ShoppingBag, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useComboPackages, ComboPackage, ComboMenu } from '@/hooks/useComboPackages';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMemberDiscount } from '@/hooks/useMemberDiscount';
