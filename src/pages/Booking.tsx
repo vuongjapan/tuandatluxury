@@ -871,6 +871,24 @@ const Booking = () => {
                       </div>
                     )}
 
+                    {/* Personal meal plans summary */}
+                    {personalMealSelections.length > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+                        <h3 className="font-semibold flex items-center gap-2">👥 {isVi ? 'Suất ăn theo số người' : 'Meal plans by group'}</h3>
+                        {personalMealSelections.map((m, i) => (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span>{m.name} ({m.guest_count} {isVi ? 'người' : 'guests'}) ×{m.quantity}</span>
+                              <span className="font-medium">{formatPrice(m.price * m.quantity)}</span>
+                            </div>
+                            {m.items.length > 0 && (
+                              <p className="text-xs text-muted-foreground pl-2 line-clamp-2">{m.items.join(', ')}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Individual food */}
                     {individualFoods.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
