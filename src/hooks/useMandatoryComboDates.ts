@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export type MandatoryRuleType = 'date_range' | 'weekday_month';
+
 export interface MandatoryComboDate {
   id: string;
-  date_from: string; // YYYY-MM-DD
-  date_to: string;   // YYYY-MM-DD
+  date_from: string | null; // YYYY-MM-DD
+  date_to: string | null;   // YYYY-MM-DD
   label: string;
   note: string | null;
   is_active: boolean;
+  rule_type: MandatoryRuleType;
+  weekdays: number[] | null; // 0=Sun..6=Sat
+  months: number[] | null;   // 1..12
+  banner_title: string | null;
+  banner_message: string | null;
 }
 
 export function useMandatoryComboDates() {
@@ -19,7 +26,8 @@ export function useMandatoryComboDates() {
     const { data } = await (supabase as any)
       .from('mandatory_combo_dates')
       .select('*')
-      .order('date_from', { ascending: true });
+      .order('rule_type', { ascending: true })
+      .order('date_from', { ascending: true, nullsFirst: false });
     setRanges((data as MandatoryComboDate[]) || []);
     setLoading(false);
   };
@@ -27,8 +35,8 @@ export function useMandatoryComboDates() {
   useEffect(() => { fetchAll(); }, []);
 
   /**
-   * Returns the matching active range if `checkIn` falls within any active mandatory window,
-   * otherwise null.
+   * Returns the matching active rule if `checkIn` matches any active mandatory rule
+   * (either a fixed date range OR a weekday-month rule), otherwise null.
    */
   const getMatchingRange = (checkIn: Date | undefined): MandatoryComboDate | null => {
     if (!checkIn) return null;
@@ -39,7 +47,21 @@ export function useMandatoryComboDates() {
       return `${y}-${m}-${day}`;
     };
     const ci = ymd(checkIn);
-    return ranges.find(r => r.is_active && ci >= r.date_from && ci <= r.date_to) || null;
+    const dow = checkIn.getDay();
+    const month = checkIn.getMonth() + 1;
+
+    return ranges.find(r => {
+      if (!r.is_active) return false;
+      if (r.rule_type === 'date_range') {
+        return !!r.date_from && !!r.date_to && ci >= r.date_from && ci <= r.date_to;
+      }
+      if (r.rule_type === 'weekday_month') {
+        const months = Array.isArray(r.months) ? r.months : [];
+        const weekdays = Array.isArray(r.weekdays) ? r.weekdays : [];
+        return months.includes(month) && weekdays.includes(dow);
+      }
+      return false;
+    }) || null;
   };
 
   return { ranges, loading, fetchAll, getMatchingRange };
