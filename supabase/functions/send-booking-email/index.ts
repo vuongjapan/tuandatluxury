@@ -328,13 +328,6 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     </div>
   </div>
   <div style="padding:24px;">
-    <div style="background:#f8f6f0;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
-      <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Mã đặt phòng</p>
-      <p style="margin:0;font-size:28px;font-weight:700;color:#8B6914;letter-spacing:3px;">${booking.booking_code}</p>
-      <p style="margin:4px 0 0;font-size:11px;color:#aaa;">Lưu mã này để tra cứu đặt phòng</p>
-    </div>
-
-  <div style="padding:24px;">
     <!-- 1. Mã đặt phòng -->
     <div style="background:#f8f6f0;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
       <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Mã đặt phòng</p>
