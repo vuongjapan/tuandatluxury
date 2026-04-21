@@ -1,25 +1,47 @@
 import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePromoBanners } from '@/hooks/usePromoBanners';
 
 const PromoBanner = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const isVi = t('nav.rooms') === 'Hạng phòng';
+  const { activeBanners } = usePromoBanners();
 
-  const bullets = isVi
-    ? [
-        'Đặt trực tiếp: rẻ hơn Booking & Agoda',
-        '2 đêm: Miễn phí bữa sáng cho 2 khách',
-        'Đặt sớm 30 ngày: Giảm thêm 10% giá phòng',
-        'Khách thành viên VIP: Ưu tiên phòng đẹp',
-      ]
-    : [
-        'Book direct: cheaper than Booking & Agoda',
-        '2 nights: Free breakfast for 2 guests',
-        'Book 30 days early: Extra 10% off',
-        'VIP members: Priority best rooms',
-      ];
+  // Show first active banner; fallback to hardcoded defaults if none
+  const banner = activeBanners[0];
+
+  const title = banner
+    ? (isVi ? banner.title_vi : banner.title_en) || banner.title_vi
+    : (isVi ? 'Ở CÀNG NHIỀU — ƯU ĐÃI CÀNG CAO' : 'STAY MORE — SAVE MORE');
+
+  const badge = banner
+    ? (isVi ? banner.badge_vi : banner.badge_en) || banner.badge_vi
+    : (isVi ? 'ƯU ĐÃI HÈ 2026' : 'SUMMER 2026');
+
+  const bullets = banner
+    ? (isVi ? banner.bullets_vi : banner.bullets_en).filter(Boolean).slice(0, 4)
+    : isVi
+      ? [
+          'Đặt trực tiếp: rẻ hơn Booking & Agoda',
+          '2 đêm: Miễn phí bữa sáng cho 2 khách',
+          'Đặt sớm 30 ngày: Giảm thêm 10% giá phòng',
+          'Khách thành viên VIP: Ưu tiên phòng đẹp',
+        ]
+      : [
+          'Book direct: cheaper than Booking & Agoda',
+          '2 nights: Free breakfast for 2 guests',
+          'Book 30 days early: Extra 10% off',
+          'VIP members: Priority best rooms',
+        ];
+
+  const ctaLabel = banner
+    ? (isVi ? banner.cta_label_vi : banner.cta_label_en) || banner.cta_label_vi
+    : (isVi ? 'Xem chi tiết →' : 'View details →');
+
+  const ctaLink = banner?.cta_link || '/khuyen-mai';
+  const imageUrl = banner?.image_url || 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&q=80';
 
   return (
     <section
@@ -34,7 +56,7 @@ const PromoBanner = () => {
         {/* LEFT - Image (desktop only) */}
         <div className="hidden md:block relative w-1/4 h-full overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&q=80"
+            src={imageUrl}
             alt=""
             className="w-full h-full object-cover"
             loading="eager"
@@ -58,7 +80,7 @@ const PromoBanner = () => {
               letterSpacing: '1px',
             }}
           >
-            {isVi ? 'Ở CÀNG NHIỀU — ƯU ĐÃI CÀNG CAO' : 'STAY MORE — SAVE MORE'}
+            {title}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1.5">
             {bullets.map((b, i) => (
@@ -81,13 +103,19 @@ const PromoBanner = () => {
               letterSpacing: '0.5px',
             }}
           >
-            {isVi ? 'ƯU ĐÃI HÈ 2025' : 'SUMMER 2025'}
+            {badge}
           </span>
           <button
-            onClick={() => navigate('/khuyen-mai')}
+            onClick={() => {
+              if (ctaLink.startsWith('http')) {
+                window.open(ctaLink, '_blank');
+              } else {
+                navigate(ctaLink);
+              }
+            }}
             className="border border-white text-white text-sm px-5 py-2 rounded-full hover:bg-white hover:text-[#1B3A5C] transition-colors duration-200"
           >
-            {isVi ? 'Xem chi tiết →' : 'View details →'}
+            {ctaLabel}
           </button>
         </div>
       </div>
