@@ -127,7 +127,7 @@ const Index = () => {
                     <div className="aspect-[4/3] overflow-hidden">
                       <img
                         src={a.image_url}
-                        alt={a.name}
+                        alt={isVi ? a.name_vi : a.name_en}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                         width={600}
@@ -140,16 +140,16 @@ const Index = () => {
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <h3 className="font-display text-base sm:text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {a.name}
+                        {isVi ? a.name_vi : a.name_en}
                       </h3>
-                      {a.area && (
+                      {a.distance && (
                         <Badge variant="outline" className="text-[10px] border-primary/30 text-primary shrink-0">
-                          {a.area}
+                          {a.distance}
                         </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                      {a.description || (isVi ? 'Điểm tham quan nổi bật tại Sầm Sơn' : 'Featured attraction in Sầm Sơn')}
+                      {(isVi ? a.description_vi : a.description_en) || (isVi ? 'Điểm tham quan nổi bật tại Sầm Sơn' : 'Featured attraction in Sầm Sơn')}
                     </p>
                   </div>
                 </button>
