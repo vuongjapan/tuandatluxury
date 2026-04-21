@@ -98,6 +98,8 @@ const Booking = () => {
   const [specialRequests, setSpecialRequests] = useState('');
   const [country, setCountry] = useState('');
   const [address, setAddress] = useState('');
+  const [dob, setDob] = useState('');
+  const [idNumber, setIdNumber] = useState('');
   const [searchDone, setSearchDone] = useState(!!preselectedRoom);
   
 
