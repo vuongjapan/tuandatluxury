@@ -1,65 +1,46 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface VehicleType {
-  type: string;
-  type_en: string;
-  capacity: number;
-  luggage: number;
-  price: number;
-}
-
 export interface Service {
   id: string;
-  name_vi: string;
-  name_en: string;
-  description_vi: string | null;
-  description_en: string | null;
-  icon: string;
-  image_url: string | null;
-  category: string;
-  is_bookable: boolean;
-  is_free: boolean;
-  price_vnd: number;
-  schedule: string | null;
-  vehicle_types: VehicleType[] | null;
   sort_order: number;
-  is_active: boolean;
+  name: string;
+  description: string | null;
   badge_text: string | null;
-  badge_color: string | null;
+  badge_color: string | null; // gold | navy | teal
+  image_url: string | null;
+  image_effect: string; // zoom | parallax | fade | slide
   button_text: string | null;
   button_link: string | null;
-  homepage_featured: boolean;
+  is_featured: boolean;
+  is_active: boolean;
+  created_at: string;
 }
 
 export const useServices = () => {
   const { data: services = [], isLoading, refetch } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('services')
-          .select('*')
-          .order('sort_order');
-        if (error) throw error;
-        return Array.isArray(data) ? (data as unknown as Service[]) : [];
-      } catch (error) {
+      const { data, error } = await (supabase as any)
+        .from('services')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (error) {
         console.warn('Failed to fetch services:', error);
         return [] as Service[];
       }
+      return (data || []) as Service[];
     },
-    staleTime: 0,
-    gcTime: 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: 'always',
-    refetchOnReconnect: true,
-    retry: 1,
+    staleTime: 30 * 1000,
   });
 
-  const safeServices = Array.isArray(services) ? services : [];
-  const amenities = safeServices.filter(s => s.category === 'amenity');
-  const shuttles = safeServices.filter(s => s.category === 'shuttle');
-  const featured = safeServices.filter(s => s.homepage_featured && s.is_active);
+  const safe = Array.isArray(services) ? services : [];
+  const featured = safe.filter((s) => s.is_featured && s.is_active);
+  const minor = safe.filter((s) => !s.is_featured && s.is_active);
 
-  return { services: safeServices, amenities, shuttles, featured, isLoading, refetch };
+  // Backwards-compat aliases used elsewhere in the codebase
+  const amenities = safe;
+  const shuttles: Service[] = [];
+
+  return { services: safe, featured, minor, amenities, shuttles, isLoading, refetch };
 };

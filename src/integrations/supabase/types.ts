@@ -2447,15 +2447,7 @@ export type Database = {
           user_id?: string | null
           vehicle_type?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "service_bookings_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       services: {
         Row: {
@@ -2463,72 +2455,48 @@ export type Database = {
           badge_text: string | null
           button_link: string | null
           button_text: string | null
-          category: string
           created_at: string
-          description_en: string | null
-          description_vi: string | null
-          homepage_featured: boolean
-          icon: string
+          description: string | null
           id: string
+          image_effect: string
           image_url: string | null
           is_active: boolean
-          is_bookable: boolean
-          is_free: boolean
-          name_en: string
-          name_vi: string
-          price_vnd: number
-          schedule: string | null
+          is_featured: boolean
+          name: string
           sort_order: number
           updated_at: string
-          vehicle_types: Json | null
         }
         Insert: {
           badge_color?: string | null
           badge_text?: string | null
           button_link?: string | null
           button_text?: string | null
-          category?: string
           created_at?: string
-          description_en?: string | null
-          description_vi?: string | null
-          homepage_featured?: boolean
-          icon?: string
+          description?: string | null
           id?: string
+          image_effect?: string
           image_url?: string | null
           is_active?: boolean
-          is_bookable?: boolean
-          is_free?: boolean
-          name_en?: string
-          name_vi: string
-          price_vnd?: number
-          schedule?: string | null
+          is_featured?: boolean
+          name: string
           sort_order?: number
           updated_at?: string
-          vehicle_types?: Json | null
         }
         Update: {
           badge_color?: string | null
           badge_text?: string | null
           button_link?: string | null
           button_text?: string | null
-          category?: string
           created_at?: string
-          description_en?: string | null
-          description_vi?: string | null
-          homepage_featured?: boolean
-          icon?: string
+          description?: string | null
           id?: string
+          image_effect?: string
           image_url?: string | null
           is_active?: boolean
-          is_bookable?: boolean
-          is_free?: boolean
-          name_en?: string
-          name_vi?: string
-          price_vnd?: number
-          schedule?: string | null
+          is_featured?: boolean
+          name?: string
           sort_order?: number
           updated_at?: string
-          vehicle_types?: Json | null
         }
         Relationships: []
       }

@@ -1,357 +1,327 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { compressImage } from '@/lib/compressImage';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Plus, Save, Trash2, Pencil, Upload, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Plus, Pencil, Eye, EyeOff, GripVertical, Trash2, Upload, X, Loader2 } from 'lucide-react';
+import type { Service } from '@/hooks/useServices';
 
-interface ServiceRow {
-  id: string;
-  name_vi: string;
-  name_en: string;
-  description_vi: string | null;
-  description_en: string | null;
-  icon: string;
-  image_url: string | null;
-  category: string;
-  is_bookable: boolean;
-  is_free: boolean;
-  price_vnd: number;
-  schedule: string | null;
-  vehicle_types: any;
-  sort_order: number;
-  is_active: boolean;
-  badge_text: string | null;
-  badge_color: string | null;
-  button_text: string | null;
-  button_link: string | null;
-  homepage_featured: boolean;
-}
+const BADGE_OPTIONS = [
+  { value: 'free', label: 'Miễn phí (gold)', text: 'Miễn phí', color: 'gold' },
+  { value: 'request', label: 'Theo yêu cầu (navy)', text: 'Theo yêu cầu', color: 'navy' },
+  { value: 'none', label: 'Không có', text: '', color: '' },
+];
+const EFFECT_OPTIONS = [
+  { value: 'zoom', label: 'Zoom khi hover (mặc định)' },
+  { value: 'parallax', label: 'Parallax cuộn' },
+  { value: 'fade', label: 'Fade in' },
+  { value: 'slide', label: 'Slide từ dưới lên' },
+];
 
-const ICONS = ['🏊','🍽️','📶','🅿️','👨‍👩‍👧‍👦','🛎️','🏖️','✈️','🌊','🚐','💆','🎾','🏋️','🧖','🎵','☕'];
+const emptyForm = {
+  id: '', name: '', description: '', badge_choice: 'free', image_url: '',
+  image_effect: 'zoom', button_text: 'Khám phá →', button_link: '',
+  is_featured: true, is_active: true,
+};
 
 const AdminServices = () => {
   const { toast } = useToast();
-  const [services, setServices] = useState<ServiceRow[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [editing, setEditing] = useState<ServiceRow | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [items, setItems] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<typeof emptyForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
-  const [tab, setTab] = useState<'services' | 'bookings'>('services');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imgKey, setImgKey] = useState(0);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const dragIdx = useRef<number | null>(null);
 
-  const fetchServices = async () => {
-    const { data } = await supabase.from('services').select('*').order('sort_order') as any;
-    setServices(data || []);
+  const fetchItems = async () => {
+    setLoading(true);
+    const { data, error } = await (supabase as any).from('services').select('*').order('sort_order');
+    if (error) toast({ title: 'Lỗi tải', description: error.message, variant: 'destructive' });
+    else setItems((data || []) as Service[]);
+    setLoading(false);
   };
 
-  const fetchBookings = async () => {
-    const { data } = await supabase.from('service_bookings').select('*, services(name_vi, icon)').order('created_at', { ascending: false }) as any;
-    setBookings(data || []);
+  useEffect(() => { fetchItems(); }, []);
+
+  const openNew = () => { setForm({ ...emptyForm }); setOpen(true); };
+
+  const openEdit = (s: Service) => {
+    const choice = s.badge_text === 'Miễn phí' ? 'free' : s.badge_text === 'Theo yêu cầu' ? 'request' : 'none';
+    setForm({
+      id: s.id, name: s.name, description: s.description || '',
+      badge_choice: choice, image_url: s.image_url || '',
+      image_effect: s.image_effect || 'zoom',
+      button_text: s.button_text || '', button_link: s.button_link || '',
+      is_featured: s.is_featured, is_active: s.is_active,
+    });
+    setOpen(true);
   };
 
-  useEffect(() => { fetchServices(); fetchBookings(); }, []);
+  const toggleActive = async (s: Service) => {
+    const { error } = await (supabase as any).from('services').update({ is_active: !s.is_active }).eq('id', s.id);
+    if (error) toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
+    else { toast({ title: !s.is_active ? '✓ Đã hiển thị' : 'Đã ẩn' }); fetchItems(); }
+  };
 
-  const newService = (): ServiceRow => ({
-    id: '',
-    name_vi: '', name_en: '',
-    description_vi: '', description_en: '',
-    icon: '🏨', image_url: null,
-    category: 'amenity', is_bookable: false,
-    is_free: true, price_vnd: 0,
-    schedule: null, vehicle_types: null,
-    sort_order: services.length, is_active: true,
-    badge_text: 'Miễn phí', badge_color: 'gold',
-    button_text: 'Khám phá', button_link: '/dich-vu',
-    homepage_featured: false,
-  });
+  const remove = async (s: Service) => {
+    if (!confirm(`Xóa "${s.name}"?`)) return;
+    const { error } = await (supabase as any).from('services').delete().eq('id', s.id);
+    if (error) toast({ title: 'Lỗi xóa', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Đã xóa' }); fetchItems(); }
+  };
 
-  const handleSave = async () => {
-    if (!editing) return;
+  const onDragStart = (i: number) => (dragIdx.current = i);
+  const onDragOver = (e: React.DragEvent) => e.preventDefault();
+  const onDrop = async (i: number) => {
+    const from = dragIdx.current; dragIdx.current = null;
+    if (from === null || from === i) return;
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(i, 0, moved);
+    setItems(next);
+    await Promise.all(next.map((s, idx) =>
+      (supabase as any).from('services').update({ sort_order: idx + 1 }).eq('id', s.id)
+    ));
+    toast({ title: '✓ Đã cập nhật thứ tự' });
+  };
+
+  const handleFile = async (file: File) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast({ title: 'File quá lớn (tối đa 5MB)', variant: 'destructive' }); return; }
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) { toast({ title: 'Định dạng không hỗ trợ', variant: 'destructive' }); return; }
+    setUploading(true); setUploadProgress(10);
+    const timer = setInterval(() => setUploadProgress((p) => (p < 85 ? p + 8 : p)), 120);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from('service-images').upload(path, file, { cacheControl: '3600', upsert: false });
+    clearInterval(timer);
+    if (error) { setUploading(false); setUploadProgress(0); toast({ title: 'Lỗi upload', description: error.message, variant: 'destructive' }); return; }
+    const { data: { publicUrl } } = supabase.storage.from('service-images').getPublicUrl(path);
+    setUploadProgress(100);
+    setForm((f) => ({ ...f, image_url: publicUrl }));
+    setImgKey((k) => k + 1);
+    setTimeout(() => { setUploading(false); setUploadProgress(0); }, 400);
+    toast({ title: '✓ Ảnh đã tải lên thành công' });
+  };
+
+  const onDropFile = (e: React.DragEvent) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f) handleFile(f);
+  };
+
+  const save = async () => {
+    if (!form.name.trim()) { toast({ title: 'Vui lòng nhập tên', variant: 'destructive' }); return; }
+    const badge = BADGE_OPTIONS.find((b) => b.value === form.badge_choice)!;
     const payload = {
-      name_vi: editing.name_vi,
-      name_en: editing.name_en,
-      description_vi: editing.description_vi,
-      description_en: editing.description_en,
-      icon: editing.icon,
-      image_url: editing.image_url,
-      category: editing.category,
-      is_bookable: editing.is_bookable,
-      is_free: editing.is_free,
-      price_vnd: editing.price_vnd,
-      schedule: editing.schedule,
-      vehicle_types: editing.vehicle_types,
-      sort_order: editing.sort_order,
-      is_active: editing.is_active,
-      badge_text: editing.badge_text,
-      badge_color: editing.badge_color,
-      button_text: editing.button_text,
-      button_link: editing.button_link,
-      homepage_featured: editing.homepage_featured,
+      name: form.name.trim(), description: form.description.trim(),
+      badge_text: badge.text || null, badge_color: badge.color || null,
+      image_url: form.image_url || null, image_effect: form.image_effect,
+      button_text: form.button_text.trim() || null, button_link: form.button_link.trim() || null,
+      is_featured: form.is_featured, is_active: form.is_active,
     };
-
-    let error;
-    if (adding) {
-      ({ error } = await supabase.from('services').insert(payload as any));
+    if (form.id) {
+      const { error } = await (supabase as any).from('services').update(payload).eq('id', form.id);
+      if (error) { toast({ title: 'Lỗi lưu', description: error.message, variant: 'destructive' }); return; }
+      toast({ title: '✓ Đã lưu' });
     } else {
-      ({ error } = await supabase.from('services').update(payload as any).eq('id', editing.id));
+      const nextOrder = items.length ? Math.max(...items.map((i) => i.sort_order)) + 1 : 1;
+      const { error } = await (supabase as any).from('services').insert({ ...payload, sort_order: nextOrder });
+      if (error) { toast({ title: 'Lỗi tạo', description: error.message, variant: 'destructive' }); return; }
+      toast({ title: '✓ Đã tạo dịch vụ mới' });
     }
-    if (error) { toast({ title: 'Lỗi', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: adding ? 'Đã thêm dịch vụ ✓' : 'Đã cập nhật ✓' });
-    setEditing(null);
-    setAdding(false);
-    fetchServices();
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Xóa dịch vụ này?')) return;
-    await supabase.from('services').delete().eq('id', id);
-    toast({ title: 'Đã xóa ✓' });
-    fetchServices();
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !editing) return;
-    setUploading(true);
-    try {
-      const compressed = await compressImage(file, { maxWidth: 800, quality: 0.7 });
-      const path = `services/${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from('gallery').upload(path, compressed);
-      if (error) { toast({ title: 'Lỗi upload', variant: 'destructive' }); setUploading(false); return; }
-      const { data } = supabase.storage.from('gallery').getPublicUrl(path);
-      setEditing({ ...editing, image_url: data.publicUrl });
-    } catch (err: any) {
-      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
-    }
-    setUploading(false);
-  };
-
-  const updateBookingStatus = async (id: string, status: string) => {
-    await supabase.from('service_bookings').update({ status } as any).eq('id', id);
-    toast({ title: 'Đã cập nhật ✓' });
-    fetchBookings();
-  };
-
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    confirmed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
-    completed: 'bg-blue-100 text-blue-800',
+    setOpen(false);
+    fetchItems();
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2 mb-4">
-        <Button variant={tab === 'services' ? 'default' : 'outline'} size="sm" onClick={() => setTab('services')}>
-          Quản lý dịch vụ
-        </Button>
-        <Button variant={tab === 'bookings' ? 'default' : 'outline'} size="sm" onClick={() => setTab('bookings')}>
-          Đơn đặt dịch vụ ({bookings.filter(b => b.status === 'pending').length})
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Quản lý Dịch vụ</h2>
+          <p className="text-sm text-muted-foreground mt-1">Kéo thả ⠿ để đổi thứ tự. Toggle ẩn/hiện ngay.</p>
+        </div>
+        <Button onClick={openNew} className="bg-[#C9A84C] hover:bg-[#b8973f] text-[#1B3A5C] font-semibold gap-2">
+          <Plus className="h-4 w-4" />Thêm dịch vụ mới
         </Button>
       </div>
 
-      {tab === 'services' && (
-        <>
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold">Danh sách dịch vụ</h3>
-            <Button size="sm" onClick={() => { setEditing(newService()); setAdding(true); }}>
-              <Plus className="h-4 w-4 mr-1" /> Thêm
-            </Button>
-          </div>
-
-          {editing && (
-            <div className="bg-secondary rounded-xl p-4 space-y-3 border border-border">
-              <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-sm">{adding ? 'Thêm dịch vụ' : 'Sửa dịch vụ'}</h4>
-                <Button variant="ghost" size="sm" onClick={() => { setEditing(null); setAdding(false); }}>
-                  <X className="h-4 w-4" />
-                </Button>
+      {loading ? (
+        <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
+          <p className="text-muted-foreground">Chưa có dịch vụ nào.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((s, i) => (
+            <div
+              key={s.id}
+              draggable
+              onDragStart={() => onDragStart(i)}
+              onDragOver={onDragOver}
+              onDrop={() => onDrop(i)}
+              className={`relative bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all ${!s.is_active ? 'opacity-60' : ''}`}
+            >
+              <div className="absolute top-2 left-2 z-10 cursor-grab active:cursor-grabbing bg-background/90 rounded p-1 shadow">
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium">Tên (VI)</label>
-                  <Input value={editing.name_vi} onChange={e => setEditing({ ...editing, name_vi: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Tên (EN)</label>
-                  <Input value={editing.name_en} onChange={e => setEditing({ ...editing, name_en: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Mô tả (VI)</label>
-                  <Textarea value={editing.description_vi || ''} onChange={e => setEditing({ ...editing, description_vi: e.target.value })} rows={2} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Mô tả (EN)</label>
-                  <Textarea value={editing.description_en || ''} onChange={e => setEditing({ ...editing, description_en: e.target.value })} rows={2} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <label className="text-xs font-medium">Icon</label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {ICONS.map(ic => (
-                      <button key={ic} onClick={() => setEditing({ ...editing, icon: ic })}
-                        className={`text-xl p-1 rounded ${editing.icon === ic ? 'bg-primary/20 ring-2 ring-primary' : 'hover:bg-secondary'}`}>
-                        {ic}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Danh mục</label>
-                  <Select value={editing.category} onValueChange={v => setEditing({ ...editing, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="amenity">Tiện nghi</SelectItem>
-                      <SelectItem value="shuttle">Đưa đón</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Giá (VNĐ)</label>
-                  <Input type="number" value={editing.price_vnd} onChange={e => setEditing({ ...editing, price_vnd: parseInt(e.target.value) || 0 })} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Lịch trình</label>
-                  <Input value={editing.schedule || ''} onChange={e => setEditing({ ...editing, schedule: e.target.value })} placeholder="7:00 - 22:00" />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 items-center">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={editing.is_bookable} onChange={e => setEditing({ ...editing, is_bookable: e.target.checked })} />
-                  Cho phép đặt
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={editing.is_free} onChange={e => setEditing({ ...editing, is_free: e.target.checked })} />
-                  Miễn phí
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={editing.is_active} onChange={e => setEditing({ ...editing, is_active: e.target.checked })} />
-                  Hiển thị
-                </label>
-                <label className="flex items-center gap-2 text-sm font-semibold text-primary">
-                  <input type="checkbox" checked={editing.homepage_featured} onChange={e => setEditing({ ...editing, homepage_featured: e.target.checked })} />
-                  ⭐ Hiển thị trên trang chủ
-                </label>
-                <label className="text-sm">
-                  Thứ tự:
-                  <Input type="number" className="w-16 inline ml-2" value={editing.sort_order} onChange={e => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })} />
-                </label>
-              </div>
-
-              {/* Homepage card customization */}
-              <div className="bg-background/50 border border-border rounded-lg p-3 space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🏠 Hiển thị trên trang chủ</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium">Chữ trên huy hiệu</label>
-                    <Input value={editing.badge_text || ''} onChange={e => setEditing({ ...editing, badge_text: e.target.value })} placeholder="Miễn phí / Theo yêu cầu / để trống" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium">Màu huy hiệu</label>
-                    <Select value={editing.badge_color || 'gold'} onValueChange={v => setEditing({ ...editing, badge_color: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gold">Vàng (gold)</SelectItem>
-                        <SelectItem value="navy">Navy (đậm)</SelectItem>
-                        <SelectItem value="teal">Teal (xanh)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium">Chữ trên nút</label>
-                    <Input value={editing.button_text || ''} onChange={e => setEditing({ ...editing, button_text: e.target.value })} placeholder="Khám phá / Đặt dịch vụ" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium">Link nút</label>
-                    <Input value={editing.button_link || ''} onChange={e => setEditing({ ...editing, button_link: e.target.value })} placeholder="/dich-vu hoặc tel:0936..." />
-                  </div>
-                </div>
-              </div>
-
-              {/* Image */}
-              <div className="flex items-center gap-3">
-                {editing.image_url && <img src={editing.image_url} alt="" className="h-16 w-24 object-cover rounded" />}
-                <label className="cursor-pointer">
-                  <Button variant="outline" size="sm" asChild><span><Upload className="h-3 w-3 mr-1" />{uploading ? 'Đang upload...' : 'Upload ảnh'}</span></Button>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              </div>
-
-              <Button onClick={handleSave}><Save className="h-4 w-4 mr-1" /> Lưu</Button>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {services.map(s => (
-              <div key={s.id} className="flex items-center gap-3 bg-card p-3 rounded-lg border border-border">
-                <span className="text-2xl">{s.icon}</span>
+              <div className="flex gap-3 p-3">
+                {s.image_url ? (
+                  <img src={s.image_url} alt={s.name} className="w-[120px] h-[80px] object-cover rounded-md flex-shrink-0" />
+                ) : (
+                  <div className="w-[120px] h-[80px] bg-muted rounded-md flex-shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{s.name_vi}</p>
-                  <p className="text-xs text-muted-foreground">{s.category === 'amenity' ? 'Tiện nghi' : 'Đưa đón'} • {s.is_free ? 'Miễn phí' : `${s.price_vnd.toLocaleString()}đ`}</p>
+                  <h3 className="font-semibold text-sm truncate">{s.name}</h3>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {s.badge_text && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${s.badge_color === 'navy' ? 'bg-[#1B3A5C] text-white' : 'bg-[#C9A84C] text-[#1B3A5C]'}`}>
+                        {s.badge_text}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground">{s.is_featured ? 'Hàng lớn' : 'Hàng nhỏ'}</span>
+                    <span className="text-[10px] text-muted-foreground">· {s.image_effect}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.description}</p>
                 </div>
-                {s.homepage_featured && <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">⭐ Trang chủ</Badge>}
-                {!s.is_active && <Badge variant="outline" className="text-xs">Ẩn</Badge>}
-                <Button variant="ghost" size="sm" onClick={() => { setEditing(s); setAdding(false); }}>
-                  <Pencil className="h-3.5 w-3.5" />
+              </div>
+              <div className="flex items-center justify-between border-t bg-muted/30 px-3 py-2">
+                <Button size="sm" variant="ghost" onClick={() => openEdit(s)} className="h-8 gap-1">
+                  <Pencil className="h-3.5 w-3.5" /> Sửa
                 </Button>
-                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(s.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {tab === 'bookings' && (
-        <div className="space-y-3">
-          <h3 className="font-semibold">Đơn đặt dịch vụ</h3>
-          {bookings.length === 0 && <p className="text-muted-foreground text-sm">Chưa có đơn đặt dịch vụ nào.</p>}
-          {bookings.map(b => (
-            <div key={b.id} className="bg-card p-4 rounded-lg border border-border space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span>{b.services?.icon}</span>
-                  <span className="font-medium text-sm">{b.services?.name_vi}</span>
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => toggleActive(s)} className="h-8 gap-1" title={s.is_active ? 'Ẩn' : 'Hiện'}>
+                    {s.is_active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove(s)} className="h-8 text-destructive hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-                <Badge className={statusColors[b.status] || 'bg-gray-100'}>
-                  {b.status === 'pending' ? 'Chờ xác nhận' : b.status === 'confirmed' ? 'Đã xác nhận' : b.status === 'cancelled' ? 'Đã hủy' : 'Hoàn thành'}
-                </Badge>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
-                <span>👤 {b.guest_name}</span>
-                <span>📞 {b.guest_phone}</span>
-                <span>📅 {b.booking_date} {b.booking_time || ''}</span>
-                <span>💰 {b.total_price_vnd > 0 ? `${b.total_price_vnd.toLocaleString()}đ` : 'Miễn phí'}
-                  {b.discount_percent > 0 && ` (-${b.discount_percent}%)`}
-                </span>
-                {b.pickup_location && <span>📍 {b.pickup_location}</span>}
-                {b.vehicle_type && <span>🚗 {b.vehicle_type}</span>}
-                <span>👥 {b.guests_count} khách</span>
-                <span>{b.payment_method === 'online' ? '💳 Online' : '🏨 Tại KS'}</span>
-              </div>
-              {b.notes && <p className="text-xs text-muted-foreground italic">📝 {b.notes}</p>}
-              {b.status === 'pending' && (
-                <div className="flex gap-2">
-                  <Button size="sm" variant="default" onClick={() => updateBookingStatus(b.id, 'confirmed')}>Xác nhận</Button>
-                  <Button size="sm" variant="outline" className="text-destructive" onClick={() => updateBookingStatus(b.id, 'cancelled')}>Hủy</Button>
-                </div>
-              )}
-              {b.status === 'confirmed' && (
-                <Button size="sm" variant="outline" onClick={() => updateBookingStatus(b.id, 'completed')}>Hoàn thành</Button>
-              )}
             </div>
           ))}
         </div>
       )}
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{form.id ? 'Sửa dịch vụ' : 'Thêm dịch vụ mới'}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-5 mt-6">
+            <div>
+              <Label>Tên dịch vụ *</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="VD: Hồ Bơi Vô Cực" />
+            </div>
+            <div>
+              <Label>Ảnh dịch vụ</Label>
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={onDropFile}
+                onClick={() => !uploading && fileRef.current?.click()}
+                className="mt-1 border-2 border-dashed border-[#C9A84C]/40 hover:border-[#C9A84C] rounded-lg p-6 text-center cursor-pointer bg-[#C9A84C]/5 transition"
+              >
+                {form.image_url ? (
+                  <div className="relative inline-block">
+                    <img key={imgKey} src={form.image_url} alt="preview" className="max-h-48 rounded-md mx-auto" style={{ animation: 'serviceImgIn 0.4s ease-out' }} />
+                    <Button type="button" variant="destructive" size="sm" className="absolute -top-2 -right-2 h-7 w-7 p-0 rounded-full"
+                      onClick={(e) => { e.stopPropagation(); setForm({ ...form, image_url: '' }); }}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : uploading ? (
+                  <div className="space-y-2">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-[#C9A84C]" />
+                    <p className="text-sm text-muted-foreground">Đang upload...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="h-8 w-8 mx-auto text-[#C9A84C]" />
+                    <p className="text-sm font-medium">Kéo ảnh vào đây hoặc click để chọn</p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG, WebP — tối đa 5MB</p>
+                  </div>
+                )}
+                {uploading && (
+                  <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-[#C9A84C] transition-all" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                )}
+                <input ref={fileRef} type="file" accept="image/*" className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              </div>
+            </div>
+            <div>
+              <Label>Mô tả</Label>
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Mô tả 2–3 dòng..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Badge</Label>
+                <Select value={form.badge_choice} onValueChange={(v) => setForm({ ...form, badge_choice: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {BADGE_OPTIONS.map((b) => (<SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Hiệu ứng ảnh</Label>
+                <Select value={form.image_effect} onValueChange={(v) => setForm({ ...form, image_effect: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EFFECT_OPTIONS.map((e) => (<SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Chữ nút CTA</Label>
+                <Input value={form.button_text} onChange={(e) => setForm({ ...form, button_text: e.target.value })} placeholder="Khám phá →" />
+              </div>
+              <div>
+                <Label>Link nút CTA</Label>
+                <Input value={form.button_link} onChange={(e) => setForm({ ...form, button_link: e.target.value })} placeholder="/dich-vu hoặc tel:..." />
+              </div>
+            </div>
+            <div>
+              <Label>Vị trí hiển thị</Label>
+              <RadioGroup value={form.is_featured ? 'featured' : 'minor'}
+                onValueChange={(v) => setForm({ ...form, is_featured: v === 'featured' })}
+                className="flex gap-4 mt-2">
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="featured" id="r-featured" />
+                  <Label htmlFor="r-featured" className="cursor-pointer">Hàng lớn</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="minor" id="r-minor" />
+                  <Label htmlFor="r-minor" className="cursor-pointer">Hàng icon nhỏ</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="flex items-center justify-between border-t pt-4">
+              <Label htmlFor="active-toggle" className="cursor-pointer">Hiện trên web</Label>
+              <Switch id="active-toggle" checked={form.is_active} onCheckedChange={(c) => setForm({ ...form, is_active: c })} />
+            </div>
+            <div className="flex gap-2 pt-4 border-t">
+              <Button onClick={save} className="flex-1 bg-[#C9A84C] hover:bg-[#b8973f] text-[#1B3A5C] font-semibold">LƯU</Button>
+              <Button variant="outline" onClick={() => setOpen(false)} className="flex-1">Hủy</Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <style>{`@keyframes serviceImgIn { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }`}</style>
     </div>
   );
 };
