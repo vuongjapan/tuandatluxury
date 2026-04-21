@@ -271,6 +271,8 @@ export type Database = {
           dining_item_id: string | null
           dishes_snapshot: Json
           id: string
+          meal_multiplier: number
+          meal_time: string | null
           price_vnd: number
           quantity: number
         }
@@ -285,6 +287,8 @@ export type Database = {
           dining_item_id?: string | null
           dishes_snapshot?: Json
           id?: string
+          meal_multiplier?: number
+          meal_time?: string | null
           price_vnd?: number
           quantity?: number
         }
@@ -299,6 +303,8 @@ export type Database = {
           dining_item_id?: string | null
           dishes_snapshot?: Json
           id?: string
+          meal_multiplier?: number
+          meal_time?: string | null
           price_vnd?: number
           quantity?: number
         }
@@ -338,6 +344,8 @@ export type Database = {
           booking_id: string
           created_at: string
           id: string
+          meal_multiplier: number
+          meal_time: string | null
           menu_item_id: string
           name: string
           price_vnd: number
@@ -347,6 +355,8 @@ export type Database = {
           booking_id: string
           created_at?: string
           id?: string
+          meal_multiplier?: number
+          meal_time?: string | null
           menu_item_id: string
           name?: string
           price_vnd?: number
@@ -356,6 +366,8 @@ export type Database = {
           booking_id?: string
           created_at?: string
           id?: string
+          meal_multiplier?: number
+          meal_time?: string | null
           menu_item_id?: string
           name?: string
           price_vnd?: number
@@ -397,6 +409,8 @@ export type Database = {
           id: string
           individual_food_total: number | null
           language: string | null
+          meal_time: string | null
+          meal_time_label: string | null
           member_discount_amount: number | null
           member_discount_percent: number | null
           original_price_vnd: number | null
@@ -444,6 +458,8 @@ export type Database = {
           id?: string
           individual_food_total?: number | null
           language?: string | null
+          meal_time?: string | null
+          meal_time_label?: string | null
           member_discount_amount?: number | null
           member_discount_percent?: number | null
           original_price_vnd?: number | null
@@ -491,6 +507,8 @@ export type Database = {
           id?: string
           individual_food_total?: number | null
           language?: string | null
+          meal_time?: string | null
+          meal_time_label?: string | null
           member_discount_amount?: number | null
           member_discount_percent?: number | null
           original_price_vnd?: number | null
@@ -843,6 +861,7 @@ export type Database = {
           is_combo: boolean
           name_en: string
           name_vi: string
+          price_type: string
           price_vnd: number
           show_price: boolean
           sort_order: number
@@ -860,6 +879,7 @@ export type Database = {
           is_combo?: boolean
           name_en: string
           name_vi: string
+          price_type?: string
           price_vnd?: number
           show_price?: boolean
           sort_order?: number
@@ -877,6 +897,7 @@ export type Database = {
           is_combo?: boolean
           name_en?: string
           name_vi?: string
+          price_type?: string
           price_vnd?: number
           show_price?: boolean
           sort_order?: number
@@ -1754,6 +1775,7 @@ export type Database = {
           is_popular: boolean
           name_en: string
           name_vi: string
+          price_type: string
           price_vnd: number
           show_price: boolean
           sort_order: number
@@ -1771,6 +1793,7 @@ export type Database = {
           is_popular?: boolean
           name_en?: string
           name_vi: string
+          price_type?: string
           price_vnd?: number
           show_price?: boolean
           sort_order?: number
@@ -1788,6 +1811,7 @@ export type Database = {
           is_popular?: boolean
           name_en?: string
           name_vi?: string
+          price_type?: string
           price_vnd?: number
           show_price?: boolean
           sort_order?: number
