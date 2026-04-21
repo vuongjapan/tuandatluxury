@@ -23,6 +23,7 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import AdminTrash, { TrashItem, getTrash, saveTrash } from '@/components/admin/AdminTrash';
 import AdminDining from '@/components/AdminDining';
 import AdminPromotions from '@/components/AdminPromotions';
+import AdminOffers from '@/components/admin/AdminOffers';
 import AdminServices from '@/components/AdminServices';
 import AdminFoodMenu from '@/components/AdminFoodMenu';
 import AdminMembers from '@/components/AdminMembers';
@@ -43,7 +44,7 @@ import AdminReviews from '@/components/admin/AdminReviews';
 import AdminMemberDiscount from '@/components/admin/AdminMemberDiscount';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'offers' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -193,7 +194,8 @@ const AdminDashboard = () => {
     {
       title: 'Khác',
       items: [
-        { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
+        { id: 'offers', icon: Gift, label: 'Bài Ưu đãi (Web)' },
+        { id: 'promotions', icon: Gift, label: 'Ưu đãi (cũ)' },
         { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
         { id: 'web-discount', icon: MapPin, label: 'Giảm giá web' },
         { id: 'member-discount', icon: Sparkles, label: 'Ưu đãi TV & Combo/người' },
@@ -383,6 +385,7 @@ const AdminDashboard = () => {
           {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'dining' && <AdminDining />}
+          {tab === 'offers' && <AdminOffers />}
           {tab === 'promotions' && <AdminPromotions />}
           {tab === 'promotion-system' && <AdminPromotionSystem />}
           {tab === 'services' && <AdminServices />}

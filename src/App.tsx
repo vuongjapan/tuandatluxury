@@ -27,6 +27,8 @@ const Cuisine = lazy(() => import("./pages/Cuisine"));
 const Seafood = lazy(() => import("./pages/Seafood"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Promotions = lazy(() => import("./pages/Promotions"));
+const Offers = lazy(() => import("./pages/Offers"));
+const OfferDetail = lazy(() => import("./pages/OfferDetail"));
 const Auction = lazy(() => import("./pages/Auction"));
 const Live = lazy(() => import("./pages/Live"));
 const Reviews = lazy(() => import("./pages/Reviews"));
@@ -112,7 +114,10 @@ const App = () => {
                     <Route path="/blog/:slug" element={<BlogPost />} />
                     <Route path="/seafood" element={<Seafood />} />
                     <Route path="/terms" element={<Terms />} />
-                    <Route path="/promotions" element={<Promotions />} />
+                    <Route path="/promotions" element={<Offers />} />
+                    <Route path="/uu-dai" element={<Offers />} />
+                    <Route path="/uu-dai/:slug" element={<OfferDetail />} />
+                    <Route path="/khuyen-mai" element={<Offers />} />
                     <Route path="/auction" element={<Auction />} />
                     <Route path="/live" element={<Live />} />
                     <Route path="/reviews" element={<Reviews />} />
