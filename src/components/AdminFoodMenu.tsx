@@ -484,7 +484,7 @@ const AdminFoodMenu = () => {
                   <div className="text-xs text-muted-foreground truncate">{item.name_en}</div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <Badge variant="outline" className="text-xs py-0">{CATEGORIES[item.category] || item.category}</Badge>
-                    <span className="text-xs font-medium text-primary">{formatPrice(item.price_vnd)}</span>
+                    <span className="text-xs font-medium text-primary">{formatPrice(item)}</span>
                   </div>
                 </div>
 
@@ -522,7 +522,7 @@ const AdminFoodMenu = () => {
                   {priceLoading ? (
                     <div className="text-center py-2 text-xs text-muted-foreground">Đang tải...</div>
                   ) : priceVariants.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-2">Chưa có mức giá. Món sẽ dùng giá mặc định ({formatPrice(item.price_vnd)}).</p>
+                    <p className="text-xs text-muted-foreground py-2">Chưa có mức giá. Món sẽ dùng giá mặc định ({formatPrice(item)}).</p>
                   ) : (
                     <div className="space-y-1.5">
                       {priceVariants.map((v: any) => (
