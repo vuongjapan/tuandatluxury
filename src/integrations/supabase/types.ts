@@ -2459,10 +2459,15 @@ export type Database = {
       }
       services: {
         Row: {
+          badge_color: string | null
+          badge_text: string | null
+          button_link: string | null
+          button_text: string | null
           category: string
           created_at: string
           description_en: string | null
           description_vi: string | null
+          homepage_featured: boolean
           icon: string
           id: string
           image_url: string | null
@@ -2478,10 +2483,15 @@ export type Database = {
           vehicle_types: Json | null
         }
         Insert: {
+          badge_color?: string | null
+          badge_text?: string | null
+          button_link?: string | null
+          button_text?: string | null
           category?: string
           created_at?: string
           description_en?: string | null
           description_vi?: string | null
+          homepage_featured?: boolean
           icon?: string
           id?: string
           image_url?: string | null
@@ -2497,10 +2507,15 @@ export type Database = {
           vehicle_types?: Json | null
         }
         Update: {
+          badge_color?: string | null
+          badge_text?: string | null
+          button_link?: string | null
+          button_text?: string | null
           category?: string
           created_at?: string
           description_en?: string | null
           description_vi?: string | null
+          homepage_featured?: boolean
           icon?: string
           id?: string
           image_url?: string | null
