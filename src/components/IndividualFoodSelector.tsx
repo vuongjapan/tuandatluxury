@@ -206,8 +206,8 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
               const selectedVariant = hasVariants
                 ? item.price_variants!.find(v => v.id === selectedVariantId)
                 : undefined;
+              const itemPriceType = ((item as any).price_type === 'negotiable' ? 'negotiable' : 'fixed') as 'fixed' | 'negotiable';
 
-              // Find all cart entries for this menu item
               const cartEntries = items.filter(i => i.id.startsWith(item.id));
               const itemInCart = cartEntries.length > 0;
 
@@ -220,80 +220,56 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.name_vi}</p>
                       {!hasVariants && (
-                        <p className="text-xs text-primary font-bold">{formatPrice(item.price_vnd)}</p>
+                        <PriceDisplay price={item.price_vnd} priceType={itemPriceType} className="text-xs text-primary font-bold" />
                       )}
                     </div>
 
-                    {/* No variants: simple add/qty buttons */}
                     {!hasVariants && (() => {
                       const cartKey = getCartKey(item.id);
                       const inCart = items.find(i => i.id === cartKey);
                       return inCart ? (
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, -1)}>
-                            <Minus className="h-3 w-3" />
-                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, -1)}><Minus className="h-3 w-3" /></Button>
                           <span className="font-bold w-6 text-center text-sm">{inCart.quantity}</span>
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, 1)}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, 1)}><Plus className="h-3 w-3" /></Button>
                         </div>
                       ) : (
                         <Button variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => addItem(item)}>
-                          <Plus className="h-3 w-3 mr-1" /> Thêm
+                          <Plus className="h-3 w-3 mr-1" /> {isVi ? 'Thêm' : 'Add'}
                         </Button>
                       );
                     })()}
 
-                    {/* Has variants: show dropdown + add */}
                     {hasVariants && (
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <Select
-                          value={selectedVariantId || ''}
-                          onValueChange={v => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}
-                        >
-                          <SelectTrigger className="h-8 w-[120px] text-xs">
-                            <SelectValue placeholder="Chọn giá" />
-                          </SelectTrigger>
+                        <Select value={selectedVariantId || ''} onValueChange={v => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}>
+                          <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue placeholder={isVi ? 'Chọn giá' : 'Pick'} /></SelectTrigger>
                           <SelectContent>
                             {item.price_variants!.map(v => (
                               <SelectItem key={v.id} value={v.id} className="text-xs">
-                                {v.label_vi} – {formatPrice(v.price_vnd)}
+                                {v.label_vi} – {itemPriceType === 'negotiable' ? (isVi ? 'Thỏa thuận' : 'On request') : formatPrice(v.price_vnd)}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0 text-xs"
-                          disabled={!selectedVariant}
-                          onClick={() => {
-                            if (selectedVariant) addItem(item, selectedVariant);
-                          }}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Thêm
+                        <Button variant="outline" size="sm" className="shrink-0 text-xs" disabled={!selectedVariant} onClick={() => { if (selectedVariant) addItem(item, selectedVariant); }}>
+                          <Plus className="h-3 w-3 mr-1" /> {isVi ? 'Thêm' : 'Add'}
                         </Button>
                       </div>
                     )}
                   </div>
 
-                  {/* Show cart entries for variants */}
                   {hasVariants && cartEntries.length > 0 && (
                     <div className="mt-2 space-y-1 pl-2 border-l-2 border-primary/30 ml-2">
                       {cartEntries.map(entry => (
                         <div key={entry.id} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            {entry.priceLabel} – {formatPrice(entry.price)}
+                          <span className="text-muted-foreground inline-flex items-center gap-1">
+                            {entry.priceLabel} – <PriceDisplay price={entry.price} priceType={entry.priceType} compact />
                           </span>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, -1)}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, -1)}><Minus className="h-3 w-3" /></Button>
                             <span className="font-bold w-5 text-center">{entry.quantity}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, 1)}><Plus className="h-3 w-3" /></Button>
                           </div>
                         </div>
                       ))}
@@ -305,19 +281,23 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           </div>
 
           {/* Footer / cart summary */}
-          <div className="p-4 border-t border-border bg-secondary/50 shrink-0">
+          <div className="p-4 border-t border-border bg-secondary/50 shrink-0 space-y-1.5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{totalItems} món đã chọn</p>
+                <p className="text-sm text-muted-foreground">{totalItems} {isVi ? 'món đã chọn' : 'items'}</p>
                 <p className="font-bold text-primary text-lg">{formatPrice(total)}</p>
               </div>
-              <Button variant="gold" onClick={onClose}>
-                Xong
-              </Button>
+              <Button variant="gold" onClick={onClose}>{isVi ? 'Xong' : 'Done'}</Button>
             </div>
+            {negotiableCount > 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                * {isVi ? `${negotiableCount} món giá thỏa thuận sẽ được tính riêng tại nhà hàng` : `${negotiableCount} negotiable item(s) will be billed at the restaurant`}
+              </p>
+            )}
           </div>
         </motion.div>
       </motion.div>
+      <MenuViewerModal open={menuViewerOpen} onClose={() => setMenuViewerOpen(false)} />
     </AnimatePresence>
   );
 };
