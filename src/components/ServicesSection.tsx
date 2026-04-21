@@ -1,11 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { Waves, UtensilsCrossed, Wifi, Bike, Mic2, Car, Concierge, Umbrella, Plane } from 'lucide-react';
+import { Waves, UtensilsCrossed, Wifi, Bike, Mic2, Car, Umbrella, Plane, BellRing } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import FadeIn from '@/components/FadeIn';
 import { Button } from '@/components/ui/button';
-
-// Concierge icon doesn't exist in lucide; fallback
-import { BellRing } from 'lucide-react';
 
 const HERO_SERVICES = [
   {
