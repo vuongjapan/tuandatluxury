@@ -24,6 +24,7 @@ import { useRooms } from '@/hooks/useRooms';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useDining } from '@/hooks/useDining';
 import { usePromotions } from '@/hooks/usePromotions';
+import { useMandatoryComboDates } from '@/hooks/useMandatoryComboDates';
 import { useAuth, MemberTier } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -66,6 +67,7 @@ const Booking = () => {
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
   const { settings } = useSiteSettings();
+  const { getMatchingRange } = useMandatoryComboDates();
   const webDiscountPercent = parseInt(settings.web_discount_percent || '0', 10);
 
   const preselectedRoom = searchParams.get('room') || '';
