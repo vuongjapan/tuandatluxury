@@ -46,8 +46,9 @@ import AdminAboutImages from '@/components/admin/AdminAboutImages';
 import AdminIntroSection from '@/components/admin/AdminIntroSection';
 import AdminPromoBanners from '@/components/admin/AdminPromoBanners';
 import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
+import AdminPersonalMealPlans from '@/components/admin/AdminPersonalMealPlans';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'offers' | 'promotions' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotions' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -191,7 +192,8 @@ const AdminDashboard = () => {
         { id: 'cuisine-media', icon: Film, label: 'Trang Ẩm thực' },
         { id: 'dining', icon: UtensilsCrossed, label: 'Nhà hàng' },
         { id: 'food-menu', icon: ShoppingCart, label: 'Menu đồ ăn' },
-        { id: 'combos', icon: Gift, label: 'Combo ăn uống' },
+        { id: 'combos', icon: Gift, label: 'Combo ăn uống (≥6 khách)' },
+        { id: 'personal-meal-plans', icon: Users, label: 'Suất ăn theo số người' },
         { id: 'mandatory-combo', icon: AlertTriangle as any, label: 'Ngày bắt buộc combo 🔴' },
       ],
     },
@@ -402,6 +404,7 @@ const AdminDashboard = () => {
           {tab === 'blog' && <AdminBlog />}
           {tab === 'combos' && <AdminCombo />}
           {tab === 'mandatory-combo' && <AdminMandatoryCombo />}
+          {tab === 'personal-meal-plans' && <AdminPersonalMealPlans />}
           {tab === 'special-prices' && <AdminSpecialPrices />}
           {tab === 'cuisine-media' && <AdminCuisineMedia />}
           {tab === 'amenities' && <AdminAmenities />}

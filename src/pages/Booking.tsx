@@ -4,6 +4,7 @@ import { format, differenceInDays } from 'date-fns';
 import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check, Search, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
+import PersonalMealPlanSelector, { PersonalMealSelection } from '@/components/PersonalMealPlanSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
@@ -89,6 +90,7 @@ const Booking = () => {
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [comboSelections, setComboSelections] = useState<ComboSelection[]>([]);
+  const [personalMealSelections, setPersonalMealSelections] = useState<PersonalMealSelection[]>([]);
   const [comboNotes, setComboNotes] = useState('');
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
@@ -168,7 +170,8 @@ const Booking = () => {
     return true;
   }, [checkIn, checkOut, nightCount, selectedRooms, isDateAvailable]);
 
-  const comboTotal = useMemo(() => comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0), [comboSelections]);
+  const personalMealTotal = useMemo(() => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0), [personalMealSelections]);
+  const comboTotal = useMemo(() => comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0) + personalMealTotal, [comboSelections, personalMealTotal]);
   const individualFoodTotal = useMemo(() => individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0), [individualFoods]);
 
   const roomTotals = useMemo(() => {
@@ -374,6 +377,13 @@ const Booking = () => {
         name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
         price_vnd: f.price, quantity: f.quantity,
       }));
+      const personalMealNote = personalMealSelections.length > 0
+        ? '🍽️ SUẤT ĂN THEO SỐ NGƯỜI:\n' + personalMealSelections.map(m =>
+            `• ${m.name} (${m.guest_count} người) ×${m.quantity} = ${(m.price * m.quantity).toLocaleString('vi-VN')}đ`
+            + (m.items.length ? `\n  └ ${m.items.join(', ')}` : '')
+          ).join('\n')
+        : '';
+      const mergedComboNotes = [comboNotes, personalMealNote].filter(Boolean).join('\n\n');
       const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
       const roomBreakdown = roomTotals.map(rt => ({
@@ -392,7 +402,7 @@ const Booking = () => {
           room_subtotal: roomTotal, room_quantity: totalRoomQuantity, language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: comboTotal > 0 ? comboTotal : undefined,
-          combo_notes: comboNotes || undefined,
+          combo_notes: mergedComboNotes || undefined,
           food_items: foodItemsPayload.length > 0 ? foodItemsPayload : undefined,
           individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
@@ -705,20 +715,30 @@ const Booking = () => {
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {isVi ? 'Thêm dịch vụ' : 'Add Services'}</h2>
 
-                    <ComboSelector
-                      sectionId="combo-section"
-                      required={comboRequired}
-                      mandatory={isComboMandatory}
-                      mandatoryLabel={mandatoryComboRange?.label}
-                      mandatoryNote={mandatoryComboRange?.note || undefined}
-                      shake={comboShake}
-                      selections={comboSelections}
-                      onSelectionsChange={setComboSelections}
+                    {/* SECTION 1: Personal meal plans — always visible regardless of guest count */}
+                    <PersonalMealPlanSelector
                       guestCount={guestCount}
-                      comboNotes={comboNotes}
-                      onComboNotesChange={setComboNotes}
-                      onOpenFoodOrder={() => setFoodSelectorOpen(true)}
+                      selections={personalMealSelections}
+                      onChange={setPersonalMealSelections}
                     />
+
+                    {/* SECTION 2: Combo 225k–550k — only when guestCount >= 6 OR mandatory holiday */}
+                    {(guestCount >= 6 || isComboMandatory) && (
+                      <ComboSelector
+                        sectionId="combo-section"
+                        required={comboRequired}
+                        mandatory={isComboMandatory}
+                        mandatoryLabel={mandatoryComboRange?.label}
+                        mandatoryNote={mandatoryComboRange?.note || undefined}
+                        shake={comboShake}
+                        selections={comboSelections}
+                        onSelectionsChange={setComboSelections}
+                        guestCount={guestCount}
+                        comboNotes={comboNotes}
+                        onComboNotesChange={setComboNotes}
+                        onOpenFoodOrder={() => setFoodSelectorOpen(true)}
+                      />
+                    )}
 
                     <IndividualFoodSelector
                       open={foodSelectorOpen}
@@ -853,6 +873,24 @@ const Booking = () => {
                               <span className="font-medium">{formatPrice(c.pricePerPerson * c.quantity)}</span>
                             </div>
                             <p className="text-xs text-muted-foreground pl-2">{c.dishes.slice(0, 5).join(', ')}...</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Personal meal plans summary */}
+                    {personalMealSelections.length > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+                        <h3 className="font-semibold flex items-center gap-2">👥 {isVi ? 'Suất ăn theo số người' : 'Meal plans by group'}</h3>
+                        {personalMealSelections.map((m, i) => (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span>{m.name} ({m.guest_count} {isVi ? 'người' : 'guests'}) ×{m.quantity}</span>
+                              <span className="font-medium">{formatPrice(m.price * m.quantity)}</span>
+                            </div>
+                            {m.items.length > 0 && (
+                              <p className="text-xs text-muted-foreground pl-2 line-clamp-2">{m.items.join(', ')}</p>
+                            )}
                           </div>
                         ))}
                       </div>
