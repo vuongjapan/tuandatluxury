@@ -195,8 +195,32 @@ const AdminFoodMenu = () => {
           <Input value={data.name_en} onChange={e => onChange({ name_en: e.target.value })} placeholder="English name" />
         </div>
         <div>
-          <label className="text-sm font-medium text-muted-foreground">Giá (VNĐ) - Nhập 0 nếu giá thỏa thuận</label>
-          <Input type="number" value={data.price_vnd} onChange={e => onChange({ price_vnd: parseInt(e.target.value) || 0 })} />
+          <label className="text-sm font-medium text-muted-foreground">
+            Giá (VNĐ){data.price_type === 'negotiable' ? ' — Bị ẩn vì giá thỏa thuận' : ''}
+          </label>
+          <Input
+            type="number"
+            value={data.price_vnd}
+            disabled={data.price_type === 'negotiable'}
+            onChange={e => onChange({ price_vnd: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-muted-foreground">Kiểu giá</label>
+          <div className="flex items-center gap-3 mt-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={data.price_type === 'negotiable'}
+                onCheckedChange={(v) => onChange({ price_type: v ? 'negotiable' : 'fixed', ...(v ? { price_vnd: 0 } : {}) } as any)}
+              />
+              <span className="font-medium">
+                {data.price_type === 'negotiable' ? '💬 Giá thỏa thuận' : '💰 Giá cố định'}
+              </span>
+            </label>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Bật nếu món tính tại nhà hàng (theo cân, theo mùa…). Khách sẽ thấy nhãn "Giá thỏa thuận".
+          </p>
         </div>
         <div>
           <label className="text-sm font-medium text-muted-foreground">Danh mục</label>
