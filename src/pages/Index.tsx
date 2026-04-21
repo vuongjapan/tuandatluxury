@@ -22,6 +22,7 @@ const MapSection = lazy(() => import('@/components/MapSection'));
 const DiningSection = lazy(() => import('@/components/DiningHomeSection'));
 const FloatingButtons = lazy(() => import('@/components/FloatingButtons'));
 const TestimonialsSection = lazy(() => import('@/components/TestimonialsSection'));
+const RestaurantSection = lazy(() => import('@/components/RestaurantSection'));
 
 const SectionFallback = () => (
   <div className="py-12 flex items-center justify-center">
@@ -237,39 +238,35 @@ const Index = () => {
         <TestimonialsSection />
       </Suspense>
 
-      {/* 4. Điểm tham quan lân cận */}
-      <section id="nearby" className="py-16 sm:py-24 bg-background">
+      {/* 3.5 Nhà hàng & Ẩm thực */}
+      <Suspense fallback={<SectionFallback />}>
+        <RestaurantSection />
+      </Suspense>
+
+      {/* 4. Banner Khám phá Sầm Sơn */}
+      <section className="py-12 sm:py-16 bg-background">
         <div className="container mx-auto px-4">
-          <SectionHeader
-            tagline={isVi ? 'Khám phá' : 'Explore'}
-            title={isVi ? 'Điểm tham quan lân cận' : 'Nearby Attractions'}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-5xl mx-auto">
-            {safeAttractions.map((place, idx) => (
-              <FadeIn key={place.id} delay={idx * 60}>
-                <div className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-300">
-                  {place.image_url ? (
-                    <div className="aspect-video overflow-hidden">
-                      <img src={place.image_url} alt={isVi ? place.name_vi : place.name_en} className="w-full h-full object-cover" loading="lazy" width={400} height={225} />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                      <span className="text-4xl">{place.icon}</span>
-                    </div>
-                  )}
-                  <div className="p-4 text-center">
-                    <p className="font-display text-sm sm:text-base font-semibold text-foreground mb-1">{isVi ? place.name_vi : place.name_en}</p>
-                    <p className="text-xs text-primary font-medium mb-2">{place.distance}</p>
-                    {(isVi ? place.description_vi : place.description_en) && (
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                        {isVi ? place.description_vi : place.description_en}
-                      </p>
-                    )}
-                  </div>
+          <FadeIn>
+            <button
+              onClick={() => navigate('/kham-pha')}
+              className="block w-full max-w-5xl mx-auto rounded-2xl overflow-hidden relative group bg-gradient-to-r from-foreground to-foreground/80 hover:shadow-luxury transition-all duration-500"
+            >
+              <div className="px-6 sm:px-12 py-10 sm:py-14 text-background flex items-center justify-between gap-4">
+                <div className="text-left">
+                  <p className="text-primary text-[11px] tracking-[0.35em] uppercase mb-2">
+                    {isVi ? 'Khám phá' : 'Discover'}
+                  </p>
+                  <h3 className="font-display text-xl sm:text-3xl font-semibold">
+                    {isVi ? 'Khám phá Sầm Sơn' : 'Explore Sầm Sơn'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-background/70 mt-2">
+                    {isVi ? 'Bãi biển · Ẩm thực · Điểm tham quan' : 'Beaches · Cuisine · Attractions'}
+                  </p>
                 </div>
-              </FadeIn>
-            ))}
-          </div>
+                <ArrowRight className="h-6 w-6 sm:h-8 sm:w-8 text-primary group-hover:translate-x-2 transition-transform" />
+              </div>
+            </button>
+          </FadeIn>
         </div>
       </section>
 
