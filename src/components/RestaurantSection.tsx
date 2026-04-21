@@ -113,7 +113,7 @@ const RestaurantSection = () => {
           >
             <div
               className="relative overflow-hidden rounded-xl shadow-luxury"
-              style={{ height: 'clamp(260px, 45vw, 420px)' }}
+              style={{ height: 'clamp(240px, 38vw, 340px)' }}
             >
               {slides.map((s, i) => (
                 <img
@@ -201,32 +201,43 @@ const RestaurantSection = () => {
           </div>
         </div>
 
-        {/* Horizontal scroll thumbnails */}
-        <div className="mt-12 max-w-6xl mx-auto">
-          <div
-            className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {slides.slice(0, 4).map((s, i) => (
-              <div key={i} className="shrink-0 snap-start text-center">
-                <div
-                  className="overflow-hidden rounded-lg cursor-pointer"
-                  style={{ width: 160, height: 110 }}
+        {/* Equal-width thumbnails grid */}
+        <div className="mt-10 max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {slides.slice(0, 4).map((s, i) => {
+              const isActive = i === current;
+              return (
+                <button
+                  key={i}
+                  type="button"
                   onClick={() => setCurrent(i)}
+                  className="group/thumb text-center"
                 >
-                  <img
-                    src={s.url}
-                    alt={s.title || thumbCaptions[i]}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                    onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
-                  />
-                </div>
-                <p className="mt-2 text-xs font-medium" style={{ color: '#1B3A5C' }}>
-                  {s.title || thumbCaptions[i]}
-                </p>
-              </div>
-            ))}
+                  <div
+                    className="overflow-hidden rounded-lg cursor-pointer transition-all duration-200"
+                    style={{
+                      height: 100,
+                      border: isActive ? '2px solid #C9A84C' : '2px solid transparent',
+                      transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                    }}
+                  >
+                    <img
+                      src={s.url}
+                      alt={s.title || thumbCaptions[i]}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-105"
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                    />
+                  </div>
+                  <p
+                    className="mt-2 text-xs font-medium transition-colors"
+                    style={{ color: isActive ? '#C9A84C' : '#666' }}
+                  >
+                    {s.title || thumbCaptions[i]}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
