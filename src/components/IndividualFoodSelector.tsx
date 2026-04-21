@@ -79,6 +79,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     const cartKey = getCartKey(menuItem.id, variant?.id);
     const price = variant ? variant.price_vnd : menuItem.price_vnd;
     const priceLabel = variant ? (language === 'vi' ? variant.label_vi : variant.label_en) : undefined;
+    const priceType: 'fixed' | 'negotiable' = (menuItem as any).price_type === 'negotiable' ? 'negotiable' : 'fixed';
 
     const existing = items.find(i => i.id === cartKey);
     if (existing) {
@@ -92,6 +93,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
         category: menuItem.category,
         priceLabel,
         priceVariantId: variant?.id,
+        priceType,
       }]);
     }
   };
@@ -101,8 +103,10 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     onItemsChange(updated);
   };
 
-  const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  // Total only counts FIXED-price items. Negotiable items are paid at the restaurant.
+  const total = items.reduce((s, i) => s + (i.priceType === 'negotiable' ? 0 : i.price * i.quantity), 0);
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+  const negotiableCount = items.filter(i => i.priceType === 'negotiable').reduce((s, i) => s + i.quantity, 0);
 
   const catLabels: Record<string, string> = {
     breakfast: '🍳 Ăn sáng',
