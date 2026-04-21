@@ -934,8 +934,7 @@ const Booking = () => {
                             {appliedPromotions.map((p, i) => (
                               <div key={i} className="flex justify-between text-primary"><span>{p.name}</span><span>-{formatPrice(p.amount)}</span></div>
                             ))}
-                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>⭐ Thành viên ({memberDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span></div>}
-                            {promoDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🎉 Ưu đãi ({promoDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span></div>}
+                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🏅 {isVi ? 'Ưu đãi VIP' : 'VIP'} ({memberDiscountPercent}% {isVi ? 'tiền phòng' : 'on room'})</span><span>-{formatPrice(memberDiscountAmount)}</span></div>}
                             {discountCodeAmount > 0 && appliedDiscountCodes.length > 0 && (
                               <div className="flex justify-between text-primary">
                                 <span>🎟️ {appliedDiscountCodes.length === 1 ? `Mã ${appliedDiscountCodes[0].code}` : `${appliedDiscountCodes.length} ${isVi ? 'mã' : 'codes'}: ${appliedDiscountCodes.map(c => c.code).join(', ')}`}</span>
