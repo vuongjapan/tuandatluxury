@@ -303,11 +303,18 @@ const Booking = () => {
     return list;
   }, [webDiscountAmount, webDiscountPercent, flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
-  const totalComboServings = comboSelections.reduce((s, c) => s + c.quantity, 0);
-  const hasSelectedCombo = comboSelections.length > 0;
+  // 1–4 guests use personal meal plans (set ăn). 5+ guests use combo slots.
+  const useSetMeals = guestCount <= 4;
+  const useComboSlots = guestCount >= 5;
+
+  const filledComboSlots = comboSlots.filter(s => s.packageId);
+  const hasSelectedCombo = filledComboSlots.length > 0;
   const hasSelectedPersonalMeal = personalMealSelections.length > 0;
-  const comboServingsMatch = totalComboServings === guestCount;
-  const comboServingsError = hasSelectedCombo && !comboServingsMatch;
+
+  // 5+ guests: combo people across all slots must equal guestCount
+  const totalAssignedPeople = filledComboSlots.reduce((s, c) => s + c.people, 0);
+  const comboServingsError = useComboSlots && hasSelectedCombo && totalAssignedPeople !== guestCount;
+  const totalComboServings = totalAssignedPeople; // legacy alias for the toast text
 
   // Minimum individual food spend per person (for mandatory days fallback)
   const minIndividualPerPerson = discountConfig.min_individual_per_person || 300000;
