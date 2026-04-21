@@ -10,6 +10,7 @@ import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSel
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
 import MealRuleBanner from '@/components/MealRuleBanner';
+import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,6 +91,7 @@ const Booking = () => {
   const [comboNotes, setComboNotes] = useState('');
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
+  const [mealTime, setMealTime] = useState<MealTime>('dinner');
   const [appliedDiscountCodes, setAppliedDiscountCodes] = useState<DiscountCode[]>([]);
   const [companyName, setCompanyName] = useState('');
   const [groupSize, setGroupSize] = useState('');
@@ -161,17 +163,25 @@ const Booking = () => {
     return true;
   }, [checkIn, checkOut, nightCount, selectedRooms, isDateAvailable]);
 
+  // Meal time multiplier: "both" doubles all food totals (lunch + dinner served).
+  const mealMultiplier = mealTime === 'both' ? 2 : 1;
+  const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
+
   const personalMealTotal = useMemo(
-    () => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0),
-    [personalMealSelections]
+    () => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0) * mealMultiplier,
+    [personalMealSelections, mealMultiplier]
   );
   // 5+ guests: combo slot total = pricePerPerson × peopleInSlot (NO min-6 multiplier)
   const comboSlotsTotal = useMemo(
-    () => comboSlots.filter(s => s.packageId).reduce((sum, s) => sum + s.pricePerPerson * s.people, 0),
-    [comboSlots]
+    () => comboSlots.filter(s => s.packageId).reduce((sum, s) => sum + s.pricePerPerson * s.people, 0) * mealMultiplier,
+    [comboSlots, mealMultiplier]
   );
   const comboTotal = useMemo(() => comboSlotsTotal + personalMealTotal, [comboSlotsTotal, personalMealTotal]);
-  const individualFoodTotal = useMemo(() => individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0), [individualFoods]);
+  // Individual food: only fixed-price items contribute; negotiable items are paid at the restaurant.
+  const individualFoodTotal = useMemo(
+    () => individualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0) * mealMultiplier,
+    [individualFoods, mealMultiplier]
+  );
 
   const roomTotals = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return [];
