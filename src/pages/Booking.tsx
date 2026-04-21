@@ -8,6 +8,7 @@ import PersonalMealPlanSelector, { PersonalMealSelection } from '@/components/Pe
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
+import MealRuleBanner from '@/components/MealRuleBanner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -712,12 +713,44 @@ const Booking = () => {
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {isVi ? 'Thêm dịch vụ' : 'Add Services'}</h2>
 
-                    {/* SECTION 1: Personal meal plans — always visible regardless of guest count */}
-                    <PersonalMealPlanSelector
-                      guestCount={guestCount}
-                      selections={personalMealSelections}
-                      onChange={setPersonalMealSelections}
-                    />
+                    {/* Banner explaining whether food is mandatory or optional */}
+                    <MealRuleBanner rule={mandatoryComboRange} />
+
+                    {/* SECTION 1: Personal meal plans — collapses when a combo is chosen */}
+                    {hasSelectedCombo ? (
+                      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-sm transition-all">
+                        <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                          <Check className="h-4 w-4" />
+                          {isVi ? 'Đã chọn combo — không cần chọn thêm suất ăn theo số người' : 'Combo selected — no need to add a per-person meal'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setComboSelections([])}
+                          className="text-emerald-700 dark:text-emerald-300 font-semibold hover:underline shrink-0"
+                        >
+                          {isVi ? 'Thay đổi →' : 'Change →'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="overflow-hidden transition-all duration-400 ease-out"
+                        style={{ maxHeight: '2000px', opacity: 1 }}
+                      >
+                        <PersonalMealPlanSelector
+                          guestCount={guestCount}
+                          selections={personalMealSelections}
+                          onChange={setPersonalMealSelections}
+                        />
+                      </div>
+                    )}
+
+                    {/* Hint above combo when a personal meal is already chosen */}
+                    {hasSelectedPersonalMeal && !hasSelectedCombo && (guestCount >= 4 || isComboMandatory) && (
+                      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                        <Check className="h-3.5 w-3.5" />
+                        {isVi ? 'Đã chọn suất ăn — combo là tùy chọn thêm, không bắt buộc' : 'Meal plan selected — combo is optional, not required'}
+                      </div>
+                    )}
 
                     {/* SECTION 2: Combo 225k–550k — only when guestCount >= 4 OR mandatory holiday */}
                     {(guestCount >= 4 || isComboMandatory) && (
