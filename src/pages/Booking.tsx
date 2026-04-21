@@ -273,11 +273,10 @@ const Booking = () => {
     return Math.round(roomTotal * webDiscountPercent / 100);
   }, [webDiscountPercent, roomTotal]);
 
-  const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
+  // VIP discount applies to ROOM ONLY (memberDiscountAmount already computed from roomTotal).
   const originalPrice = roomTotal + extraPersonSurcharge + comboTotal + individualFoodTotal;
-  const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
   const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount + webDiscountAmount;
-  const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
+  const discountAmount = memberDiscountAmount + discountCodeAmount + allAutoDiscounts;
   const computedTotal = Math.max(0, originalPrice - discountAmount);
 
   // Admin manual price override (only when admin is logged in)
