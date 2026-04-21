@@ -281,14 +281,14 @@ const FloatingButtons = () => {
       {/* Left side - Quick actions */}
       <div className="fixed left-4 bottom-20 sm:bottom-4 z-40 flex flex-col gap-2">
         <a
-          href="tel:0986617939"
+          href="tel:0384418811"
           className="w-12 h-12 rounded-full bg-card shadow-card-hover flex items-center justify-center hover:shadow-gold transition-all duration-300 border border-border"
           title="Hotline"
         >
           <span className="text-lg">📞</span>
         </a>
         <a
-          href="https://zalo.me/0986617939"
+          href="https://zalo.me/0384418811"
           target="_blank"
           rel="noopener noreferrer"
           className="w-12 h-12 rounded-full bg-card shadow-card-hover flex items-center justify-center hover:shadow-gold transition-all duration-300 border border-border"

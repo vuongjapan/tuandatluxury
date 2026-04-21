@@ -32,7 +32,6 @@ const Live = lazy(() => import("./pages/Live"));
 
 // Auto-apply voucher code redirect
 const ApplyVoucher = lazy(() => import("./pages/ApplyVoucher"));
-const ExitIntentPopup = lazy(() => import("./components/ExitIntentPopup"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -119,9 +118,6 @@ const App = () => {
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                  <Suspense fallback={null}>
-                    <ExitIntentPopup />
-                  </Suspense>
                 </Suspense>
               </BrowserRouter>
             </TooltipProvider>
