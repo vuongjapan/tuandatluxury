@@ -4,7 +4,7 @@ import { Sparkles, ArrowRight, Phone } from 'lucide-react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import BookingSearch from '@/components/BookingSearch';
-import RoomCard from '@/components/RoomCard';
+import RoomsCarousel from '@/components/RoomsCarousel';
 
 import Footer from '@/components/Footer';
 import FadeIn from '@/components/FadeIn';
@@ -80,32 +80,16 @@ const Index = () => {
       <HeroSection />
       <BookingSearch />
 
-      {/* 1. Phòng nghỉ */}
-      <section id="rooms" className="py-20 sm:py-28 bg-background luxury-section">
-        <div className="container mx-auto px-4">
-          <SectionHeader
-            tagline={isVi ? 'Hạng phòng' : 'Accommodation'}
-            title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
-          />
-          <div className="space-y-4 sm:space-y-5">
-            {roomsLoading && safeRooms.length === 0 ? (
-              <><RoomSkeleton /><RoomSkeleton /><RoomSkeleton /></>
-            ) : (
-              visibleRooms.map((room, i) => (
-                <FadeIn key={room.id} delay={i * 100}>
-                  <RoomCard room={room} index={i} />
-                </FadeIn>
-              ))
-            )}
+      {/* 1. Phòng nghỉ - Carousel kiểu Vinpearl */}
+      {roomsLoading && safeRooms.length === 0 ? (
+        <section className="py-16 sm:py-24 bg-background">
+          <div className="container mx-auto px-4 space-y-4">
+            <RoomSkeleton /><RoomSkeleton />
           </div>
-          <FadeIn className="text-center mt-10 sm:mt-14">
-            <Button variant="gold" size="lg" onClick={() => navigate('/booking')} className="gap-2 text-sm px-10 py-5 tracking-wider uppercase">
-              {t('hero.book_now')}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </FadeIn>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <RoomsCarousel rooms={visibleRooms} />
+      )}
 
       {/* 3. Khách hàng nói gì */}
       <Suspense fallback={<SectionFallback />}>
