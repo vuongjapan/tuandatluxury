@@ -47,6 +47,10 @@ const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, c
   const [step, setStep] = useState<'list' | 'menus'>('list');
   const [selectedPkg, setSelectedPkg] = useState<ComboPackage | null>(null);
   const [tempQuantity, setTempQuantity] = useState(1);
+  // Toggle: skip vs add — default ON if required, else off (skip)
+  const [enabled, setEnabled] = useState<boolean>(!!required || selections.length > 0);
+  // View-menu modal
+  const [previewPkg, setPreviewPkg] = useState<ComboPackage | null>(null);
 
   const totalComboServings = selections.reduce((sum, s) => sum + s.quantity, 0);
   const remainingServings = guestCount - totalComboServings;
