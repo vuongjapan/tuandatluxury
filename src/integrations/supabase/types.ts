@@ -1912,6 +1912,57 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          content: string
+          created_at: string
+          guest_email: string | null
+          guest_name: string
+          id: string
+          image_url: string | null
+          is_approved: boolean
+          is_featured: boolean
+          rating: number
+          room_type: string | null
+          sort_order: number
+          stay_date: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          guest_email?: string | null
+          guest_name: string
+          id?: string
+          image_url?: string | null
+          is_approved?: boolean
+          is_featured?: boolean
+          rating: number
+          room_type?: string | null
+          sort_order?: number
+          stay_date?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          guest_email?: string | null
+          guest_name?: string
+          id?: string
+          image_url?: string | null
+          is_approved?: boolean
+          is_featured?: boolean
+          rating?: number
+          room_type?: string | null
+          sort_order?: number
+          stay_date?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       room_amenities: {
         Row: {
           category: string

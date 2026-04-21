@@ -39,8 +39,10 @@ import AdminQuickImport from '@/components/admin/AdminQuickImport';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminAuction from '@/components/admin/AdminAuction';
 import AdminLive from '@/components/admin/AdminLive';
+import AdminReviews from '@/components/admin/AdminReviews';
+import AdminMemberDiscount from '@/components/admin/AdminMemberDiscount';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -193,9 +195,11 @@ const AdminDashboard = () => {
         { id: 'promotions', icon: Gift, label: 'Ưu đãi' },
         { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
         { id: 'web-discount', icon: MapPin, label: 'Giảm giá web' },
+        { id: 'member-discount', icon: Sparkles, label: 'Ưu đãi TV & Combo/người' },
         { id: 'vouchers', icon: Gift, label: 'Voucher QR' },
         { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
         { id: 'members', icon: Users, label: 'Khách & Thành viên' },
+        { id: 'reviews', icon: BookOpen, label: 'Đánh giá khách' },
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
         { id: 'blog', icon: BookOpen, label: 'Blog' },
       ],
@@ -396,6 +400,8 @@ const AdminDashboard = () => {
           {tab === 'analytics' && <AdminAnalytics />}
           {tab === 'auction' && <AdminAuction />}
           {tab === 'live' && <AdminLive />}
+          {tab === 'reviews' && <AdminReviews />}
+          {tab === 'member-discount' && <AdminMemberDiscount />}
         </div>
       </main>
     </div>

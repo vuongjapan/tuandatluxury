@@ -74,7 +74,7 @@ const Header = () => {
 
   const rightNavItems = [
     { key: 'nav.services', href: '/services' },
-    { key: 'nav.offers', href: '/#offers' },
+    { labelVi: 'Khám phá', labelEn: 'Discover', href: '/kham-pha' },
     { key: 'nav.promotions', href: '/promotions' },
     { labelVi: 'Đấu giá 🔥', labelEn: 'Auction 🔥', href: '/auction' },
     { labelVi: 'Live 🔴', labelEn: 'Live 🔴', href: '/live' },
@@ -82,6 +82,7 @@ const Header = () => {
 
   const moreItems = [
     { labelVi: 'Đặt đồ ăn', labelEn: 'Food Order', href: '/food-order' },
+    { labelVi: 'Đánh giá', labelEn: 'Reviews', href: '/danh-gia' },
     { labelVi: 'Thư viện ảnh', labelEn: 'Gallery', href: '/#gallery' },
     { labelVi: 'Blog', labelEn: 'Blog', href: '/blog' },
     { labelVi: 'Hải sản khô', labelEn: 'Dried Seafood', href: '/seafood' },

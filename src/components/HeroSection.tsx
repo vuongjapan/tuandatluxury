@@ -13,8 +13,10 @@ const HeroSection = () => {
   const isVi = t('nav.rooms') === 'Hạng phòng';
   const heroImage = settings.hero_image_url || heroImageFallback;
   const heroVideo = settings.hero_video_url || '';
+  const heroVideoMobile = settings.hero_video_mobile_url || heroVideo;
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoMobileRef = useRef<HTMLVideoElement>(null);
   const [visible, setVisible] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
@@ -23,11 +25,12 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section id="overview" className="relative h-screen min-h-[600px] flex flex-col overflow-hidden">
-      {/* Background */}
+    <section id="overview" className="relative min-h-[85vh] h-screen flex flex-col overflow-hidden">
+      {/* Background — responsive: 16:9 desktop, 9:16 mobile */}
       <div className="absolute inset-0">
         {heroVideo ? (
           <>
+            {/* Desktop video 16:9 */}
             <video
               ref={videoRef}
               src={heroVideo}
@@ -37,18 +40,29 @@ const HeroSection = () => {
               playsInline
               preload="metadata"
               onLoadedData={() => setVideoLoaded(true)}
-              className={`w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-              style={{ transform: 'scale(1.05)' }}
+              className={`hidden md:block w-full h-full object-cover object-center transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+            />
+            {/* Mobile video 9:16 (or same source) */}
+            <video
+              ref={videoMobileRef}
+              src={heroVideoMobile}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              onLoadedData={() => setVideoLoaded(true)}
+              className={`md:hidden w-full h-full object-cover object-center transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
             />
             {!videoLoaded && (
-              <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="absolute inset-0 w-full h-full object-cover" loading="eager" width={1920} height={1080} />
+              <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="absolute inset-0 w-full h-full object-cover object-center" loading="eager" width={1920} height={1080} />
             )}
           </>
         ) : (
-          <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="w-full h-full object-cover" loading="eager" decoding="async" width={1920} height={1080} />
+          <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="w-full h-full object-cover object-center" loading="eager" decoding="async" width={1920} height={1080} style={{ filter: 'contrast(1.05) saturate(1.08)' }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,10%,0.55)] via-[hsl(220,25%,10%,0.35)] to-[hsl(220,25%,10%,0.80)]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,25%,10%,0.4)] to-transparent" />
+        {/* Vinpearl-style overlay: lighter top, darker bottom for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,10%,0.15)] via-[hsl(220,25%,10%,0.30)] to-[hsl(220,25%,10%,0.65)]" />
       </div>
 
       {/* Decorative gold lines */}
