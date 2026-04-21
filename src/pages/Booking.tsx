@@ -446,6 +446,19 @@ const Booking = () => {
       return;
     }
     if (currentStep === 2) {
+      // Block when holiday/admin-mandated combo not selected
+      if (comboValidationError) {
+        toast({
+          title: isVi ? '⚠️ Vui lòng chọn ít nhất 1 combo ăn uống để tiếp tục' : '⚠️ Please select at least 1 combo to continue',
+          variant: 'destructive',
+        });
+        // Scroll to combo section + trigger shake
+        const el = document.getElementById('combo-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setComboShake(true);
+        setTimeout(() => setComboShake(false), 2000);
+        return;
+      }
       if (comboServingsError) { toast({ title: `Tổng suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' }); return; }
       if (multiComboNeedsNotes) { toast({ title: 'Vui lòng nhập ghi chú ăn uống', variant: 'destructive' }); return; }
     }
@@ -693,7 +706,12 @@ const Booking = () => {
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {isVi ? 'Thêm dịch vụ' : 'Add Services'}</h2>
 
                     <ComboSelector
+                      sectionId="combo-section"
                       required={comboRequired}
+                      mandatory={isComboMandatory}
+                      mandatoryLabel={mandatoryComboRange?.label}
+                      mandatoryNote={mandatoryComboRange?.note || undefined}
+                      shake={comboShake}
                       selections={comboSelections}
                       onSelectionsChange={setComboSelections}
                       guestCount={guestCount}
