@@ -25,6 +25,11 @@ interface ServiceRow {
   vehicle_types: any;
   sort_order: number;
   is_active: boolean;
+  badge_text: string | null;
+  badge_color: string | null;
+  button_text: string | null;
+  button_link: string | null;
+  homepage_featured: boolean;
 }
 
 const ICONS = ['🏊','🍽️','📶','🅿️','👨‍👩‍👧‍👦','🛎️','🏖️','✈️','🌊','🚐','💆','🎾','🏋️','🧖','🎵','☕'];
@@ -59,6 +64,9 @@ const AdminServices = () => {
     is_free: true, price_vnd: 0,
     schedule: null, vehicle_types: null,
     sort_order: services.length, is_active: true,
+    badge_text: 'Miễn phí', badge_color: 'gold',
+    button_text: 'Khám phá', button_link: '/dich-vu',
+    homepage_featured: false,
   });
 
   const handleSave = async () => {
@@ -78,6 +86,11 @@ const AdminServices = () => {
       vehicle_types: editing.vehicle_types,
       sort_order: editing.sort_order,
       is_active: editing.is_active,
+      badge_text: editing.badge_text,
+      badge_color: editing.badge_color,
+      button_text: editing.button_text,
+      button_link: editing.button_link,
+      homepage_featured: editing.homepage_featured,
     };
 
     let error;
@@ -223,10 +236,44 @@ const AdminServices = () => {
                   <input type="checkbox" checked={editing.is_active} onChange={e => setEditing({ ...editing, is_active: e.target.checked })} />
                   Hiển thị
                 </label>
+                <label className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <input type="checkbox" checked={editing.homepage_featured} onChange={e => setEditing({ ...editing, homepage_featured: e.target.checked })} />
+                  ⭐ Hiển thị trên trang chủ
+                </label>
                 <label className="text-sm">
                   Thứ tự:
                   <Input type="number" className="w-16 inline ml-2" value={editing.sort_order} onChange={e => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })} />
                 </label>
+              </div>
+
+              {/* Homepage card customization */}
+              <div className="bg-background/50 border border-border rounded-lg p-3 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🏠 Hiển thị trên trang chủ</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium">Chữ trên huy hiệu</label>
+                    <Input value={editing.badge_text || ''} onChange={e => setEditing({ ...editing, badge_text: e.target.value })} placeholder="Miễn phí / Theo yêu cầu / để trống" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium">Màu huy hiệu</label>
+                    <Select value={editing.badge_color || 'gold'} onValueChange={v => setEditing({ ...editing, badge_color: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gold">Vàng (gold)</SelectItem>
+                        <SelectItem value="navy">Navy (đậm)</SelectItem>
+                        <SelectItem value="teal">Teal (xanh)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium">Chữ trên nút</label>
+                    <Input value={editing.button_text || ''} onChange={e => setEditing({ ...editing, button_text: e.target.value })} placeholder="Khám phá / Đặt dịch vụ" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium">Link nút</label>
+                    <Input value={editing.button_link || ''} onChange={e => setEditing({ ...editing, button_link: e.target.value })} placeholder="/dich-vu hoặc tel:0936..." />
+                  </div>
+                </div>
               </div>
 
               {/* Image */}
@@ -250,6 +297,7 @@ const AdminServices = () => {
                   <p className="font-medium text-sm truncate">{s.name_vi}</p>
                   <p className="text-xs text-muted-foreground">{s.category === 'amenity' ? 'Tiện nghi' : 'Đưa đón'} • {s.is_free ? 'Miễn phí' : `${s.price_vnd.toLocaleString()}đ`}</p>
                 </div>
+                {s.homepage_featured && <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">⭐ Trang chủ</Badge>}
                 {!s.is_active && <Badge variant="outline" className="text-xs">Ẩn</Badge>}
                 <Button variant="ghost" size="sm" onClick={() => { setEditing(s); setAdding(false); }}>
                   <Pencil className="h-3.5 w-3.5" />
