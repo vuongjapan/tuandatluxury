@@ -1831,6 +1831,66 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_banners: {
+        Row: {
+          badge_en: string
+          badge_vi: string
+          bullets_en: Json
+          bullets_vi: Json
+          created_at: string
+          cta_label_en: string
+          cta_label_vi: string
+          cta_link: string
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sort_order: number
+          start_date: string | null
+          title_en: string
+          title_vi: string
+          updated_at: string
+        }
+        Insert: {
+          badge_en?: string
+          badge_vi?: string
+          bullets_en?: Json
+          bullets_vi?: Json
+          created_at?: string
+          cta_label_en?: string
+          cta_label_vi?: string
+          cta_link?: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          start_date?: string | null
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+        }
+        Update: {
+          badge_en?: string
+          badge_vi?: string
+          bullets_en?: Json
+          bullets_vi?: Json
+          created_at?: string
+          cta_label_en?: string
+          cta_label_vi?: string
+          cta_link?: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          start_date?: string | null
+          title_en?: string
+          title_vi?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       promotions: {
         Row: {
           applies_to_tier: string | null
