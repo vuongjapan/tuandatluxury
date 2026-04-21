@@ -254,3 +254,15 @@
     visibility: hidden;
   }
 }
+
+/* Combo mandatory shake animation */
+@keyframes combo-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-6px); }
+  30%, 70% { transform: translateX(6px); }
+}
+.combo-required-shake {
+  animation: combo-shake 0.4s ease-in-out;
+  border: 2px solid hsl(var(--destructive)) !important;
+  border-radius: 0.75rem;
+}

@@ -24,6 +24,7 @@ import { useRooms } from '@/hooks/useRooms';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useDining } from '@/hooks/useDining';
 import { usePromotions } from '@/hooks/usePromotions';
+import { useMandatoryComboDates } from '@/hooks/useMandatoryComboDates';
 import { useAuth, MemberTier } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -66,6 +67,7 @@ const Booking = () => {
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
   const { settings } = useSiteSettings();
+  const { getMatchingRange } = useMandatoryComboDates();
   const webDiscountPercent = parseInt(settings.web_discount_percent || '0', 10);
 
   const preselectedRoom = searchParams.get('room') || '';
@@ -149,6 +151,10 @@ const Booking = () => {
     if (!checkIn || !checkOut) return false;
     return selectedRooms.some(item => hasComboRequiredDays(item.roomId, checkIn!, checkOut!));
   }, [checkIn, checkOut, selectedRooms, hasComboRequiredDays]);
+
+  // Holiday/admin-mandated combo requirement based on check-in date
+  const mandatoryComboRange = useMemo(() => getMatchingRange(checkIn), [checkIn, getMatchingRange]);
+  const isComboMandatory = !!mandatoryComboRange;
 
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return true;
@@ -302,8 +308,12 @@ const Booking = () => {
   const hasSelectedCombo = comboSelections.length > 0;
   const comboServingsMatch = totalComboServings === guestCount;
   const comboServingsError = hasSelectedCombo && !comboServingsMatch;
-  const comboValidationError = comboRequired && !hasSelectedCombo;
+  // Either room policy OR holiday range can require combo
+  const comboValidationError = (comboRequired || isComboMandatory) && !hasSelectedCombo;
   const multiComboNeedsNotes = false; // disabled: combo notes not required
+
+  // Shake animation trigger when user tries to advance without combo on mandatory days
+  const [comboShake, setComboShake] = useState(false);
 
   const availableServices = [
     { id: 'dining', label: 'Ăn uống / Tiệc', labelEn: 'Dining / Banquet' },
@@ -436,6 +446,19 @@ const Booking = () => {
       return;
     }
     if (currentStep === 2) {
+      // Block when holiday/admin-mandated combo not selected
+      if (comboValidationError) {
+        toast({
+          title: isVi ? '⚠️ Vui lòng chọn ít nhất 1 combo ăn uống để tiếp tục' : '⚠️ Please select at least 1 combo to continue',
+          variant: 'destructive',
+        });
+        // Scroll to combo section + trigger shake
+        const el = document.getElementById('combo-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setComboShake(true);
+        setTimeout(() => setComboShake(false), 2000);
+        return;
+      }
       if (comboServingsError) { toast({ title: `Tổng suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' }); return; }
       if (multiComboNeedsNotes) { toast({ title: 'Vui lòng nhập ghi chú ăn uống', variant: 'destructive' }); return; }
     }
@@ -683,7 +706,12 @@ const Booking = () => {
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {isVi ? 'Thêm dịch vụ' : 'Add Services'}</h2>
 
                     <ComboSelector
+                      sectionId="combo-section"
                       required={comboRequired}
+                      mandatory={isComboMandatory}
+                      mandatoryLabel={mandatoryComboRange?.label}
+                      mandatoryNote={mandatoryComboRange?.note || undefined}
+                      shake={comboShake}
                       selections={comboSelections}
                       onSelectionsChange={setComboSelections}
                       guestCount={guestCount}
