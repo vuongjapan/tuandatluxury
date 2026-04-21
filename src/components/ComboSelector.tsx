@@ -23,6 +23,16 @@ export interface ComboSelection {
 
 interface ComboSelectorProps {
   required?: boolean;
+  /** Holiday/admin-mandated requirement (cannot skip; shows red banner) */
+  mandatory?: boolean;
+  /** Label of the holiday window (e.g. "Lễ 30/4 – 1/5 2026") */
+  mandatoryLabel?: string;
+  /** Note to display to guests for the mandatory window */
+  mandatoryNote?: string;
+  /** When true, applies the shake animation + red border */
+  shake?: boolean;
+  /** Optional ref-style id so caller can scroll to this section */
+  sectionId?: string;
   selections: ComboSelection[];
   onSelectionsChange: (selections: ComboSelection[]) => void;
   guestCount: number;
@@ -37,18 +47,24 @@ const NOTES_SUGGESTIONS = [
   'Đoàn muốn trải nghiệm nhiều menu',
 ];
 
-const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, comboNotes, onComboNotesChange, onOpenFoodOrder }: ComboSelectorProps) => {
+const ComboSelector = ({ required, mandatory, mandatoryLabel, mandatoryNote, shake, sectionId, selections, onSelectionsChange, guestCount, comboNotes, onComboNotesChange, onOpenFoodOrder }: ComboSelectorProps) => {
   const { packages, loading, getMenusByPackage, getDishesByMenu } = useComboPackages();
   const { language, formatPrice } = useLanguage();
   const { perPerson } = useMemberDiscount();
   const isVi = language === 'vi';
   const perPersonMode = perPerson.enabled;
+  const isLocked = !!mandatory; // hide skip toggle, force-open
 
   const [step, setStep] = useState<'list' | 'menus'>('list');
   const [selectedPkg, setSelectedPkg] = useState<ComboPackage | null>(null);
   const [tempQuantity, setTempQuantity] = useState(1);
-  // Toggle: skip vs add — default ON if required, else off (skip)
-  const [enabled, setEnabled] = useState<boolean>(!!required || selections.length > 0);
+  // Toggle: skip vs add — forced ON when mandatory or required, else default to selections existing
+  const [enabled, setEnabled] = useState<boolean>(!!required || !!mandatory || selections.length > 0);
+
+  // Re-sync if parent flips mandatory after mount
+  useEffect(() => {
+    if (mandatory && !enabled) setEnabled(true);
+  }, [mandatory]);
   // View-menu modal
   const [previewPkg, setPreviewPkg] = useState<ComboPackage | null>(null);
 
