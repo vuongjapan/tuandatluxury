@@ -18,6 +18,8 @@ export interface FoodItem {
   category: string;
   priceLabel?: string; // e.g. "Nhỏ", "Vừa", "Lớn"
   priceVariantId?: string; // ID of selected price variant
+  /** When "negotiable", this item does NOT contribute to totals — pay at restaurant. */
+  priceType?: 'fixed' | 'negotiable';
 }
 
 interface Props {
@@ -35,11 +37,21 @@ interface Props {
 const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false }: Props) => {
   const { allItems, loading } = useMenuItems();
   const { formatPrice, language } = useLanguage();
+  const isVi = language === 'vi';
   const [search, setSearch] = useState('');
   // Track which price variant is selected per menu item (for items with multiple prices)
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [menuViewerOpen, setMenuViewerOpen] = useState(false);
 
-  const activeItems = useMemo(() => allItems.filter(m => m.price_vnd > 0 || (m.price_variants && m.price_variants.length > 0)), [allItems]);
+  // Show negotiable items too — they just won't add to the total.
+  const activeItems = useMemo(
+    () => allItems.filter(m =>
+      (m as any).price_type === 'negotiable'
+      || m.price_vnd > 0
+      || (m.price_variants && m.price_variants.length > 0)
+    ),
+    [allItems]
+  );
 
   const categories = useMemo(() => {
     const cats = new Set(activeItems.map(m => m.category));
