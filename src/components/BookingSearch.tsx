@@ -27,7 +27,7 @@ const BookingSearch = () => {
 
   return (
     <div className="relative z-20 -mt-8 sm:-mt-10 mb-4">
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         <div className="max-w-4xl mx-auto bg-card/95 backdrop-blur-lg rounded-2xl border border-border shadow-luxury p-4 sm:p-6">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
             {/* Check-in */}

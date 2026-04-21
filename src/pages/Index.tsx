@@ -96,7 +96,7 @@ const Index = () => {
       {/* [4] Hạng phòng — carousel */}
       {roomsLoading && safeRooms.length === 0 ? (
         <section className="py-16 sm:py-24 bg-background">
-          <div className="container mx-auto px-4 space-y-4">
+          <div className="section-container space-y-4">
             <RoomSkeleton /><RoomSkeleton />
           </div>
         </section>
@@ -121,7 +121,7 @@ const Index = () => {
 
       {/* [7] Khám phá Sầm Sơn */}
       <section className="py-20 sm:py-28 bg-secondary">
-        <div className="container mx-auto px-4">
+        <div className="section-container">
           <SectionHeader
             tagline={isVi ? 'Khám phá' : 'Discover'}
             title={isVi ? 'Khám phá Sầm Sơn' : 'Explore Sầm Sơn'}

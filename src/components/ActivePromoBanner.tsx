@@ -59,7 +59,7 @@ const ActivePromoBanner = () => {
         exit={{ height: 0, opacity: 0 }}
         className="bg-gradient-to-r from-destructive via-destructive/90 to-primary text-destructive-foreground overflow-hidden print:hidden"
       >
-        <div className="container mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+        <div className="section-container py-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide text-sm flex-1">
             {activeFlash && (
               <button onClick={() => navigate('/promotions')} className="flex items-center gap-2 shrink-0 hover:underline font-medium animate-pulse">

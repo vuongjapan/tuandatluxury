@@ -14,7 +14,7 @@ const Footer = () => {
 
       {/* CTA band */}
       <div className="bg-primary/5 border-b border-background/10">
-        <div className="container mx-auto px-4 py-10 sm:py-12 text-center">
+        <div className="section-container py-10 sm:py-12 text-center">
           <p className="text-primary font-display text-xs tracking-[0.35em] uppercase mb-3">
             {isVi ? 'Liên hệ ngay' : 'Get in Touch'}
           </p>
@@ -35,7 +35,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-14 sm:py-16">
+      <div className="section-container py-14 sm:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Col 1: Hotel Info */}
           <div className="md:col-span-1">
