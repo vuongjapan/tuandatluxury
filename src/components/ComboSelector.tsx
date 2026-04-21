@@ -129,30 +129,50 @@ const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, c
 
   return (
     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <UtensilsCrossed className="h-5 w-5 text-primary" />
-        <h2 className="font-display text-xl font-semibold">Combo ăn uống</h2>
-        {perPersonMode && (
-          <span className="bg-chart-2/15 text-chart-2 text-xs font-bold px-2 py-0.5 rounded-full">
-            Chế độ 1 người = 1 thực đơn
-          </span>
-        )}
-        {required && (
-          <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" /> Bắt buộc
-          </span>
+      {/* Header with Skip/Add toggle */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <UtensilsCrossed className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="font-display text-lg sm:text-xl font-semibold">
+              {isVi ? 'Thêm bữa ăn' : 'Add meal'}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {required
+                ? (isVi ? 'Bắt buộc với ngày bạn chọn' : 'Required for your dates')
+                : (isVi ? 'Không bắt buộc' : 'Optional')}
+            </p>
+          </div>
+          {required && (
+            <span className="bg-primary/15 text-primary text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" /> {isVi ? 'Bắt buộc' : 'Required'}
+            </span>
+          )}
+        </div>
+        {!required && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{isVi ? 'Bỏ qua' : 'Skip'}</span>
+            <Switch
+              checked={enabled}
+              onCheckedChange={(v) => {
+                setEnabled(v);
+                if (!v) onSelectionsChange([]);
+              }}
+            />
+            <span className="text-xs text-muted-foreground">{isVi ? 'Thêm' : 'Add'}</span>
+          </div>
         )}
       </div>
 
-      {perPersonMode && (
-        <div className="bg-chart-2/5 border border-chart-2/30 rounded-lg p-3 text-sm text-foreground">
-          Mỗi khách sẽ có 1 thực đơn riêng · Hóa đơn tính theo số người ({guestCount} khách).
+      {!enabled && !required && (
+        <div className="bg-muted/40 rounded-lg p-3 text-sm text-muted-foreground text-center">
+          {isVi ? '🍽️ Bỏ qua bữa ăn — bạn có thể đặt sau khi nhận phòng' : '🍽️ Skipped — order later at check-in'}
         </div>
       )}
 
-      {required && selections.length === 0 && (
-        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
-          ⚠️ {isVi ? 'Ngày bạn chọn yêu cầu chọn combo ăn uống để hoàn tất đặt phòng.' : 'Selected dates require a dining combo.'}
+      {(enabled || required) && perPersonMode && (
+        <div className="bg-chart-2/5 border border-chart-2/30 rounded-lg p-3 text-sm text-foreground">
+          {isVi ? `Mỗi khách 1 thực đơn riêng · ${guestCount} khách.` : `1 menu per guest · ${guestCount} guests.`}
         </div>
       )}
 
