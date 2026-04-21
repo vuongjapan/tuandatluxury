@@ -763,10 +763,18 @@ const Booking = () => {
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Địa chỉ' : 'Address'}</label>
                           <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={isVi ? 'Địa chỉ (không bắt buộc)' : 'Address (optional)'} />
                         </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Ngày sinh' : 'Date of birth'} <span className="text-muted-foreground/60 normal-case">({isVi ? 'không bắt buộc' : 'optional'})</span></label>
+                          <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'CCCD / Hộ chiếu' : 'ID / Passport'} <span className="text-muted-foreground/60 normal-case">({isVi ? 'không bắt buộc' : 'optional'})</span></label>
+                          <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder={isVi ? 'Số căn cước hoặc hộ chiếu' : 'ID or passport number'} />
+                        </div>
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.notes')}</label>
-                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder={isVi ? 'Ghi chú thêm...' : 'Additional notes...'} />
+                        <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Yêu cầu đặc biệt' : 'Special requests'}</label>
+                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder={isVi ? 'Ví dụ: phòng tầng cao, giường extra, dị ứng...' : 'E.g. high floor, extra bed, allergies...'} />
                       </div>
                     </div>
                   </motion.div>
