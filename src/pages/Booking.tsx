@@ -301,7 +301,7 @@ const Booking = () => {
   const comboServingsMatch = totalComboServings === guestCount;
   const comboServingsError = hasSelectedCombo && !comboServingsMatch;
   const comboValidationError = comboRequired && !hasSelectedCombo;
-  const multiComboNeedsNotes = comboSelections.length >= 2 && !comboNotes.trim();
+  const multiComboNeedsNotes = false; // disabled: combo notes not required
 
   const availableServices = [
     { id: 'dining', label: 'Ăn uống / Tiệc', labelEn: 'Dining / Banquet' },
