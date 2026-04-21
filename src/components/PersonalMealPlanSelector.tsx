@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Plus, Minus, Check, Phone } from 'lucide-react';
+import { Users, Plus, Minus, Check, Phone, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePersonalMealPlans, PersonalMealPlan } from '@/hooks/usePersonalMealPlans';
+import MenuViewerModal from '@/components/MenuViewerModal';
 
 export interface PersonalMealSelection {
   planId: string;
@@ -30,6 +31,7 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
   const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const { plans, loading, getPlansFor, suggestCombination } = usePersonalMealPlans(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [n, setN] = useState<number>(Math.max(1, guestCount));
   useEffect(() => { setN(Math.max(1, guestCount)); }, [guestCount]);
