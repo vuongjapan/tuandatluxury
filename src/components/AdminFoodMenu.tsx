@@ -20,6 +20,7 @@ interface MenuItem {
   description_vi: string | null;
   description_en: string | null;
   price_vnd: number;
+  price_type: 'fixed' | 'negotiable';
   category: string;
   image_url: string | null;
   is_popular: boolean;
@@ -52,6 +53,7 @@ const EMPTY_ITEM: Omit<MenuItem, 'id'> = {
   description_vi: '',
   description_en: '',
   price_vnd: 0,
+  price_type: 'fixed',
   category: 'main',
   image_url: null,
   is_popular: false,
@@ -193,8 +195,32 @@ const AdminFoodMenu = () => {
           <Input value={data.name_en} onChange={e => onChange({ name_en: e.target.value })} placeholder="English name" />
         </div>
         <div>
-          <label className="text-sm font-medium text-muted-foreground">Giá (VNĐ) - Nhập 0 nếu giá thỏa thuận</label>
-          <Input type="number" value={data.price_vnd} onChange={e => onChange({ price_vnd: parseInt(e.target.value) || 0 })} />
+          <label className="text-sm font-medium text-muted-foreground">
+            Giá (VNĐ){data.price_type === 'negotiable' ? ' — Bị ẩn vì giá thỏa thuận' : ''}
+          </label>
+          <Input
+            type="number"
+            value={data.price_vnd}
+            disabled={data.price_type === 'negotiable'}
+            onChange={e => onChange({ price_vnd: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-muted-foreground">Kiểu giá</label>
+          <div className="flex items-center gap-3 mt-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={data.price_type === 'negotiable'}
+                onCheckedChange={(v) => onChange({ price_type: v ? 'negotiable' : 'fixed', ...(v ? { price_vnd: 0 } : {}) } as any)}
+              />
+              <span className="font-medium">
+                {data.price_type === 'negotiable' ? '💬 Giá thỏa thuận' : '💰 Giá cố định'}
+              </span>
+            </label>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Bật nếu món tính tại nhà hàng (theo cân, theo mùa…). Khách sẽ thấy nhãn "Giá thỏa thuận".
+          </p>
         </div>
         <div>
           <label className="text-sm font-medium text-muted-foreground">Danh mục</label>
@@ -279,7 +305,10 @@ const AdminFoodMenu = () => {
     </div>
   );
 
-  const formatPrice = (p: number) => p === 0 ? 'Giá thỏa thuận' : `${p.toLocaleString('vi-VN')}₫`;
+  const formatPrice = (item: MenuItem) =>
+    item.price_type === 'negotiable' || item.price_vnd === 0
+      ? 'Giá thỏa thuận'
+      : `${item.price_vnd.toLocaleString('vi-VN')}₫`;
 
   const categoryCounts = items.reduce((acc, item) => {
     acc[item.category] = (acc[item.category] || 0) + 1;
@@ -455,7 +484,7 @@ const AdminFoodMenu = () => {
                   <div className="text-xs text-muted-foreground truncate">{item.name_en}</div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <Badge variant="outline" className="text-xs py-0">{CATEGORIES[item.category] || item.category}</Badge>
-                    <span className="text-xs font-medium text-primary">{formatPrice(item.price_vnd)}</span>
+                    <span className="text-xs font-medium text-primary">{formatPrice(item)}</span>
                   </div>
                 </div>
 
@@ -493,7 +522,7 @@ const AdminFoodMenu = () => {
                   {priceLoading ? (
                     <div className="text-center py-2 text-xs text-muted-foreground">Đang tải...</div>
                   ) : priceVariants.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-2">Chưa có mức giá. Món sẽ dùng giá mặc định ({formatPrice(item.price_vnd)}).</p>
+                    <p className="text-xs text-muted-foreground py-2">Chưa có mức giá. Món sẽ dùng giá mặc định ({formatPrice(item)}).</p>
                   ) : (
                     <div className="space-y-1.5">
                       {priceVariants.map((v: any) => (

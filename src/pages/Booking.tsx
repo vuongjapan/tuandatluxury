@@ -1021,12 +1021,28 @@ const Booking = () => {
                     {individualFoods.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
                         <h3 className="font-semibold flex items-center gap-2">🍤 {isVi ? 'Món ăn riêng' : 'Individual Dishes'}</h3>
-                        {individualFoods.map(f => (
-                          <div key={f.id} className="flex justify-between text-sm">
-                            <span>{f.name}{f.priceLabel ? ` (${f.priceLabel})` : ''} ×{f.quantity}</span>
-                            <span className="font-medium">{formatPrice(f.price * f.quantity)}</span>
-                          </div>
-                        ))}
+                        {individualFoods.map(f => {
+                          const isNeg = f.priceType === 'negotiable' || f.price === 0;
+                          return (
+                            <div key={f.id} className="flex justify-between text-sm gap-2">
+                              <span className="min-w-0">{f.name}{f.priceLabel ? ` (${f.priceLabel})` : ''} ×{f.quantity}</span>
+                              {isNeg ? (
+                                <span className="font-semibold text-orange-600 whitespace-nowrap">
+                                  {isVi ? 'Thỏa thuận' : 'On request'}
+                                </span>
+                              ) : (
+                                <span className="font-medium whitespace-nowrap">{formatPrice(f.price * f.quantity * mealMultiplier)}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {individualFoods.some(f => f.priceType === 'negotiable' || f.price === 0) && (
+                          <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
+                            {isVi
+                              ? '💬 Các món "Thỏa thuận" sẽ được tính riêng tại nhà hàng theo cân/thời giá.'
+                              : '💬 Negotiable items are billed separately at the restaurant.'}
+                          </p>
+                        )}
                       </div>
                     )}
 

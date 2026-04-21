@@ -77,9 +77,12 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
 
   const addItem = (menuItem: any, variant?: MenuItemPrice) => {
     const cartKey = getCartKey(menuItem.id, variant?.id);
-    const price = variant ? variant.price_vnd : menuItem.price_vnd;
+    // Treat any zero-priced item OR explicit 'negotiable' flag as negotiable.
+    const isNegotiable = (menuItem as any).price_type === 'negotiable'
+      || (variant ? variant.price_vnd === 0 : menuItem.price_vnd === 0);
+    const priceType: 'fixed' | 'negotiable' = isNegotiable ? 'negotiable' : 'fixed';
+    const price = isNegotiable ? 0 : (variant ? variant.price_vnd : menuItem.price_vnd);
     const priceLabel = variant ? (language === 'vi' ? variant.label_vi : variant.label_en) : undefined;
-    const priceType: 'fixed' | 'negotiable' = (menuItem as any).price_type === 'negotiable' ? 'negotiable' : 'fixed';
 
     const existing = items.find(i => i.id === cartKey);
     if (existing) {
@@ -206,7 +209,9 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
               const selectedVariant = hasVariants
                 ? item.price_variants!.find(v => v.id === selectedVariantId)
                 : undefined;
-              const itemPriceType = ((item as any).price_type === 'negotiable' ? 'negotiable' : 'fixed') as 'fixed' | 'negotiable';
+              const itemPriceType = (
+                (item as any).price_type === 'negotiable' || item.price_vnd === 0
+              ) ? 'negotiable' : 'fixed' as 'fixed' | 'negotiable';
 
               const cartEntries = items.filter(i => i.id.startsWith(item.id));
               const itemInCart = cartEntries.length > 0;
