@@ -4,6 +4,7 @@ import { format, differenceInDays } from 'date-fns';
 import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check, Search, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
+import PersonalMealPlanSelector, { PersonalMealSelection } from '@/components/PersonalMealPlanSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
@@ -89,6 +90,7 @@ const Booking = () => {
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [comboSelections, setComboSelections] = useState<ComboSelection[]>([]);
+  const [personalMealSelections, setPersonalMealSelections] = useState<PersonalMealSelection[]>([]);
   const [comboNotes, setComboNotes] = useState('');
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
@@ -168,7 +170,8 @@ const Booking = () => {
     return true;
   }, [checkIn, checkOut, nightCount, selectedRooms, isDateAvailable]);
 
-  const comboTotal = useMemo(() => comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0), [comboSelections]);
+  const personalMealTotal = useMemo(() => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0), [personalMealSelections]);
+  const comboTotal = useMemo(() => comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0) + personalMealTotal, [comboSelections, personalMealTotal]);
   const individualFoodTotal = useMemo(() => individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0), [individualFoods]);
 
   const roomTotals = useMemo(() => {
