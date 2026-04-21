@@ -2050,6 +2050,54 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_popups: {
+        Row: {
+          created_at: string
+          dismiss_duration_hours: number
+          display_delay_seconds: number
+          end_date: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          position: string
+          sort_order: number
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dismiss_duration_hours?: number
+          display_delay_seconds?: number
+          end_date?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          position?: string
+          sort_order?: number
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dismiss_duration_hours?: number
+          display_delay_seconds?: number
+          end_date?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          position?: string
+          sort_order?: number
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       restaurants: {
         Row: {
           area: string | null
