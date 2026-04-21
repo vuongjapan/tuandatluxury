@@ -359,6 +359,8 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
           )}
         </DialogContent>
       </Dialog>
+
+      <MenuViewerModal open={fullMenuOpen} onClose={() => setFullMenuOpen(false)} />
     </div>
   );
 };
