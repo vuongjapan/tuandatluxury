@@ -161,8 +161,16 @@ const Booking = () => {
     return true;
   }, [checkIn, checkOut, nightCount, selectedRooms, isDateAvailable]);
 
-  const personalMealTotal = useMemo(() => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0), [personalMealSelections]);
-  const comboTotal = useMemo(() => comboSelections.reduce((sum, s) => sum + s.pricePerPerson * s.quantity, 0) + personalMealTotal, [comboSelections, personalMealTotal]);
+  const personalMealTotal = useMemo(
+    () => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0),
+    [personalMealSelections]
+  );
+  // 5+ guests: combo slot total = pricePerPerson × peopleInSlot (NO min-6 multiplier)
+  const comboSlotsTotal = useMemo(
+    () => comboSlots.filter(s => s.packageId).reduce((sum, s) => sum + s.pricePerPerson * s.people, 0),
+    [comboSlots]
+  );
+  const comboTotal = useMemo(() => comboSlotsTotal + personalMealTotal, [comboSlotsTotal, personalMealTotal]);
   const individualFoodTotal = useMemo(() => individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0), [individualFoods]);
 
   const roomTotals = useMemo(() => {
