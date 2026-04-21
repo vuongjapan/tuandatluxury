@@ -44,8 +44,9 @@ import AdminReviews from '@/components/admin/AdminReviews';
 import AdminMemberDiscount from '@/components/admin/AdminMemberDiscount';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
 import AdminIntroSection from '@/components/admin/AdminIntroSection';
+import AdminPromoBanners from '@/components/admin/AdminPromoBanners';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'offers' | 'promotions' | 'promotion-system' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'offers' | 'promotions' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -195,6 +196,7 @@ const AdminDashboard = () => {
     {
       title: 'Khác',
       items: [
+        { id: 'promo-banners', icon: Flame, label: 'Banner Hè 2026 (Trang chủ)' },
         { id: 'offers', icon: Gift, label: 'Bài Ưu đãi (Web)' },
         { id: 'promotions', icon: Gift, label: 'Ưu đãi (cũ)' },
         { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
@@ -387,6 +389,7 @@ const AdminDashboard = () => {
           {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'dining' && <AdminDining />}
+          {tab === 'promo-banners' && <AdminPromoBanners />}
           {tab === 'offers' && <AdminOffers />}
           {tab === 'promotions' && <AdminPromotions />}
           {tab === 'promotion-system' && <AdminPromotionSystem />}
