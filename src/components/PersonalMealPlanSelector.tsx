@@ -84,7 +84,7 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
       {/* Header */}
       <div className="flex items-center gap-2">
         <Users className="h-5 w-5 text-primary" />
-        <div>
+        <div className="flex-1 min-w-0">
           <h2 className="font-display text-lg sm:text-xl font-semibold">
             {fixedMode
               ? (isVi ? `Set ăn cho ${guestCount} người` : `Set meal for ${guestCount}`)
@@ -96,6 +96,16 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
               : (isVi ? 'Chọn số người ăn — hệ thống tự gợi ý suất ăn phù hợp' : 'Pick the number of diners — we suggest the right plan')}
           </p>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1 shrink-0 text-xs"
+          onClick={() => setMenuOpen(true)}
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          {isVi ? 'Xem thực đơn' : 'View menu'}
+        </Button>
       </div>
 
       {/* Stepper — hidden in fixed mode */}
