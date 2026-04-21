@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useComboPackages, ComboPackage, ComboMenu } from '@/hooks/useComboPackages';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useMemberDiscount } from '@/hooks/useMemberDiscount';
 import { cn } from '@/lib/utils';
 
 export interface ComboSelection {
@@ -37,7 +38,9 @@ const NOTES_SUGGESTIONS = [
 const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, comboNotes, onComboNotesChange, onOpenFoodOrder }: ComboSelectorProps) => {
   const { packages, loading, getMenusByPackage, getDishesByMenu } = useComboPackages();
   const { language, formatPrice } = useLanguage();
+  const { perPerson } = useMemberDiscount();
   const isVi = language === 'vi';
+  const perPersonMode = perPerson.enabled;
 
   const [step, setStep] = useState<'list' | 'menus'>('list');
   const [selectedPkg, setSelectedPkg] = useState<ComboPackage | null>(null);
@@ -50,7 +53,8 @@ const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, c
 
   const handleSelectPackage = (pkg: ComboPackage) => {
     setSelectedPkg(pkg);
-    setTempQuantity(Math.max(1, remainingServings));
+    // Per-person mode: 1 menu = 1 person, default qty = guest count for single combo
+    setTempQuantity(perPersonMode ? guestCount : Math.max(1, remainingServings));
     setStep('menus');
   };
 
