@@ -1,26 +1,149 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bike, Mic2, Car, Umbrella, Plane, BellRing } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import FadeIn from '@/components/FadeIn';
 import { Button } from '@/components/ui/button';
-import { useServices } from '@/hooks/useServices';
-
-const MINI_SERVICES = [
-  { icon: Bike, title_vi: 'Xe đạp đôi FLC', title_en: 'Tandem Bike (FLC)', tag_vi: 'Miễn phí', tag_en: 'Free' },
-  { icon: Mic2, title_vi: 'Karaoke sân khấu', title_en: 'Stage Karaoke', tag_vi: 'Miễn phí', tag_en: 'Free' },
-  { icon: Car, title_vi: 'Chỗ đỗ xe', title_en: 'Parking', tag_vi: 'Miễn phí', tag_en: 'Free' },
-  { icon: BellRing, title_vi: 'Lễ tân 24/7', title_en: '24/7 Reception', tag_vi: 'Luôn có', tag_en: 'Always' },
-  { icon: Umbrella, title_vi: 'Giáp biển', title_en: 'Beachfront', tag_vi: 'Miễn phí', tag_en: 'Free' },
-  { icon: Plane, title_vi: 'Đón sân bay', title_en: 'Airport Pickup', tag_vi: 'Theo YC', tag_en: 'On request' },
-];
+import { useServices, type Service } from '@/hooks/useServices';
 
 const badgeClassFor = (color: string | null | undefined) => {
   switch (color) {
-    case 'navy': return 'bg-foreground text-background';
-    case 'teal': return 'bg-teal-600 text-white';
+    case 'navy':
+      return 'bg-[#1B3A5C] text-white';
+    case 'teal':
+      return 'bg-teal-600 text-white';
     case 'gold':
-    default: return 'bg-primary text-primary-foreground';
+    default:
+      return 'bg-[#C9A84C] text-[#1B3A5C]';
   }
+};
+
+const ServiceCard = ({
+  s,
+  index,
+  sectionVisible,
+  isVi,
+  onClick,
+}: {
+  s: Service;
+  index: number;
+  sectionVisible: boolean;
+  isVi: boolean;
+  onClick: (link: string | null) => void;
+}) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [inView, setInView] = useState(false);
+
+  // Per-card observer for fade/slide effects
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Parallax effect
+  useEffect(() => {
+    if (s.image_effect !== 'parallax') return;
+    const handle = () => {
+      const card = cardRef.current;
+      const img = imgRef.current;
+      if (!card || !img) return;
+      const rect = card.getBoundingClientRect();
+      const offset = (rect.top / window.innerHeight) * 20;
+      img.style.transform = `translateY(${offset}px) scale(1.1)`;
+    };
+    window.addEventListener('scroll', handle, { passive: true });
+    handle();
+    return () => window.removeEventListener('scroll', handle);
+  }, [s.image_effect]);
+
+  const effect = s.image_effect || 'zoom';
+
+  // Entrance animation per effect
+  let entranceStyle: React.CSSProperties = {};
+  if (effect === 'fade') {
+    entranceStyle = {
+      opacity: inView ? 1 : 0,
+      transform: inView ? 'translateY(0)' : 'translateY(30px)',
+      transition: `opacity 0.7s ease-out ${index * 0.1}s, transform 0.7s ease-out ${index * 0.1}s`,
+    };
+  } else if (effect === 'slide') {
+    entranceStyle = {
+      opacity: inView ? 1 : 0,
+      transform: inView ? 'translateY(0)' : 'translateY(50px)',
+      transition: `opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.12}s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.12}s`,
+    };
+  } else {
+    // zoom + parallax: still get section stagger entrance
+    entranceStyle = {
+      opacity: sectionVisible ? 1 : 0,
+      transform: sectionVisible ? 'translateY(0)' : 'translateY(20px)',
+      transition: `opacity 0.6s ease-out ${index * 0.12}s, transform 0.6s ease-out ${index * 0.12}s`,
+    };
+  }
+
+  const imgClass =
+    effect === 'zoom'
+      ? 'w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]'
+      : 'w-full h-full object-cover';
+
+  return (
+    <div
+      ref={cardRef}
+      className="service-card group bg-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 h-full flex flex-col"
+      style={entranceStyle}
+      data-effect={effect}
+    >
+      <div className="relative h-[220px] overflow-hidden bg-secondary">
+        {s.image_url ? (
+          <img
+            ref={imgRef}
+            src={s.image_url}
+            alt={s.name}
+            loading="lazy"
+            width={600}
+            height={220}
+            className={imgClass}
+            style={effect === 'parallax' ? { willChange: 'transform' } : undefined}
+          />
+        ) : (
+          <div className="w-full h-full bg-muted" />
+        )}
+        {s.badge_text && (
+          <span
+            className={`absolute top-3 left-3 ${badgeClassFor(s.badge_color)} text-[11px] font-medium px-3 py-1 rounded-full tracking-wide shadow-sm`}
+          >
+            {s.badge_text}
+          </span>
+        )}
+      </div>
+      <div className="p-5 flex-1 flex flex-col">
+        <h3 className="font-display text-xl font-semibold text-foreground mb-2">{s.name}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+          {s.description}
+        </p>
+        {s.button_text && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onClick(s.button_link)}
+            className="mt-4 self-start border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            {s.button_text}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 const ServicesSection = () => {
@@ -28,6 +151,24 @@ const ServicesSection = () => {
   const navigate = useNavigate();
   const isVi = t('nav.rooms') === 'Hạng phòng';
   const { featured } = useServices();
+  const sectionRef = useRef<HTMLElement>(null);
+  const [sectionVisible, setSectionVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setSectionVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const handleClick = (link: string | null) => {
     if (!link) return;
@@ -38,11 +179,23 @@ const ServicesSection = () => {
     }
   };
 
+  if (featured.length === 0) return null;
+
+  // Split into rows: first row up to 3, next row remaining (centered)
+  const row1 = featured.slice(0, 3);
+  const row2 = featured.slice(3);
+
   return (
-    <section className="py-20 sm:py-28 bg-background">
+    <section ref={sectionRef} className="py-20 sm:py-28 bg-background">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <FadeIn className="text-center mb-12 sm:mb-16">
+        <div
+          className="text-center mb-12 sm:mb-16"
+          style={{
+            opacity: sectionVisible ? 1 : 0,
+            transform: sectionVisible ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+          }}
+        >
           <p className="text-primary font-display text-xs tracking-[0.3em] uppercase mb-3 font-medium">
             {isVi ? 'TIỆN ÍCH' : 'AMENITIES'}
           </p>
@@ -50,86 +203,56 @@ const ServicesSection = () => {
             {isVi ? 'Dịch Vụ Của Chúng Tôi' : 'Our Services'}
           </h2>
           <div className="w-[50px] h-[2px] bg-primary mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+          <p
+            className="text-sm text-muted-foreground max-w-xl mx-auto"
+            style={{
+              opacity: sectionVisible ? 1 : 0,
+              transition: 'opacity 0.5s ease-out 0.15s',
+            }}
+          >
             {isVi
               ? 'Trải nghiệm trọn vẹn với hệ thống tiện ích cao cấp dành cho khách lưu trú.'
               : 'A complete experience with premium amenities for our guests.'}
           </p>
-        </FadeIn>
+        </div>
 
-        {/* Featured services from DB — responsive grid that auto-centers last row */}
-        {featured.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto mb-14">
-            {featured.map((s, idx) => (
-              <FadeIn
+        {/* Row 1 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {row1.map((s, idx) => (
+            <ServiceCard
+              key={s.id}
+              s={s}
+              index={idx}
+              sectionVisible={sectionVisible}
+              isVi={isVi}
+              onClick={handleClick}
+            />
+          ))}
+        </div>
+
+        {/* Row 2 — centered remainder */}
+        {row2.length > 0 && (
+          <div
+            className={`mt-6 grid gap-6 max-w-6xl mx-auto ${
+              row2.length === 1
+                ? 'grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 lg:max-w-md'
+                : row2.length === 2
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:max-w-3xl'
+                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+            }`}
+          >
+            {row2.map((s, idx) => (
+              <ServiceCard
                 key={s.id}
-                delay={idx * 150}
-                className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]"
-              >
-                <div className="group bg-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 h-full flex flex-col">
-                  <div className="relative h-[220px] overflow-hidden bg-secondary">
-                    {s.image_url && (
-                      <img
-                        src={s.image_url}
-                        alt={isVi ? s.name_vi : s.name_en}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        loading="lazy"
-                        width={600}
-                        height={220}
-                      />
-                    )}
-                    {s.badge_text && (
-                      <span className={`absolute top-3 left-3 ${badgeClassFor(s.badge_color)} text-[11px] font-medium px-3 py-1 rounded-full tracking-wide`}>
-                        {s.badge_text}
-                      </span>
-                    )}
-                    <div className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center text-primary text-lg">
-                      <span aria-hidden="true">{s.icon}</span>
-                    </div>
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="font-display text-xl font-semibold text-foreground mb-2">
-                      {isVi ? s.name_vi : (s.name_en || s.name_vi)}
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed flex-1">
-                      {isVi ? s.description_vi : (s.description_en || s.description_vi)}
-                    </p>
-                    {s.button_text && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleClick(s.button_link)}
-                        className="mt-4 self-start border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
-                      >
-                        {s.button_text} →
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </FadeIn>
+                s={s}
+                index={row1.length + idx}
+                sectionVisible={sectionVisible}
+                isVi={isVi}
+                onClick={handleClick}
+              />
             ))}
           </div>
         )}
-
-        {/* Mini icon cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
-          {MINI_SERVICES.map((m, idx) => {
-            const Icon = m.icon;
-            return (
-              <FadeIn key={m.title_en} delay={idx * 80}>
-                <div className="group bg-card rounded-lg border border-border p-4 text-center transition-all duration-200 hover:border-primary hover:bg-secondary cursor-default h-full flex flex-col items-center justify-between gap-2">
-                  <Icon className="h-8 w-8 text-primary mx-auto" />
-                  <h4 className="text-sm font-medium text-foreground leading-tight">
-                    {isVi ? m.title_vi : m.title_en}
-                  </h4>
-                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary text-primary border border-primary/20 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    {isVi ? m.tag_vi : m.tag_en}
-                  </span>
-                </div>
-              </FadeIn>
-            );
-          })}
-        </div>
       </div>
     </section>
   );
