@@ -18,7 +18,7 @@ const HERO_IMG =
 const STORY_IMG =
   'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=80&auto=format&fit=crop';
 
-const GALLERY = [
+const DEFAULT_GALLERY = [
   'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&q=80&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900&q=80&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=900&q=80&auto=format&fit=crop',
@@ -68,6 +68,15 @@ const About = () => {
   const { settings } = useSiteSettings();
   const [lightbox, setLightbox] = useState<string | null>(null);
   const heroImg = settings.about_image_url || HERO_IMG;
+  const storyImg = (settings as any).about_story_image_url || STORY_IMG;
+  const gallery: string[] = (() => {
+    try {
+      const raw = (settings as any).about_gallery_images;
+      if (!raw) return DEFAULT_GALLERY;
+      const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return Array.isArray(arr) && arr.length ? arr : DEFAULT_GALLERY;
+    } catch { return DEFAULT_GALLERY; }
+  })();
 
   useEffect(() => {
     document.title = 'Giới thiệu | Tuấn Đạt Luxury — FLC Sầm Sơn';
@@ -104,7 +113,7 @@ const About = () => {
         <div className="container mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
           <FadeIn direction="left">
             <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-card">
-              <img src={STORY_IMG} alt="Tuấn Đạt Luxury" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
+              <img src={storyImg} alt="Tuấn Đạt Luxury" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
             </div>
           </FadeIn>
           <FadeIn direction="right">
@@ -175,7 +184,7 @@ const About = () => {
             </div>
           </FadeIn>
           <div className="columns-2 md:columns-3 gap-4 [column-fill:_balance]">
-            {GALLERY.map((src, i) => (
+            {gallery.map((src, i) => (
               <FadeIn key={src} delay={(i % 6) * 100}>
                 <button
                   onClick={() => setLightbox(src)}
