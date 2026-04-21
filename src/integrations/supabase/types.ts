@@ -959,6 +959,7 @@ export type Database = {
           group_min_people: number
           group_note: string
           id: string
+          min_individual_per_person: number
           updated_at: string
           vip_applies_to: string
           vip_tier1_bookings: number
@@ -972,6 +973,7 @@ export type Database = {
           group_min_people?: number
           group_note?: string
           id?: string
+          min_individual_per_person?: number
           updated_at?: string
           vip_applies_to?: string
           vip_tier1_bookings?: number
@@ -985,6 +987,7 @@ export type Database = {
           group_min_people?: number
           group_note?: string
           id?: string
+          min_individual_per_person?: number
           updated_at?: string
           vip_applies_to?: string
           vip_tier1_bookings?: number
