@@ -20,6 +20,7 @@ interface MenuItem {
   description_vi: string | null;
   description_en: string | null;
   price_vnd: number;
+  price_type: 'fixed' | 'negotiable';
   category: string;
   image_url: string | null;
   is_popular: boolean;
