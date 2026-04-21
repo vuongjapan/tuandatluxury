@@ -1105,13 +1105,17 @@ const Booking = () => {
 
                 {comboTotal > 0 && (
                   <div className="flex justify-between text-xs border-t border-border pt-2">
-                    <span className="text-muted-foreground">🍽️ Combo</span>
+                    <span className="text-muted-foreground">
+                      🍽️ {hasSelectedPersonalMeal && !hasSelectedCombo
+                        ? (isVi ? 'Suất ăn' : 'Meal plan')
+                        : 'Combo'}
+                    </span>
                     <span className="font-medium">{formatPrice(comboTotal)}</span>
                   </div>
                 )}
                 {individualFoodTotal > 0 && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">🍤 Món riêng</span>
+                    <span className="text-muted-foreground">🍤 {isVi ? 'Món riêng' : 'Dishes'}</span>
                     <span className="font-medium">{formatPrice(individualFoodTotal)}</span>
                   </div>
                 )}
@@ -1138,7 +1142,16 @@ const Booking = () => {
 
                 {/* Validation warnings */}
                 {!allNightsAvailable && nightCount > 0 && <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">Một số đêm đang đóng bán.</div>}
-                {comboValidationError && <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-300 rounded-lg p-2 text-xs text-purple-700">⚠️ Chọn combo ăn uống.</div>}
+                {currentStep === 2 && comboValidationError && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">
+                    ⚠️ {isVi ? 'Dịp này bắt buộc đặt ăn trước.' : 'Meal selection required for this holiday.'}
+                  </div>
+                )}
+                {currentStep === 2 && !comboValidationError && !hasValidFoodSelection && !isComboMandatory && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2 text-xs text-blue-700 dark:text-blue-300">
+                    💡 {isVi ? 'Bạn có thể đặt đồ ăn sau khi nhận phòng' : 'You can order meals after check-in'}
+                  </div>
+                )}
                 {comboServingsError && <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">⚠️ Suất combo ({totalComboServings}) ≠ số khách ({guestCount}).</div>}
               </div>
             </motion.div>
