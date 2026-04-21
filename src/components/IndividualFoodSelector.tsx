@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, X, Minus, Plus, Search, ChevronDown } from 'lucide-react';
+import { ShoppingBag, X, Minus, Plus, Search, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMenuItems, type MenuItemPrice } from '@/hooks/useMenuItems';
 import { useLanguage } from '@/contexts/LanguageContext';
+import PriceDisplay from '@/components/PriceDisplay';
+import MenuViewerModal from '@/components/MenuViewerModal';
 
 export interface FoodItem {
   id: string;
@@ -16,6 +18,8 @@ export interface FoodItem {
   category: string;
   priceLabel?: string; // e.g. "Nhỏ", "Vừa", "Lớn"
   priceVariantId?: string; // ID of selected price variant
+  /** When "negotiable", this item does NOT contribute to totals — pay at restaurant. */
+  priceType?: 'fixed' | 'negotiable';
 }
 
 interface Props {
@@ -33,11 +37,21 @@ interface Props {
 const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false }: Props) => {
   const { allItems, loading } = useMenuItems();
   const { formatPrice, language } = useLanguage();
+  const isVi = language === 'vi';
   const [search, setSearch] = useState('');
   // Track which price variant is selected per menu item (for items with multiple prices)
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [menuViewerOpen, setMenuViewerOpen] = useState(false);
 
-  const activeItems = useMemo(() => allItems.filter(m => m.price_vnd > 0 || (m.price_variants && m.price_variants.length > 0)), [allItems]);
+  // Show negotiable items too — they just won't add to the total.
+  const activeItems = useMemo(
+    () => allItems.filter(m =>
+      (m as any).price_type === 'negotiable'
+      || m.price_vnd > 0
+      || (m.price_variants && m.price_variants.length > 0)
+    ),
+    [allItems]
+  );
 
   const categories = useMemo(() => {
     const cats = new Set(activeItems.map(m => m.category));
@@ -65,6 +79,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     const cartKey = getCartKey(menuItem.id, variant?.id);
     const price = variant ? variant.price_vnd : menuItem.price_vnd;
     const priceLabel = variant ? (language === 'vi' ? variant.label_vi : variant.label_en) : undefined;
+    const priceType: 'fixed' | 'negotiable' = (menuItem as any).price_type === 'negotiable' ? 'negotiable' : 'fixed';
 
     const existing = items.find(i => i.id === cartKey);
     if (existing) {
@@ -78,6 +93,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
         category: menuItem.category,
         priceLabel,
         priceVariantId: variant?.id,
+        priceType,
       }]);
     }
   };
@@ -87,8 +103,10 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     onItemsChange(updated);
   };
 
-  const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  // Total only counts FIXED-price items. Negotiable items are paid at the restaurant.
+  const total = items.reduce((s, i) => s + (i.priceType === 'negotiable' ? 0 : i.price * i.quantity), 0);
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+  const negotiableCount = items.filter(i => i.priceType === 'negotiable').reduce((s, i) => s + i.quantity, 0);
 
   const catLabels: Record<string, string> = {
     breakfast: '🍳 Ăn sáng',
@@ -129,15 +147,20 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-primary" />
-              <h2 className="font-display text-lg font-bold">Đặt món riêng</h2>
+          <div className="p-4 border-b border-border flex items-center justify-between shrink-0 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <ShoppingBag className="h-5 w-5 text-primary shrink-0" />
+              <h2 className="font-display text-lg font-bold truncate">{isVi ? 'Đặt món riêng' : 'Order dishes'}</h2>
               {totalItems > 0 && (
-                <Badge className="bg-primary text-primary-foreground">{totalItems} món</Badge>
+                <Badge className="bg-primary text-primary-foreground shrink-0">{totalItems}</Badge>
               )}
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setMenuViewerOpen(true)}>
+                <BookOpen className="h-3.5 w-3.5" /> {isVi ? 'Xem thực đơn' : 'Full menu'}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+            </div>
           </div>
 
           {/* Search */}
@@ -183,8 +206,8 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
               const selectedVariant = hasVariants
                 ? item.price_variants!.find(v => v.id === selectedVariantId)
                 : undefined;
+              const itemPriceType = ((item as any).price_type === 'negotiable' ? 'negotiable' : 'fixed') as 'fixed' | 'negotiable';
 
-              // Find all cart entries for this menu item
               const cartEntries = items.filter(i => i.id.startsWith(item.id));
               const itemInCart = cartEntries.length > 0;
 
@@ -197,80 +220,56 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.name_vi}</p>
                       {!hasVariants && (
-                        <p className="text-xs text-primary font-bold">{formatPrice(item.price_vnd)}</p>
+                        <PriceDisplay price={item.price_vnd} priceType={itemPriceType} className="text-xs text-primary font-bold" />
                       )}
                     </div>
 
-                    {/* No variants: simple add/qty buttons */}
                     {!hasVariants && (() => {
                       const cartKey = getCartKey(item.id);
                       const inCart = items.find(i => i.id === cartKey);
                       return inCart ? (
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, -1)}>
-                            <Minus className="h-3 w-3" />
-                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, -1)}><Minus className="h-3 w-3" /></Button>
                           <span className="font-bold w-6 text-center text-sm">{inCart.quantity}</span>
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, 1)}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, 1)}><Plus className="h-3 w-3" /></Button>
                         </div>
                       ) : (
                         <Button variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => addItem(item)}>
-                          <Plus className="h-3 w-3 mr-1" /> Thêm
+                          <Plus className="h-3 w-3 mr-1" /> {isVi ? 'Thêm' : 'Add'}
                         </Button>
                       );
                     })()}
 
-                    {/* Has variants: show dropdown + add */}
                     {hasVariants && (
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <Select
-                          value={selectedVariantId || ''}
-                          onValueChange={v => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}
-                        >
-                          <SelectTrigger className="h-8 w-[120px] text-xs">
-                            <SelectValue placeholder="Chọn giá" />
-                          </SelectTrigger>
+                        <Select value={selectedVariantId || ''} onValueChange={v => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}>
+                          <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue placeholder={isVi ? 'Chọn giá' : 'Pick'} /></SelectTrigger>
                           <SelectContent>
                             {item.price_variants!.map(v => (
                               <SelectItem key={v.id} value={v.id} className="text-xs">
-                                {v.label_vi} – {formatPrice(v.price_vnd)}
+                                {v.label_vi} – {itemPriceType === 'negotiable' ? (isVi ? 'Thỏa thuận' : 'On request') : formatPrice(v.price_vnd)}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0 text-xs"
-                          disabled={!selectedVariant}
-                          onClick={() => {
-                            if (selectedVariant) addItem(item, selectedVariant);
-                          }}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Thêm
+                        <Button variant="outline" size="sm" className="shrink-0 text-xs" disabled={!selectedVariant} onClick={() => { if (selectedVariant) addItem(item, selectedVariant); }}>
+                          <Plus className="h-3 w-3 mr-1" /> {isVi ? 'Thêm' : 'Add'}
                         </Button>
                       </div>
                     )}
                   </div>
 
-                  {/* Show cart entries for variants */}
                   {hasVariants && cartEntries.length > 0 && (
                     <div className="mt-2 space-y-1 pl-2 border-l-2 border-primary/30 ml-2">
                       {cartEntries.map(entry => (
                         <div key={entry.id} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            {entry.priceLabel} – {formatPrice(entry.price)}
+                          <span className="text-muted-foreground inline-flex items-center gap-1">
+                            {entry.priceLabel} – <PriceDisplay price={entry.price} priceType={entry.priceType} compact />
                           </span>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, -1)}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, -1)}><Minus className="h-3 w-3" /></Button>
                             <span className="font-bold w-5 text-center">{entry.quantity}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, 1)}><Plus className="h-3 w-3" /></Button>
                           </div>
                         </div>
                       ))}
@@ -282,19 +281,23 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           </div>
 
           {/* Footer / cart summary */}
-          <div className="p-4 border-t border-border bg-secondary/50 shrink-0">
+          <div className="p-4 border-t border-border bg-secondary/50 shrink-0 space-y-1.5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{totalItems} món đã chọn</p>
+                <p className="text-sm text-muted-foreground">{totalItems} {isVi ? 'món đã chọn' : 'items'}</p>
                 <p className="font-bold text-primary text-lg">{formatPrice(total)}</p>
               </div>
-              <Button variant="gold" onClick={onClose}>
-                Xong
-              </Button>
+              <Button variant="gold" onClick={onClose}>{isVi ? 'Xong' : 'Done'}</Button>
             </div>
+            {negotiableCount > 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                * {isVi ? `${negotiableCount} món giá thỏa thuận sẽ được tính riêng tại nhà hàng` : `${negotiableCount} negotiable item(s) will be billed at the restaurant`}
+              </p>
+            )}
           </div>
         </motion.div>
       </motion.div>
+      <MenuViewerModal open={menuViewerOpen} onClose={() => setMenuViewerOpen(false)} />
     </AnimatePresence>
   );
 };
