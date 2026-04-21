@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import BookingSearch from '@/components/BookingSearch';
 import RoomsCarousel from '@/components/RoomsCarousel';
+import PromoBanner from '@/components/PromoBanner';
 
 import Footer from '@/components/Footer';
 import FadeIn from '@/components/FadeIn';
@@ -79,6 +80,7 @@ const Index = () => {
       <Header />
       <HeroSection />
       <BookingSearch />
+      <PromoBanner />
 
       {/* 1. Phòng nghỉ - Carousel kiểu Vinpearl */}
       {roomsLoading && safeRooms.length === 0 ? (
