@@ -952,6 +952,48 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_config: {
+        Row: {
+          group_discount_max: number
+          group_discount_min: number
+          group_min_people: number
+          group_note: string
+          id: string
+          updated_at: string
+          vip_applies_to: string
+          vip_tier1_bookings: number
+          vip_tier1_discount: number
+          vip_tier2_bookings: number
+          vip_tier2_discount: number
+        }
+        Insert: {
+          group_discount_max?: number
+          group_discount_min?: number
+          group_min_people?: number
+          group_note?: string
+          id?: string
+          updated_at?: string
+          vip_applies_to?: string
+          vip_tier1_bookings?: number
+          vip_tier1_discount?: number
+          vip_tier2_bookings?: number
+          vip_tier2_discount?: number
+        }
+        Update: {
+          group_discount_max?: number
+          group_discount_min?: number
+          group_min_people?: number
+          group_note?: string
+          id?: string
+          updated_at?: string
+          vip_applies_to?: string
+          vip_tier1_bookings?: number
+          vip_tier1_discount?: number
+          vip_tier2_bookings?: number
+          vip_tier2_discount?: number
+        }
+        Relationships: []
+      }
       external_hotels: {
         Row: {
           address: string | null
@@ -1966,66 +2008,6 @@ export type Database = {
         }
         Relationships: []
       }
-      promotions: {
-        Row: {
-          applies_to_tier: string | null
-          benefits_en: string[]
-          benefits_vi: string[]
-          created_at: string
-          description_en: string | null
-          description_vi: string | null
-          discount_percent: number | null
-          group_discount_tiers: Json | null
-          icon: string
-          id: string
-          image_url: string | null
-          is_active: boolean
-          promo_type: string
-          sort_order: number
-          title_en: string
-          title_vi: string
-          updated_at: string
-        }
-        Insert: {
-          applies_to_tier?: string | null
-          benefits_en?: string[]
-          benefits_vi?: string[]
-          created_at?: string
-          description_en?: string | null
-          description_vi?: string | null
-          discount_percent?: number | null
-          group_discount_tiers?: Json | null
-          icon?: string
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          promo_type?: string
-          sort_order?: number
-          title_en?: string
-          title_vi: string
-          updated_at?: string
-        }
-        Update: {
-          applies_to_tier?: string | null
-          benefits_en?: string[]
-          benefits_vi?: string[]
-          created_at?: string
-          description_en?: string | null
-          description_vi?: string | null
-          discount_percent?: number | null
-          group_discount_tiers?: Json | null
-          icon?: string
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          promo_type?: string
-          sort_order?: number
-          title_en?: string
-          title_vi?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       restaurants: {
         Row: {
           area: string | null
@@ -2771,6 +2753,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_bookings_count: {
+        Row: {
+          current_tier: string
+          email: string
+          id: string
+          joined_at: string
+          total_bookings: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          current_tier?: string
+          email: string
+          id?: string
+          joined_at?: string
+          total_bookings?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          current_tier?: string
+          email?: string
+          id?: string
+          joined_at?: string
+          total_bookings?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
