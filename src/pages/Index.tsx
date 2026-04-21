@@ -23,8 +23,8 @@ const PromotionsSection = lazy(() => import('@/components/PromotionsSection'));
 const MapSection = lazy(() => import('@/components/MapSection'));
 const LocationSection = lazy(() => import('@/components/LocationSection'));
 const DiningSection = lazy(() => import('@/components/DiningHomeSection'));
-const FloatingButtons = lazy(() => import('@/components/FloatingButtons'));
-const PromoPopup = lazy(() => import('@/components/PromoPopup'));
+import FloatingButtons from '@/components/FloatingButtons';
+import PromoPopup from '@/components/PromoPopup';
 const TestimonialsSection = lazy(() => import('@/components/TestimonialsSection'));
 const RestaurantSection = lazy(() => import('@/components/RestaurantSection'));
 const ServicesSection = lazy(() => import('@/components/ServicesSection'));
@@ -185,12 +185,8 @@ const Index = () => {
 
       {/* [8] Footer */}
       <Footer />
-      <Suspense fallback={null}>
-        <FloatingButtons />
-      </Suspense>
-      <Suspense fallback={null}>
-        <PromoPopup />
-      </Suspense>
+      <FloatingButtons />
+      <PromoPopup />
     </div>
   );
 };
