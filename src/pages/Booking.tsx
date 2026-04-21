@@ -134,13 +134,8 @@ const Booking = () => {
 
   const extraPersonCount = useMemo(() => Math.max(0, guestCount - standardCapacity), [guestCount, standardCapacity]);
 
-  const activePromo = useMemo(() => {
-    if (!promoId) return null;
-    return promotions.find(p => p.id === promoId && p.is_active) || null;
-  }, [promoId, promotions]);
-
-  const isGroupPromo = promoType === 'group' || (activePromo as any)?.promo_type === 'group';
-  const isCouplePromo = promoType === 'couple' || (activePromo as any)?.promo_type === 'couple';
+  const isGroupPromo = false;
+  const isCouplePromo = false;
 
   const comboRequired = useMemo(() => {
     if (!checkIn || !checkOut) return false;
@@ -243,20 +238,18 @@ const Booking = () => {
     return Math.round(roomTotal * activeSmartRule.discount_percent / 100);
   }, [activeSmartRule, roomTotal]);
 
-  const promoDiscountPercent = useMemo(() => {
-    if (!activePromo) return 0;
-    let base = activePromo.discount_percent || 0;
-    if (isGroupPromo && groupSize) {
-      const size = parseInt(groupSize) || 0;
-      const tiers = (activePromo as any).group_discount_tiers || [];
-      for (const tier of tiers) {
-        if (size >= tier.min && size <= tier.max) { base += tier.discount; break; }
-      }
-    }
-    return base;
-  }, [activePromo, isGroupPromo, groupSize]);
+  // Old promo system removed — only the new VIP / discount-config system is used.
+  const promoDiscountPercent = 0;
 
-  const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
+  // VIP discount: applies to ROOM ONLY, based on the user's confirmed booking history.
+  const memberDiscountPercent = useMemo(
+    () => (user ? getVipDiscountPercent(discountConfig, userBookingCount) : 0),
+    [user, discountConfig, userBookingCount]
+  );
+  const memberDiscountAmount = useMemo(
+    () => (memberDiscountPercent > 0 ? Math.round(roomTotal * memberDiscountPercent / 100) : 0),
+    [memberDiscountPercent, roomTotal]
+  );
 
   // Sum of all applied discount codes (multi-voucher support).
   const discountCodeAmount = useMemo(() => {
