@@ -1,16 +1,23 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { usePromotions } from '@/hooks/usePromotions';
-import { useAuth, MemberTier, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
+import { useAuth, MemberTier, TIER_COLORS } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, LogIn, Crown, Star, Users } from 'lucide-react';
+import { Check, LogIn, Crown, Star, Users, ArrowRight } from 'lucide-react';
 
 const TIER_DISCOUNT: Record<MemberTier, number> = {
   normal: 5,
   vip: 10,
   super_vip: 15,
+};
+
+const PROMO_TYPE_BADGE: Record<string, { vi: string; en: string; cls: string }> = {
+  seasonal: { vi: 'Theo mùa', en: 'Seasonal', cls: 'bg-rose-500/90 text-white' },
+  member: { vi: 'Thành viên', en: 'Member', cls: 'bg-amber-500/90 text-white' },
+  couple: { vi: 'Cặp đôi', en: 'Couple', cls: 'bg-pink-500/90 text-white' },
+  group: { vi: 'Đoàn', en: 'Group', cls: 'bg-blue-600/90 text-white' },
 };
 
 const PromotionsSection = () => {
@@ -26,13 +33,8 @@ const PromotionsSection = () => {
 
   const getUserDiscount = (promo: typeof activePromotions[0]) => {
     if (!user) return null;
-    if (promo.applies_to_tier === 'member') {
-      return TIER_DISCOUNT[user.tier];
-    }
-    if (promo.discount_percent > 0) {
-      const tierBonus = TIER_DISCOUNT[user.tier] || 0;
-      return promo.discount_percent + tierBonus;
-    }
+    if (promo.applies_to_tier === 'member') return TIER_DISCOUNT[user.tier];
+    if (promo.discount_percent > 0) return promo.discount_percent + (TIER_DISCOUNT[user.tier] || 0);
     return TIER_DISCOUNT[user.tier] > 0 ? TIER_DISCOUNT[user.tier] : null;
   };
 
@@ -42,153 +44,187 @@ const PromotionsSection = () => {
   };
 
   return (
-    <section id="offers" className="py-20 bg-secondary">
+    <section id="offers" className="py-20 sm:py-24 bg-secondary">
       <div className="container mx-auto px-4">
-        {/* Login/Register CTA at top */}
+        {/* [1] Login Banner — full-width navy gradient */}
         {!user ? (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="mb-10"
+            className="mb-12 rounded-xl overflow-hidden shadow-luxury"
+            style={{ background: 'linear-gradient(90deg, #1B3A5C 0%, #0D2137 100%)' }}
           >
-            <div className="bg-card rounded-2xl border border-border p-6 sm:p-8 text-center shadow-card max-w-2xl mx-auto">
-              <LogIn className="h-10 w-10 text-primary mx-auto mb-3" />
-              <h3 className="font-display text-xl font-bold text-foreground mb-2">
-                {isVi ? 'Đăng nhập để nhận ưu đãi độc quyền' : 'Sign in for exclusive discounts'}
-              </h3>
-              <p className="text-muted-foreground text-sm mb-4">
-                {isVi
-                  ? 'Hệ thống tự động nhận diện hạng thành viên và áp dụng giảm giá: Thường 5% • VIP 10% • Siêu VIP 15%'
-                  : 'Auto-detect member tier & apply discounts: Member 5% • VIP 10% • Super VIP 15%'}
-              </p>
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <Badge className="bg-muted text-muted-foreground text-xs"><Users className="h-3 w-3 mr-1" /> {isVi ? 'Thường 5%' : 'Member 5%'}</Badge>
-                <Badge className="bg-primary/20 text-primary text-xs"><Star className="h-3 w-3 mr-1" /> VIP 10%</Badge>
-                <Badge className="bg-amber-100 text-amber-800 text-xs"><Crown className="h-3 w-3 mr-1" /> {isVi ? 'Siêu VIP 15%' : 'Super VIP 15%'}</Badge>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-5 md:px-8 py-5 md:py-0 md:h-[100px]">
+              {/* Left */}
+              <div className="flex items-center gap-3 text-white text-center md:text-left">
+                <div className="w-10 h-10 rounded-full bg-[#C9A84C]/20 flex items-center justify-center shrink-0">
+                  <LogIn className="h-5 w-5 text-[#C9A84C]" />
+                </div>
+                <p className="font-medium text-sm sm:text-base">
+                  {isVi ? 'Đăng nhập để nhận ưu đãi độc quyền' : 'Sign in for exclusive offers'}
+                </p>
               </div>
-              <Button variant="gold" size="lg" onClick={() => navigate('/member')}>
-                <LogIn className="h-4 w-4 mr-2" />
-                {isVi ? 'Đăng nhập / Đăng ký ngay' : 'Sign in / Register now'}
-              </Button>
+
+              {/* Middle - Tier badges */}
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <span className="inline-flex items-center gap-1 border border-white/40 text-white text-[11px] sm:text-xs px-3 py-1 rounded-full">
+                  <Users className="h-3 w-3" /> {isVi ? 'Thường 5%' : 'Member 5%'}
+                </span>
+                <span className="inline-flex items-center gap-1 border border-[#C9A84C] text-[#C9A84C] text-[11px] sm:text-xs px-3 py-1 rounded-full">
+                  <Star className="h-3 w-3" /> VIP 10%
+                </span>
+                <span className="inline-flex items-center gap-1 border border-[#C9A84C] bg-[#C9A84C]/10 text-[#C9A84C] text-[11px] sm:text-xs px-3 py-1 rounded-full">
+                  <Crown className="h-3 w-3" /> {isVi ? 'Siêu VIP 15%' : 'Super VIP 15%'}
+                </span>
+              </div>
+
+              {/* Right - CTA */}
+              <button
+                onClick={() => navigate('/member')}
+                className="shrink-0 bg-[#C9A84C] hover:bg-[#b89640] text-[#1B3A5C] font-bold text-sm px-5 py-2.5 rounded-full transition-colors duration-200 whitespace-nowrap"
+              >
+                {isVi ? 'Đăng nhập / Đăng ký' : 'Sign in / Register'}
+              </button>
             </div>
           </motion.div>
         ) : (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="mb-10"
+            className="mb-12 bg-card rounded-xl border border-border p-5 text-center shadow-card max-w-2xl mx-auto"
           >
-            <div className="bg-card rounded-2xl border border-border p-6 text-center shadow-card max-w-2xl mx-auto">
-              <div className="flex items-center justify-center gap-3 mb-2">
-                {user.tier === 'super_vip' ? <Crown className="h-6 w-6 text-amber-600" /> : user.tier === 'vip' ? <Star className="h-6 w-6 text-primary" /> : <Users className="h-6 w-6 text-muted-foreground" />}
-                <h3 className="font-display text-xl font-bold text-foreground">
-                  {isVi ? `Xin chào, ${user.fullName}!` : `Welcome, ${user.fullName}!`}
-                </h3>
-              </div>
-              <Badge className={`${TIER_COLORS[user.tier]} text-sm px-4 py-1 mb-2`}>
-                {isVi 
-                  ? `Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'} — Giảm ${TIER_DISCOUNT[user.tier]}%`
-                  : `${user.tier.replace('_', ' ').toUpperCase()} — ${TIER_DISCOUNT[user.tier]}% off`}
-              </Badge>
-              <p className="text-sm text-muted-foreground mt-2">
-                {isVi
-                  ? `Bạn đã đặt ${user.bookingCount} lần. Ưu đãi ${TIER_DISCOUNT[user.tier]}% được áp dụng tự động vào mọi đơn đặt phòng.`
-                  : `You have ${user.bookingCount} bookings. ${TIER_DISCOUNT[user.tier]}% discount applied automatically.`}
-              </p>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              {user.tier === 'super_vip' ? <Crown className="h-5 w-5 text-amber-600" /> : user.tier === 'vip' ? <Star className="h-5 w-5 text-primary" /> : <Users className="h-5 w-5 text-muted-foreground" />}
+              <h3 className="font-display text-lg font-semibold text-foreground">
+                {isVi ? `Xin chào, ${user.fullName}!` : `Welcome, ${user.fullName}!`}
+              </h3>
             </div>
+            <Badge className={`${TIER_COLORS[user.tier]} text-sm px-4 py-1`}>
+              {isVi
+                ? `Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'} — Giảm ${TIER_DISCOUNT[user.tier]}% tự động`
+                : `${user.tier.replace('_', ' ').toUpperCase()} — ${TIER_DISCOUNT[user.tier]}% off auto`}
+            </Badge>
           </motion.div>
         )}
 
+        {/* [2] Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="font-display text-4xl font-bold text-foreground mb-3">
-            {isVi ? 'Ưu đãi & Khuyến mãi' : 'Offers & Promotions'}
+          <p className="text-[#C9A84C] font-medium text-xs tracking-[0.3em] uppercase mb-3">
+            {isVi ? 'ƯU ĐÃI' : 'OFFERS'}
+          </p>
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground mb-4 tracking-tight">
+            {isVi ? 'Ưu Đãi & Khuyến Mãi' : 'Offers & Promotions'}
           </h2>
-          <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-4" />
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          <div className="w-[50px] h-[2px] bg-[#C9A84C] mx-auto mb-4" />
+          <p className="text-muted-foreground text-[15px] max-w-xl mx-auto leading-relaxed">
             {isVi
               ? 'Trải nghiệm nghỉ dưỡng sang trọng với những ưu đãi hấp dẫn dành riêng cho bạn'
               : 'Experience luxury stays with exclusive offers just for you'}
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {activePromotions.map((promo, i) => {
+        {/* [3] 4 Promo Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          {activePromotions.slice(0, 4).map((promo, i) => {
             const discount = getUserDiscount(promo);
             const promoType = (promo as any).promo_type || 'seasonal';
+            const typeBadge = PROMO_TYPE_BADGE[promoType] || PROMO_TYPE_BADGE.seasonal;
+            const isHot = i === 0;
+            const isNew = i === 1;
+
             return (
               <motion.div
                 key={promo.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
                 viewport={{ once: true }}
-                className="group relative bg-card rounded-2xl border border-border overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300"
+                className="group relative bg-card rounded-xl overflow-hidden border border-border shadow-card hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                style={{ boxShadow: '0 2px 8px rgba(27,58,92,0.06)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 12px 28px rgba(27,58,92,0.12)')}
+                onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(27,58,92,0.06)')}
               >
-                {promo.image_url ? (
-                  <div className="h-40 overflow-hidden">
+                {/* Image */}
+                <div className="relative h-[200px] overflow-hidden">
+                  {promo.image_url ? (
                     <img
                       src={promo.image_url}
                       alt={isVi ? promo.title_vi : promo.title_en}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                      loading="lazy"
+                      width={400}
+                      height={200}
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80'; }}
                     />
-                    <div className="absolute inset-0 h-40 bg-gradient-to-t from-card/80 to-transparent" />
-                  </div>
-                ) : (
-                  <div className="h-32 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent flex items-center justify-center">
-                    <span className="text-5xl">{promo.icon}</span>
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/15 to-accent/5 flex items-center justify-center">
+                      <span className="text-6xl">{promo.icon}</span>
+                    </div>
+                  )}
+                  {/* gradient bottom */}
+                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent" />
 
-                {user && discount && discount > 0 && (
-                  <div className="absolute top-3 right-3 z-10">
-                    <Badge className="bg-gold-gradient text-primary-foreground font-bold shadow-gold text-sm px-3 py-1">
-                      -{discount}%
-                    </Badge>
-                  </div>
-                )}
+                  {/* Type badge top-left */}
+                  <span className={`absolute top-3 left-3 ${typeBadge.cls} text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur`}>
+                    {isVi ? typeBadge.vi : typeBadge.en}
+                  </span>
 
-                {/* Promo type badge */}
-                <div className="absolute top-3 left-3 z-10">
-                  <Badge variant="outline" className="bg-card/80 backdrop-blur text-xs">
-                    {promoType === 'group' ? (isVi ? '👥 Đoàn/Công ty' : '👥 Group') :
-                     promoType === 'couple' ? (isVi ? '💑 Cặp đôi' : '💑 Couple') :
-                     promoType === 'member' ? (isVi ? '⭐ Thành viên' : '⭐ Member') :
-                     (isVi ? '🌸 Theo mùa' : '🌸 Seasonal')}
-                  </Badge>
+                  {/* HOT / NEW / discount top-right */}
+                  <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
+                    {user && discount && discount > 0 && (
+                      <span className="bg-[#C9A84C] text-[#1B3A5C] text-xs font-bold px-2.5 py-1 rounded-full shadow">
+                        -{discount}%
+                      </span>
+                    )}
+                    {isHot && (
+                      <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider">
+                        HOT
+                      </span>
+                    )}
+                    {isNew && (
+                      <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider">
+                        {isVi ? 'MỚI' : 'NEW'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="p-6">
-                  {promo.image_url && (
-                    <span className="text-3xl mb-2 block">{promo.icon}</span>
-                  )}
-                  <h3 className="font-display text-xl font-bold text-foreground mb-3">
+                {/* Content */}
+                <div className="p-5 flex-1 flex flex-col">
+                  <h3 className="font-display text-lg font-medium text-[#1B3A5C] mb-3 leading-snug">
                     {isVi ? promo.title_vi : promo.title_en}
                   </h3>
 
-                  <ul className="space-y-2 mb-6">
-                    {(isVi ? promo.benefits_vi : promo.benefits_en).map((b, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <span>{b}</span>
+                  <ul className="space-y-2 mb-4 flex-1">
+                    {(isVi ? promo.benefits_vi : promo.benefits_en).slice(0, 4).map((b, j) => (
+                      <li key={j} className="flex items-start gap-2 text-[13px] text-muted-foreground">
+                        <Check className="h-3.5 w-3.5 text-teal-600 shrink-0 mt-0.5" />
+                        <span className="leading-snug">{b}</span>
                       </li>
                     ))}
                   </ul>
 
+                  {promo.discount_percent > 0 && (
+                    <div className="mb-3">
+                      <span className="font-display text-2xl font-bold text-[#C9A84C]">
+                        -{promo.discount_percent}%
+                      </span>
+                    </div>
+                  )}
+
                   <Button
-                    variant="gold"
-                    className="w-full"
                     onClick={() => handleBookNow(promo)}
+                    className="w-full bg-[#C9A84C] hover:bg-[#b89640] text-[#1B3A5C] font-semibold"
                   >
                     {isVi ? 'Đặt phòng ngay' : 'Book Now'}
                   </Button>
@@ -196,6 +232,17 @@ const PromotionsSection = () => {
               </motion.div>
             );
           })}
+        </div>
+
+        {/* [4] CTA bottom */}
+        <div className="text-center mt-10">
+          <button
+            onClick={() => navigate('/khuyen-mai')}
+            className="inline-flex items-center gap-1.5 text-[#C9A84C] hover:text-[#b89640] text-sm font-medium hover:underline transition-colors"
+          >
+            {isVi ? 'Xem tất cả ưu đãi' : 'View all offers'}
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </section>
