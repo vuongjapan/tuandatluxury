@@ -18,17 +18,37 @@ interface Props {
   guestCount: number;
   selections: PersonalMealSelection[];
   onChange: (s: PersonalMealSelection[]) => void;
+  /**
+   * When true: lock the diner count to `guestCount` (1–4 mode).
+   * Hides the stepper, hides combination suggestions, treats each plan as a
+   * single bundled order — no quantity multiplier in the UI.
+   */
+  fixedMode?: boolean;
 }
 
-const PersonalMealPlanSelector = ({ guestCount, selections, onChange }: Props) => {
+const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode = false }: Props) => {
   const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const { plans, loading, getPlansFor, suggestCombination } = usePersonalMealPlans(true);
 
   const [n, setN] = useState<number>(Math.max(1, guestCount));
   useEffect(() => { setN(Math.max(1, guestCount)); }, [guestCount]);
+  // In fixed mode, always show plans matching the guest count exactly.
+  const effectiveN = fixedMode ? Math.max(1, guestCount) : n;
 
   const addPlan = (plan: PersonalMealPlan) => {
+    if (fixedMode) {
+      // Fixed mode: a chosen plan REPLACES any prior pick (one bundle for the group).
+      onChange([{
+        planId: plan.id,
+        name: plan.name,
+        price: plan.price,
+        items: plan.items,
+        guest_count: plan.guest_count,
+        quantity: 1,
+      }]);
+      return;
+    }
     const idx = selections.findIndex(s => s.planId === plan.id);
     if (idx >= 0) {
       const updated = [...selections];
@@ -54,8 +74,8 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange }: Props) =
     onChange(updated);
   };
 
-  const matched = getPlansFor(n);
-  const suggestion = matched.length === 0 ? suggestCombination(n) : [];
+  const matched = getPlansFor(effectiveN);
+  const suggestion = !fixedMode && matched.length === 0 ? suggestCombination(effectiveN) : [];
 
   return (
     <div className="bg-card rounded-xl border border-border p-5 space-y-4">
@@ -64,28 +84,34 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange }: Props) =
         <Users className="h-5 w-5 text-primary" />
         <div>
           <h2 className="font-display text-lg sm:text-xl font-semibold">
-            {isVi ? 'Suất ăn theo số người' : 'Meals by group size'}
+            {fixedMode
+              ? (isVi ? `Set ăn cho ${guestCount} người` : `Set meal for ${guestCount}`)
+              : (isVi ? 'Suất ăn theo số người' : 'Meals by group size')}
           </h2>
           <p className="text-xs text-muted-foreground">
-            {isVi ? 'Chọn số người ăn — hệ thống tự gợi ý suất ăn phù hợp' : 'Pick the number of diners — we suggest the right plan'}
+            {fixedMode
+              ? (isVi ? 'Giá đã trọn gói cho cả nhóm — chỉ cần chọn loại set' : 'Price is bundled for the group — just pick a set type')
+              : (isVi ? 'Chọn số người ăn — hệ thống tự gợi ý suất ăn phù hợp' : 'Pick the number of diners — we suggest the right plan')}
           </p>
         </div>
       </div>
 
-      {/* Stepper */}
-      <div className="flex items-center gap-3 bg-muted/40 rounded-lg p-3">
-        <span className="text-sm font-medium">{isVi ? 'Số người ăn:' : 'Diners:'}</span>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setN(Math.max(1, n - 1))}>
-          <Minus className="h-3 w-3" />
-        </Button>
-        <span className="font-bold text-lg w-10 text-center tabular-nums">{n}</span>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setN(n + 1)}>
-          <Plus className="h-3 w-3" />
-        </Button>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {isVi ? `Đoàn của bạn: ${guestCount} khách` : `Your group: ${guestCount} guests`}
-        </span>
-      </div>
+      {/* Stepper — hidden in fixed mode */}
+      {!fixedMode && (
+        <div className="flex items-center gap-3 bg-muted/40 rounded-lg p-3">
+          <span className="text-sm font-medium">{isVi ? 'Số người ăn:' : 'Diners:'}</span>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setN(Math.max(1, n - 1))}>
+            <Minus className="h-3 w-3" />
+          </Button>
+          <span className="font-bold text-lg w-10 text-center tabular-nums">{n}</span>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setN(n + 1)}>
+            <Plus className="h-3 w-3" />
+          </Button>
+          <span className="ml-auto text-xs text-muted-foreground">
+            {isVi ? `Đoàn của bạn: ${guestCount} khách` : `Your group: ${guestCount} guests`}
+          </span>
+        </div>
+      )}
 
       {/* Selected list */}
       {selections.length > 0 && (
@@ -101,20 +127,25 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange }: Props) =
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm truncate">{sel.name}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {sel.guest_count} {isVi ? 'người' : 'guests'} · {sel.items.slice(0, 3).join(' • ')}
+                  {fixedMode
+                    ? (isVi ? `Trọn gói cho ${guestCount} người` : `Bundled for ${guestCount}`)
+                    : `${sel.guest_count} ${isVi ? 'người' : 'guests'}`}
+                  {sel.items.length > 0 && ` · ${sel.items.slice(0, 3).join(' • ')}`}
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, -1)}>
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <span className="font-bold text-sm w-6 text-center">{sel.quantity}</span>
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, 1)}>
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
+              {!fixedMode && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, -1)}>
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="font-bold text-sm w-6 text-center">{sel.quantity}</span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, 1)}>
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
               <span className="text-primary font-bold text-sm shrink-0 w-24 text-right">
-                {formatPrice(sel.price * sel.quantity)}
+                {formatPrice(sel.price * (fixedMode ? 1 : sel.quantity))}
               </span>
               <button onClick={() => removeAt(idx)} className="text-muted-foreground hover:text-destructive shrink-0 text-sm" aria-label="Remove">✕</button>
             </motion.div>
