@@ -27,10 +27,10 @@ const Footer = () => {
               : 'Contact us directly for the best rates and exclusive offers just for you.'}
           </p>
           <a
-            href="tel:0986617939"
+            href="tel:0384418811"
             className="inline-flex items-center gap-2 bg-gold-gradient text-primary-foreground px-8 py-3.5 rounded-full font-semibold text-sm shadow-gold hover:brightness-110 transition-all duration-300"
           >
-            <Phone className="h-4 w-4" /> 098.661.7939
+            <Phone className="h-4 w-4" /> 038.441.8811
           </a>
         </div>
       </div>
@@ -76,7 +76,7 @@ const Footer = () => {
           <div>
             <h4 className="font-display text-base font-semibold mb-5 text-primary">{t('footer.contact')}</h4>
             <div className="space-y-3">
-              {['098.360.5768', '036.984.5422', '098.661.7939'].map((phone) => (
+              {['098.360.5768', '036.984.5422', '038.441.8811'].map((phone) => (
                 <a key={phone} href={`tel:${phone.replace(/\./g, '')}`} className="flex items-center gap-2.5 text-sm text-background/60 hover:text-primary transition-colors duration-300">
                   <Phone className="h-4 w-4 text-primary/70 shrink-0" /> {phone}
                 </a>

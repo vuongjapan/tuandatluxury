@@ -115,7 +115,7 @@ const Header = () => {
               <span className="text-background/30">|</span>
               <a href="tel:0369845422" className="hover:text-background transition-colors">036.984.5422</a>
               <span className="text-background/30">|</span>
-              <a href="tel:0986617939" className="hover:text-background transition-colors">098.661.7939</a>
+              <a href="tel:0384418811" className="hover:text-background transition-colors">038.441.8811</a>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-background/50">LK29-20 FLC Sầm Sơn, Thanh Hóa</span>
@@ -247,7 +247,7 @@ const Header = () => {
 
               {/* Right: actions */}
               <div className="flex items-center gap-1">
-                <a href="tel:0986617939">
+                <a href="tel:0384418811">
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
                     <Phone className="h-4 w-4" />
                   </Button>

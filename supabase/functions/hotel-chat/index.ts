@@ -223,7 +223,7 @@ ${roomsInfo}
 
 🏨 KHÁCH SẠN TUẤN ĐẠT LUXURY:
 - Địa chỉ: LK29-20, FLC Sầm Sơn, Quảng Cư, TP Sầm Sơn, Thanh Hóa
-- Hotline: 098.360.5768 | 036.984.5422 | 098.661.7939
+- Hotline: 098.360.5768 | 036.984.5422 | 038.441.8811
 - Check-in: 14:00 | Check-out: 12:00 (linh hoạt ±1-2h nếu phòng trống)
 - Early check-in từ 12:00: +30% giá phòng | Late check-out đến 14:00: miễn phí (tùy tình trạng)
 - Tiện ích: bể bơi vô cực, nhà hàng, spa, wifi tốc độ cao, máy giặt, đưa đón sân bay
