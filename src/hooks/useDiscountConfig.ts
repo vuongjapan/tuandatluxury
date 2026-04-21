@@ -12,6 +12,7 @@ export interface DiscountConfig {
   group_discount_min: number;
   group_discount_max: number;
   group_note: string;
+  min_individual_per_person: number;
 }
 
 const DEFAULT: DiscountConfig = {
@@ -25,6 +26,7 @@ const DEFAULT: DiscountConfig = {
   group_discount_min: 5,
   group_discount_max: 10,
   group_note: 'Liên hệ trực tiếp để được báo giá đoàn tốt nhất',
+  min_individual_per_person: 300000,
 };
 
 export function useDiscountConfig() {

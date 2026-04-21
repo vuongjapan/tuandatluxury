@@ -23,9 +23,14 @@ interface Props {
   onClose: () => void;
   items: FoodItem[];
   onItemsChange: (items: FoodItem[]) => void;
+  /** When true (mandatory holiday), shows progress bar in dialog footer too */
+  isMandatory?: boolean;
+  guestCount?: number;
+  minPerPerson?: number;
+  hasOtherValidSelection?: boolean;
 }
 
-const IndividualFoodSelector = ({ open, onClose, items, onItemsChange }: Props) => {
+const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false }: Props) => {
   const { allItems, loading } = useMenuItems();
   const { formatPrice, language } = useLanguage();
   const [search, setSearch] = useState('');

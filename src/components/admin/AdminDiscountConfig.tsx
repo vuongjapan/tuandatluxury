@@ -37,6 +37,7 @@ const AdminDiscountConfig = () => {
       group_discount_min: form.group_discount_min,
       group_discount_max: form.group_discount_max,
       group_note: form.group_note,
+      min_individual_per_person: form.min_individual_per_person,
     });
     setSaving(false);
     if (error) {
@@ -119,6 +120,29 @@ const AdminDiscountConfig = () => {
             onChange={(e) => set('group_note', e.target.value)}
             placeholder="VD: Liên hệ trực tiếp để được báo giá đoàn tốt nhất"
           />
+        </div>
+      </div>
+
+      {/* Min individual food per person (for mandatory holidays) */}
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h3 className="font-semibold flex items-center gap-2">
+          🍤 Mức tối thiểu đặt món riêng
+        </h3>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Áp dụng vào ngày lễ bắt buộc đặt ăn: nếu khách không chọn Suất ăn / Combo, họ phải đặt món riêng đủ mức này × số khách để được tiếp tục.
+        </p>
+        <div>
+          <Label>Mức tối thiểu / người (đ)</Label>
+          <Input
+            type="number"
+            min={0}
+            step={10000}
+            value={form.min_individual_per_person ?? 300000}
+            onChange={(e) => set('min_individual_per_person', Math.max(0, parseInt(e.target.value) || 0))}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            VD: 300.000đ → Đoàn 4 người cần đặt ≥ 1.200.000đ món riêng để bỏ qua Suất ăn / Combo.
+          </p>
         </div>
       </div>
 
