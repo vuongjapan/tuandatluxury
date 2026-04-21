@@ -112,10 +112,12 @@
     padding-right: 24px;
   }
 
-  /* Full-bleed utility — phá container để chạm mép màn hình */
+  /* Full-bleed utility — phá container để chạm mép màn hình.
+     Dùng 100% + margin âm theo container cha để tránh scroll ngang khi có scrollbar dọc. */
   .section-fullwidth,
   .full-bleed {
     width: 100vw;
+    max-width: 100vw;
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
   }
