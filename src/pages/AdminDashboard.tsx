@@ -45,8 +45,9 @@ import AdminMemberDiscount from '@/components/admin/AdminMemberDiscount';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
 import AdminIntroSection from '@/components/admin/AdminIntroSection';
 import AdminPromoBanners from '@/components/admin/AdminPromoBanners';
+import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'offers' | 'promotions' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'offers' | 'promotions' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -191,6 +192,7 @@ const AdminDashboard = () => {
         { id: 'dining', icon: UtensilsCrossed, label: 'Nhà hàng' },
         { id: 'food-menu', icon: ShoppingCart, label: 'Menu đồ ăn' },
         { id: 'combos', icon: Gift, label: 'Combo ăn uống' },
+        { id: 'mandatory-combo', icon: AlertTriangle as any, label: 'Ngày bắt buộc combo 🔴' },
       ],
     },
     {
@@ -399,6 +401,7 @@ const AdminDashboard = () => {
           {tab === 'revenue' && <AdminRevenue bookings={bookings} rooms={rooms} />}
           {tab === 'blog' && <AdminBlog />}
           {tab === 'combos' && <AdminCombo />}
+          {tab === 'mandatory-combo' && <AdminMandatoryCombo />}
           {tab === 'special-prices' && <AdminSpecialPrices />}
           {tab === 'cuisine-media' && <AdminCuisineMedia />}
           {tab === 'amenities' && <AdminAmenities />}
