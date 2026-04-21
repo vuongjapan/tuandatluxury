@@ -279,8 +279,17 @@ const AdminRooms = ({ rooms, onRefresh }: Props) => {
               <Input value={editingRoom.bed_type || ''} onChange={e => setEditingRoom({ ...editingRoom, bed_type: e.target.value })} placeholder="VD: 2 giường đôi lớn" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">View</label>
-              <Input value={editingRoom.view_type || ''} onChange={e => setEditingRoom({ ...editingRoom, view_type: e.target.value })} placeholder="VD: View biển + thành phố" />
+              <label className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">View phòng</label>
+              <select
+                value={editingRoom.view_type || 'sea_view'}
+                onChange={e => setEditingRoom({ ...editingRoom, view_type: e.target.value })}
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+              >
+                <option value="sea_view">🌊 View biển</option>
+                <option value="city_view">🏙️ View thành phố</option>
+                <option value="pool_view">🏊 View hồ bơi</option>
+                <option value="garden_view">🌿 View vườn</option>
+              </select>
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={editingRoom.has_balcony || false} onChange={e => setEditingRoom({ ...editingRoom, has_balcony: e.target.checked })} />
