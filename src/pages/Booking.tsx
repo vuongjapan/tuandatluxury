@@ -10,6 +10,7 @@ import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSel
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
 import MealRuleBanner from '@/components/MealRuleBanner';
+import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,6 +91,7 @@ const Booking = () => {
   const [comboNotes, setComboNotes] = useState('');
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
+  const [mealTime, setMealTime] = useState<MealTime>('dinner');
   const [appliedDiscountCodes, setAppliedDiscountCodes] = useState<DiscountCode[]>([]);
   const [companyName, setCompanyName] = useState('');
   const [groupSize, setGroupSize] = useState('');
@@ -161,17 +163,25 @@ const Booking = () => {
     return true;
   }, [checkIn, checkOut, nightCount, selectedRooms, isDateAvailable]);
 
+  // Meal time multiplier: "both" doubles all food totals (lunch + dinner served).
+  const mealMultiplier = mealTime === 'both' ? 2 : 1;
+  const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
+
   const personalMealTotal = useMemo(
-    () => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0),
-    [personalMealSelections]
+    () => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0) * mealMultiplier,
+    [personalMealSelections, mealMultiplier]
   );
   // 5+ guests: combo slot total = pricePerPerson × peopleInSlot (NO min-6 multiplier)
   const comboSlotsTotal = useMemo(
-    () => comboSlots.filter(s => s.packageId).reduce((sum, s) => sum + s.pricePerPerson * s.people, 0),
-    [comboSlots]
+    () => comboSlots.filter(s => s.packageId).reduce((sum, s) => sum + s.pricePerPerson * s.people, 0) * mealMultiplier,
+    [comboSlots, mealMultiplier]
   );
   const comboTotal = useMemo(() => comboSlotsTotal + personalMealTotal, [comboSlotsTotal, personalMealTotal]);
-  const individualFoodTotal = useMemo(() => individualFoods.reduce((sum, f) => sum + f.price * f.quantity, 0), [individualFoods]);
+  // Individual food: only fixed-price items contribute; negotiable items are paid at the restaurant.
+  const individualFoodTotal = useMemo(
+    () => individualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0) * mealMultiplier,
+    [individualFoods, mealMultiplier]
+  );
 
   const roomTotals = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return [];
@@ -383,14 +393,16 @@ const Booking = () => {
       const combosPayload = filledComboSlots.map(c => ({
         combo_package_id: c.packageId, combo_menu_id: c.menuId,
         combo_package_name: c.packageName, combo_menu_name: c.menuName,
-        combo_name: `${c.packageName} – ${c.menuName}`,
-        price_vnd: c.pricePerPerson, quantity: c.people,
-      }));
-      const foodItemsPayload = individualFoods.map(f => ({
-        menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
-        name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-        price_vnd: f.price, quantity: f.quantity,
-      }));
+          combo_name: `${c.packageName} – ${c.menuName}`,
+          price_vnd: c.pricePerPerson, quantity: c.people,
+          meal_time: mealTime, meal_multiplier: mealMultiplier,
+        }));
+        const foodItemsPayload = individualFoods.map(f => ({
+          menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+          name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+          price_vnd: f.price, quantity: f.quantity,
+          meal_time: mealTime, meal_multiplier: mealMultiplier,
+        }));
       const personalMealNote = personalMealSelections.length > 0
         ? '🍽️ SUẤT ĂN THEO SỐ NGƯỜI:\n' + personalMealSelections.map(m =>
             `• ${m.name} (${m.guest_count} người) ×${m.quantity} = ${(m.price * m.quantity).toLocaleString('vi-VN')}đ`
@@ -732,6 +744,18 @@ const Booking = () => {
 
                     {/* Banner explaining whether food is mandatory or optional */}
                     <MealRuleBanner rule={mandatoryComboRange} />
+
+                    {/* Meal time selector — applies × multiplier to all food totals */}
+                    <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
+                      <MealTimeSelector value={mealTime} onChange={setMealTime} />
+                      {mealTime === 'both' && (
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          {isVi
+                            ? 'Giá đồ ăn sẽ được tính × 2 (phục vụ cả bữa trưa và tối)'
+                            : 'Food price will be × 2 (both lunch and dinner served)'}
+                        </p>
+                      )}
+                    </div>
 
                     {/* === 1–4 GUESTS: SET MEAL ONLY === */}
                     {useSetMeals && (
