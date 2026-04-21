@@ -12,56 +12,109 @@ const HeroSection = () => {
   const { settings } = useSiteSettings();
   const isVi = t('nav.rooms') === 'Hạng phòng';
   const heroImage = settings.hero_image_url || heroImageFallback;
-  const heroVideo = settings.hero_video_url || '';
-  const heroVideoMobile = settings.hero_video_mobile_url || heroVideo;
+  const heroVideoDesktop = settings.hero_video_url || '';
+  const heroVideoMobile = settings.hero_video_mobile_url || heroVideoDesktop;
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const videoMobileRef = useRef<HTMLVideoElement>(null);
   const [visible, setVisible] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [showVideo, setShowVideo] = useState(true);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
+  // Decide whether to load the video at all (slow connection / save data)
+  useEffect(() => {
+    const conn = (navigator as any).connection;
+    if (conn) {
+      const slow = conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g' || conn.effectiveType === '3g';
+      if (slow || conn.saveData) {
+        setShowVideo(false);
+        return;
+      }
+    }
+  }, []);
+
+  // Pick the right source based on viewport, then attach + play
+  useEffect(() => {
+    if (!showVideo || !heroVideoDesktop) return;
+    const el = videoRef.current;
+    if (!el) return;
+
+    const isMobile = window.innerWidth < 768;
+    const src = isMobile && heroVideoMobile ? heroVideoMobile : heroVideoDesktop;
+    if (el.src !== src) {
+      el.src = src;
+      el.load();
+    }
+    const playPromise = el.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  }, [showVideo, heroVideoDesktop, heroVideoMobile]);
+
+  // Pause video when tab hidden
+  useEffect(() => {
+    const handler = () => {
+      const el = videoRef.current;
+      if (!el) return;
+      if (document.hidden) {
+        el.pause();
+      } else {
+        el.play().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, []);
+
+  const hasVideo = !!heroVideoDesktop && showVideo;
+
   return (
     <section id="overview" className="relative min-h-[85vh] h-screen flex flex-col overflow-hidden">
-      {/* Background — responsive: 16:9 desktop, 9:16 mobile */}
+      {/* Background */}
       <div className="absolute inset-0">
-        {heroVideo ? (
+        {hasVideo ? (
           <>
-            {/* Desktop video 16:9 */}
             <video
               ref={videoRef}
-              src={heroVideo}
               autoPlay
               muted
               loop
               playsInline
               preload="metadata"
+              poster={heroImage}
               onLoadedData={() => setVideoLoaded(true)}
-              className={`hidden md:block w-full h-full object-cover object-center transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-            />
-            {/* Mobile video 9:16 (or same source) */}
-            <video
-              ref={videoMobileRef}
-              src={heroVideoMobile}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              onLoadedData={() => setVideoLoaded(true)}
-              className={`md:hidden w-full h-full object-cover object-center transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+              className={`hero-video transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
             />
             {!videoLoaded && (
-              <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="absolute inset-0 w-full h-full object-cover object-center" loading="eager" width={1920} height={1080} />
+              <img
+                src={heroImage}
+                alt="Tuấn Đạt Luxury Hotel"
+                className="absolute inset-0 w-full h-full object-cover object-center"
+                loading="eager"
+                {...({ fetchpriority: 'high' } as any)}
+                decoding="async"
+                width={1920}
+                height={1080}
+              />
             )}
           </>
         ) : (
-          <img src={heroImage} alt="Tuấn Đạt Luxury Hotel" className="w-full h-full object-cover object-center" loading="eager" decoding="async" width={1920} height={1080} style={{ filter: 'contrast(1.05) saturate(1.08)' }} />
+          <img
+            src={heroImage}
+            alt="Tuấn Đạt Luxury Hotel"
+            className="w-full h-full object-cover object-center"
+            loading="eager"
+            {...({ fetchpriority: 'high' } as any)}
+            decoding="async"
+            width={1920}
+            height={1080}
+            style={{ filter: 'contrast(1.05) saturate(1.08)' }}
+          />
         )}
-        {/* Vinpearl-style overlay: lighter top, darker bottom for text legibility */}
+        {/* Vinpearl-style overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,10%,0.15)] via-[hsl(220,25%,10%,0.30)] to-[hsl(220,25%,10%,0.65)]" />
       </div>
 
