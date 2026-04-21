@@ -24,9 +24,9 @@ import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useDining } from '@/hooks/useDining';
-import { usePromotions } from '@/hooks/usePromotions';
 import { useMandatoryComboDates } from '@/hooks/useMandatoryComboDates';
-import { useAuth, MemberTier } from '@/contexts/AuthContext';
+import { useDiscountConfig, useUserBookingCount, getVipDiscountPercent } from '@/hooks/useDiscountConfig';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -36,12 +36,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
 
 const localeMap = { vi, en: enUS, ja, zh: zhCN };
-
-const TIER_DISCOUNT: Record<MemberTier, number> = {
-  normal: 5,
-  vip: 10,
-  super_vip: 15,
-};
 
 const ROOM_GUEST_LIMITS: Record<string, number> = {
   standard: 2,
@@ -62,8 +56,9 @@ const Booking = () => {
   const { toast } = useToast();
   const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays, getAvailability, isSpecialDate } = useRooms();
   const { items: diningItems, loading: diningLoading } = useDining();
-  const { promotions } = usePromotions();
   const { user, isAdmin } = useAuth();
+  const { config: discountConfig } = useDiscountConfig();
+  const { totalBookings: userBookingCount } = useUserBookingCount(user?.email);
   const { flashSales } = useFlashSales();
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
@@ -74,8 +69,6 @@ const Booking = () => {
   const preselectedRoom = searchParams.get('room') || '';
   const preCheckin = searchParams.get('checkin');
   const preCheckout = searchParams.get('checkout');
-  const promoId = searchParams.get('promo');
-  const promoType = searchParams.get('promo_type');
 
   const [roomCart, setRoomCart] = useState<RoomCartItem[]>(() => {
     if (preselectedRoom) return [{ roomId: preselectedRoom, quantity: 1 }];
