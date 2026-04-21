@@ -4,6 +4,7 @@ import { format, differenceInDays } from 'date-fns';
 import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check, Search, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
+import ComboSlotSelector, { ComboSlot } from '@/components/ComboSlotSelector';
 import PersonalMealPlanSelector, { PersonalMealSelection } from '@/components/PersonalMealPlanSelector';
 import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSelector';
 import DiscountCodeInput from '@/components/DiscountCodeInput';
@@ -84,6 +85,7 @@ const Booking = () => {
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [comboSelections, setComboSelections] = useState<ComboSelection[]>([]);
+  const [comboSlots, setComboSlots] = useState<ComboSlot[]>([]);
   const [personalMealSelections, setPersonalMealSelections] = useState<PersonalMealSelection[]>([]);
   const [comboNotes, setComboNotes] = useState('');
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
