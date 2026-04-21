@@ -212,19 +212,19 @@ const ComboSelector = ({ required, mandatory, mandatoryLabel, mandatoryNote, sha
         )}
       </div>
 
-      {!enabled && !required && (
+      {!enabled && !required && !isLocked && (
         <div className="bg-muted/40 rounded-lg p-3 text-sm text-muted-foreground text-center">
           {isVi ? '🍽️ Bỏ qua bữa ăn — bạn có thể đặt sau khi nhận phòng' : '🍽️ Skipped — order later at check-in'}
         </div>
       )}
 
-      {(enabled || required) && perPersonMode && (
+      {(enabled || required || isLocked) && perPersonMode && (
         <div className="bg-chart-2/5 border border-chart-2/30 rounded-lg p-3 text-sm text-foreground">
           {isVi ? `Mỗi khách 1 thực đơn riêng · ${guestCount} khách.` : `1 menu per guest · ${guestCount} guests.`}
         </div>
       )}
 
-      {(enabled || required) && (
+      {(enabled || required || isLocked) && (
         <>
           {/* Servings tracker */}
           <div className={cn(
