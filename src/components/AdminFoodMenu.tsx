@@ -53,6 +53,7 @@ const EMPTY_ITEM: Omit<MenuItem, 'id'> = {
   description_vi: '',
   description_en: '',
   price_vnd: 0,
+  price_type: 'fixed',
   category: 'main',
   image_url: null,
   is_popular: false,
