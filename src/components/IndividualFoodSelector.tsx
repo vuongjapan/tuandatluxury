@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, X, Minus, Plus, Search, ChevronDown } from 'lucide-react';
+import { ShoppingBag, X, Minus, Plus, Search, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMenuItems, type MenuItemPrice } from '@/hooks/useMenuItems';
 import { useLanguage } from '@/contexts/LanguageContext';
+import PriceDisplay from '@/components/PriceDisplay';
+import MenuViewerModal from '@/components/MenuViewerModal';
 
 export interface FoodItem {
   id: string;
