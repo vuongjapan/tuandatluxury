@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { UtensilsCrossed, Plus, Minus, Eye, Trash2, Users } from 'lucide-react';
+import { UtensilsCrossed, Plus, Minus, Eye, Trash2, Users, BookOpen } from 'lucide-react';
+import MenuViewerModal from '@/components/MenuViewerModal';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -41,6 +42,7 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
   const maxGroups = Math.max(1, Math.ceil(guestCount / 6));
 
   const [previewPkg, setPreviewPkg] = useState<ComboPackage | null>(null);
+  const [fullMenuOpen, setFullMenuOpen] = useState(false);
 
   // Make sure we always have exactly `maxGroups` slots — fill with empty placeholders.
   // Empty = packageId === '' (user hasn't picked yet).
