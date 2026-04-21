@@ -1654,34 +1654,49 @@ export type Database = {
       }
       mandatory_combo_dates: {
         Row: {
+          banner_message: string | null
+          banner_title: string | null
           created_at: string
-          date_from: string
-          date_to: string
+          date_from: string | null
+          date_to: string | null
           id: string
           is_active: boolean
           label: string
+          months: Json | null
           note: string | null
+          rule_type: string
           updated_at: string
+          weekdays: Json | null
         }
         Insert: {
+          banner_message?: string | null
+          banner_title?: string | null
           created_at?: string
-          date_from: string
-          date_to: string
+          date_from?: string | null
+          date_to?: string | null
           id?: string
           is_active?: boolean
           label: string
+          months?: Json | null
           note?: string | null
+          rule_type?: string
           updated_at?: string
+          weekdays?: Json | null
         }
         Update: {
+          banner_message?: string | null
+          banner_title?: string | null
           created_at?: string
-          date_from?: string
-          date_to?: string
+          date_from?: string | null
+          date_to?: string | null
           id?: string
           is_active?: boolean
           label?: string
+          months?: Json | null
           note?: string | null
+          rule_type?: string
           updated_at?: string
+          weekdays?: Json | null
         }
         Relationships: []
       }
