@@ -334,10 +334,19 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       <p style="margin:4px 0 0;font-size:11px;color:#aaa;">Lưu mã này để tra cứu đặt phòng</p>
     </div>
 
+  <div style="padding:24px;">
+    <!-- 1. Mã đặt phòng -->
+    <div style="background:#f8f6f0;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
+      <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Mã đặt phòng</p>
+      <p style="margin:0;font-size:28px;font-weight:700;color:#8B6914;letter-spacing:3px;">${booking.booking_code}</p>
+      <p style="margin:4px 0 0;font-size:11px;color:#aaa;">Lưu mã này để tra cứu đặt phòng</p>
+    </div>
+
+    <!-- Trạng thái -->
     <div style="display:flex;gap:12px;margin-bottom:20px;">
       <div style="flex:1;background:#f8f6f0;border-radius:10px;padding:12px;text-align:center;">
         <p style="margin:0 0 4px;font-size:11px;color:#888;">Trạng thái</p>
-        <span style="font-weight:700;font-size:12px;color:#d97706;">⏳ Chờ xác nhận</span>
+        <span style="font-weight:700;font-size:12px;color:#d97706;">Chờ xác nhận</span>
       </div>
       <div style="flex:1;background:${statusBg};border-radius:10px;padding:12px;text-align:center;">
         <p style="margin:0 0 4px;font-size:11px;color:#888;">Thanh toán</p>
@@ -345,52 +354,48 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       </div>
     </div>
 
-    ${discountHtml}
-
-    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">👤 Thông tin khách hàng</h3>
+    <!-- 2. THÔNG TIN KHÁCH HÀNG -->
+    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">Thông tin khách hàng</h3>
     <table style="width:100%;font-size:13px;line-height:1.8;">
       <tr><td style="color:#888;width:40%;">Họ tên:</td><td style="font-weight:500;text-align:right;">${booking.guest_name}</td></tr>
-      <tr><td style="color:#888;">Số điện thoại:</td><td style="font-weight:500;text-align:right;">📞 ${booking.guest_phone}</td></tr>
-      ${booking.guest_email ? `<tr><td style="color:#888;">Email:</td><td style="font-weight:500;text-align:right;">📧 ${booking.guest_email}</td></tr>` : ""}
+      <tr><td style="color:#888;">Số điện thoại:</td><td style="font-weight:500;text-align:right;">${booking.guest_phone}</td></tr>
+      ${booking.guest_email ? `<tr><td style="color:#888;">Email:</td><td style="font-weight:500;text-align:right;">${booking.guest_email}</td></tr>` : ""}
+      <tr><td style="color:#888;">Nhận phòng:</td><td style="font-weight:500;text-align:right;">${checkIn}</td></tr>
+      <tr><td style="color:#888;">Trả phòng:</td><td style="font-weight:500;text-align:right;">${checkOut}</td></tr>
+      <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${booking.guests_count} khách</td></tr>
     </table>
-
     ${booking.company_name ? `
-    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">🏢 Thông tin đoàn / công ty</h3>
-    <table style="width:100%;font-size:13px;line-height:1.8;">
-      <tr><td style="color:#888;width:40%;">Tên công ty:</td><td style="font-weight:500;text-align:right;">${booking.company_name}</td></tr>
-      ${booking.group_size ? `<tr><td style="color:#888;">Số người:</td><td style="font-weight:500;text-align:right;">${booking.group_size} người</td></tr>` : ''}
-      ${booking.special_services ? `<tr><td style="color:#888;">Dịch vụ:</td><td style="font-weight:500;text-align:right;">${booking.special_services}</td></tr>` : ''}
-    </table>` : ''}
+    <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;">
+      <p style="margin:2px 0;"><strong>Công ty:</strong> ${booking.company_name}</p>
+      ${booking.group_size ? `<p style="margin:2px 0;"><strong>Số người:</strong> ${booking.group_size}</p>` : ''}
+      ${booking.special_services ? `<p style="margin:2px 0;"><strong>Dịch vụ:</strong> ${booking.special_services}</p>` : ''}
+    </div>` : ''}
 
-    ${booking.decoration_notes ? `
-    <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:20px 0 12px;">💕 Yêu cầu trang trí</h3>
-    <p style="font-size:13px;color:#666;">${booking.decoration_notes}</p>` : ''}
+    <!-- 3. TỔNG HÓA ĐƠN -->
+    <div style="background:rgba(139,105,20,0.05);border:2px solid rgba(139,105,20,0.3);border-radius:12px;padding:16px;margin:20px 0;">
+      <table style="width:100%;">
+        <tr>
+          <td style="font-weight:700;color:#333;font-size:15px;">TỔNG HÓA ĐƠN:</td>
+          <td style="text-align:right;font-weight:700;color:#8B6914;font-size:22px;">${fmt(booking.total_price_vnd)}</td>
+        </tr>
+        ${hasDiscount ? `<tr><td colspan="2" style="text-align:right;font-size:11px;color:#999;padding-top:4px;">Giá gốc: <span style="text-decoration:line-through;">${fmt(originalPrice)}</span></td></tr>` : ''}
+      </table>
+    </div>
 
-    <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">🛏️ Chi tiết đặt phòng</h3>
-    <table style="width:100%;font-size:13px;line-height:1.8;">
-      <tr><td style="color:#888;width:40%;">Loại phòng:</td><td style="font-weight:600;text-align:right;">${roomName}</td></tr>
-      <tr><td style="color:#888;">Số lượng phòng:</td><td style="font-weight:500;text-align:right;">${roomQty} phòng</td></tr>
-      <tr><td style="color:#888;">Số khách:</td><td style="font-weight:500;text-align:right;">${booking.guests_count} người lớn</td></tr>
-      <tr><td style="color:#888;">📅 Nhận phòng:</td><td style="font-weight:500;text-align:right;">${checkIn}</td></tr>
-      <tr><td style="color:#888;">📅 Trả phòng:</td><td style="font-weight:500;text-align:right;">${checkOut}</td></tr>
-      <tr><td style="color:#888;">Tổng số đêm:</td><td style="font-weight:600;color:#8B6914;text-align:right;">${nights} đêm</td></tr>
-    </table>
-    ${roomBreakdownHtml}
-    ${extraPersonHtml}
+    <!-- 4. TỔNG KHUYẾN MÃI -->
+    ${hasDiscount ? `
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;margin-bottom:20px;">
+      <p style="font-weight:600;font-size:14px;margin:0 0 8px;">Tổng khuyến mãi</p>
+      <table style="width:100%;font-size:12px;line-height:1.7;">
+        ${memberDiscount > 0 ? `<tr><td>Giảm thành viên (${booking.member_discount_percent || 0}%)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(memberDiscount)}</td></tr>` : ''}
+        ${promotionDiscount > 0 ? `<tr><td>${booking.promotion_name || 'Ưu đãi'} (${booking.promotion_discount_percent || 0}%)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(promotionDiscount)}</td></tr>` : ''}
+        ${booking.discount_code ? `<tr><td>Mã <strong>${booking.discount_code}</strong>${booking.discount_code_type === 'percent' ? ` (${booking.discount_code_value}%)` : ''}</td><td style="text-align:right;font-weight:700;color:#16a34a;">${discountCodeAmt > 0 ? `-${fmt(discountCodeAmt)}` : 'Đã áp dụng'}</td></tr>` : ''}
+        ${totalDiscount > 0 ? `<tr><td style="font-weight:700;border-top:1px solid #86efac;padding-top:6px;">Tổng tiết kiệm:</td><td style="text-align:right;font-weight:700;color:#16a34a;font-size:14px;border-top:1px solid #86efac;padding-top:6px;">${fmt(totalDiscount)}</td></tr>` : ''}
+      </table>
+    </div>` : ''}
 
-    ${comboHtml}
-    ${foodHtml}
-
-    <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">💰 Tổng hợp chi phí</h3>
-    <table style="width:100%;font-size:13px;line-height:1.8;">
-      ${costRows}
-      ${discountRows}
-      <tr>
-        <td style="padding:8px 0;border-top:2px solid rgba(139,105,20,0.3);font-weight:700;font-size:15px;">TỔNG THANH TOÁN${hasDiscount ? ' (sau giảm)' : ''}:</td>
-        <td style="text-align:right;padding:8px 0;border-top:2px solid rgba(139,105,20,0.3);font-weight:700;color:#8B6914;font-size:18px;">${fmt(booking.total_price_vnd)}</td>
-      </tr>
-    </table>
-    <div style="background:#f8f6f0;border-radius:10px;padding:12px;margin-top:8px;">
+    <!-- 5. CỌC & THANH TOÁN -->
+    <div style="background:#f8f6f0;border-radius:10px;padding:12px;margin-bottom:20px;">
       <table style="width:100%;font-size:13px;line-height:1.8;">
         <tr><td style="color:#888;">Tiền cọc (50%):</td><td style="text-align:right;font-weight:700;color:${isPaid ? '#059669' : '#d97706'};">${fmt(depositAmount)}</td></tr>
         <tr><td style="color:#888;">Đã thanh toán:</td><td style="text-align:right;font-weight:600;color:${isPaid ? '#059669' : '#888'};">${isPaid ? fmt(depositAmount) : '0₫'}</td></tr>
@@ -399,43 +404,49 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     </div>
 
     ${!isPaid ? `
-    <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-top:20px;">
-      <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#92400E;text-align:center;">💳 THANH TOÁN ĐẶT CỌC</p>
+    <div style="background:#FEF3C7;border:2px dashed #F59E0B;border-radius:10px;padding:16px;margin-bottom:20px;">
+      <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#92400E;text-align:center;">THANH TOÁN ĐẶT CỌC</p>
       <table style="width:100%;font-size:13px;line-height:1.8;margin-bottom:12px;">
-        <tr><td style="color:#92400E;width:45%;">🏦 Ngân hàng:</td><td style="font-weight:700;">${VA_BANK}</td></tr>
-        <tr><td style="color:#92400E;">🔢 Số tài khoản (VA):</td><td style="font-weight:700;">${VA_ACCOUNT}</td></tr>
-        <tr><td style="color:#92400E;">👤 Chủ tài khoản:</td><td style="font-weight:700;">${VA_HOLDER}</td></tr>
+        <tr><td style="color:#92400E;width:45%;">Ngân hàng:</td><td style="font-weight:700;">${VA_BANK}</td></tr>
+        <tr><td style="color:#92400E;">Số tài khoản (VA):</td><td style="font-weight:700;">${VA_ACCOUNT}</td></tr>
+        <tr><td style="color:#92400E;">Chủ tài khoản:</td><td style="font-weight:700;">${VA_HOLDER}</td></tr>
       </table>
       <div style="text-align:center;">
-        <img src="${qrUrl}" alt="QR Thanh toán SePay" style="width:200px;height:auto;border-radius:8px;margin-bottom:12px;" />
+        <img src="${qrUrl}" alt="QR Thanh toán" style="width:200px;height:auto;border-radius:8px;margin-bottom:12px;" />
       </div>
       <div style="text-align:center;">
-        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">📌 Nội dung chuyển khoản:</p>
+        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">Nội dung chuyển khoản:</p>
         <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#8B6914;letter-spacing:2px;">${booking.booking_code}</p>
-        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">💰 Số tiền cần chuyển:</p>
+        <p style="margin:0 0 4px;font-size:12px;color:#92400E;">Số tiền cần chuyển:</p>
         <p style="margin:0;font-size:20px;font-weight:700;color:#DC2626;">${fmt(depositAmount)}</p>
       </div>
-      <p style="text-align:center;font-size:11px;color:#92400E;margin:12px 0 0;">⚠️ Chỉ chuyển khoản qua tài khoản ảo (VA) hoặc quét mã QR.</p>
     </div>` : `
-    <div style="background:#ECFDF5;border:1px solid #86efac;border-radius:10px;padding:16px;margin-top:20px;text-align:center;">
-      <p style="font-size:24px;margin:0 0 8px;">✅</p>
+    <div style="background:#ECFDF5;border:1px solid #86efac;border-radius:10px;padding:16px;margin-bottom:20px;text-align:center;">
       <p style="font-weight:700;color:#059669;font-size:16px;margin:0 0 4px;">Đã cọc 50% thành công!</p>
       <p style="font-size:13px;color:#666;margin:0;">Số tiền còn lại ${fmt(remainingAmount)} thanh toán khi nhận phòng</p>
     </div>`}
 
+    <!-- 6. CHI TIẾT ĐẶT PHÒNG -->
+    <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">Chi tiết đặt phòng</h3>
+    ${roomBreakdownHtml}
+    ${extraPersonHtml}
+    ${comboHtml}
+    ${foodHtml}
+
     ${booking.guest_notes ? `
     <div style="margin-top:20px;">
-      <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:0 0 12px;">📝 Ghi chú</h3>
+      <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:0 0 12px;">Ghi chú</h3>
       <p style="font-size:13px;color:#666;background:#f8f6f0;border-radius:8px;padding:10px 12px;">${booking.guest_notes}</p>
     </div>` : ''}
 
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
-      <p style="text-align:center;">Xin chân thành cảm ơn Quý khách đã lựa chọn <strong style="color:#8B6914;">${HOTEL_NAME}</strong>.</p>
+      <p style="text-align:center;">Cảm ơn Quý khách đã lựa chọn <strong style="color:#8B6914;">${HOTEL_NAME}</strong>.</p>
       <div style="text-align:center;border-top:1px solid #eee;margin-top:12px;padding-top:12px;">
         <p style="font-weight:600;color:#333;margin:0;">Trân trọng,</p>
-        <p style="font-weight:600;color:#333;margin:2px 0;">Bộ phận lễ tân – ${HOTEL_NAME}</p>
-        <p style="margin:2px 0;">📞 ${HOTEL_PHONES}</p>
-        <p style="margin:2px 0;">📧 ${HOTEL_EMAIL_DISPLAY}</p>
+        <p style="font-weight:600;color:#333;margin:2px 0;">${HOTEL_NAME}</p>
+        <p style="margin:2px 0;">${HOTEL_PHONES}</p>
+        <p style="margin:2px 0;">${HOTEL_EMAIL_DISPLAY}</p>
+        <p style="margin:6px 0 2px;"><a href="https://www.google.com/maps/search/?api=1&query=Tu%E1%BA%A5n+%C4%90%E1%BA%A1t+Luxury+FLC+S%E1%BA%A7m+S%C6%A1n" style="color:#8B6914;text-decoration:underline;">Xem bản đồ →</a></p>
       </div>
     </div>
     <p style="text-align:center;font-size:11px;color:#bbb;margin-top:16px;">Số phiếu: ${invoiceNumber}</p>
