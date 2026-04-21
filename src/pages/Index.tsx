@@ -6,6 +6,7 @@ import HeroSection from '@/components/HeroSection';
 import BookingSearch from '@/components/BookingSearch';
 import RoomsCarousel from '@/components/RoomsCarousel';
 import PromoBanner from '@/components/PromoBanner';
+import IntroSection from '@/components/IntroSection';
 
 import Footer from '@/components/Footer';
 import FadeIn from '@/components/FadeIn';
