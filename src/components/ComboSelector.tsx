@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UtensilsCrossed, ArrowLeft, Check, ChevronRight, AlertTriangle, Minus, Plus, Info, ShoppingBag } from 'lucide-react';
+import { UtensilsCrossed, ArrowLeft, Check, ChevronRight, AlertTriangle, Minus, Plus, Info, ShoppingBag, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useComboPackages, ComboPackage, ComboMenu } from '@/hooks/useComboPackages';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMemberDiscount } from '@/hooks/useMemberDiscount';
@@ -45,6 +47,10 @@ const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, c
   const [step, setStep] = useState<'list' | 'menus'>('list');
   const [selectedPkg, setSelectedPkg] = useState<ComboPackage | null>(null);
   const [tempQuantity, setTempQuantity] = useState(1);
+  // Toggle: skip vs add — default ON if required, else off (skip)
+  const [enabled, setEnabled] = useState<boolean>(!!required || selections.length > 0);
+  // View-menu modal
+  const [previewPkg, setPreviewPkg] = useState<ComboPackage | null>(null);
 
   const totalComboServings = selections.reduce((sum, s) => sum + s.quantity, 0);
   const remainingServings = guestCount - totalComboServings;
@@ -123,263 +129,307 @@ const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, c
 
   return (
     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <UtensilsCrossed className="h-5 w-5 text-primary" />
-        <h2 className="font-display text-xl font-semibold">Combo ăn uống</h2>
-        {perPersonMode && (
-          <span className="bg-chart-2/15 text-chart-2 text-xs font-bold px-2 py-0.5 rounded-full">
-            Chế độ 1 người = 1 thực đơn
-          </span>
-        )}
-        {required && (
-          <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" /> Bắt buộc
-          </span>
-        )}
-      </div>
-
-      {perPersonMode && (
-        <div className="bg-chart-2/5 border border-chart-2/30 rounded-lg p-3 text-sm text-foreground">
-          Mỗi khách sẽ có 1 thực đơn riêng · Hóa đơn tính theo số người ({guestCount} khách).
-        </div>
-      )}
-
-      {required && selections.length === 0 && (
-        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
-          ⚠️ {isVi ? 'Ngày bạn chọn yêu cầu chọn combo ăn uống để hoàn tất đặt phòng.' : 'Selected dates require a dining combo.'}
-        </div>
-      )}
-
-      {/* Servings tracker */}
-      <div className={cn(
-        "rounded-lg p-3 text-sm flex items-center justify-between",
-        totalComboServings === guestCount ? "bg-chart-2/10 border border-chart-2/30" :
-        totalComboServings > guestCount ? "bg-destructive/10 border border-destructive/30" :
-        "bg-muted/50 border border-border"
-      )}>
-        <span className="flex items-center gap-2">
-          <Info className="h-4 w-4 shrink-0" />
-          <span>
-            {isVi ? `Đã chọn ${totalComboServings}/${guestCount} suất (theo số người lớn)` : `Selected ${totalComboServings}/${guestCount} servings`}
-          </span>
-        </span>
-        {totalComboServings === guestCount && (
-          <span className="text-chart-2 font-bold text-xs">✅ Đủ</span>
-        )}
-        {totalComboServings > guestCount && (
-          <span className="text-destructive font-bold text-xs">⚠️ Dư {totalComboServings - guestCount} suất</span>
-        )}
-      </div>
-
-      {/* Info note */}
-      <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground flex gap-2">
-        <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
-        <span>
-          {isVi
-            ? 'Quý khách có thể chọn nhiều loại combo khác nhau. Tổng số suất phải bằng số người lớn. Mỗi mức giá gồm nhiều thực đơn – chọn 1 thực đơn khi đặt phòng.'
-            : 'You can select different combo types. Total servings must equal the number of adults.'}
-        </span>
-      </div>
-
-      {/* Selected combos list */}
-      {selections.length > 0 && step === 'list' && (
-        <div className="space-y-3">
-          {selections.map((sel, idx) => (
-            <motion.div
-              key={`${sel.packageId}-${sel.menuId}-${idx}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-primary/5 border-2 border-primary/50 rounded-xl p-4 space-y-2"
-            >
-              <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="font-display font-bold text-foreground">
-                    ✅ {sel.packageName} – {sel.menuName}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {sel.dishes.join(' • ')}
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => removeCombo(idx)} className="text-muted-foreground shrink-0">
-                  ✕
-                </Button>
-              </div>
-              <div className="flex items-center gap-3 pt-2 border-t border-border">
-                <span className="text-sm text-muted-foreground">{isVi ? 'Số suất:' : 'Qty:'}</span>
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(idx, -1)}>
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <span className="font-bold text-lg w-8 text-center">{sel.quantity}</span>
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(idx, 1)}>
-                  <Plus className="h-3 w-3" />
-                </Button>
-                <span className="ml-auto text-primary font-bold">
-                  = {formatPrice(sel.pricePerPerson * sel.quantity)}
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* Notes requirement for multiple combo types */}
-      {hasMultipleTypes && step === 'list' && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 space-y-2">
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-            📝 Ghi chú yêu cầu ăn uống {!comboNotes.trim() && <span className="text-destructive">(bắt buộc)</span>}
-          </p>
-          <Textarea
-            value={comboNotes}
-            onChange={e => onComboNotesChange(e.target.value)}
-            placeholder="Mô tả lý do chọn nhiều loại combo..."
-            rows={2}
-            className="text-sm"
-          />
-          <div className="flex flex-wrap gap-1.5">
-            {NOTES_SUGGESTIONS.map(s => (
-              <Button
-                key={s}
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => onComboNotesChange(comboNotes ? `${comboNotes}, ${s.toLowerCase()}` : s)}
-              >
-                {s}
-              </Button>
-            ))}
+      {/* Header with Skip/Add toggle */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <UtensilsCrossed className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="font-display text-lg sm:text-xl font-semibold">
+              {isVi ? 'Thêm bữa ăn' : 'Add meal'}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {required
+                ? (isVi ? 'Bắt buộc với ngày bạn chọn' : 'Required for your dates')
+                : (isVi ? 'Không bắt buộc' : 'Optional')}
+            </p>
           </div>
+          {required && (
+            <span className="bg-primary/15 text-primary text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" /> {isVi ? 'Bắt buộc' : 'Required'}
+            </span>
+          )}
+        </div>
+        {!required && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{isVi ? 'Bỏ qua' : 'Skip'}</span>
+            <Switch
+              checked={enabled}
+              onCheckedChange={(v) => {
+                setEnabled(v);
+                if (!v) onSelectionsChange([]);
+              }}
+            />
+            <span className="text-xs text-muted-foreground">{isVi ? 'Thêm' : 'Add'}</span>
+          </div>
+        )}
+      </div>
+
+      {!enabled && !required && (
+        <div className="bg-muted/40 rounded-lg p-3 text-sm text-muted-foreground text-center">
+          {isVi ? '🍽️ Bỏ qua bữa ăn — bạn có thể đặt sau khi nhận phòng' : '🍽️ Skipped — order later at check-in'}
         </div>
       )}
 
-      <AnimatePresence mode="wait">
-        {/* STEP 1: Choose combo package */}
-        {step === 'list' && (remainingServings > 0 || selections.length === 0) && (
-          <motion.div
-            key="packages"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            {selections.length > 0 && remainingServings > 0 && (
-              <p className="text-sm font-medium text-primary mb-3">
-                ➕ Chọn thêm combo cho {remainingServings} suất còn lại:
-              </p>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {packages.map((pkg) => (
+      {(enabled || required) && perPersonMode && (
+        <div className="bg-chart-2/5 border border-chart-2/30 rounded-lg p-3 text-sm text-foreground">
+          {isVi ? `Mỗi khách 1 thực đơn riêng · ${guestCount} khách.` : `1 menu per guest · ${guestCount} guests.`}
+        </div>
+      )}
+
+      {(enabled || required) && (
+        <>
+          {/* Servings tracker */}
+          <div className={cn(
+            "rounded-lg p-3 text-sm flex items-center justify-between",
+            totalComboServings === guestCount ? "bg-chart-2/10 border border-chart-2/30" :
+            totalComboServings > guestCount ? "bg-destructive/10 border border-destructive/30" :
+            "bg-muted/50 border border-border"
+          )}>
+            <span className="flex items-center gap-2">
+              <Info className="h-4 w-4 shrink-0" />
+              <span>
+                {isVi ? `Đã chọn ${totalComboServings}/${guestCount} suất` : `${totalComboServings}/${guestCount} servings`}
+              </span>
+            </span>
+            {totalComboServings === guestCount && <span className="text-chart-2 font-bold text-xs">✅ {isVi ? 'Đủ' : 'OK'}</span>}
+            {totalComboServings > guestCount && <span className="text-destructive font-bold text-xs">⚠️ +{totalComboServings - guestCount}</span>}
+          </div>
+
+          {/* Selected combos list */}
+          {selections.length > 0 && step === 'list' && (
+            <div className="space-y-2">
+              {selections.map((sel, idx) => (
                 <motion.div
-                  key={pkg.id}
-                  whileHover={{ y: -2 }}
-                  className="rounded-xl border border-border overflow-hidden cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
-                  onClick={() => handleSelectPackage(pkg)}
+                  key={`${sel.packageId}-${sel.menuId}-${idx}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-primary/5 border border-primary/40 rounded-lg p-3 flex items-center gap-3"
                 >
-                  {pkg.image_url && (
-                    <div className="aspect-[4/3] overflow-hidden relative">
-                      <img src={pkg.image_url} alt={pkg.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">
-                        {formatPrice(pkg.price_per_person)}/suất
-                      </div>
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-display text-lg font-bold text-foreground">{pkg.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{isVi ? pkg.description_vi : pkg.description_en}</p>
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="text-xs text-muted-foreground">{pkg.menu_count} {isVi ? 'thực đơn' : 'menus'}</span>
-                      <span className="text-primary text-sm font-medium flex items-center gap-1">
-                        {isVi ? 'Xem thực đơn' : 'View menus'} <ChevronRight className="h-4 w-4" />
-                      </span>
-                    </div>
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-foreground text-sm truncate">{sel.packageName} – {sel.menuName}</p>
+                    <p className="text-[11px] text-muted-foreground line-clamp-1">{sel.dishes.slice(0, 4).join(' • ')}</p>
                   </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, -1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="font-bold text-sm w-6 text-center">{sel.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(idx, 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <span className="text-primary font-bold text-sm shrink-0 w-24 text-right">
+                    {formatPrice(sel.pricePerPerson * sel.quantity)}
+                  </span>
+                  <button onClick={() => removeCombo(idx)} className="text-muted-foreground hover:text-destructive shrink-0 text-sm" aria-label="Remove">✕</button>
                 </motion.div>
               ))}
             </div>
-          </motion.div>
-        )}
+          )}
 
-        {/* STEP 2: Choose menu within package */}
-        {step === 'menus' && selectedPkg && (
-          <motion.div
-            key="menus"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
-                <ArrowLeft className="h-4 w-4" /> {isVi ? 'Quay lại' : 'Back'}
-              </Button>
-              <div>
-                <h3 className="font-display text-lg font-bold">{selectedPkg.name}</h3>
-                <p className="text-sm text-primary font-medium">{formatPrice(selectedPkg.price_per_person)}/suất</p>
+          {/* Notes for multiple combo types */}
+          {hasMultipleTypes && step === 'list' && (
+            <div className="bg-secondary/40 border border-border rounded-lg p-3 space-y-2">
+              <p className="text-sm font-semibold">
+                📝 {isVi ? 'Ghi chú yêu cầu ăn uống' : 'Dining notes'} {!comboNotes.trim() && <span className="text-muted-foreground text-xs">({isVi ? 'không bắt buộc' : 'optional'})</span>}
+              </p>
+              <Textarea
+                value={comboNotes}
+                onChange={e => onComboNotesChange(e.target.value)}
+                placeholder={isVi ? 'VD: trẻ em ăn ít, dị ứng hải sản...' : 'E.g. less for kids, seafood allergy...'}
+                rows={2}
+                className="text-sm"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {NOTES_SUGGESTIONS.map(s => (
+                  <Button key={s} variant="outline" size="sm" className="text-xs h-7"
+                    onClick={() => onComboNotesChange(comboNotes ? `${comboNotes}, ${s.toLowerCase()}` : s)}>
+                    {s}
+                  </Button>
+                ))}
               </div>
             </div>
+          )}
 
-            {/* Quantity selector */}
-            <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
-              <span className="text-sm font-medium">{isVi ? 'Số suất:' : 'Quantity:'}</span>
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}>
-                <Minus className="h-3 w-3" />
-              </Button>
-              <span className="font-bold text-lg w-8 text-center">{tempQuantity}</span>
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTempQuantity(tempQuantity + 1)}>
-                <Plus className="h-3 w-3" />
-              </Button>
-              <span className="ml-auto text-sm text-muted-foreground">
-                = {formatPrice(selectedPkg.price_per_person * tempQuantity)}
-              </span>
-            </div>
-
-            <p className="text-sm text-muted-foreground font-medium">
-              {isVi ? `Chọn 1 trong ${selectedPkg.menu_count} thực đơn:` : `Choose 1 of ${selectedPkg.menu_count} menus:`}
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getMenusByPackage(selectedPkg.id).map((menu) => {
-                const menuDishes = getDishesByMenu(menu.id);
-                return (
-                  <motion.div
-                    key={menu.id}
-                    whileHover={{ y: -2 }}
-                    className="rounded-xl border border-border p-4 cursor-pointer hover:border-primary hover:shadow-md transition-all group"
-                    onClick={() => handleSelectMenu(menu)}
+          <AnimatePresence mode="wait">
+            {/* LIST MODE: combo packages as rows */}
+            {step === 'list' && (remainingServings > 0 || selections.length === 0) && (
+              <motion.div
+                key="packages"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-2"
+              >
+                {selections.length > 0 && remainingServings > 0 && (
+                  <p className="text-sm font-medium text-primary">
+                    ➕ {isVi ? `Thêm cho ${remainingServings} suất còn lại` : `Add for ${remainingServings} more`}
+                  </p>
+                )}
+                {packages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className="rounded-lg border border-border hover:border-primary/50 transition-colors p-3 flex items-center gap-3 flex-wrap"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-display font-bold text-foreground">{isVi ? menu.name_vi : menu.name_en}</h4>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                        {menuDishes.length} {isVi ? 'món' : 'dishes'}
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-foreground">{pkg.name}</h3>
+                        <span className="text-[11px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                          {pkg.menu_count} {isVi ? 'thực đơn' : 'menus'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                        {isVi ? pkg.description_vi : pkg.description_en}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPkg(pkg)}
+                        className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                      >
+                        <Eye className="h-3 w-3" /> {isVi ? 'Xem thực đơn' : 'View menus'} →
+                      </button>
                     </div>
-                    <ol className="space-y-1.5">
-                      {menuDishes.map((dish, i) => (
-                        <li key={dish.id} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span className="text-xs font-bold text-foreground/50 w-5 shrink-0 text-right">{i + 1}.</span>
-                          <span>{isVi ? dish.name_vi : dish.name_en}</span>
-                        </li>
-                      ))}
-                    </ol>
-                    <Button variant="outline" size="sm" className="w-full mt-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      <Check className="h-4 w-4 mr-1" />
-                      {isVi ? 'Chọn thực đơn này' : 'Select this menu'}
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-primary">{formatPrice(pkg.price_per_person)}</p>
+                      <p className="text-[10px] text-muted-foreground">/{isVi ? 'suất' : 'serving'}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="gold"
+                      className="shrink-0 gap-1"
+                      onClick={() => handleSelectPackage(pkg)}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      {isVi ? 'Chọn' : 'Pick'}
                     </Button>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  </div>
+                ))}
+              </motion.div>
+            )}
 
-      {/* Individual food order link */}
-      {step === 'list' && onOpenFoodOrder && (
-        <div className="border-t border-border pt-3">
-          <Button variant="outline" className="w-full gap-2" onClick={onOpenFoodOrder}>
-            <ShoppingBag className="h-4 w-4" />
-            👉 Đặt món riêng (xem menu)
-          </Button>
-        </div>
+            {/* STEP 2: Choose menu within package */}
+            {step === 'menus' && selectedPkg && (
+              <motion.div
+                key="menus"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
+                    <ArrowLeft className="h-4 w-4" /> {isVi ? 'Quay lại' : 'Back'}
+                  </Button>
+                  <div>
+                    <h3 className="font-display text-lg font-bold">{selectedPkg.name}</h3>
+                    <p className="text-sm text-primary font-medium">{formatPrice(selectedPkg.price_per_person)}/{isVi ? 'suất' : 'serving'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
+                  <span className="text-sm font-medium">{isVi ? 'Số suất:' : 'Quantity:'}</span>
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}>
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="font-bold text-lg w-8 text-center">{tempQuantity}</span>
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setTempQuantity(tempQuantity + 1)}>
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                  <span className="ml-auto text-sm text-muted-foreground">
+                    = {formatPrice(selectedPkg.price_per_person * tempQuantity)}
+                  </span>
+                </div>
+
+                <p className="text-sm text-muted-foreground font-medium">
+                  {isVi ? `Chọn 1 trong ${selectedPkg.menu_count} thực đơn:` : `Choose 1 of ${selectedPkg.menu_count} menus:`}
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {getMenusByPackage(selectedPkg.id).map((menu) => {
+                    const menuDishes = getDishesByMenu(menu.id);
+                    return (
+                      <motion.div
+                        key={menu.id}
+                        whileHover={{ y: -2 }}
+                        className="rounded-xl border border-border p-4 cursor-pointer hover:border-primary hover:shadow-md transition-all group"
+                        onClick={() => handleSelectMenu(menu)}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-display font-bold text-foreground">{isVi ? menu.name_vi : menu.name_en}</h4>
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+                            {menuDishes.length} {isVi ? 'món' : 'dishes'}
+                          </span>
+                        </div>
+                        <ol className="space-y-1.5">
+                          {menuDishes.map((dish, i) => (
+                            <li key={dish.id} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <span className="text-xs font-bold text-foreground/50 w-5 shrink-0 text-right">{i + 1}.</span>
+                              <span>{isVi ? dish.name_vi : dish.name_en}</span>
+                            </li>
+                          ))}
+                        </ol>
+                        <Button variant="outline" size="sm" className="w-full mt-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          <Check className="h-4 w-4 mr-1" />
+                          {isVi ? 'Chọn thực đơn này' : 'Select this menu'}
+                        </Button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Individual food order link */}
+          {step === 'list' && onOpenFoodOrder && (
+            <div className="border-t border-border pt-3">
+              <Button variant="outline" className="w-full gap-2" onClick={onOpenFoodOrder}>
+                <ShoppingBag className="h-4 w-4" />
+                {isVi ? '👉 Đặt món riêng' : '👉 Order individual dishes'}
+              </Button>
+            </div>
+          )}
+        </>
       )}
+
+      {/* Preview menu modal */}
+      <Dialog open={!!previewPkg} onOpenChange={(o) => !o && setPreviewPkg(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              {previewPkg?.name} <span className="text-primary text-base">· {previewPkg && formatPrice(previewPkg.price_per_person)}/{isVi ? 'suất' : 'serving'}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {previewPkg && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{isVi ? previewPkg.description_vi : previewPkg.description_en}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {getMenusByPackage(previewPkg.id).map((menu) => {
+                  const dishes = getDishesByMenu(menu.id);
+                  return (
+                    <div key={menu.id} className="border border-border rounded-lg p-3">
+                      <h4 className="font-bold text-sm mb-2">{isVi ? menu.name_vi : menu.name_en}</h4>
+                      <ol className="space-y-1 text-xs text-muted-foreground">
+                        {dishes.map((d, i) => (
+                          <li key={d.id}>{i + 1}. {isVi ? d.name_vi : d.name_en}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  );
+                })}
+              </div>
+              <Button
+                variant="gold"
+                className="w-full"
+                onClick={() => { handleSelectPackage(previewPkg); setPreviewPkg(null); }}
+              >
+                {isVi ? 'Chọn combo này' : 'Pick this combo'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

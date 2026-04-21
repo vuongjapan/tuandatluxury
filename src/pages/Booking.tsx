@@ -98,6 +98,8 @@ const Booking = () => {
   const [specialRequests, setSpecialRequests] = useState('');
   const [country, setCountry] = useState('');
   const [address, setAddress] = useState('');
+  const [dob, setDob] = useState('');
+  const [idNumber, setIdNumber] = useState('');
   const [searchDone, setSearchDone] = useState(!!preselectedRoom);
   
 
@@ -462,25 +464,44 @@ const Booking = () => {
       <div className="pt-24 lg:pt-28 pb-8">
         <div className="container mx-auto px-4 max-w-5xl">
 
-          {/* Step indicator */}
-          <div className="flex items-center justify-center gap-0 mb-8 overflow-x-auto">
-            {STEPS.map((step, i) => (
-              <div key={step.num} className="flex items-center shrink-0">
-                <button
-                  onClick={() => { if (step.num <= currentStep) setCurrentStep(step.num); }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all",
-                    step.num === currentStep ? 'bg-primary text-primary-foreground' :
-                    step.num < currentStep ? 'bg-primary/20 text-primary cursor-pointer' :
-                    'bg-secondary text-muted-foreground'
-                  )}
-                >
-                  {step.num < currentStep ? <Check className="h-4 w-4" /> : <span className="text-xs">{step.icon}</span>}
-                  <span className="hidden sm:inline text-xs">{step.label}</span>
-                </button>
-                {i < STEPS.length - 1 && <div className={cn("w-6 sm:w-10 h-0.5 mx-1", step.num < currentStep ? 'bg-primary' : 'bg-border')} />}
-              </div>
-            ))}
+          {/* Progress bar — Vinpearl/FLC style */}
+          <div className="mb-8">
+            {/* Bar with fill */}
+            <div className="relative h-1.5 bg-secondary rounded-full overflow-hidden mb-4">
+              <div
+                className="absolute inset-y-0 left-0 bg-primary transition-all duration-500 rounded-full"
+                style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+              />
+            </div>
+            {/* Step pills */}
+            <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto">
+              {STEPS.map((step) => {
+                const done = step.num < currentStep;
+                const active = step.num === currentStep;
+                return (
+                  <button
+                    key={step.num}
+                    onClick={() => { if (step.num <= currentStep) setCurrentStep(step.num); }}
+                    className={cn(
+                      "flex flex-col items-center gap-1 shrink-0 min-w-0 flex-1 px-1 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      active && 'text-primary',
+                      done && 'text-primary/70 cursor-pointer hover:text-primary',
+                      !active && !done && 'text-muted-foreground'
+                    )}
+                  >
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all",
+                      active && 'bg-primary text-primary-foreground shadow-md scale-110',
+                      done && 'bg-primary/20 text-primary',
+                      !active && !done && 'bg-secondary text-muted-foreground'
+                    )}>
+                      {done ? <Check className="h-4 w-4" /> : step.num}
+                    </div>
+                    <span className="hidden sm:block text-[11px] truncate w-full text-center">{step.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Promo banners */}
@@ -742,10 +763,18 @@ const Booking = () => {
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Địa chỉ' : 'Address'}</label>
                           <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={isVi ? 'Địa chỉ (không bắt buộc)' : 'Address (optional)'} />
                         </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Ngày sinh' : 'Date of birth'} <span className="text-muted-foreground/60 normal-case">({isVi ? 'không bắt buộc' : 'optional'})</span></label>
+                          <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'CCCD / Hộ chiếu' : 'ID / Passport'} <span className="text-muted-foreground/60 normal-case">({isVi ? 'không bắt buộc' : 'optional'})</span></label>
+                          <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder={isVi ? 'Số căn cước hoặc hộ chiếu' : 'ID or passport number'} />
+                        </div>
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.notes')}</label>
-                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder={isVi ? 'Ghi chú thêm...' : 'Additional notes...'} />
+                        <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Yêu cầu đặc biệt' : 'Special requests'}</label>
+                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder={isVi ? 'Ví dụ: phòng tầng cao, giường extra, dị ứng...' : 'E.g. high floor, extra bed, allergies...'} />
                       </div>
                     </div>
                   </motion.div>
