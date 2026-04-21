@@ -18,6 +18,14 @@ function generateBookingCodePrefix(): string {
   return `TD${year}${month}A`;
 }
 
+function mealTimeLabel(mt?: string | null): string | null {
+  if (!mt) return null;
+  if (mt === 'lunch') return 'Bữa trưa';
+  if (mt === 'dinner') return 'Bữa tối';
+  if (mt === 'both') return 'Cả 2 bữa';
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -36,6 +44,7 @@ serve(async (req) => {
       company_name, group_size, special_services, decoration_notes,
       original_price_vnd, discount_code, discount_code_amount, discount_code_type, discount_code_value,
       room_details, room_breakdown, room_subtotal,
+      meal_time, meal_multiplier,
     } = body;
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
@@ -69,6 +78,8 @@ serve(async (req) => {
     const depositAmount = Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
     const sepayQrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(bookingCode)}`;
+
+    const mtLabel = mealTimeLabel(meal_time);
 
     // Insert booking
     const { data: booking, error: bookingError } = await supabase
@@ -116,6 +127,8 @@ serve(async (req) => {
         extra_person_surcharge: extra_person_surcharge || 0,
         individual_food_total: individual_food_total || 0,
         combo_notes: combo_notes || null,
+        meal_time: meal_time || null,
+        meal_time_label: mtLabel,
       })
       .select()
       .single();
@@ -153,6 +166,8 @@ serve(async (req) => {
           price_vnd: c.price_vnd,
           quantity: c.quantity,
           dishes_snapshot: dishesSnapshot,
+          meal_time: c.meal_time || meal_time || null,
+          meal_multiplier: c.meal_multiplier || meal_multiplier || 1,
         });
       }
 
@@ -173,6 +188,8 @@ serve(async (req) => {
         name: f.name,
         price_vnd: f.price_vnd,
         quantity: f.quantity,
+        meal_time: f.meal_time || meal_time || null,
+        meal_multiplier: f.meal_multiplier || meal_multiplier || 1,
       }));
       const { data: insertedFoods, error: foodError } = await supabase
         .from("booking_food_items")

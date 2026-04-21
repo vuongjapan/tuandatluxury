@@ -445,6 +445,8 @@ const Booking = () => {
           special_services: serviceLabels || undefined,
           decoration_notes: decorationNotes || undefined,
           room_details: roomDetails, room_breakdown: roomBreakdown,
+          meal_time: mealTime,
+          meal_multiplier: mealMultiplier,
         }),
       });
       const data = await resp.json();
