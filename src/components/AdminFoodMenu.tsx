@@ -305,7 +305,10 @@ const AdminFoodMenu = () => {
     </div>
   );
 
-  const formatPrice = (p: number) => p === 0 ? 'Giá thỏa thuận' : `${p.toLocaleString('vi-VN')}₫`;
+  const formatPrice = (item: MenuItem) =>
+    item.price_type === 'negotiable' || item.price_vnd === 0
+      ? 'Giá thỏa thuận'
+      : `${item.price_vnd.toLocaleString('vi-VN')}₫`;
 
   const categoryCounts = items.reduce((acc, item) => {
     acc[item.category] = (acc[item.category] || 0) + 1;
