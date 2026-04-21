@@ -139,7 +139,7 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
       {/* Header */}
       <div className="flex items-center gap-2">
         <UtensilsCrossed className="h-5 w-5 text-primary" />
-        <div>
+        <div className="flex-1 min-w-0">
           <h2 className="font-display text-lg sm:text-xl font-semibold">
             {isVi ? 'Combo ăn uống cho đoàn' : 'Group meal combos'}
           </h2>
@@ -149,6 +149,16 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
               : `${guestCount} guests → ${maxGroups} combo${maxGroups > 1 ? 's' : ''} (each group picks a different combo)`}
           </p>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1 shrink-0 text-xs"
+          onClick={() => setFullMenuOpen(true)}
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          {isVi ? 'Xem thực đơn' : 'View menu'}
+        </Button>
       </div>
 
       {/* Progress: assigned / guestCount */}
