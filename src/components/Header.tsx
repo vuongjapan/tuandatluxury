@@ -68,7 +68,6 @@ const Header = () => {
   // Split nav items: left side & right side of logo
   const leftNavItems = [
     { labelVi: 'Giới thiệu', labelEn: 'About', href: '/gioi-thieu' },
-    { key: 'nav.overview', href: '/#overview' },
     { key: 'nav.rooms_booking', href: '/#rooms' },
     { key: 'nav.dining', href: '/cuisine' },
   ] as any[];
