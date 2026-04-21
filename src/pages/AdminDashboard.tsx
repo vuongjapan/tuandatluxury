@@ -22,7 +22,6 @@ import AdminRevenue from '@/components/admin/AdminRevenue';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminTrash, { TrashItem, getTrash, saveTrash } from '@/components/admin/AdminTrash';
 import AdminDining from '@/components/AdminDining';
-import AdminPromotions from '@/components/AdminPromotions';
 import AdminOffers from '@/components/admin/AdminOffers';
 import AdminServices from '@/components/AdminServices';
 import AdminFoodMenu from '@/components/AdminFoodMenu';
@@ -41,14 +40,14 @@ import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminAuction from '@/components/admin/AdminAuction';
 import AdminLive from '@/components/admin/AdminLive';
 import AdminReviews from '@/components/admin/AdminReviews';
-import AdminMemberDiscount from '@/components/admin/AdminMemberDiscount';
+import AdminDiscountConfig from '@/components/admin/AdminDiscountConfig';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
 import AdminIntroSection from '@/components/admin/AdminIntroSection';
 import AdminPromoBanners from '@/components/admin/AdminPromoBanners';
 import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
 import AdminPersonalMealPlans from '@/components/admin/AdminPersonalMealPlans';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotions' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'discount-config' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -202,10 +201,9 @@ const AdminDashboard = () => {
       items: [
         { id: 'promo-banners', icon: Flame, label: 'Banner Hè 2026 (Trang chủ)' },
         { id: 'offers', icon: Gift, label: 'Bài Ưu đãi (Web)' },
-        { id: 'promotions', icon: Gift, label: 'Ưu đãi (cũ)' },
         { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
         { id: 'web-discount', icon: MapPin, label: 'Giảm giá web' },
-        { id: 'member-discount', icon: Sparkles, label: 'Ưu đãi TV & Combo/người' },
+        { id: 'discount-config', icon: Sparkles, label: 'Ưu đãi VIP & Đoàn' },
         { id: 'vouchers', icon: Gift, label: 'Voucher QR' },
         { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
         { id: 'intro-section', icon: ImageIcon, label: 'Section Giới thiệu (Trang chủ)' },
@@ -395,7 +393,6 @@ const AdminDashboard = () => {
           {tab === 'dining' && <AdminDining />}
           {tab === 'promo-banners' && <AdminPromoBanners />}
           {tab === 'offers' && <AdminOffers />}
-          {tab === 'promotions' && <AdminPromotions />}
           {tab === 'promotion-system' && <AdminPromotionSystem />}
           {tab === 'services' && <AdminServices />}
           {tab === 'food-menu' && <AdminFoodMenu />}
@@ -417,7 +414,7 @@ const AdminDashboard = () => {
           {tab === 'auction' && <AdminAuction />}
           {tab === 'live' && <AdminLive />}
           {tab === 'reviews' && <AdminReviews />}
-          {tab === 'member-discount' && <AdminMemberDiscount />}
+          {tab === 'discount-config' && <AdminDiscountConfig />}
           {tab === 'about-images' && <AdminAboutImages />}
           {tab === 'intro-section' && <AdminIntroSection />}
         </div>

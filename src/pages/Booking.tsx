@@ -24,9 +24,9 @@ import FloatingButtons from '@/components/FloatingButtons';
 import { useRooms } from '@/hooks/useRooms';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useDining } from '@/hooks/useDining';
-import { usePromotions } from '@/hooks/usePromotions';
 import { useMandatoryComboDates } from '@/hooks/useMandatoryComboDates';
-import { useAuth, MemberTier } from '@/contexts/AuthContext';
+import { useDiscountConfig, useUserBookingCount, getVipDiscountPercent } from '@/hooks/useDiscountConfig';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -36,12 +36,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
 
 const localeMap = { vi, en: enUS, ja, zh: zhCN };
-
-const TIER_DISCOUNT: Record<MemberTier, number> = {
-  normal: 5,
-  vip: 10,
-  super_vip: 15,
-};
 
 const ROOM_GUEST_LIMITS: Record<string, number> = {
   standard: 2,
@@ -62,8 +56,9 @@ const Booking = () => {
   const { toast } = useToast();
   const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays, getAvailability, isSpecialDate } = useRooms();
   const { items: diningItems, loading: diningLoading } = useDining();
-  const { promotions } = usePromotions();
   const { user, isAdmin } = useAuth();
+  const { config: discountConfig } = useDiscountConfig();
+  const { totalBookings: userBookingCount } = useUserBookingCount(user?.email);
   const { flashSales } = useFlashSales();
   const { discounts: globalDiscounts } = useGlobalDiscounts();
   const { rules: smartRules } = useSmartPricing();
@@ -74,8 +69,6 @@ const Booking = () => {
   const preselectedRoom = searchParams.get('room') || '';
   const preCheckin = searchParams.get('checkin');
   const preCheckout = searchParams.get('checkout');
-  const promoId = searchParams.get('promo');
-  const promoType = searchParams.get('promo_type');
 
   const [roomCart, setRoomCart] = useState<RoomCartItem[]>(() => {
     if (preselectedRoom) return [{ roomId: preselectedRoom, quantity: 1 }];
@@ -141,13 +134,8 @@ const Booking = () => {
 
   const extraPersonCount = useMemo(() => Math.max(0, guestCount - standardCapacity), [guestCount, standardCapacity]);
 
-  const activePromo = useMemo(() => {
-    if (!promoId) return null;
-    return promotions.find(p => p.id === promoId && p.is_active) || null;
-  }, [promoId, promotions]);
-
-  const isGroupPromo = promoType === 'group' || (activePromo as any)?.promo_type === 'group';
-  const isCouplePromo = promoType === 'couple' || (activePromo as any)?.promo_type === 'couple';
+  const isGroupPromo = false;
+  const isCouplePromo = false;
 
   const comboRequired = useMemo(() => {
     if (!checkIn || !checkOut) return false;
@@ -250,20 +238,18 @@ const Booking = () => {
     return Math.round(roomTotal * activeSmartRule.discount_percent / 100);
   }, [activeSmartRule, roomTotal]);
 
-  const promoDiscountPercent = useMemo(() => {
-    if (!activePromo) return 0;
-    let base = activePromo.discount_percent || 0;
-    if (isGroupPromo && groupSize) {
-      const size = parseInt(groupSize) || 0;
-      const tiers = (activePromo as any).group_discount_tiers || [];
-      for (const tier of tiers) {
-        if (size >= tier.min && size <= tier.max) { base += tier.discount; break; }
-      }
-    }
-    return base;
-  }, [activePromo, isGroupPromo, groupSize]);
+  // Old promo system removed — only the new VIP / discount-config system is used.
+  const promoDiscountPercent = 0;
 
-  const memberDiscountPercent = user ? TIER_DISCOUNT[user.tier] : 0;
+  // VIP discount: applies to ROOM ONLY, based on the user's confirmed booking history.
+  const memberDiscountPercent = useMemo(
+    () => (user ? getVipDiscountPercent(discountConfig, userBookingCount) : 0),
+    [user, discountConfig, userBookingCount]
+  );
+  const memberDiscountAmount = useMemo(
+    () => (memberDiscountPercent > 0 ? Math.round(roomTotal * memberDiscountPercent / 100) : 0),
+    [memberDiscountPercent, roomTotal]
+  );
 
   // Sum of all applied discount codes (multi-voucher support).
   const discountCodeAmount = useMemo(() => {
@@ -287,11 +273,10 @@ const Booking = () => {
     return Math.round(roomTotal * webDiscountPercent / 100);
   }, [webDiscountPercent, roomTotal]);
 
-  const totalDiscountPercent = memberDiscountPercent + promoDiscountPercent;
+  // VIP discount applies to ROOM ONLY (memberDiscountAmount already computed from roomTotal).
   const originalPrice = roomTotal + extraPersonSurcharge + comboTotal + individualFoodTotal;
-  const percentDiscount = Math.round(originalPrice * totalDiscountPercent / 100);
   const allAutoDiscounts = flashSaleDiscount + globalDiscountAmount + smartPricingAmount + webDiscountAmount;
-  const discountAmount = percentDiscount + discountCodeAmount + allAutoDiscounts;
+  const discountAmount = memberDiscountAmount + discountCodeAmount + allAutoDiscounts;
   const computedTotal = Math.max(0, originalPrice - discountAmount);
 
   // Admin manual price override (only when admin is logged in)
@@ -407,12 +392,9 @@ const Booking = () => {
           individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
-          promotion_id: activePromo?.id || undefined,
-          promotion_name: [activePromo ? (activePromo.title_vi || activePromo.title_en) : null, ...appliedPromotions.map(p => p.name)].filter(Boolean).join(' | ') || undefined,
-          promotion_discount_percent: promoDiscountPercent > 0 ? promoDiscountPercent : undefined,
-          promotion_discount_amount: (promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : 0) + allAutoDiscounts || undefined,
+          promotion_name: appliedPromotions.map(p => p.name).join(' | ') || undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
-          member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
+          member_discount_amount: memberDiscountAmount > 0 ? memberDiscountAmount : undefined,
           discount_code: appliedDiscountCodes.length > 0 ? appliedDiscountCodes.map(c => c.code).join(',') : undefined,
           discount_code_amount: discountCodeAmount > 0 ? discountCodeAmount : undefined,
           discount_code_type: appliedDiscountCodes.length === 1 ? appliedDiscountCodes[0].discount_type : (appliedDiscountCodes.length > 1 ? 'mixed' : undefined),
@@ -537,27 +519,29 @@ const Booking = () => {
             </div>
           </div>
 
-          {/* Promo banners */}
-          {activePromo && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-              <Gift className="h-6 w-6 text-primary shrink-0" />
-              <div className="flex-1">
-                <p className="font-semibold text-foreground text-sm">{isVi ? `Đang áp dụng: ${activePromo.title_vi}` : `Applied: ${activePromo.title_en}`}</p>
-                <p className="text-xs text-muted-foreground">
-                  {promoDiscountPercent > 0 && `Giảm ${promoDiscountPercent}%`}
-                  {memberDiscountPercent > 0 && ` + Thành viên ${memberDiscountPercent}%`}
-                </p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/booking')}>✕</Button>
-            </motion.div>
-          )}
-          {!activePromo && user && memberDiscountPercent > 0 && (
+          {/* VIP banner (signed-in users with active discount) */}
+          {user && memberDiscountPercent > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
-              <p className="text-sm text-foreground">⭐ {isVi ? `Giảm ${memberDiscountPercent}% (Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'})` : `${memberDiscountPercent}% discount`}</p>
+              <p className="text-sm text-foreground">
+                🏅 {isVi
+                  ? `Ưu đãi VIP: -${memberDiscountPercent}% tiền phòng (đã đặt ${userBookingCount} lần)`
+                  : `VIP discount: -${memberDiscountPercent}% on room (${userBookingCount} bookings)`}
+              </p>
             </motion.div>
           )}
+          {!user && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="mb-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-center">
+              <p className="text-sm text-amber-900 dark:text-amber-200">
+                ⭐ {isVi ? 'Đăng nhập để nhận ưu đãi thành viên VIP' : 'Sign in for VIP member discounts'}{' '}
+                <button onClick={() => navigate('/member')} className="underline font-semibold">
+                  {isVi ? 'Đăng nhập' : 'Sign in'}
+                </button>
+              </p>
+            </motion.div>
+          )}
+
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main content */}
@@ -949,8 +933,7 @@ const Booking = () => {
                             {appliedPromotions.map((p, i) => (
                               <div key={i} className="flex justify-between text-primary"><span>{p.name}</span><span>-{formatPrice(p.amount)}</span></div>
                             ))}
-                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>⭐ Thành viên ({memberDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * memberDiscountPercent / 100))}</span></div>}
-                            {promoDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🎉 Ưu đãi ({promoDiscountPercent}%)</span><span>-{formatPrice(Math.round(originalPrice * promoDiscountPercent / 100))}</span></div>}
+                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🏅 {isVi ? 'Ưu đãi VIP' : 'VIP'} ({memberDiscountPercent}% {isVi ? 'tiền phòng' : 'on room'})</span><span>-{formatPrice(memberDiscountAmount)}</span></div>}
                             {discountCodeAmount > 0 && appliedDiscountCodes.length > 0 && (
                               <div className="flex justify-between text-primary">
                                 <span>🎟️ {appliedDiscountCodes.length === 1 ? `Mã ${appliedDiscountCodes[0].code}` : `${appliedDiscountCodes.length} ${isVi ? 'mã' : 'codes'}: ${appliedDiscountCodes.map(c => c.code).join(', ')}`}</span>

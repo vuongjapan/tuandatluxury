@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Zap, Clock, Copy, Check, Tag, Percent, ArrowRight, ShoppingCart, Flame, Calendar, Users, Star } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import MembershipSection from '@/components/MembershipSection';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -215,6 +216,9 @@ const Promotions = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Membership program — VIP + Group */}
+      <MembershipSection />
 
       {/* Global Discount Banner */}
       {activeGlobal.length > 0 && (

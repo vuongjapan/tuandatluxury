@@ -7,7 +7,6 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useComboPackages, ComboPackage, ComboMenu } from '@/hooks/useComboPackages';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useMemberDiscount } from '@/hooks/useMemberDiscount';
 import { cn } from '@/lib/utils';
 
 export interface ComboSelection {
@@ -50,9 +49,8 @@ const NOTES_SUGGESTIONS = [
 const ComboSelector = ({ required, mandatory, mandatoryLabel, mandatoryNote, shake, sectionId, selections, onSelectionsChange, guestCount, comboNotes, onComboNotesChange, onOpenFoodOrder }: ComboSelectorProps) => {
   const { packages, loading, getMenusByPackage, getDishesByMenu } = useComboPackages();
   const { language, formatPrice } = useLanguage();
-  const { perPerson } = useMemberDiscount();
   const isVi = language === 'vi';
-  const perPersonMode = perPerson.enabled;
+  const perPersonMode = false;
   const isLocked = !!mandatory; // hide skip toggle, force-open
 
   const [step, setStep] = useState<'list' | 'menus'>('list');
