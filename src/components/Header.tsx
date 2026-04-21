@@ -67,10 +67,11 @@ const Header = () => {
 
   // Split nav items: left side & right side of logo
   const leftNavItems = [
+    { labelVi: 'Giới thiệu', labelEn: 'About', href: '/gioi-thieu' },
     { key: 'nav.overview', href: '/#overview' },
     { key: 'nav.rooms_booking', href: '/#rooms' },
     { key: 'nav.dining', href: '/cuisine' },
-  ];
+  ] as any[];
 
   const rightNavItems = [
     { key: 'nav.services', href: '/services' },
@@ -168,13 +169,13 @@ const Header = () => {
             <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] items-center h-full gap-2">
               {/* Left nav */}
               <nav className="flex items-center justify-end gap-0.5">
-                {leftNavItems.map((item) => (
+                {leftNavItems.map((item: any) => (
                   <button
-                    key={item.key}
+                    key={item.key || item.href}
                     onClick={() => handleNavClick(item.href)}
                     className="px-3 xl:px-4 py-2 text-[11px] xl:text-xs font-semibold uppercase tracking-widest text-foreground/70 hover:text-primary transition-colors whitespace-nowrap"
                   >
-                    {t(item.key)}
+                    {item.key ? t(item.key) : (isVi ? item.labelVi : item.labelEn)}
                   </button>
                 ))}
               </nav>
