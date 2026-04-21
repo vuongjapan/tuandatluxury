@@ -24,6 +24,7 @@ const DiningSection = lazy(() => import('@/components/DiningHomeSection'));
 const FloatingButtons = lazy(() => import('@/components/FloatingButtons'));
 const TestimonialsSection = lazy(() => import('@/components/TestimonialsSection'));
 const RestaurantSection = lazy(() => import('@/components/RestaurantSection'));
+const ServicesSection = lazy(() => import('@/components/ServicesSection'));
 
 const SectionFallback = () => (
   <div className="py-12 flex items-center justify-center">
@@ -107,6 +108,11 @@ const Index = () => {
       {/* [6] Ẩm thực */}
       <Suspense fallback={<SectionFallback />}>
         <RestaurantSection />
+      </Suspense>
+
+      {/* [6.5] Dịch vụ / Tiện ích */}
+      <Suspense fallback={<SectionFallback />}>
+        <ServicesSection />
       </Suspense>
 
       {/* [7] Khám phá Sầm Sơn */}
