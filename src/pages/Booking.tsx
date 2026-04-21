@@ -708,20 +708,30 @@ const Booking = () => {
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {isVi ? 'Thêm dịch vụ' : 'Add Services'}</h2>
 
-                    <ComboSelector
-                      sectionId="combo-section"
-                      required={comboRequired}
-                      mandatory={isComboMandatory}
-                      mandatoryLabel={mandatoryComboRange?.label}
-                      mandatoryNote={mandatoryComboRange?.note || undefined}
-                      shake={comboShake}
-                      selections={comboSelections}
-                      onSelectionsChange={setComboSelections}
+                    {/* SECTION 1: Personal meal plans — always visible regardless of guest count */}
+                    <PersonalMealPlanSelector
                       guestCount={guestCount}
-                      comboNotes={comboNotes}
-                      onComboNotesChange={setComboNotes}
-                      onOpenFoodOrder={() => setFoodSelectorOpen(true)}
+                      selections={personalMealSelections}
+                      onChange={setPersonalMealSelections}
                     />
+
+                    {/* SECTION 2: Combo 225k–550k — only when guestCount >= 6 OR mandatory holiday */}
+                    {(guestCount >= 6 || isComboMandatory) && (
+                      <ComboSelector
+                        sectionId="combo-section"
+                        required={comboRequired}
+                        mandatory={isComboMandatory}
+                        mandatoryLabel={mandatoryComboRange?.label}
+                        mandatoryNote={mandatoryComboRange?.note || undefined}
+                        shake={comboShake}
+                        selections={comboSelections}
+                        onSelectionsChange={setComboSelections}
+                        guestCount={guestCount}
+                        comboNotes={comboNotes}
+                        onComboNotesChange={setComboNotes}
+                        onOpenFoodOrder={() => setFoodSelectorOpen(true)}
+                      />
+                    )}
 
                     <IndividualFoodSelector
                       open={foodSelectorOpen}
