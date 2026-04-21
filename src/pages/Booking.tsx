@@ -377,6 +377,13 @@ const Booking = () => {
         name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
         price_vnd: f.price, quantity: f.quantity,
       }));
+      const personalMealNote = personalMealSelections.length > 0
+        ? '🍽️ SUẤT ĂN THEO SỐ NGƯỜI:\n' + personalMealSelections.map(m =>
+            `• ${m.name} (${m.guest_count} người) ×${m.quantity} = ${(m.price * m.quantity).toLocaleString('vi-VN')}đ`
+            + (m.items.length ? `\n  └ ${m.items.join(', ')}` : '')
+          ).join('\n')
+        : '';
+      const mergedComboNotes = [comboNotes, personalMealNote].filter(Boolean).join('\n\n');
       const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
       const roomBreakdown = roomTotals.map(rt => ({
@@ -395,7 +402,7 @@ const Booking = () => {
           room_subtotal: roomTotal, room_quantity: totalRoomQuantity, language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: comboTotal > 0 ? comboTotal : undefined,
-          combo_notes: comboNotes || undefined,
+          combo_notes: mergedComboNotes || undefined,
           food_items: foodItemsPayload.length > 0 ? foodItemsPayload : undefined,
           individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
