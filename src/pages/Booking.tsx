@@ -380,11 +380,11 @@ const Booking = () => {
     }
     setSubmitting(true);
     try {
-      const combosPayload = comboSelections.map(c => ({
+      const combosPayload = filledComboSlots.map(c => ({
         combo_package_id: c.packageId, combo_menu_id: c.menuId,
         combo_package_name: c.packageName, combo_menu_name: c.menuName,
         combo_name: `${c.packageName} – ${c.menuName}`,
-        price_vnd: c.pricePerPerson, quantity: c.quantity,
+        price_vnd: c.pricePerPerson, quantity: c.people,
       }));
       const foodItemsPayload = individualFoods.map(f => ({
         menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
