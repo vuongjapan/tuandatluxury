@@ -90,6 +90,9 @@ const Index = () => {
       {/* [3] Banner Ưu đãi nổi bật */}
       <PromoBanner />
 
+      {/* [3.5] Giới thiệu — Kỳ Nghỉ Ngập Tràn Niềm Vui */}
+      <IntroSection />
+
       {/* [4] Hạng phòng — carousel */}
       {roomsLoading && safeRooms.length === 0 ? (
         <section className="py-16 sm:py-24 bg-background">
