@@ -1,5 +1,5 @@
 import { useState, memo } from 'react';
-import { Minus, Plus, Users, Maximize2, BedDouble, Eye, Waves, Eye as EyeIcon, Sparkles } from 'lucide-react';
+import { Minus, Plus, Users, Maximize2, BedDouble, Eye, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -18,6 +18,22 @@ const ROOM_GUEST_LIMITS: Record<string, number> = {
   family: 4,
 };
 
+// Map view_type enum → badge text + colors (Vinpearl style)
+const VIEW_BADGE: Record<string, { vi: string; en: string; bg: string; text: string }> = {
+  sea_view:    { vi: '🌊 View biển',       en: '🌊 Sea view',    bg: 'bg-[#E0F4F1]', text: 'text-[#0F5A50]' },
+  city_view:   { vi: '🏙️ View thành phố', en: '🏙️ City view',  bg: 'bg-[#EBF0F5]', text: 'text-[#1B3A5C]' },
+  pool_view:   { vi: '🏊 View hồ bơi',     en: '🏊 Pool view',   bg: 'bg-[#E3F2FD]', text: 'text-[#0D47A1]' },
+  garden_view: { vi: '🌿 View vườn',       en: '🌿 Garden view', bg: 'bg-[#E8F5EC]', text: 'text-[#1A6B3A]' },
+};
+
+function normalizeView(view: string): keyof typeof VIEW_BADGE {
+  const v = (view || '').toLowerCase();
+  if (v.includes('sea') || v.includes('biển')) return 'sea_view';
+  if (v.includes('pool') || v.includes('hồ bơi')) return 'pool_view';
+  if (v.includes('garden') || v.includes('vườn')) return 'garden_view';
+  return 'city_view';
+}
+
 interface BookingRoomCardProps {
   room: Room;
   quantity: number;
@@ -25,15 +41,6 @@ interface BookingRoomCardProps {
   nightlyPrice: string;
 }
 
-/**
- * Compact luxury booking card.
- * Layout (top → bottom):
- *  1. Title header (name + badges)
- *  2. Single hero image
- *  3. Quick specs row
- *  4. Accordion: Giá hôm nay / Tiện nghi & Ưu đãi
- *  5. "Xem chi tiết" + quantity controls
- */
 const BookingRoomCard = memo(function BookingRoomCard({ room, quantity, onQuantityChange }: BookingRoomCardProps) {
   const { language } = useLanguage();
   const isVi = language === 'vi';
@@ -44,86 +51,132 @@ const BookingRoomCard = memo(function BookingRoomCard({ room, quantity, onQuanti
 
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [popupOpen, setPopupOpen] = useState(false);
+  const [imgIndex, setImgIndex] = useState(0);
 
   const maxGuests = ROOM_GUEST_LIMITS[room.id] || room.capacity;
   const badgeText = isVi ? popup?.badge_vi : popup?.badge_en;
 
+  // Mini gallery: combine main image + extras
+  const gallery = [room.image, ...((room.images || []).filter(u => u && u !== room.image))].slice(0, 6);
+  const totalImages = gallery.length;
+  const currentImage = gallery[imgIndex] || room.image;
+
+  const viewKey = normalizeView(room.viewType);
+  const viewBadge = VIEW_BADGE[viewKey];
+
+  const lowStock = room.totalRooms > 0 && room.totalRooms <= 3;
+
+  const prevImg = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setImgIndex(i => (i - 1 + totalImages) % totalImages);
+  };
+  const nextImg = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setImgIndex(i => (i + 1) % totalImages);
+  };
+
   return (
     <>
       <div
-        className={`bg-card rounded-2xl border-2 overflow-hidden transition-all ${
-          quantity > 0 ? 'border-primary shadow-lg' : 'border-border hover:border-primary/40'
+        className={`bg-card rounded-xl border overflow-hidden transition-all shadow-sm hover:shadow-md ${
+          quantity > 0 ? 'border-primary border-2' : 'border-[#E8E0D0] hover:border-primary/40'
         }`}
       >
-        {/* 1. Title header — đặt LÊN ĐẦU */}
-        <header className="px-4 sm:px-5 pt-4 pb-3">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h3 className="font-display text-lg sm:text-xl font-semibold text-foreground tracking-tight uppercase">
+        {/* HERO IMAGE — 16:9 with mini gallery */}
+        <div className="relative aspect-[16/9] bg-secondary group">
+          <SmartImage
+            src={currentImage}
+            alt={room.name[language]}
+            wrapperClassName="w-full h-full"
+            className="object-cover"
+            eager
+          />
+
+          {/* View badge — top left */}
+          <div className={`absolute top-3 left-3 ${viewBadge.bg} ${viewBadge.text} px-2.5 py-1 rounded-md text-xs font-semibold shadow-sm`}>
+            {isVi ? viewBadge.vi : viewBadge.en}
+          </div>
+
+          {/* Low stock badge — top right */}
+          {lowStock && (
+            <div className="absolute top-3 right-3 bg-destructive text-destructive-foreground px-2.5 py-1 rounded-md text-xs font-bold shadow-sm animate-pulse">
+              {isVi ? `Còn ${room.totalRooms} phòng` : `${room.totalRooms} left`}
+            </div>
+          )}
+
+          {/* Custom popup badge */}
+          {badgeText && !lowStock && (
+            <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm">
+              {badgeText}
+            </div>
+          )}
+
+          {/* Gallery nav arrows */}
+          {totalImages > 1 && (
+            <>
+              <button
+                onClick={prevImg}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={nextImg}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              {/* Dots */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {gallery.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.stopPropagation(); setImgIndex(i); }}
+                    className={`h-1.5 rounded-full transition-all ${i === imgIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/60'}`}
+                    aria-label={`Image ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* CONTENT */}
+        <div className="p-4 sm:p-5 space-y-3">
+          {/* Title */}
+          <div>
+            <h3 className="font-display text-xl font-semibold text-foreground tracking-tight uppercase leading-tight">
               {room.name[language]}
             </h3>
-            {badgeText && (
-              <Badge className="bg-primary text-primary-foreground border-0 text-[10px] uppercase tracking-wider">
-                {badgeText}
-              </Badge>
-            )}
-            {!badgeText && room.hasBalcony && (
-              <Badge variant="outline" className="border-primary/40 text-primary gap-1 text-[10px]">
-                <Waves className="h-3 w-3" /> {isVi ? 'Sea view' : 'Sea view'}
-              </Badge>
-            )}
+            <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{room.description[language]}</p>
           </div>
-          <p className="text-xs text-muted-foreground line-clamp-2">{room.description[language]}</p>
-        </header>
 
-        {/* 2. Single hero image */}
-        <div className="relative mx-4 sm:mx-5 rounded-xl overflow-hidden">
-          <div className="aspect-[16/10]">
-            <SmartImage
-              src={room.image}
-              alt={room.name[language]}
-              wrapperClassName="w-full h-full"
-              className="object-cover"
-              eager
-            />
+          {/* Quick specs row */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><Maximize2 className="h-3.5 w-3.5 text-primary" /> {room.size}m²</span>
+            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5 text-primary" /> {isVi ? `${maxGuests} khách` : `${maxGuests} guests`}</span>
+            <span className="flex items-center gap-1"><BedDouble className="h-3.5 w-3.5 text-primary" /> {room.bedType}</span>
+            <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5 text-primary" /> {isVi ? viewBadge.vi.replace(/^[^\s]+\s/, '') : viewBadge.en.replace(/^[^\s]+\s/, '')}</span>
           </div>
-          <div className="absolute top-2 left-2 bg-foreground/70 text-background px-2.5 py-1 rounded-md text-[10px] font-semibold backdrop-blur-sm">
-            {room.totalRooms} {isVi ? 'phòng' : 'rooms'}
-          </div>
-        </div>
 
-        {/* 3. Quick specs */}
-        <div className="px-4 sm:px-5 pt-3 flex flex-wrap gap-1.5">
-          <span className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">
-            <Maximize2 className="h-3 w-3 text-primary" /> {room.size}m²
-          </span>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">
-            <BedDouble className="h-3 w-3 text-primary" /> {room.bedType}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">
-            <Eye className="h-3 w-3 text-primary" /> {room.viewType}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">
-            <Users className="h-3 w-3 text-primary" /> {isVi ? `Tối đa ${maxGuests}` : `Max ${maxGuests}`}
-          </span>
-        </div>
+          {/* Top highlights (max 3) */}
+          {highlights.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {highlights.slice(0, 3).map((h) => (
+                <span
+                  key={h.id}
+                  className="inline-flex items-center gap-1 text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
+                >
+                  <Sparkles className="h-2.5 w-2.5" />
+                  {isVi ? h.name_vi : h.name_en || h.name_vi}
+                </span>
+              ))}
+            </div>
+          )}
 
-        {/* Top highlights (max 3) */}
-        {highlights.length > 0 && (
-          <div className="px-4 sm:px-5 pt-2 flex flex-wrap gap-1">
-            {highlights.slice(0, 3).map((h) => (
-              <span
-                key={h.id}
-                className="inline-flex items-center gap-1 text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
-              >
-                <Sparkles className="h-2.5 w-2.5" />
-                {isVi ? h.name_vi : h.name_en || h.name_vi}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* 4. Accordion — chỉ mở khi cần */}
-        <div className="px-4 sm:px-5 pt-2">
+          {/* Accordion */}
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="price" className="border-b">
               <AccordionTrigger className="text-sm font-semibold py-3">
@@ -187,17 +240,15 @@ const BookingRoomCard = memo(function BookingRoomCard({ room, quantity, onQuanti
           </Accordion>
         </div>
 
-        {/* 5. Footer: Xem chi tiết + Quantity */}
-        <div className="px-4 sm:px-5 py-3 mt-2 border-t border-border bg-secondary/20 flex items-center justify-between gap-3 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
+        {/* Footer: Xem chi tiết + stepper */}
+        <div className="px-4 sm:px-5 py-3 border-t border-border bg-secondary/20 flex items-center justify-between gap-3 flex-wrap">
+          <button
+            type="button"
             onClick={() => setPopupOpen(true)}
+            className="text-sm text-primary hover:underline font-medium"
           >
-            <EyeIcon className="h-3.5 w-3.5" />
-            {isVi ? 'Xem chi tiết' : 'View details'}
-          </Button>
+            {isVi ? 'Xem chi tiết →' : 'View details →'}
+          </button>
 
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground hidden sm:inline">
