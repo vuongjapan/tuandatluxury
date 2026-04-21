@@ -165,6 +165,11 @@ const Booking = () => {
 
   // Meal time multiplier: "both" doubles all food totals (lunch + dinner served).
   const mealMultiplier = mealTime === 'both' ? 2 : 1;
+  const mealTimeLabelText = mealTime === 'lunch'
+    ? (language === 'vi' ? 'Bữa trưa' : 'Lunch')
+    : mealTime === 'dinner'
+      ? (language === 'vi' ? 'Bữa tối' : 'Dinner')
+      : (language === 'vi' ? 'Cả 2 bữa' : 'Both meals');
   const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
 
   const personalMealTotal = useMemo(
@@ -445,6 +450,8 @@ const Booking = () => {
           special_services: serviceLabels || undefined,
           decoration_notes: decorationNotes || undefined,
           room_details: roomDetails, room_breakdown: roomBreakdown,
+          meal_time: mealTime,
+          meal_multiplier: mealMultiplier,
         }),
       });
       const data = await resp.json();
@@ -1164,8 +1171,10 @@ const Booking = () => {
                   <div className="border-t border-border pt-2 space-y-1">
                     {personalMealSelections.map((m, i) => (
                       <div key={i} className="flex justify-between text-xs">
-                        <span className="text-muted-foreground truncate pr-2">🍽️ {m.name}</span>
-                        <span className="font-medium tabular-nums">{formatPrice(m.price * m.quantity)}</span>
+                        <span className="text-muted-foreground truncate pr-2">
+                          🍽️ {m.name} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
+                        </span>
+                        <span className="font-medium tabular-nums">{formatPrice(m.price * m.quantity * mealMultiplier)}</span>
                       </div>
                     ))}
                   </div>
@@ -1174,15 +1183,19 @@ const Booking = () => {
                   <div className="border-t border-border pt-2 space-y-1">
                     {filledComboSlots.map((c, i) => (
                       <div key={i} className="flex justify-between text-xs">
-                        <span className="text-muted-foreground truncate pr-2">🍱 {c.packageName} × {c.people} {isVi ? 'người' : 'pax'}</span>
-                        <span className="font-medium tabular-nums">{formatPrice(c.pricePerPerson * c.people)}</span>
+                        <span className="text-muted-foreground truncate pr-2">
+                          🍱 {c.packageName} × {c.people} {isVi ? 'người' : 'pax'} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
+                        </span>
+                        <span className="font-medium tabular-nums">{formatPrice(c.pricePerPerson * c.people * mealMultiplier)}</span>
                       </div>
                     ))}
                   </div>
                 )}
                 {individualFoodTotal > 0 && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">🍤 {isVi ? 'Món riêng' : 'Dishes'}</span>
+                    <span className="text-muted-foreground">
+                      🍤 {isVi ? 'Món riêng' : 'Dishes'} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
+                    </span>
                     <span className="font-medium">{formatPrice(individualFoodTotal)}</span>
                   </div>
                 )}

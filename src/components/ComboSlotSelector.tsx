@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { UtensilsCrossed, Plus, Minus, Eye, Trash2, Users } from 'lucide-react';
+import { UtensilsCrossed, Plus, Minus, Eye, Trash2, Users, BookOpen } from 'lucide-react';
+import MenuViewerModal from '@/components/MenuViewerModal';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -41,6 +42,7 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
   const maxGroups = Math.max(1, Math.ceil(guestCount / 6));
 
   const [previewPkg, setPreviewPkg] = useState<ComboPackage | null>(null);
+  const [fullMenuOpen, setFullMenuOpen] = useState(false);
 
   // Make sure we always have exactly `maxGroups` slots — fill with empty placeholders.
   // Empty = packageId === '' (user hasn't picked yet).
@@ -139,7 +141,7 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
       {/* Header */}
       <div className="flex items-center gap-2">
         <UtensilsCrossed className="h-5 w-5 text-primary" />
-        <div>
+        <div className="flex-1 min-w-0">
           <h2 className="font-display text-lg sm:text-xl font-semibold">
             {isVi ? 'Combo ăn uống cho đoàn' : 'Group meal combos'}
           </h2>
@@ -149,6 +151,16 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
               : `${guestCount} guests → ${maxGroups} combo${maxGroups > 1 ? 's' : ''} (each group picks a different combo)`}
           </p>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1 shrink-0 text-xs"
+          onClick={() => setFullMenuOpen(true)}
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          {isVi ? 'Xem thực đơn' : 'View menu'}
+        </Button>
       </div>
 
       {/* Progress: assigned / guestCount */}
@@ -347,6 +359,8 @@ const ComboSlotSelector = ({ guestCount, slots, onChange, sectionId, shake }: Pr
           )}
         </DialogContent>
       </Dialog>
+
+      <MenuViewerModal open={fullMenuOpen} onClose={() => setFullMenuOpen(false)} />
     </div>
   );
 };

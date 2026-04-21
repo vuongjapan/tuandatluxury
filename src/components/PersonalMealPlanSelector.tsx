@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Plus, Minus, Check, Phone } from 'lucide-react';
+import { Users, Plus, Minus, Check, Phone, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePersonalMealPlans, PersonalMealPlan } from '@/hooks/usePersonalMealPlans';
+import MenuViewerModal from '@/components/MenuViewerModal';
 
 export interface PersonalMealSelection {
   planId: string;
@@ -30,6 +31,7 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
   const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const { plans, loading, getPlansFor, suggestCombination } = usePersonalMealPlans(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [n, setN] = useState<number>(Math.max(1, guestCount));
   useEffect(() => { setN(Math.max(1, guestCount)); }, [guestCount]);
@@ -82,7 +84,7 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
       {/* Header */}
       <div className="flex items-center gap-2">
         <Users className="h-5 w-5 text-primary" />
-        <div>
+        <div className="flex-1 min-w-0">
           <h2 className="font-display text-lg sm:text-xl font-semibold">
             {fixedMode
               ? (isVi ? `Set ăn cho ${guestCount} người` : `Set meal for ${guestCount}`)
@@ -94,6 +96,16 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
               : (isVi ? 'Chọn số người ăn — hệ thống tự gợi ý suất ăn phù hợp' : 'Pick the number of diners — we suggest the right plan')}
           </p>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1 shrink-0 text-xs"
+          onClick={() => setMenuOpen(true)}
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          {isVi ? 'Xem thực đơn' : 'View menu'}
+        </Button>
       </div>
 
       {/* Stepper — hidden in fixed mode */}
@@ -232,6 +244,8 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
           )}
         </div>
       )}
+
+      <MenuViewerModal open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   );
 };
