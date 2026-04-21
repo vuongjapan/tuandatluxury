@@ -278,32 +278,63 @@ const FloatingButtons = () => {
 
   return (
     <>
-      {/* Left side - Quick actions */}
-      <div className="fixed left-4 bottom-20 sm:bottom-4 z-40 flex flex-col gap-2">
+      {/* Left side - Quick contact actions */}
+      <div className="fixed left-3 sm:left-4 bottom-20 sm:bottom-4 z-40 flex flex-col gap-2.5">
+        {/* Phone — pulsing red urgent */}
         <a
           href="tel:0384418811"
-          className="w-12 h-12 rounded-full bg-card shadow-card-hover flex items-center justify-center hover:shadow-gold transition-all duration-300 border border-border"
-          title="Hotline"
+          className="relative w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110"
+          style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}
+          title="Gọi ngay 0384418811"
+          aria-label="Gọi điện"
         >
-          <span className="text-lg">📞</span>
+          <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-40" />
+          <svg viewBox="0 0 24 24" className="relative w-6 h-6 text-white" fill="currentColor">
+            <path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.59l2.2-2.2a1 1 0 0 0 .25-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/>
+          </svg>
         </a>
+
+        {/* Zalo — official blue */}
         <a
           href="https://zalo.me/0384418811"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-12 h-12 rounded-full bg-card shadow-card-hover flex items-center justify-center hover:shadow-gold transition-all duration-300 border border-border"
-          title="Zalo"
+          className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110"
+          style={{ background: '#0068FF' }}
+          title="Chat Zalo"
+          aria-label="Zalo"
         >
-          <span className="text-lg">💬</span>
+          <span className="text-white font-bold text-[13px] tracking-tight">Zalo</span>
         </a>
+
+        {/* Messenger — official gradient, opens m.me directly */}
         <a
           href="https://m.me/KhachSanTuanDatLuxuryFLC"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-12 h-12 rounded-full bg-[#0084FF] shadow-card-hover flex items-center justify-center hover:brightness-110 transition-all duration-300"
+          className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110"
+          style={{ background: 'linear-gradient(135deg, #00B2FF, #006AFF)' }}
           title="Messenger"
+          aria-label="Messenger"
         >
-          <Facebook className="h-5 w-5 text-white" />
+          <svg viewBox="0 0 36 36" className="w-7 h-7" fill="white">
+            <path d="M18 2C9.16 2 2 8.65 2 16.85c0 4.67 2.32 8.84 5.95 11.56V34l5.43-2.98c1.45.4 2.99.62 4.62.62 8.84 0 16-6.65 16-14.85S26.84 2 18 2zm1.59 19.99-4.07-4.34-7.95 4.34L16.32 13l4.17 4.34L28.34 13l-8.75 8.99z"/>
+          </svg>
+        </a>
+
+        {/* Facebook page */}
+        <a
+          href="https://www.facebook.com/KhachSanTuanDatLuxuryFLC"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110"
+          style={{ background: '#1877F2' }}
+          title="Facebook"
+          aria-label="Facebook"
+        >
+          <svg viewBox="0 0 24 24" className="w-6 h-6" fill="white">
+            <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.41 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.27h3.33l-.53 3.49h-2.8V24C19.61 23.09 24 18.1 24 12.07z"/>
+          </svg>
         </a>
       </div>
 

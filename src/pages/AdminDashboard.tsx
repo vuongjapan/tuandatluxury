@@ -44,10 +44,11 @@ import AdminDiscountConfig from '@/components/admin/AdminDiscountConfig';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
 import AdminIntroSection from '@/components/admin/AdminIntroSection';
 import AdminPromoBanners from '@/components/admin/AdminPromoBanners';
+import AdminPromoPopups from '@/components/admin/AdminPromoPopups';
 import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
 import AdminPersonalMealPlans from '@/components/admin/AdminPersonalMealPlans';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'discount-config' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'discount-config' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -200,6 +201,7 @@ const AdminDashboard = () => {
       title: 'Khác',
       items: [
         { id: 'promo-banners', icon: Flame, label: 'Banner Hè 2026 (Trang chủ)' },
+        { id: 'promo-popups', icon: Zap, label: 'Popup quảng cáo (Vinpearl)' },
         { id: 'offers', icon: Gift, label: 'Bài Ưu đãi (Web)' },
         { id: 'promotion-system', icon: Zap, label: 'Khuyến mại' },
         { id: 'web-discount', icon: MapPin, label: 'Giảm giá web' },
@@ -392,6 +394,7 @@ const AdminDashboard = () => {
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'dining' && <AdminDining />}
           {tab === 'promo-banners' && <AdminPromoBanners />}
+          {tab === 'promo-popups' && <AdminPromoPopups />}
           {tab === 'offers' && <AdminOffers />}
           {tab === 'promotion-system' && <AdminPromotionSystem />}
           {tab === 'services' && <AdminServices />}
