@@ -154,7 +154,7 @@ const PhotoGallery = () => {
           })}
         </div>
 
-        {/* Masonry gallery (CSS columns) */}
+        {/* Equal-column grid — đồng đều trên mọi breakpoint */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeCategory}
@@ -162,19 +162,19 @@ const PhotoGallery = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            style={{ columnGap: 10 }}
-            className="columns-1 sm:columns-2 lg:columns-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"
           >
             {visible.map((img, i) => (
               <div
                 key={img.id}
                 onClick={() => setLightboxIndex(i)}
-                className="group relative mb-[10px] break-inside-avoid overflow-hidden cursor-pointer"
+                className="group relative overflow-hidden cursor-pointer"
               >
                 <img
                   src={optimizeImageUrl(img.image_url, { width: 800, quality: 78 })}
                   alt={getTitle(img)}
-                  className="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                  className="w-full block transition-transform duration-500 group-hover:scale-105"
+                  style={{ height: 'clamp(220px, 22vw, 280px)', objectFit: 'cover' }}
                   loading="lazy"
                   decoding="async"
                   onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}

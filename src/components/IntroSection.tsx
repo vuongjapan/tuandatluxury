@@ -92,8 +92,8 @@ const IntroSection = () => {
         </p>
       </div>
 
-      {/* BOTTOM — 3 full-bleed photos */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+      {/* BOTTOM — 3 full-bleed photos chạm mép màn hình */}
+      <div className="full-bleed grid grid-cols-1 md:grid-cols-3 gap-0">
         {photos.map((p, i) => (
           <figure
             key={i}
@@ -110,7 +110,7 @@ const IntroSection = () => {
                 alt={p.cap}
                 loading="lazy"
                 className="w-full block transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                style={{ height: 'clamp(220px, 32vw, 340px)', objectFit: 'cover', objectPosition: 'center' }}
+                style={{ height: 'clamp(220px, 28vw, 360px)', objectFit: 'cover', objectPosition: 'center' }}
               />
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
