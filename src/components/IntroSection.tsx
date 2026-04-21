@@ -47,9 +47,9 @@ const IntroSection = () => {
   ];
 
   return (
-    <section ref={sectionRef} className="bg-background">
+    <section ref={sectionRef} className="bg-background overflow-hidden">
       {/* TOP — Title & description */}
-      <div className="text-center pt-16 pb-10 px-6">
+      <div className="section-container text-center pt-16 pb-10">
         <div
           className="mx-auto mb-5"
           style={{

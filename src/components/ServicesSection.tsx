@@ -187,7 +187,7 @@ const ServicesSection = () => {
 
   return (
     <section ref={sectionRef} className="py-20 sm:py-28 bg-background">
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         <div
           className="text-center mb-12 sm:mb-16"
           style={{

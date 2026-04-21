@@ -195,7 +195,7 @@ const RoomsCarousel = ({ rooms }: RoomsCarouselProps) => {
 
   return (
     <section id="rooms" className="py-16 sm:py-24 bg-background">
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         {/* Header */}
         <div className="flex items-end justify-between gap-4 mb-8 sm:mb-10">
           <div>

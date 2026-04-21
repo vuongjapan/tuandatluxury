@@ -114,7 +114,7 @@ const PhotoGallery = () => {
 
   return (
     <section id="gallery" className="py-16 sm:py-24 bg-background">
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-10">
           <p className="font-display text-[11px] sm:text-xs font-medium mb-3" style={{ color: '#C9A84C', letterSpacing: '3px' }}>
