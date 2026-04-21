@@ -294,10 +294,21 @@ const Booking = () => {
 
   const totalComboServings = comboSelections.reduce((s, c) => s + c.quantity, 0);
   const hasSelectedCombo = comboSelections.length > 0;
+  const hasSelectedPersonalMeal = personalMealSelections.length > 0;
   const comboServingsMatch = totalComboServings === guestCount;
   const comboServingsError = hasSelectedCombo && !comboServingsMatch;
-  // Either room policy OR holiday range can require combo
-  const comboValidationError = (comboRequired || isComboMandatory) && !hasSelectedCombo;
+
+  // Minimum individual food spend per person (for mandatory days fallback)
+  const minIndividualPerPerson = discountConfig.min_individual_per_person || 300000;
+  const minRequiredIndividual = guestCount * minIndividualPerPerson;
+  const individualMeetsMinimum = individualFoodTotal >= minRequiredIndividual;
+
+  // Valid food = personal meal OR combo OR individual >= 300k × guests
+  const hasValidFoodSelection = hasSelectedPersonalMeal || hasSelectedCombo || individualMeetsMinimum;
+
+  // On mandatory holiday dates, food selection is REQUIRED.
+  // On normal days, can always proceed (food is optional).
+  const comboValidationError = isComboMandatory && !hasValidFoodSelection;
   const multiComboNeedsNotes = false; // disabled: combo notes not required
 
   // Shake animation trigger when user tries to advance without combo on mandatory days
@@ -438,14 +449,16 @@ const Booking = () => {
       return;
     }
     if (currentStep === 2) {
-      // Block when holiday/admin-mandated combo not selected
+      // Block ONLY when on a mandatory holiday and no valid food selected.
+      // Normal days: always allow proceeding (food is optional).
       if (comboValidationError) {
         toast({
-          title: isVi ? '⚠️ Vui lòng chọn ít nhất 1 combo ăn uống để tiếp tục' : '⚠️ Please select at least 1 combo to continue',
+          title: isVi
+            ? '⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.'
+            : '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.',
           variant: 'destructive',
         });
-        // Scroll to combo section + trigger shake
-        const el = document.getElementById('combo-section');
+        const el = document.getElementById('combo-section') || document.getElementById('food-section');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setComboShake(true);
         setTimeout(() => setComboShake(false), 2000);
@@ -706,18 +719,18 @@ const Booking = () => {
                       onChange={setPersonalMealSelections}
                     />
 
-                    {/* SECTION 2: Combo 225k–550k — only when guestCount >= 6 OR mandatory holiday */}
-                    {(guestCount >= 6 || isComboMandatory) && (
+                    {/* SECTION 2: Combo 225k–550k — only when guestCount >= 4 OR mandatory holiday */}
+                    {(guestCount >= 4 || isComboMandatory) && (
                       <ComboSelector
                         sectionId="combo-section"
-                        required={comboRequired}
-                        mandatory={isComboMandatory}
+                        required={false}
+                        mandatory={isComboMandatory && !hasSelectedPersonalMeal && !individualMeetsMinimum}
                         mandatoryLabel={mandatoryComboRange?.label}
                         mandatoryNote={mandatoryComboRange?.note || undefined}
                         shake={comboShake}
                         selections={comboSelections}
                         onSelectionsChange={setComboSelections}
-                        guestCount={guestCount}
+                        guestCount={Math.max(guestCount, 6)}
                         comboNotes={comboNotes}
                         onComboNotesChange={setComboNotes}
                         onOpenFoodOrder={() => setFoodSelectorOpen(true)}
@@ -729,6 +742,10 @@ const Booking = () => {
                       onClose={() => setFoodSelectorOpen(false)}
                       items={individualFoods}
                       onItemsChange={setIndividualFoods}
+                      isMandatory={isComboMandatory}
+                      guestCount={guestCount}
+                      minPerPerson={minIndividualPerPerson}
+                      hasOtherValidSelection={hasSelectedPersonalMeal || hasSelectedCombo}
                     />
 
                     {/* Service checkboxes */}
@@ -747,9 +764,65 @@ const Booking = () => {
                       </div>
                     </div>
 
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => setFoodSelectorOpen(true)}>
-                      <ShoppingBag className="h-4 w-4 mr-1" /> {isVi ? 'Đặt món ăn riêng' : 'Order Individual Dishes'}
-                    </Button>
+                    {/* Individual food trigger + progress on mandatory days */}
+                    <div id="food-section" className="bg-card rounded-xl border border-border p-5 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold flex items-center gap-2 text-base">
+                            🍤 {isVi ? 'Đặt món ăn riêng' : 'Order Individual Dishes'}
+                          </h3>
+                          <p className="text-xs mt-0.5" style={{ color: '#888' }}>
+                            {isVi
+                              ? 'Đặt thêm món ngoài combo · Có thể thay thế suất/combo nếu đủ mức tối thiểu'
+                              : 'Order extras outside combos · Can substitute meal/combo if minimum is met'}
+                          </p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setFoodSelectorOpen(true)} className="shrink-0">
+                          <ShoppingBag className="h-4 w-4 mr-1" /> {isVi ? 'Mở menu' : 'Open menu'}
+                        </Button>
+                      </div>
+
+                      {/* Progress bar — only show on mandatory dates */}
+                      {isComboMandatory && !hasSelectedPersonalMeal && !hasSelectedCombo && (
+                        <div className="space-y-1.5">
+                          <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                'absolute inset-y-0 left-0 transition-all duration-300 rounded-full',
+                                individualMeetsMinimum ? 'bg-green-500' : 'bg-primary'
+                              )}
+                              style={{ width: `${Math.min(100, (individualFoodTotal / minRequiredIndividual) * 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className={cn('font-bold', individualMeetsMinimum ? 'text-green-600' : 'text-foreground')}>
+                              {formatPrice(individualFoodTotal)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {formatPrice(minRequiredIndividual)} {isVi ? `cần đạt (${guestCount} người × ${(minIndividualPerPerson / 1000).toFixed(0)}k)` : `required (${guestCount} × ${(minIndividualPerPerson / 1000).toFixed(0)}k)`}
+                            </span>
+                          </div>
+                          {individualMeetsMinimum ? (
+                            <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                              <Check className="h-3.5 w-3.5" /> {isVi ? 'Đã đạt mức tối thiểu — có thể tiếp tục' : 'Minimum met — you can continue'}
+                            </p>
+                          ) : (
+                            <p className="text-xs" style={{ color: '#888' }}>
+                              {isVi
+                                ? 'Hoặc chọn Suất ăn / Combo ở trên để không cần đạt mức tối thiểu này'
+                                : 'Or pick a Meal Plan / Combo above to skip this minimum'}
+                            </p>
+                          )}
+                          {!individualMeetsMinimum && individualFoodTotal > 0 && (
+                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md p-2 text-xs text-amber-800 dark:text-amber-300">
+                              ⚠️ {isVi
+                                ? `Cần thêm ${formatPrice(minRequiredIndividual - individualFoodTotal)} nữa (hoặc chọn Suất ăn / Combo ở trên)`
+                                : `Need ${formatPrice(minRequiredIndividual - individualFoodTotal)} more (or pick Meal Plan / Combo above)`}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
                 )}
 
