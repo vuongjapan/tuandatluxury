@@ -103,11 +103,28 @@
     font-family: 'Inter', sans-serif;
   }
 
+  .section-container {
+    width: 100%;
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
   /* Full-bleed utility — phá container để chạm mép màn hình */
+  .section-fullwidth,
   .full-bleed {
     width: 100vw;
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
+  }
+
+  @media (max-width: 640px) {
+    .section-container {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
   }
 
   h1, h2, h3, h4, h5, h6 {

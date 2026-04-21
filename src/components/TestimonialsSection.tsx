@@ -94,7 +94,7 @@ const TestimonialsSection = () => {
         backgroundSize: '32px 32px'
       }} />
 
-      <div className="container mx-auto px-4 relative">
+      <div className="section-container relative">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

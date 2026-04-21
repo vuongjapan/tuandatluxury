@@ -47,9 +47,9 @@ const IntroSection = () => {
   ];
 
   return (
-    <section ref={sectionRef} className="bg-background">
+    <section ref={sectionRef} className="bg-background overflow-hidden">
       {/* TOP — Title & description */}
-      <div className="text-center pt-16 pb-10 px-6">
+      <div className="section-container text-center pt-16 pb-10">
         <div
           className="mx-auto mb-5"
           style={{
@@ -93,7 +93,18 @@ const IntroSection = () => {
       </div>
 
       {/* BOTTOM — 3 full-bleed photos chạm mép màn hình */}
-      <div className="full-bleed grid grid-cols-1 md:grid-cols-3 gap-0">
+      <div
+        className="grid grid-cols-1 md:grid-cols-3 gap-0"
+        style={{
+          width: '100vw',
+          maxWidth: '100vw',
+          position: 'relative',
+          left: '50%',
+          right: '50%',
+          marginLeft: '-50vw',
+          marginRight: '-50vw',
+        }}
+      >
         {photos.map((p, i) => (
           <figure
             key={i}

@@ -58,7 +58,7 @@ const DiningHomeSection = () => {
 
   return (
     <section id="dining" className="py-20 sm:py-28 bg-secondary luxury-section">
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
