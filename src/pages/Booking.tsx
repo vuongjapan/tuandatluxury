@@ -165,6 +165,11 @@ const Booking = () => {
 
   // Meal time multiplier: "both" doubles all food totals (lunch + dinner served).
   const mealMultiplier = mealTime === 'both' ? 2 : 1;
+  const mealTimeLabelText = mealTime === 'lunch'
+    ? (language === 'vi' ? 'Bữa trưa' : 'Lunch')
+    : mealTime === 'dinner'
+      ? (language === 'vi' ? 'Bữa tối' : 'Dinner')
+      : (language === 'vi' ? 'Cả 2 bữa' : 'Both meals');
   const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
 
   const personalMealTotal = useMemo(
