@@ -18,15 +18,23 @@ interface Props {
   guestCount: number;
   selections: PersonalMealSelection[];
   onChange: (s: PersonalMealSelection[]) => void;
+  /**
+   * When true: lock the diner count to `guestCount` (1–4 mode).
+   * Hides the stepper, hides combination suggestions, treats each plan as a
+   * single bundled order — no quantity multiplier in the UI.
+   */
+  fixedMode?: boolean;
 }
 
-const PersonalMealPlanSelector = ({ guestCount, selections, onChange }: Props) => {
+const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode = false }: Props) => {
   const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const { plans, loading, getPlansFor, suggestCombination } = usePersonalMealPlans(true);
 
   const [n, setN] = useState<number>(Math.max(1, guestCount));
   useEffect(() => { setN(Math.max(1, guestCount)); }, [guestCount]);
+  // In fixed mode, always show plans matching the guest count exactly.
+  const effectiveN = fixedMode ? Math.max(1, guestCount) : n;
 
   const addPlan = (plan: PersonalMealPlan) => {
     const idx = selections.findIndex(s => s.planId === plan.id);
