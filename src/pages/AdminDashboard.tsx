@@ -41,8 +41,9 @@ import AdminAuction from '@/components/admin/AdminAuction';
 import AdminLive from '@/components/admin/AdminLive';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminMemberDiscount from '@/components/admin/AdminMemberDiscount';
+import AdminAboutImages from '@/components/admin/AdminAboutImages';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'promotions' | 'promotion-system' | 'services' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'member-discount' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -201,6 +202,7 @@ const AdminDashboard = () => {
         { id: 'members', icon: Users, label: 'Khách & Thành viên' },
         { id: 'reviews', icon: BookOpen, label: 'Đánh giá khách' },
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
+        { id: 'about-images', icon: ImageIcon, label: 'Ảnh trang Giới thiệu' },
         { id: 'blog', icon: BookOpen, label: 'Blog' },
       ],
     },
@@ -402,6 +404,7 @@ const AdminDashboard = () => {
           {tab === 'live' && <AdminLive />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'member-discount' && <AdminMemberDiscount />}
+          {tab === 'about-images' && <AdminAboutImages />}
         </div>
       </main>
     </div>
