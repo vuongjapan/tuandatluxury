@@ -1,11 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, Phone } from 'lucide-react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import BookingSearch from '@/components/BookingSearch';
 import RoomCard from '@/components/RoomCard';
-import SmartSearchBox from '@/components/SmartSearchBox';
+
 import Footer from '@/components/Footer';
 import FadeIn from '@/components/FadeIn';
 import { useRooms } from '@/hooks/useRooms';
@@ -71,10 +71,7 @@ const Index = () => {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
   const safeAmenities = Array.isArray(amenities) ? amenities : [];
   const safeAttractions = Array.isArray(attractions) ? attractions : [];
-  const [smartFilterIds, setSmartFilterIds] = useState<string[] | null>(null);
-  const visibleRooms = smartFilterIds && smartFilterIds.length > 0
-    ? safeRooms.filter(r => smartFilterIds.includes(r.id))
-    : safeRooms;
+  const visibleRooms = safeRooms;
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,13 +86,6 @@ const Index = () => {
             tagline={isVi ? 'Hạng phòng' : 'Accommodation'}
             title={isVi ? 'Phòng nghỉ cao cấp' : 'Exceptional Rooms'}
           />
-          <FadeIn className="mb-8">
-            <SmartSearchBox
-              rooms={safeRooms}
-              onResults={(ids) => setSmartFilterIds(ids)}
-              scrollTargetSelector="#rooms"
-            />
-          </FadeIn>
           <div className="space-y-4 sm:space-y-5">
             {roomsLoading && safeRooms.length === 0 ? (
               <><RoomSkeleton /><RoomSkeleton /><RoomSkeleton /></>
