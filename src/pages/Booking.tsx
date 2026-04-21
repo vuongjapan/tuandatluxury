@@ -152,6 +152,10 @@ const Booking = () => {
     return selectedRooms.some(item => hasComboRequiredDays(item.roomId, checkIn!, checkOut!));
   }, [checkIn, checkOut, selectedRooms, hasComboRequiredDays]);
 
+  // Holiday/admin-mandated combo requirement based on check-in date
+  const mandatoryComboRange = useMemo(() => getMatchingRange(checkIn), [checkIn, getMatchingRange]);
+  const isComboMandatory = !!mandatoryComboRange;
+
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return true;
     for (const item of selectedRooms) {
@@ -304,8 +308,12 @@ const Booking = () => {
   const hasSelectedCombo = comboSelections.length > 0;
   const comboServingsMatch = totalComboServings === guestCount;
   const comboServingsError = hasSelectedCombo && !comboServingsMatch;
-  const comboValidationError = comboRequired && !hasSelectedCombo;
+  // Either room policy OR holiday range can require combo
+  const comboValidationError = (comboRequired || isComboMandatory) && !hasSelectedCombo;
   const multiComboNeedsNotes = false; // disabled: combo notes not required
+
+  // Shake animation trigger when user tries to advance without combo on mandatory days
+  const [comboShake, setComboShake] = useState(false);
 
   const availableServices = [
     { id: 'dining', label: 'Ăn uống / Tiệc', labelEn: 'Dining / Banquet' },
