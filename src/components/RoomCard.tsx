@@ -22,6 +22,25 @@ interface RoomCardProps {
  * - 2 CTA: Xem thêm (mở popup) + Đặt ngay (chuyển booking)
  * - KHÔNG hiển thị calendar trên trang chính.
  */
+const VIEW_BADGES: Record<string, { vi: string; en: string; bg: string; color: string }> = {
+  sea_view:    { vi: '🌊 View biển',       en: '🌊 Sea view',    bg: '#E0F4F1', color: '#0F5A50' },
+  city_view:   { vi: '🏙️ View thành phố',  en: '🏙️ City view',   bg: '#EBF0F5', color: '#1B3A5C' },
+  pool_view:   { vi: '🏊 View hồ bơi',     en: '🏊 Pool view',   bg: '#E3F2FD', color: '#0D47A1' },
+  garden_view: { vi: '🌿 View vườn',       en: '🌿 Garden view', bg: '#E8F5EC', color: '#1A6B3A' },
+};
+
+// Map legacy free-text view_type values to enum keys
+function normalizeViewType(v: string | undefined): keyof typeof VIEW_BADGES | null {
+  if (!v) return null;
+  if (VIEW_BADGES[v]) return v as keyof typeof VIEW_BADGES;
+  const lower = v.toLowerCase();
+  if (lower.includes('biển') || lower.includes('sea')) return 'sea_view';
+  if (lower.includes('hồ bơi') || lower.includes('pool')) return 'pool_view';
+  if (lower.includes('vườn') || lower.includes('garden')) return 'garden_view';
+  if (lower.includes('thành phố') || lower.includes('city')) return 'city_view';
+  return null;
+}
+
 const RoomCard = memo(function RoomCard({ room, index }: RoomCardProps) {
   const { language } = useLanguage();
   const isVi = language === 'vi';
@@ -32,6 +51,8 @@ const RoomCard = memo(function RoomCard({ room, index }: RoomCardProps) {
   const [popupOpen, setPopupOpen] = useState(false);
 
   const badgeText = isVi ? popup?.badge_vi : popup?.badge_en;
+  const viewKey = normalizeViewType(room.viewType);
+  const viewBadge = viewKey ? VIEW_BADGES[viewKey] : null;
 
   return (
     <>
@@ -47,14 +68,22 @@ const RoomCard = memo(function RoomCard({ room, index }: RoomCardProps) {
                 {badgeText}
               </Badge>
             )}
-            {!badgeText && room.hasBalcony && (
+            {!badgeText && viewBadge && (
+              <span
+                className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: viewBadge.bg, color: viewBadge.color }}
+              >
+                {isVi ? viewBadge.vi : viewBadge.en}
+              </span>
+            )}
+            {!badgeText && !viewBadge && room.hasBalcony && (
               <Badge variant="outline" className="border-primary/40 text-primary gap-1 text-[10px]">
                 <Waves className="h-3 w-3" /> {isVi ? 'Sea view' : 'Sea view'}
               </Badge>
             )}
           </div>
           <p className="text-xs text-muted-foreground line-clamp-1">
-            {room.viewType} • {room.bedType}
+            {viewBadge ? (isVi ? viewBadge.vi.replace(/^[^\s]+\s/, '') : viewBadge.en.replace(/^[^\s]+\s/, '')) : room.viewType} • {room.bedType}
           </p>
         </header>
 
