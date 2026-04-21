@@ -30,7 +30,7 @@ interface Props {
   hasOtherValidSelection?: boolean;
 }
 
-const IndividualFoodSelector = ({ open, onClose, items, onItemsChange }: Props) => {
+const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false }: Props) => {
   const { allItems, loading } = useMenuItems();
   const { formatPrice, language } = useLanguage();
   const [search, setSearch] = useState('');
