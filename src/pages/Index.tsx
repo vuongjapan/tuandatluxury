@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 const PhotoGallery = lazy(() => import('@/components/PhotoGallery'));
 const PromotionsSection = lazy(() => import('@/components/PromotionsSection'));
 const MapSection = lazy(() => import('@/components/MapSection'));
+const LocationSection = lazy(() => import('@/components/LocationSection'));
 const DiningSection = lazy(() => import('@/components/DiningHomeSection'));
 const FloatingButtons = lazy(() => import('@/components/FloatingButtons'));
 const TestimonialsSection = lazy(() => import('@/components/TestimonialsSection'));
@@ -175,6 +176,11 @@ const Index = () => {
           </FadeIn>
         </div>
       </section>
+
+      {/* [7.5] Vị trí & Cách di chuyển */}
+      <Suspense fallback={<SectionFallback />}>
+        <LocationSection />
+      </Suspense>
 
       {/* [8] Footer */}
       <Footer />
