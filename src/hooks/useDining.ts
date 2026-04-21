@@ -27,6 +27,8 @@ export interface DiningItem {
   combo_serves: number | null;
   sort_order: number;
   is_active: boolean;
+  /** "fixed" = show price; "negotiable" = show "Giá thỏa thuận" badge instead. */
+  price_type?: 'fixed' | 'negotiable';
 }
 
 export function useDining() {

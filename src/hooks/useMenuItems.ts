@@ -21,6 +21,8 @@ export interface MenuItem {
   image_url: string | null;
   is_popular: boolean;
   sort_order: number;
+  /** "fixed" = show price; "negotiable" = show "Giá thỏa thuận" badge instead. */
+  price_type?: 'fixed' | 'negotiable';
   price_variants?: MenuItemPrice[];
 }
 
