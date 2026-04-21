@@ -1136,14 +1136,24 @@ const Booking = () => {
                   </div>
                 )}
 
-                {comboTotal > 0 && (
-                  <div className="flex justify-between text-xs border-t border-border pt-2">
-                    <span className="text-muted-foreground">
-                      🍽️ {hasSelectedPersonalMeal && !hasSelectedCombo
-                        ? (isVi ? 'Suất ăn' : 'Meal plan')
-                        : 'Combo'}
-                    </span>
-                    <span className="font-medium">{formatPrice(comboTotal)}</span>
+                {personalMealTotal > 0 && useSetMeals && (
+                  <div className="border-t border-border pt-2 space-y-1">
+                    {personalMealSelections.map((m, i) => (
+                      <div key={i} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground truncate pr-2">🍽️ {m.name}</span>
+                        <span className="font-medium tabular-nums">{formatPrice(m.price * m.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {comboSlotsTotal > 0 && useComboSlots && (
+                  <div className="border-t border-border pt-2 space-y-1">
+                    {filledComboSlots.map((c, i) => (
+                      <div key={i} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground truncate pr-2">🍱 {c.packageName} × {c.people} {isVi ? 'người' : 'pax'}</span>
+                        <span className="font-medium tabular-nums">{formatPrice(c.pricePerPerson * c.people)}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {individualFoodTotal > 0 && (
