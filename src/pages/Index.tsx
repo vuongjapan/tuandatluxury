@@ -185,12 +185,8 @@ const Index = () => {
 
       {/* [8] Footer */}
       <Footer />
-      <Suspense fallback={null}>
-        <FloatingButtons />
-      </Suspense>
-      <Suspense fallback={null}>
-        <PromoPopup />
-      </Suspense>
+      <FloatingButtons />
+      <PromoPopup />
     </div>
   );
 };
