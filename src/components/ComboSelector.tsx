@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useComboPackages, ComboPackage, ComboMenu } from '@/hooks/useComboPackages';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useMemberDiscount } from '@/hooks/useMemberDiscount';
 import { cn } from '@/lib/utils';
 
 export interface ComboSelection {
@@ -37,7 +38,9 @@ const NOTES_SUGGESTIONS = [
 const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, comboNotes, onComboNotesChange, onOpenFoodOrder }: ComboSelectorProps) => {
   const { packages, loading, getMenusByPackage, getDishesByMenu } = useComboPackages();
   const { language, formatPrice } = useLanguage();
+  const { perPerson } = useMemberDiscount();
   const isVi = language === 'vi';
+  const perPersonMode = perPerson.enabled;
 
   const [step, setStep] = useState<'list' | 'menus'>('list');
   const [selectedPkg, setSelectedPkg] = useState<ComboPackage | null>(null);
@@ -50,7 +53,8 @@ const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, c
 
   const handleSelectPackage = (pkg: ComboPackage) => {
     setSelectedPkg(pkg);
-    setTempQuantity(Math.max(1, remainingServings));
+    // Per-person mode: 1 menu = 1 person, default qty = guest count for single combo
+    setTempQuantity(perPersonMode ? guestCount : Math.max(1, remainingServings));
     setStep('menus');
   };
 
@@ -119,15 +123,26 @@ const ComboSelector = ({ required, selections, onSelectionsChange, guestCount, c
 
   return (
     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <UtensilsCrossed className="h-5 w-5 text-primary" />
         <h2 className="font-display text-xl font-semibold">Combo ăn uống</h2>
+        {perPersonMode && (
+          <span className="bg-chart-2/15 text-chart-2 text-xs font-bold px-2 py-0.5 rounded-full">
+            Chế độ 1 người = 1 thực đơn
+          </span>
+        )}
         {required && (
           <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" /> Bắt buộc
           </span>
         )}
       </div>
+
+      {perPersonMode && (
+        <div className="bg-chart-2/5 border border-chart-2/30 rounded-lg p-3 text-sm text-foreground">
+          Mỗi khách sẽ có 1 thực đơn riêng · Hóa đơn tính theo số người ({guestCount} khách).
+        </div>
+      )}
 
       {required && selections.length === 0 && (
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-3 text-sm text-purple-700 dark:text-purple-300">
