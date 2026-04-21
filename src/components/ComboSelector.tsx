@@ -143,8 +143,38 @@ const ComboSelector = ({ required, mandatory, mandatoryLabel, mandatoryNote, sha
 
   if (packages.length === 0) return null;
 
+  const suggestedSets = Math.ceil(guestCount / 2);
+
   return (
-    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+    <div
+      id={sectionId}
+      className={cn(
+        "bg-card rounded-xl border border-border p-6 space-y-4 transition-all",
+        shake && "combo-required-shake"
+      )}
+    >
+      {/* MANDATORY HOLIDAY BANNER */}
+      {isLocked && (
+        <div className="bg-[#FDECEA] border-l-[3px] border-l-[#C62828] rounded-md p-3 space-y-1">
+          <p className="font-bold text-[#C62828] flex items-center gap-2 text-sm">
+            🍽️ {isVi ? 'BẮT BUỘC CHỌN COMBO ĂN UỐNG' : 'COMBO MEAL REQUIRED'}
+          </p>
+          {mandatoryLabel && (
+            <p className="text-xs text-[#C62828]">
+              {isVi
+                ? <>Trong dịp <strong>{mandatoryLabel}</strong>, khách lưu trú phải đặt combo theo quy định.</>
+                : <>During <strong>{mandatoryLabel}</strong>, guests must order a combo per hotel policy.</>}
+            </p>
+          )}
+          {mandatoryNote && (
+            <p className="text-xs text-[#C62828]/90">{mandatoryNote}</p>
+          )}
+          <p className="text-xs text-[#C62828] font-medium pt-1">
+            💡 {isVi ? `Bạn có ${guestCount} khách → cần ít nhất ${suggestedSets} set combo (mỗi set ~2 người).` : `${guestCount} guests → at least ${suggestedSets} combo sets needed.`}
+          </p>
+        </div>
+      )}
+
       {/* Header with Skip/Add toggle */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
@@ -154,18 +184,20 @@ const ComboSelector = ({ required, mandatory, mandatoryLabel, mandatoryNote, sha
               {isVi ? 'Thêm bữa ăn' : 'Add meal'}
             </h2>
             <p className="text-xs text-muted-foreground">
-              {required
-                ? (isVi ? 'Bắt buộc với ngày bạn chọn' : 'Required for your dates')
-                : (isVi ? 'Không bắt buộc' : 'Optional')}
+              {isLocked
+                ? (isVi ? 'Bắt buộc theo quy định kỳ lễ' : 'Required by holiday policy')
+                : required
+                  ? (isVi ? 'Bắt buộc với ngày bạn chọn' : 'Required for your dates')
+                  : (isVi ? 'Không bắt buộc' : 'Optional')}
             </p>
           </div>
-          {required && (
-            <span className="bg-primary/15 text-primary text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+          {(required || isLocked) && (
+            <span className="bg-destructive/15 text-destructive text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" /> {isVi ? 'Bắt buộc' : 'Required'}
             </span>
           )}
         </div>
-        {!required && (
+        {!required && !isLocked && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">{isVi ? 'Bỏ qua' : 'Skip'}</span>
             <Switch
