@@ -46,8 +46,13 @@ const SmartImage = memo(function SmartImage({
         alt={alt}
         loading={eager ? 'eager' : 'lazy'}
         decoding="async"
+        fetchPriority={eager ? 'high' : 'auto' as any}
         onLoad={() => setLoaded(true)}
-        onError={() => { setErrored(true); setLoaded(true); }}
+        onError={(e) => {
+          setErrored(true);
+          setLoaded(true);
+          (e.currentTarget as HTMLImageElement).style.background = 'hsl(var(--muted))';
+        }}
         className={cn(
           'w-full h-full transition-opacity duration-300',
           fit === 'cover' ? 'object-cover' : 'object-contain',
