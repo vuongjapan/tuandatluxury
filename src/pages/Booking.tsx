@@ -393,12 +393,9 @@ const Booking = () => {
           individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
-          promotion_id: activePromo?.id || undefined,
-          promotion_name: [activePromo ? (activePromo.title_vi || activePromo.title_en) : null, ...appliedPromotions.map(p => p.name)].filter(Boolean).join(' | ') || undefined,
-          promotion_discount_percent: promoDiscountPercent > 0 ? promoDiscountPercent : undefined,
-          promotion_discount_amount: (promoDiscountPercent > 0 ? Math.round(originalPrice * promoDiscountPercent / 100) : 0) + allAutoDiscounts || undefined,
+          promotion_name: appliedPromotions.map(p => p.name).join(' | ') || undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
-          member_discount_amount: memberDiscountPercent > 0 ? Math.round(originalPrice * memberDiscountPercent / 100) : undefined,
+          member_discount_amount: memberDiscountAmount > 0 ? memberDiscountAmount : undefined,
           discount_code: appliedDiscountCodes.length > 0 ? appliedDiscountCodes.map(c => c.code).join(',') : undefined,
           discount_code_amount: discountCodeAmount > 0 ? discountCodeAmount : undefined,
           discount_code_type: appliedDiscountCodes.length === 1 ? appliedDiscountCodes[0].discount_type : (appliedDiscountCodes.length > 1 ? 'mixed' : undefined),
@@ -523,27 +520,29 @@ const Booking = () => {
             </div>
           </div>
 
-          {/* Promo banners */}
-          {activePromo && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-              <Gift className="h-6 w-6 text-primary shrink-0" />
-              <div className="flex-1">
-                <p className="font-semibold text-foreground text-sm">{isVi ? `Đang áp dụng: ${activePromo.title_vi}` : `Applied: ${activePromo.title_en}`}</p>
-                <p className="text-xs text-muted-foreground">
-                  {promoDiscountPercent > 0 && `Giảm ${promoDiscountPercent}%`}
-                  {memberDiscountPercent > 0 && ` + Thành viên ${memberDiscountPercent}%`}
-                </p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/booking')}>✕</Button>
-            </motion.div>
-          )}
-          {!activePromo && user && memberDiscountPercent > 0 && (
+          {/* VIP banner (signed-in users with active discount) */}
+          {user && memberDiscountPercent > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
-              <p className="text-sm text-foreground">⭐ {isVi ? `Giảm ${memberDiscountPercent}% (Hạng ${user.tier === 'super_vip' ? 'Siêu VIP' : user.tier === 'vip' ? 'VIP' : 'Thành viên'})` : `${memberDiscountPercent}% discount`}</p>
+              <p className="text-sm text-foreground">
+                🏅 {isVi
+                  ? `Ưu đãi VIP: -${memberDiscountPercent}% tiền phòng (đã đặt ${userBookingCount} lần)`
+                  : `VIP discount: -${memberDiscountPercent}% on room (${userBookingCount} bookings)`}
+              </p>
             </motion.div>
           )}
+          {!user && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="mb-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-center">
+              <p className="text-sm text-amber-900 dark:text-amber-200">
+                ⭐ {isVi ? 'Đăng nhập để nhận ưu đãi thành viên VIP' : 'Sign in for VIP member discounts'}{' '}
+                <button onClick={() => navigate('/member')} className="underline font-semibold">
+                  {isVi ? 'Đăng nhập' : 'Sign in'}
+                </button>
+              </p>
+            </motion.div>
+          )}
+
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main content */}
