@@ -733,58 +733,41 @@ const Booking = () => {
                     {/* Banner explaining whether food is mandatory or optional */}
                     <MealRuleBanner rule={mandatoryComboRange} />
 
-                    {/* SECTION 1: Personal meal plans — collapses when a combo is chosen */}
-                    {hasSelectedCombo ? (
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-sm transition-all">
-                        <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                          <Check className="h-4 w-4" />
-                          {isVi ? 'Đã chọn combo — không cần chọn thêm suất ăn theo số người' : 'Combo selected — no need to add a per-person meal'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setComboSelections([])}
-                          className="text-emerald-700 dark:text-emerald-300 font-semibold hover:underline shrink-0"
-                        >
-                          {isVi ? 'Thay đổi →' : 'Change →'}
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        className="overflow-hidden transition-all duration-400 ease-out"
-                        style={{ maxHeight: '2000px', opacity: 1 }}
-                      >
-                        <PersonalMealPlanSelector
-                          guestCount={guestCount}
-                          selections={personalMealSelections}
-                          onChange={setPersonalMealSelections}
-                        />
-                      </div>
-                    )}
-
-                    {/* Hint above combo when a personal meal is already chosen */}
-                    {hasSelectedPersonalMeal && !hasSelectedCombo && (guestCount >= 4 || isComboMandatory) && (
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                        <Check className="h-3.5 w-3.5" />
-                        {isVi ? 'Đã chọn suất ăn — combo là tùy chọn thêm, không bắt buộc' : 'Meal plan selected — combo is optional, not required'}
-                      </div>
-                    )}
-
-                    {/* SECTION 2: Combo 225k–550k — only when guestCount >= 4 OR mandatory holiday */}
-                    {(guestCount >= 4 || isComboMandatory) && (
-                      <ComboSelector
-                        sectionId="combo-section"
-                        required={false}
-                        mandatory={isComboMandatory && !hasSelectedPersonalMeal && !individualMeetsMinimum}
-                        mandatoryLabel={mandatoryComboRange?.label}
-                        mandatoryNote={mandatoryComboRange?.note || undefined}
-                        shake={comboShake}
-                        selections={comboSelections}
-                        onSelectionsChange={setComboSelections}
-                        guestCount={Math.max(guestCount, 6)}
-                        comboNotes={comboNotes}
-                        onComboNotesChange={setComboNotes}
-                        onOpenFoodOrder={() => setFoodSelectorOpen(true)}
+                    {/* === 1–4 GUESTS: SET MEAL ONLY === */}
+                    {useSetMeals && (
+                      <PersonalMealPlanSelector
+                        guestCount={guestCount}
+                        selections={personalMealSelections}
+                        onChange={setPersonalMealSelections}
+                        fixedMode
                       />
+                    )}
+
+                    {/* === 5+ GUESTS: COMBO SLOTS ONLY === */}
+                    {useComboSlots && (
+                      <>
+                        {/* Linked: when set ALSO chosen (rare cross-state), show optional hint */}
+                        {hasSelectedPersonalMeal && (
+                          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                            <Check className="h-3.5 w-3.5" />
+                            {isVi ? 'Đã chọn set — combo là tùy chọn thêm' : 'Set selected — combo is optional'}
+                          </div>
+                        )}
+                        <ComboSlotSelector
+                          sectionId="combo-section"
+                          guestCount={guestCount}
+                          slots={comboSlots}
+                          onChange={setComboSlots}
+                          shake={comboShake}
+                        />
+                        {comboServingsError && (
+                          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+                            ⚠️ {isVi
+                              ? `Tổng số người trong combo (${totalAssignedPeople}) phải bằng số khách (${guestCount})`
+                              : `Combo people (${totalAssignedPeople}) must equal guest count (${guestCount})`}
+                          </div>
+                        )}
+                      </>
                     )}
 
                     <IndividualFoodSelector
