@@ -75,7 +75,7 @@ const Header = () => {
   const rightNavItems = [
     { key: 'nav.services', href: '/services' },
     { labelVi: 'Khám phá', labelEn: 'Discover', href: '/kham-pha' },
-    { key: 'nav.promotions', href: '/promotions' },
+    { key: 'nav.promotions', href: '/uu-dai' },
     { labelVi: 'Đấu giá 🔥', labelEn: 'Auction 🔥', href: '/auction' },
     { labelVi: 'Live 🔴', labelEn: 'Live 🔴', href: '/live' },
   ] as any[];
