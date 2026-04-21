@@ -179,7 +179,7 @@ const HeroSection = () => {
         style={{ transitionDelay: '1400ms' }}
       >
         <div className="bg-foreground/80 backdrop-blur-md border-t border-primary/20">
-          <div className="container mx-auto px-4">
+          <div className="section-container">
             <div className="grid grid-cols-3 divide-x divide-primary/20">
               {[
                 { numVi: '19+', labelVi: 'Phòng sang trọng', numEn: '19+', labelEn: 'Luxury Rooms' },

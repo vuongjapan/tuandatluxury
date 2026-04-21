@@ -27,7 +27,7 @@ const PromotionsSection = () => {
 
   return (
     <section id="offers" className="py-16 sm:py-20 bg-background">
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         {/* Header row */}
         <FadeIn className="flex items-end justify-between gap-4 mb-8 sm:mb-10">
           <h2 className="font-display text-2xl sm:text-3xl font-normal text-[#1B3A5C] tracking-tight">

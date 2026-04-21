@@ -24,7 +24,7 @@ const MapSection = () => {
 
   return (
     <section id="map" className="py-10 sm:py-16 bg-secondary">
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
             <MapPin className="inline-block h-6 w-6 sm:h-7 sm:w-7 text-primary mr-2 -mt-1" />

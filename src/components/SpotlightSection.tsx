@@ -78,7 +78,7 @@ const SpotlightSection = () => {
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
       <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-      <div className="container mx-auto px-4">
+      <div className="section-container">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
