@@ -404,6 +404,7 @@ const AdminDashboard = () => {
           {tab === 'live' && <AdminLive />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'member-discount' && <AdminMemberDiscount />}
+          {tab === 'about-images' && <AdminAboutImages />}
         </div>
       </main>
     </div>
