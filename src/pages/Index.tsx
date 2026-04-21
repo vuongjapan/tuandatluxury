@@ -80,6 +80,7 @@ const Index = () => {
       <Header />
       <HeroSection />
       <BookingSearch />
+      <PromoBanner />
 
       {/* 1. Phòng nghỉ - Carousel kiểu Vinpearl */}
       {roomsLoading && safeRooms.length === 0 ? (
