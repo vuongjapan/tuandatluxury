@@ -25,6 +25,11 @@ export interface Service {
   vehicle_types: VehicleType[] | null;
   sort_order: number;
   is_active: boolean;
+  badge_text: string | null;
+  badge_color: string | null;
+  button_text: string | null;
+  button_link: string | null;
+  homepage_featured: boolean;
 }
 
 export const useServices = () => {
@@ -54,6 +59,7 @@ export const useServices = () => {
   const safeServices = Array.isArray(services) ? services : [];
   const amenities = safeServices.filter(s => s.category === 'amenity');
   const shuttles = safeServices.filter(s => s.category === 'shuttle');
+  const featured = safeServices.filter(s => s.homepage_featured && s.is_active);
 
-  return { services: safeServices, amenities, shuttles, isLoading, refetch };
+  return { services: safeServices, amenities, shuttles, featured, isLoading, refetch };
 };
