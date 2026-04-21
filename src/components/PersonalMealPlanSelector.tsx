@@ -244,6 +244,8 @@ const PersonalMealPlanSelector = ({ guestCount, selections, onChange, fixedMode 
           )}
         </div>
       )}
+
+      <MenuViewerModal open={menuOpen} onOpenChange={setMenuOpen} />
     </div>
   );
 };
