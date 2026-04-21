@@ -1607,6 +1607,39 @@ export type Database = {
           },
         ]
       }
+      mandatory_combo_dates: {
+        Row: {
+          created_at: string
+          date_from: string
+          date_to: string
+          id: string
+          is_active: boolean
+          label: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_from: string
+          date_to: string
+          id?: string
+          is_active?: boolean
+          label: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string
+          date_to?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_item_prices: {
         Row: {
           created_at: string
