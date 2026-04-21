@@ -196,3 +196,44 @@
     background: linear-gradient(90deg, transparent, hsl(43 74% 49% / 0.3), transparent);
   }
 }
+
+/* ============================================
+   GLOBAL IMAGE QUALITY ENHANCEMENT
+   ============================================ */
+@layer base {
+  img {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    image-rendering: -webkit-optimize-contrast;
+    filter: contrast(1.03) saturate(1.05) brightness(1.005);
+  }
+  /* Hero & banner imagery: punchier color */
+  [class*="hero"] img,
+  [class*="banner"] img,
+  .hero-img,
+  .banner-img {
+    filter: contrast(1.05) saturate(1.08);
+  }
+  /* Room cards */
+  [class*="room"] img {
+    filter: contrast(1.04) saturate(1.07);
+    transition: filter 0.3s ease, transform 0.5s ease;
+  }
+  [class*="room"]:hover img {
+    filter: contrast(1.06) saturate(1.1) brightness(1.02);
+  }
+  /* Food / dining */
+  [class*="food"] img,
+  [class*="dish"] img,
+  [class*="dining"] img,
+  [class*="cuisine"] img,
+  .food-img {
+    filter: contrast(1.06) saturate(1.12) brightness(1.02);
+  }
+  /* Broken image graceful fallback */
+  img:where(:not([src]), [src=""]) {
+    background: hsl(var(--muted));
+    visibility: hidden;
+  }
+}
