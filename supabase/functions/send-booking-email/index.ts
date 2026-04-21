@@ -15,7 +15,7 @@ const SMTP_EMAIL = "tuandatluxuryflc36hotelsamson@gmail.com";
 const ADMIN_EMAIL = "tuandatluxuryflc36hotel@gmail.com";
 const HOTEL_NAME = "Tuấn Đạt Luxury Hotel";
 const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa, Việt Nam";
-const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 098.661.7939";
+const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 038.441.8811";
 const HOTEL_EMAIL_DISPLAY = "tuandatluxuryflc36hotel@gmail.com";
 
 const VA_BANK = "BIDV";

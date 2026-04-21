@@ -196,7 +196,7 @@ const InvoicePage = () => {
             <div className="mt-4 text-sm space-y-1 text-primary-foreground/90">
               <p><strong>Khách sạn:</strong> Tuấn Đạt Luxury</p>
               <p><strong>Địa chỉ:</strong> FLC Sầm Sơn, Thanh Hóa, Việt Nam</p>
-              <p><strong>Hotline:</strong> 098.360.5768 | 036.984.5422 | 098.661.7939</p>
+              <p><strong>Hotline:</strong> 098.360.5768 | 036.984.5422 | 038.441.8811</p>
               <p><strong>Email:</strong> tuandatluxuryflc36hotel@gmail.com</p>
             </div>
           </div>
@@ -603,7 +603,7 @@ const InvoicePage = () => {
 
             <div className="text-center text-xs text-muted-foreground pt-4">
               <p>Cảm ơn quý khách đã tin tưởng <strong className="text-primary">Tuấn Đạt Luxury Hotel</strong>!</p>
-              <p className="mt-1">📞 Hotline: 098.360.5768 | 036.984.5422 | 098.661.7939</p>
+              <p className="mt-1">📞 Hotline: 098.360.5768 | 036.984.5422 | 038.441.8811</p>
               <p>📧 tuandatluxuryflc36hotel@gmail.com</p>
             </div>
           </div>

@@ -167,7 +167,7 @@ const FoodInvoice = () => {
             <p className="text-center text-sm text-primary-foreground/80 mt-0.5">FOOD ORDER CONFIRMATION</p>
             <div className="mt-4 text-sm space-y-1 text-primary-foreground/90">
               <p><strong>{isVi ? 'Khách sạn:' : 'Hotel:'}</strong> Tuấn Đạt Luxury</p>
-              <p><strong>Hotline:</strong> 098.360.5768 | 036.984.5422 | 098.661.7939</p>
+              <p><strong>Hotline:</strong> 098.360.5768 | 036.984.5422 | 038.441.8811</p>
               <p><strong>Email:</strong> tuandatluxuryflc36hotel@gmail.com</p>
             </div>
           </div>
@@ -424,7 +424,7 @@ const FoodInvoice = () => {
               <div className="text-center pt-2 border-t border-border">
                 <p className="font-semibold text-foreground">{isVi ? 'Trân trọng,' : 'Best regards,'}</p>
                 <p className="font-semibold text-foreground">Tuấn Đạt Luxury</p>
-                <p>📞 098.360.5768 | 036.984.5422 | 098.661.7939</p>
+                <p>📞 098.360.5768 | 036.984.5422 | 038.441.8811</p>
                 <p>📧 tuandatluxuryflc36hotel@gmail.com</p>
               </div>
             </div>
