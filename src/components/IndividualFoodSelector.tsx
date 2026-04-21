@@ -147,15 +147,20 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-primary" />
-              <h2 className="font-display text-lg font-bold">Đặt món riêng</h2>
+          <div className="p-4 border-b border-border flex items-center justify-between shrink-0 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <ShoppingBag className="h-5 w-5 text-primary shrink-0" />
+              <h2 className="font-display text-lg font-bold truncate">{isVi ? 'Đặt món riêng' : 'Order dishes'}</h2>
               {totalItems > 0 && (
-                <Badge className="bg-primary text-primary-foreground">{totalItems} món</Badge>
+                <Badge className="bg-primary text-primary-foreground shrink-0">{totalItems}</Badge>
               )}
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setMenuViewerOpen(true)}>
+                <BookOpen className="h-3.5 w-3.5" /> {isVi ? 'Xem thực đơn' : 'Full menu'}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+            </div>
           </div>
 
           {/* Search */}
