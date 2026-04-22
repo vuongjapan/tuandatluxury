@@ -38,6 +38,8 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   setCurrency: (cur: Currency) => void;
   t: (key: string) => string;
+  /** pick(vi, en): trả về `vi` cho ngôn ngữ vi; ngược lại trả về `en` (dùng cho ja/zh là fallback an toàn). */
+  pick: <T>(vi: T, en: T) => T;
   formatPrice: (priceVND: number) => string;
   /** Convert VND → currency (number, không có ký hiệu). */
   convertPrice: (priceVND: number) => number;
@@ -147,6 +149,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = useCallback((key: string) => translate(key, language), [language]);
 
+  const pick = useCallback(<T,>(vi: T, en: T): T => (language === 'vi' ? vi : en), [language]);
+
   const convertPrice = useCallback((vnd: number) => {
     if (!Number.isFinite(vnd) || vnd <= 0) return 0;
     switch (currency) {
@@ -187,10 +191,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const value = useMemo(() => ({
     language, currency, rates,
     setLanguage, setCurrency,
-    t, formatPrice, convertPrice,
+    t, pick, formatPrice, convertPrice,
     langLabels: LANG_LABELS,
     currencyLabels: CURRENCY_LABELS,
-  }), [language, currency, rates, setLanguage, setCurrency, t, formatPrice, convertPrice]);
+  }), [language, currency, rates, setLanguage, setCurrency, t, pick, formatPrice, convertPrice]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };

@@ -39,7 +39,7 @@ const CATEGORY_LABELS: Record<string, { vi: string; en: string }> = {
 };
 
 const FoodOrder = () => {
-  const { language, formatPrice } = useLanguage();
+  const { language, formatPrice, pick } = useLanguage();
   const { addItem, items: cartItems, totalItems, totalAmount, updateQuantity, removeItem } = useCart();
   const { toast } = useToast();
   const {
@@ -63,7 +63,7 @@ const FoodOrder = () => {
       image_url: item.image_url,
     });
     toast({
-      title: isVi ? 'Đã thêm vào giỏ' : 'Added to cart',
+      title: pick('Đã thêm vào giỏ', 'Added to cart'),
       description: getName(item),
     });
   };
@@ -83,11 +83,11 @@ const FoodOrder = () => {
         <div className="container mx-auto px-4">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-3xl mx-auto">
             <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
-              {isVi ? 'Đặt đồ ăn trực tuyến' : 'Order Food Online'}
+              {pick('Đặt đồ ăn trực tuyến', 'Order Food Online')}
             </h1>
             <div className="w-16 h-1 bg-gold-gradient mx-auto rounded-full mb-4" />
             <p className="text-muted-foreground">
-              {isVi ? 'Chọn món, thanh toán nhanh – phục vụ tận phòng' : 'Pick your dishes, pay online – room delivery'}
+              {pick('Chọn món, thanh toán nhanh – phục vụ tận phòng', 'Pick your dishes, pay online – room delivery')}
             </p>
           </motion.div>
         </div>
@@ -102,7 +102,7 @@ const FoodOrder = () => {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={isVi ? 'Tìm món ăn...' : 'Search dishes...'}
+              placeholder={pick('Tìm món ăn...', 'Search dishes...')}
               className="pl-10 pr-10"
             />
             {search && (
@@ -119,7 +119,7 @@ const FoodOrder = () => {
               onClick={() => setCategory(null)}
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${!category ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
             >
-              {isVi ? 'Tất cả' : 'All'}
+              {pick('Tất cả', 'All')}
             </button>
             {categories.map(cat => (
               <button
@@ -147,7 +147,7 @@ const FoodOrder = () => {
             {hasFilters && (
               <button onClick={clearFilters} className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium text-destructive hover:bg-destructive/10 transition-all">
                 <X className="h-3 w-3 inline mr-1" />
-                {isVi ? 'Xóa lọc' : 'Clear'}
+                {pick('Xóa lọc', 'Clear')}
               </button>
             )}
           </div>
@@ -159,17 +159,17 @@ const FoodOrder = () => {
         <div className="container mx-auto px-4">
           {loading ? (
             <div className="text-center py-20 text-muted-foreground">
-              {isVi ? 'Đang tải...' : 'Loading...'}
+              {pick('Đang tải...', 'Loading...')}
             </div>
           ) : items.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>{isVi ? 'Không tìm thấy món ăn' : 'No dishes found'}</p>
+              <p>{pick('Không tìm thấy món ăn', 'No dishes found')}</p>
             </div>
           ) : (
             <>
               <p className="text-sm text-muted-foreground mb-4">
-                {totalCount} {isVi ? 'món' : 'items'}
+                {totalCount} {pick('món', 'items')}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                 {items.map(item => {
@@ -211,7 +211,7 @@ const FoodOrder = () => {
                         {qty === 0 ? (
                           <Button size="sm" variant="gold" className="w-full text-xs gap-1" onClick={() => handleAddToCart(item)}>
                             <Plus className="h-3.5 w-3.5" />
-                            {isVi ? 'Thêm' : 'Add'}
+                            {pick('Thêm', 'Add')}
                           </Button>
                         ) : (
                           <div className="flex items-center justify-between bg-secondary rounded-lg p-1">
@@ -233,7 +233,7 @@ const FoodOrder = () => {
               {hasMore && (
                 <div className="text-center mt-8">
                   <Button variant="outline" onClick={loadMore}>
-                    {isVi ? 'Xem thêm' : 'Load more'}
+                    {pick('Xem thêm', 'Load more')}
                   </Button>
                 </div>
               )}
@@ -257,7 +257,7 @@ const FoodOrder = () => {
               className="w-full md:w-auto shadow-lg gap-2 py-6 text-base"
             >
               <ShoppingCart className="h-5 w-5" />
-              <span>{isVi ? 'Giỏ hàng' : 'Cart'} ({totalItems})</span>
+              <span>{pick('Giỏ hàng', 'Cart')} ({totalItems})</span>
               <span className="ml-2 font-bold">{formatPrice(totalAmount)}</span>
             </Button>
           </motion.div>
@@ -280,7 +280,7 @@ const FoodOrder = () => {
             >
               {/* Cart Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="font-display text-lg font-bold">{isVi ? 'Giỏ hàng' : 'Cart'} ({totalItems})</h2>
+                <h2 className="font-display text-lg font-bold">{pick('Giỏ hàng', 'Cart')} ({totalItems})</h2>
                 <button onClick={() => setShowCart(false)}>
                   <X className="h-5 w-5" />
                 </button>
@@ -291,7 +291,7 @@ const FoodOrder = () => {
                 {cartItems.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                    <p>{isVi ? 'Giỏ hàng trống' : 'Cart is empty'}</p>
+                    <p>{pick('Giỏ hàng trống', 'Cart is empty')}</p>
                   </div>
                 ) : (
                   cartItems.map(item => (
@@ -318,7 +318,7 @@ const FoodOrder = () => {
                       </div>
                       <div className="text-sm font-bold text-foreground self-center">
                         {(item as any).price_type === 'negotiable' || (item as any).price_vnd === 0
-                          ? <span className="text-[11px] text-orange-600">{isVi ? 'Tính tại NH' : 'At venue'}</span>
+                          ? <span className="text-[11px] text-orange-600">{pick('Tính tại NH', 'At venue')}</span>
                           : formatPrice((item as any).price_vnd * item.quantity)}
                       </div>
                     </div>
@@ -329,7 +329,7 @@ const FoodOrder = () => {
                 {cartItems.length > 0 && popularItems.length > 0 && (
                   <div className="mt-6 pt-4 border-t border-border">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                      {isVi ? '🔥 Gợi ý thêm món' : '🔥 You might also like'}
+                      {pick('🔥 Gợi ý thêm món', '🔥 You might also like')}
                     </h3>
                     <div className="space-y-2">
                       {popularItems.filter(p => !cartItems.some(c => c.id === p.id)).slice(0, 5).map(item => (
@@ -359,7 +359,7 @@ const FoodOrder = () => {
               {cartItems.length > 0 && (
                 <div className="p-4 border-t border-border space-y-3">
                   <div className="flex justify-between text-lg font-bold">
-                    <span>{isVi ? 'Tổng cộng' : 'Total'}</span>
+                    <span>{pick('Tổng cộng', 'Total')}</span>
                     <span className="text-primary">{formatPrice(totalAmount)}</span>
                   </div>
                   <Button
@@ -367,7 +367,7 @@ const FoodOrder = () => {
                     className="w-full py-6 text-base"
                     onClick={() => { setShowCart(false); setShowCheckout(true); }}
                   >
-                    {isVi ? 'Tiến hành đặt hàng' : 'Proceed to Order'}
+                    {pick('Tiến hành đặt hàng', 'Proceed to Order')}
                   </Button>
                 </div>
               )}
