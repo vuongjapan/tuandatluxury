@@ -379,7 +379,8 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       ${booking.guest_email ? `<tr><td style="color:#888;">Email:</td><td style="font-weight:500;text-align:right;">${booking.guest_email}</td></tr>` : ""}
       <tr><td style="color:#888;">Nhận phòng:</td><td style="font-weight:500;text-align:right;">${checkIn}</td></tr>
       <tr><td style="color:#888;">Trả phòng:</td><td style="font-weight:500;text-align:right;">${checkOut}</td></tr>
-      <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${(() => { const m = (booking.guest_notes || '').match(/\[Khách: (\d+) người lớn(?: · (\d+) trẻ em)?\]/); if (m) { const a = m[1]; const c = m[2] || '0'; return `${a} người lớn${parseInt(c) > 0 ? ` · ${c} trẻ em` : ''}`; } return `${booking.guests_count} khách`; })()}</td></tr>
+      <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${guestBreakdown.adults > 0 ? `${guestBreakdown.adults} người lớn` : `${booking.guests_count} khách`}</td></tr>
+      ${guestBreakdown.children > 0 ? `<tr><td style="color:#888;">Ghi chú trẻ em:</td><td style="font-weight:500;text-align:right;">${guestBreakdown.children} trẻ em đính kèm (không tính tiền)</td></tr>` : ''}
     </table>
     ${booking.company_name ? `
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;">
@@ -450,10 +451,10 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     ${comboHtml}
     ${foodHtml}
 
-    ${booking.guest_notes ? `
+    ${guestBreakdown.cleanedNotes ? `
     <div style="margin-top:20px;">
       <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:0 0 12px;">Ghi chú</h3>
-      <p style="font-size:13px;color:#666;background:#f8f6f0;border-radius:8px;padding:10px 12px;">${booking.guest_notes}</p>
+      <p style="font-size:13px;color:#666;background:#f8f6f0;border-radius:8px;padding:10px 12px;white-space:pre-line;">${guestBreakdown.cleanedNotes}</p>
     </div>` : ''}
 
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
