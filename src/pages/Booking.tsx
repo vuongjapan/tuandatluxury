@@ -82,7 +82,8 @@ const Booking = () => {
   const [checkOut, setCheckOut] = useState<Date | undefined>(preCheckout ? new Date(preCheckout + 'T00:00:00') : undefined);
   const [adults, setAdults] = useState(searchParams.get('adults') || searchParams.get('guests') || '2');
   const [children, setChildren] = useState(searchParams.get('children') || '0');
-  const guests = String((parseInt(adults) || 0) + (parseInt(children) || 0));
+  // Trẻ em CHỈ là ghi chú đính kèm — không tính vào sức chứa, suất ăn, hay giá tiền.
+  const guests = String(parseInt(adults) || 0);
   const setGuests = (v: string) => setAdults(v);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
