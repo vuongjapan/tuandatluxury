@@ -355,7 +355,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       ${booking.guest_email ? `<tr><td style="color:#888;">Email:</td><td style="font-weight:500;text-align:right;">${booking.guest_email}</td></tr>` : ""}
       <tr><td style="color:#888;">Nhận phòng:</td><td style="font-weight:500;text-align:right;">${checkIn}</td></tr>
       <tr><td style="color:#888;">Trả phòng:</td><td style="font-weight:500;text-align:right;">${checkOut}</td></tr>
-      <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${booking.guests_count} khách</td></tr>
+      <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${(() => { const m = (booking.guest_notes || '').match(/\[Khách: (\d+) người lớn(?: · (\d+) trẻ em)?\]/); if (m) { const a = m[1]; const c = m[2] || '0'; return `${a} người lớn${parseInt(c) > 0 ? ` · ${c} trẻ em` : ''}`; } return `${booking.guests_count} khách`; })()}</td></tr>
     </table>
     ${booking.company_name ? `
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;">
