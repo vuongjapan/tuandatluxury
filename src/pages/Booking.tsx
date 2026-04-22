@@ -80,7 +80,10 @@ const Booking = () => {
 
   const [checkIn, setCheckIn] = useState<Date | undefined>(preCheckin ? new Date(preCheckin + 'T00:00:00') : undefined);
   const [checkOut, setCheckOut] = useState<Date | undefined>(preCheckout ? new Date(preCheckout + 'T00:00:00') : undefined);
-  const [guests, setGuests] = useState(searchParams.get('guests') || '2');
+  const [adults, setAdults] = useState(searchParams.get('adults') || searchParams.get('guests') || '2');
+  const [children, setChildren] = useState(searchParams.get('children') || '0');
+  const guests = String((parseInt(adults) || 0) + (parseInt(children) || 0));
+  const setGuests = (v: string) => setAdults(v);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -601,7 +604,7 @@ const Booking = () => {
                     {/* Search bar */}
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <h2 className="font-display text-xl font-semibold flex items-center gap-2">📅 {isVi ? 'Chọn ngày & số khách' : 'Select Dates & Guests'}</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
                           <Popover>
@@ -631,14 +634,27 @@ const Booking = () => {
                           </Popover>
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.guests')}</label>
-                          <Select value={guests} onValueChange={setGuests}>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Người lớn' : 'Adults'}</label>
+                          <Select value={adults} onValueChange={setAdults}>
                             <SelectTrigger>
                               <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
                             </SelectTrigger>
                             <SelectContent>
                               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người' : 'guests'}</SelectItem>
+                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người lớn' : 'adults'}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Trẻ em' : 'Children'}</label>
+                          <Select value={children} onValueChange={setChildren}>
+                            <SelectTrigger>
+                              <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 6 }, (_, i) => i).map((n) => (
+                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'trẻ em' : 'children'}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

@@ -298,3 +298,51 @@
   border: 2px solid hsl(var(--destructive)) !important;
   border-radius: 0.75rem;
 }
+
+/* ============================================
+   ACCESSIBILITY — reduced motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   MOBILE PERF — disable heavy effects
+   ============================================ */
+@media (max-width: 768px) {
+  [data-parallax] { transform: none !important; }
+  .hero-particle, .cursor-dot, .cursor-ring { display: none !important; }
+  .luxury-section::before { opacity: 0.5; }
+}
+
+/* ============================================
+   LUXURY MICRO-INTERACTIONS
+   ============================================ */
+@keyframes shimmer-gold {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-gold {
+  background: linear-gradient(90deg, transparent, hsl(var(--gold-glow) / 0.3), transparent);
+  background-size: 200% 100%;
+  animation: shimmer-gold 2.4s ease-in-out infinite;
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.float-soft { animation: float-soft 4s ease-in-out infinite; }
+
+.luxury-hover {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+.luxury-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-luxury);
+}
