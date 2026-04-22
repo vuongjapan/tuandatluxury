@@ -2898,6 +2898,72 @@ export type Database = {
           },
         ]
       }
+      transport_bookings: {
+        Row: {
+          admin_notes: string | null
+          booking_id: string
+          created_at: string
+          dropoff_location: string | null
+          flight_number: string | null
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string
+          id: string
+          luggage: string | null
+          notes: string | null
+          passengers: number
+          pickup_datetime: string
+          pickup_location: string | null
+          price: number
+          room_number: string | null
+          status: string
+          transport_type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          booking_id: string
+          created_at?: string
+          dropoff_location?: string | null
+          flight_number?: string | null
+          guest_email?: string | null
+          guest_name: string
+          guest_phone: string
+          id?: string
+          luggage?: string | null
+          notes?: string | null
+          passengers?: number
+          pickup_datetime: string
+          pickup_location?: string | null
+          price?: number
+          room_number?: string | null
+          status?: string
+          transport_type: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          booking_id?: string
+          created_at?: string
+          dropoff_location?: string | null
+          flight_number?: string | null
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string
+          id?: string
+          luggage?: string | null
+          notes?: string | null
+          passengers?: number
+          pickup_datetime?: string
+          pickup_location?: string | null
+          price?: number
+          room_number?: string | null
+          status?: string
+          transport_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_bookings_count: {
         Row: {
           current_tier: string
