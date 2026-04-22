@@ -141,8 +141,19 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
   const roomQty = booking.room_quantity || 1;
-  const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity, 0);
-  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity, 0);
+  // Multiplier (×1 với trưa hoặc tối, ×2 với cả hai bữa)
+  const mealMultiplier = Number(booking.meal_multiplier) || 1;
+  const mealTimeRaw: string | null = booking.meal_time || null;
+  const mealTimeLabel: string | null =
+    booking.meal_time_label ||
+    (mealTimeRaw === 'lunch' ? 'Bữa trưa'
+      : mealTimeRaw === 'dinner' ? 'Bữa tối'
+      : mealTimeRaw === 'both' ? 'Cả 2 bữa (Trưa + Tối)'
+      : null);
+  const itemMealLabel = (mt?: string | null) =>
+    mt === 'lunch' ? 'Bữa trưa' : mt === 'dinner' ? 'Bữa tối' : mt === 'both' ? 'Cả 2 bữa' : null;
+  const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity * (Number(c.meal_multiplier) || 1), 0);
+  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity * (Number((f as any).meal_multiplier) || 1), 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
