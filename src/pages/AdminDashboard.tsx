@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, Gavel, Radio, AlertTriangle
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -37,8 +37,6 @@ import AdminWebDiscount from '@/components/admin/AdminWebDiscount';
 import AdminRoomPopup from '@/components/admin/AdminRoomPopup';
 import AdminQuickImport from '@/components/admin/AdminQuickImport';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
-import AdminAuction from '@/components/admin/AdminAuction';
-import AdminLive from '@/components/admin/AdminLive';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminDiscountConfig from '@/components/admin/AdminDiscountConfig';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
@@ -48,7 +46,7 @@ import AdminPromoPopups from '@/components/admin/AdminPromoPopups';
 import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
 import AdminPersonalMealPlans from '@/components/admin/AdminPersonalMealPlans';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'auction' | 'live' | 'reviews' | 'discount-config' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -221,13 +219,6 @@ const AdminDashboard = () => {
       items: [
         { id: 'analytics', icon: BarChart3, label: 'Analytics AI' },
         { id: 'quick-import', icon: Database, label: 'Quick Import Sầm Sơn' },
-      ],
-    },
-    {
-      title: 'Đấu giá & Live',
-      items: [
-        { id: 'auction', icon: Gavel, label: 'Đấu giá 🔥' },
-        { id: 'live', icon: Radio, label: 'Livestream 🔴' },
       ],
     },
     {
