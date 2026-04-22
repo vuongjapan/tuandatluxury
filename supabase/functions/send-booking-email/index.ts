@@ -141,8 +141,19 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
   const roomQty = booking.room_quantity || 1;
-  const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity, 0);
-  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity, 0);
+  // Multiplier (×1 với trưa hoặc tối, ×2 với cả hai bữa)
+  const mealMultiplier = Number(booking.meal_multiplier) || 1;
+  const mealTimeRaw: string | null = booking.meal_time || null;
+  const mealTimeLabel: string | null =
+    booking.meal_time_label ||
+    (mealTimeRaw === 'lunch' ? 'Bữa trưa'
+      : mealTimeRaw === 'dinner' ? 'Bữa tối'
+      : mealTimeRaw === 'both' ? 'Cả 2 bữa (Trưa + Tối)'
+      : null);
+  const itemMealLabel = (mt?: string | null) =>
+    mt === 'lunch' ? 'Bữa trưa' : mt === 'dinner' ? 'Bữa tối' : mt === 'both' ? 'Cả 2 bữa' : null;
+  const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity * (Number(c.meal_multiplier) || 1), 0);
+  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity * (Number((f as any).meal_multiplier) || 1), 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
@@ -187,17 +198,28 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     </div>`;
   }
 
+  // === BUILD MEAL TIME BADGE ===
+  const mealBadgeHtml = mealTimeLabel && (combos.length > 0 || foodItems.length > 0)
+    ? `<div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:10px;padding:10px 14px;margin:16px 0;display:flex;justify-content:space-between;">
+         <span style="font-weight:600;color:#92400E;font-size:13px;">🍽️ Bữa ăn đã chọn:</span>
+         <span style="font-weight:700;color:#D97706;font-size:13px;">${mealTimeLabel}${mealMultiplier > 1 ? ` (×${mealMultiplier} giá)` : ''}</span>
+       </div>`
+    : '';
+
   // === BUILD COMBO SECTION ===
   let comboHtml = '';
   if (combos.length > 0 || booking.combo_notes) {
     let comboRows = '';
-    combos.forEach((c, idx) => {
+    combos.forEach((c: any, idx) => {
       const parts = c.combo_name?.split(' – ') || [c.combo_name];
       const packageName = c.combo_package_name || parts[0] || '';
       const menuName = c.combo_menu_name || (parts.length > 1 ? parts.slice(1).join(' – ') : '');
-      const comboItemTotal = c.price_vnd * c.quantity;
+      const itemMult = Number(c.meal_multiplier) || 1;
+      const itemMt = c.meal_time || mealTimeRaw;
+      const itemMtLabel = itemMealLabel(itemMt);
+      const comboItemTotal = c.price_vnd * c.quantity * itemMult;
       const comboDishes = getComboDishes(c);
-      
+
       let dishesHtml = '';
       if (comboDishes.length > 0) {
         const dishRows = comboDishes.map((d, i) =>
@@ -212,6 +234,13 @@ function buildBookingInvoiceHtml(data: EmailData): string {
         </td></tr>`;
       }
 
+      const mealLine = itemMtLabel
+        ? `<tr><td colspan="2" style="font-size:12px;color:#D97706;font-weight:600;padding-top:2px;">🕐 ${itemMtLabel}${itemMult > 1 ? ` (×${itemMult} bữa)` : ''}</td></tr>`
+        : '';
+      const calcLine = itemMult > 1
+        ? `<tr><td colspan="2" style="font-size:12px;color:#888;padding-top:2px;">💰 ${fmt(c.price_vnd)}/người × ${c.quantity} suất × ${itemMult} bữa = ${fmt(comboItemTotal)}</td></tr>`
+        : `<tr><td colspan="2" style="font-size:12px;color:#888;padding-top:2px;">💰 ${fmt(c.price_vnd)}/người × ${c.quantity} suất</td></tr>`;
+
       comboRows += `
       <div style="background:#f8f6f0;border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid #f0ebe0;">
         <table style="width:100%;font-size:13px;">
@@ -220,7 +249,8 @@ function buildBookingInvoiceHtml(data: EmailData): string {
             <td style="text-align:right;font-weight:700;color:#8B6914;">${fmt(comboItemTotal)}</td>
           </tr>
           ${menuName ? `<tr><td colspan="2" style="font-size:12px;color:#8B6914;padding-top:2px;">📋 ${menuName}</td></tr>` : ''}
-          <tr><td colspan="2" style="font-size:12px;color:#888;padding-top:2px;">💰 ${fmt(c.price_vnd)}/người × ${c.quantity} suất</td></tr>
+          ${mealLine}
+          ${calcLine}
           ${dishesHtml}
         </table>
       </div>`;
@@ -245,11 +275,11 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     comboHtml = `
     <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">🍽️ a. Suất ăn (Combo)</h3>
     ${comboRows}
-    <p style="font-size:11px;color:#888;font-style:italic;margin:8px 0;">📌 Danh sách món được nhân theo số lượng suất ăn</p>
+    <p style="font-size:11px;color:#888;font-style:italic;margin:8px 0;">📌 Danh sách món được nhân theo số lượng suất ăn${mealMultiplier > 1 ? ` × ${mealMultiplier} bữa` : ''}</p>
     ${comboNotesHtml}
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;">
       <table style="width:100%;font-size:13px;"><tr>
-        <td style="font-weight:600;color:#888;">Tổng suất ăn (${totalServings > 0 ? `${totalServings}` : 'đã chọn'} suất):</td>
+        <td style="font-weight:600;color:#888;">Tổng suất ăn (${totalServings > 0 ? `${totalServings}` : 'đã chọn'} suất${mealMultiplier > 1 ? ` × ${mealMultiplier} bữa` : ''}):</td>
         <td style="text-align:right;font-weight:700;color:#8B6914;">${fmt(comboTotal)}</td>
       </tr></table>
     </div>`;
@@ -262,19 +292,24 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   // === BUILD FOOD ITEMS SECTION ===
   let foodHtml = '';
   if (foodItems.length > 0) {
-    const foodRows = foodItems.map((f, i) =>
-      `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8f6f0;border-radius:6px;padding:8px 12px;margin-bottom:4px;font-size:13px;">
-        <span><strong>${i + 1}. ${f.name}</strong> <span style="color:#888;font-size:12px;">×${f.quantity} · ${fmt(f.price_vnd)}/món</span></span>
-        <span style="font-weight:700;color:#8B6914;">${fmt(f.price_vnd * f.quantity)}</span>
-      </div>`
-    ).join('');
+    const foodRows = foodItems.map((f: any, i) => {
+      const itemMult = Number(f.meal_multiplier) || 1;
+      const itemMt = f.meal_time || mealTimeRaw;
+      const itemMtLabel = itemMealLabel(itemMt);
+      const lineTotal = f.price_vnd * f.quantity * itemMult;
+      const mtSuffix = itemMtLabel ? ` · ${itemMtLabel}${itemMult > 1 ? ` ×${itemMult}` : ''}` : '';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8f6f0;border-radius:6px;padding:8px 12px;margin-bottom:4px;font-size:13px;">
+        <span><strong>${i + 1}. ${f.name}</strong> <span style="color:#888;font-size:12px;">×${f.quantity} · ${fmt(f.price_vnd)}/món${mtSuffix}</span></span>
+        <span style="font-weight:700;color:#8B6914;">${fmt(lineTotal)}</span>
+      </div>`;
+    }).join('');
     const totalFoodQty = foodItems.reduce((s, f) => s + f.quantity, 0);
     foodHtml = `
     <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">🛒 b. Món ăn đặt riêng</h3>
     ${foodRows}
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;">
       <table style="width:100%;font-size:13px;"><tr>
-        <td style="font-weight:600;color:#888;">Tổng món ăn riêng (${totalFoodQty} món):</td>
+        <td style="font-weight:600;color:#888;">Tổng món ăn riêng (${totalFoodQty} món${mealMultiplier > 1 ? ` × ${mealMultiplier} bữa` : ''}):</td>
         <td style="text-align:right;font-weight:700;color:#8B6914;">${fmt(indFoodTotal)}</td>
       </tr></table>
     </div>`;
@@ -283,6 +318,9 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">🛒 b. Món ăn đặt riêng</h3>
     <p style="font-size:12px;color:#999;font-style:italic;">Không đặt món riêng</p>`;
   }
+
+  // Prepend meal badge before combo section
+  comboHtml = mealBadgeHtml + comboHtml;
 
   // === BUILD COST SUMMARY ===
   const roomBreakdownHtml = roomBreakdown.map((room, index) => {

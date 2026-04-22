@@ -108,8 +108,17 @@ const InvoicePage = () => {
 
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
   const roomQty = booking.room_quantity || 1;
-  const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + (c.price_vnd * c.quantity), 0);
-  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + (f.price_vnd * f.quantity), 0);
+  // Multiplier dùng để nhân khi hiển thị (cả 2 bữa = ×2)
+  const mealMultiplier = Number(booking.meal_multiplier) || 1;
+  const mealTimeRaw: string | null = booking.meal_time || null;
+  const mealTimeLabel: string | null =
+    booking.meal_time_label ||
+    (mealTimeRaw === 'lunch' ? 'Bữa trưa'
+      : mealTimeRaw === 'dinner' ? 'Bữa tối'
+      : mealTimeRaw === 'both' ? 'Cả 2 bữa (Trưa + Tối)'
+      : null);
+  const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + (c.price_vnd * c.quantity * (Number(c.meal_multiplier) || 1)), 0);
+  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + (f.price_vnd * f.quantity * (Number(f.meal_multiplier) || 1)), 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
@@ -335,6 +344,14 @@ const InvoicePage = () => {
                 </div>
               )}
 
+              {/* Badge bữa ăn */}
+              {mealTimeLabel && (combos.length > 0 || foodItems.length > 0) && (
+                <div className="mt-4 bg-primary/10 border border-primary/30 rounded-lg p-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-primary">🍽️ Bữa ăn đã chọn:</span>
+                  <span className="text-sm font-bold text-primary">{mealTimeLabel}{mealMultiplier > 1 ? ` (×${mealMultiplier} giá)` : ''}</span>
+                </div>
+              )}
+
               {/* Combo */}
               {(combos.length > 0 || booking.combo_notes) && (
                 <div className="mt-4">
@@ -345,7 +362,12 @@ const InvoicePage = () => {
                       const packageName = c.combo_package_name || parts[0] || '';
                       const menuName = c.combo_menu_name || (parts.length > 1 ? parts.slice(1).join(' – ') : '');
                       const dishes = comboDishes[c.id] || [];
-                      const comboItemTotal = c.price_vnd * c.quantity;
+                      const itemMultiplier = Number(c.meal_multiplier) || 1;
+                      const itemMealTime = c.meal_time || mealTimeRaw;
+                      const itemMealLabel = itemMealTime === 'lunch' ? 'Bữa trưa'
+                        : itemMealTime === 'dinner' ? 'Bữa tối'
+                        : itemMealTime === 'both' ? 'Cả 2 bữa' : null;
+                      const comboItemTotal = c.price_vnd * c.quantity * itemMultiplier;
                       const isAgreed = c.price_vnd === 0;
                       return (
                         <div key={c.id} className="bg-secondary/50 rounded-xl p-3 border border-border/50">
@@ -353,10 +375,17 @@ const InvoicePage = () => {
                             <div>
                               <p className="font-semibold text-sm">{idx + 1}. {packageName}</p>
                               {menuName && <p className="text-xs text-primary mt-0.5">{menuName}</p>}
+                              {itemMealLabel && (
+                                <p className="text-xs text-amber-700 font-semibold mt-0.5">🕐 {itemMealLabel}{itemMultiplier > 1 ? ` (×${itemMultiplier})` : ''}</p>
+                              )}
                             </div>
                             {isAgreed ? <span className="text-xs font-bold text-orange-600">Giá thỏa thuận</span> : <span className="font-bold text-primary text-sm">{fmt(comboItemTotal)}</span>}
                           </div>
-                          <p className="text-xs text-muted-foreground">{isAgreed ? `${c.quantity} suất · Liên hệ NH trước khi đến` : `${fmt(c.price_vnd)}/người × ${c.quantity} suất`}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {isAgreed
+                              ? `${c.quantity} suất · Liên hệ NH trước khi đến`
+                              : `${fmt(c.price_vnd)}/người × ${c.quantity} suất${itemMultiplier > 1 ? ` × ${itemMultiplier} bữa = ${fmt(comboItemTotal)}` : ''}`}
+                          </p>
                           {dishes.length > 0 && (
                             <div className="mt-2 border-t border-border/50 pt-2">
                               <p className="text-xs font-semibold text-muted-foreground mb-1">Thực đơn ({dishes.length} món):</p>
@@ -376,7 +405,7 @@ const InvoicePage = () => {
                   </div>
                   {comboTotal > 0 && (
                     <div className="bg-secondary/70 rounded-lg p-3 mt-2 flex justify-between font-semibold text-sm">
-                      <span className="text-muted-foreground">Tổng combo ({combos.length > 0 ? combos.reduce((s: number, c: any) => s + c.quantity, 0) : 'đã chọn'} suất):</span>
+                      <span className="text-muted-foreground">Tổng combo ({combos.length > 0 ? combos.reduce((s: number, c: any) => s + c.quantity, 0) : 'đã chọn'} suất{mealMultiplier > 1 ? ` × ${mealMultiplier} bữa` : ''}):</span>
                       <span className="text-primary">{fmt(comboTotal)}</span>
                     </div>
                   )}
@@ -390,20 +419,29 @@ const InvoicePage = () => {
                   <div className="space-y-1.5">
                     {foodItems.map((f: any, i: number) => {
                       const isAgreed = f.price_vnd === 0;
+                      const itemMultiplier = Number(f.meal_multiplier) || 1;
+                      const itemMealTime = f.meal_time || mealTimeRaw;
+                      const itemMealLabel = itemMealTime === 'lunch' ? 'Trưa'
+                        : itemMealTime === 'dinner' ? 'Tối'
+                        : itemMealTime === 'both' ? 'Trưa+Tối' : null;
+                      const lineTotal = f.price_vnd * f.quantity * itemMultiplier;
                       return (
                         <div key={f.id} className="flex justify-between items-center text-sm bg-secondary/50 rounded-lg px-3 py-2">
                           <div className="flex-1 min-w-0">
                             <span className="font-medium">{i + 1}. {f.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">{isAgreed ? `×${f.quantity} · Giá thỏa thuận` : `×${f.quantity} · ${fmt(f.price_vnd)}/món`}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {isAgreed ? `×${f.quantity} · Giá thỏa thuận` : `×${f.quantity} · ${fmt(f.price_vnd)}/món`}
+                              {itemMealLabel && itemMultiplier > 1 ? ` · ${itemMealLabel} ×${itemMultiplier}` : itemMealLabel ? ` · ${itemMealLabel}` : ''}
+                            </span>
                           </div>
-                          {isAgreed ? <span className="text-xs font-bold text-orange-600">Liên hệ NH</span> : <span className="font-bold text-primary">{fmt(f.price_vnd * f.quantity)}</span>}
+                          {isAgreed ? <span className="text-xs font-bold text-orange-600">Liên hệ NH</span> : <span className="font-bold text-primary">{fmt(lineTotal)}</span>}
                         </div>
                       );
                     })}
                   </div>
                   {indFoodTotal > 0 && (
                     <div className="bg-secondary/70 rounded-lg p-3 mt-2 flex justify-between font-semibold text-sm">
-                      <span className="text-muted-foreground">Tổng món riêng:</span>
+                      <span className="text-muted-foreground">Tổng món riêng{mealMultiplier > 1 ? ` (× ${mealMultiplier} bữa)` : ''}:</span>
                       <span className="text-primary">{fmt(indFoodTotal)}</span>
                     </div>
                   )}

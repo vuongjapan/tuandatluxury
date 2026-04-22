@@ -54,20 +54,18 @@ const LS_CURRENCY = 'tdl_currency';
 
 function detectInitialLang(): Language {
   if (typeof window === 'undefined') return 'vi';
+  // Mặc định luôn là tiếng Việt khi mở web lần đầu — chỉ đổi khi user đã chọn thủ công
   const saved = localStorage.getItem(LS_LANG) as Language | null;
   if (saved && ['vi', 'en', 'ja', 'zh'].includes(saved)) return saved;
-  const nav = (navigator.language || 'vi').toLowerCase();
-  if (nav.startsWith('ja')) return 'ja';
-  if (nav.startsWith('zh')) return 'zh';
-  if (nav.startsWith('en')) return 'en';
   return 'vi';
 }
 
 function detectInitialCurrency(lang: Language): Currency {
-  if (typeof window === 'undefined') return DEFAULT_CURRENCY_FOR_LANG[lang];
+  if (typeof window === 'undefined') return 'VND';
+  // Mặc định luôn là VND khi mở web lần đầu — chỉ đổi khi user đã chọn thủ công
   const saved = localStorage.getItem(LS_CURRENCY) as Currency | null;
   if (saved && ['VND', 'USD', 'JPY', 'CNY'].includes(saved)) return saved;
-  return DEFAULT_CURRENCY_FOR_LANG[lang];
+  return 'VND';
 }
 
 /** Inject Noto Sans JP/SC khi cần. */
