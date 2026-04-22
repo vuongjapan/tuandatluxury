@@ -128,7 +128,7 @@ const HeroSection = () => {
           className={`text-primary font-display text-xs sm:text-sm tracking-[0.4em] uppercase mb-5 transition-all duration-1000 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           style={{ transitionDelay: '200ms' }}
         >
-          {isVi ? 'Chào mừng đến với' : 'Welcome to'}
+          {t('hero.welcome')}
         </p>
 
         <h1
@@ -160,7 +160,7 @@ const HeroSection = () => {
             onClick={() => navigate('/booking')}
             className="text-sm px-10 py-5 tracking-widest uppercase font-semibold"
           >
-            {t('hero.book_now')}
+            {t('hero.cta_book')}
           </Button>
           <Button
             variant="outline"
@@ -168,7 +168,7 @@ const HeroSection = () => {
             onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
             className="text-sm px-8 py-5 tracking-widest uppercase font-medium text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10 hover:border-primary-foreground/60 bg-transparent"
           >
-            {isVi ? 'Khám phá phòng' : 'Explore Rooms'}
+            {t('hero.cta_explore')}
           </Button>
         </div>
       </div>

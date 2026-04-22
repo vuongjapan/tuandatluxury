@@ -4,20 +4,22 @@ import { useOffers } from '@/hooks/useOffers';
 import { useLanguage } from '@/contexts/LanguageContext';
 import FadeIn from '@/components/FadeIn';
 
-const formatExpiry = (iso: string | null, isVi: boolean) => {
+const formatExpiry = (iso: string | null, lang: string) => {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
-  return isVi ? `Hết hạn: ${dd}/${mm}/${d.getFullYear()}` : `Expires: ${dd}/${mm}/${d.getFullYear()}`;
+  const labels: Record<string, string> = {
+    vi: 'Hết hạn', en: 'Expires', ja: '期限', zh: '截止',
+  };
+  return `${labels[lang] || labels.vi}: ${dd}/${mm}/${d.getFullYear()}`;
 };
 
 const PromotionsSection = () => {
   const { offers, loading } = useOffers({ featuredOnly: true, limit: 3 });
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const isVi = t('nav.rooms') === 'Hạng phòng';
 
   // Fallback to non-featured if there are no featured ones yet
   const { offers: anyOffers } = useOffers({ limit: 3 });
@@ -31,13 +33,13 @@ const PromotionsSection = () => {
         {/* Header row */}
         <FadeIn className="flex items-end justify-between gap-4 mb-8 sm:mb-10">
           <h2 className="font-display text-2xl sm:text-3xl font-normal text-[#1B3A5C] tracking-tight">
-            {isVi ? 'Ưu đãi & Khuyến mãi' : 'Offers & Promotions'}
+            {t('offer.title')}
           </h2>
           <button
             onClick={() => navigate('/uu-dai')}
             className="inline-flex items-center gap-1.5 text-[#C9A84C] hover:text-[#b89640] text-sm font-medium hover:underline transition-colors shrink-0"
           >
-            {isVi ? 'Xem tất cả' : 'View all'}
+            {t('promo.view_all')}
             <ArrowRight className="h-4 w-4" />
           </button>
         </FadeIn>
@@ -75,10 +77,10 @@ const PromotionsSection = () => {
                   {o.title}
                 </h3>
                 {o.expires_at && (
-                  <p className="text-xs text-[#999] mt-2">{formatExpiry(o.expires_at, isVi)}</p>
+                  <p className="text-xs text-[#999] mt-2">{formatExpiry(o.expires_at, language)}</p>
                 )}
                 <span className="inline-flex items-center gap-1 mt-3 text-[13px] text-[#C9A84C] group-hover:underline">
-                  {isVi ? 'Xem chi tiết' : 'Read more'} <ArrowRight className="h-3.5 w-3.5" />
+                  {t('room.view_detail')} <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </button>
             </FadeIn>
