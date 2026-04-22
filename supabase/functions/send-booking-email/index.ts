@@ -108,6 +108,21 @@ function getComboDishes(combo: any) {
   return getArray<any>(combo?.dishes);
 }
 
+function parseGuestBreakdown(notes?: string | null) {
+  const rawNotes = typeof notes === 'string' ? notes : '';
+  const match = rawNotes.match(/\[Khách:\s*(\d+)\s*người lớn(?:\s*·\s*(\d+)\s*trẻ em[^\]]*)?\]/i);
+
+  return {
+    adults: match ? parseInt(match[1] || '0', 10) : 0,
+    children: match ? parseInt(match[2] || '0', 10) : 0,
+    cleanedNotes: rawNotes
+      .replace(match?.[0] || '', '')
+      .replace(/^\s*---\s*$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
+  };
+}
+
 function buildBookingInvoiceHtml(data: EmailData): string {
   const { booking, roomName, invoiceNumber, combos, foodItems, isPaid } = data;
   const checkIn = formatDate(booking.check_in);
@@ -126,6 +141,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+  const guestBreakdown = parseGuestBreakdown(booking.guest_notes);
 
   const promotionDiscount = booking.promotion_discount_amount || 0;
   const memberDiscount = booking.member_discount_amount || 0;
