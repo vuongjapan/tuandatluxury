@@ -53,7 +53,7 @@ serve(async (req) => {
     const children = Number(children_count) || 0;
     let composedNotes = guest_notes || '';
     if (adults > 0 || children > 0) {
-      const breakdown = `[Khách: ${adults} người lớn${children > 0 ? ` · ${children} trẻ em` : ''}]`;
+      const breakdown = `[Khách: ${adults} người lớn${children > 0 ? ` · ${children} trẻ em đính kèm` : ''}]`;
       composedNotes = composedNotes ? `${breakdown}\n${composedNotes}` : breakdown;
     }
 
