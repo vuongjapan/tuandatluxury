@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, Globe, User, LogOut, Shield, ChevronDown, Search } from 'lucide-react';
+import { Menu, X, Phone, User, LogOut, Shield, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLanguage, type Language } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import ActivePromoBanner from '@/components/ActivePromoBanner';
 import PromoBannerPopup from '@/components/PromoBannerPopup';
+import LanguageCurrencySwitcher from '@/components/LanguageCurrencySwitcher';
 import logoImg from '@/assets/logo-tuan-dat.jpg';
 import {
   DropdownMenu,
@@ -18,7 +19,7 @@ import {
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { language, setLanguage, t, langLabels } = useLanguage();
+  const { language, t } = useLanguage();
   const { user, isAdmin, signOut, loading } = useAuth();
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
@@ -67,25 +68,25 @@ const Header = () => {
 
   // Split nav items: left side & right side of logo
   const leftNavItems = [
-    { labelVi: 'Giới thiệu', labelEn: 'About', href: '/gioi-thieu' },
+    { key: 'nav.intro', href: '/gioi-thieu' },
     { key: 'nav.rooms_booking', href: '/#rooms' },
     { key: 'nav.dining', href: '/cuisine' },
   ] as any[];
 
   const rightNavItems = [
     { key: 'nav.services', href: '/services' },
-    { labelVi: 'Khám phá', labelEn: 'Discover', href: '/kham-pha' },
-    { labelVi: 'Ưu đãi & Khuyến mãi', labelEn: 'Offers', href: '/uu-dai' },
+    { key: 'nav.explore', href: '/kham-pha' },
+    { key: 'nav.offers', href: '/uu-dai' },
   ] as any[];
 
   const moreItems = [
-    { labelVi: 'Đặt đồ ăn', labelEn: 'Food Order', href: '/food-order' },
-    { labelVi: 'Đánh giá', labelEn: 'Reviews', href: '/danh-gia' },
-    { labelVi: 'Thư viện ảnh', labelEn: 'Gallery', href: '/#gallery' },
-    { labelVi: 'Blog', labelEn: 'Blog', href: '/blog' },
-    { labelVi: 'Hải sản khô', labelEn: 'Dried Seafood', href: '/seafood' },
-    { labelVi: 'Điều khoản', labelEn: 'Terms', href: '/terms' },
-    { labelVi: 'Liên hệ', labelEn: 'Contact', href: '/#contact' },
+    { key: 'nav.food_order', href: '/food-order' },
+    { key: 'nav.reviews', href: '/danh-gia' },
+    { key: 'nav.gallery', href: '/#gallery' },
+    { key: 'nav.blog', href: '/blog' },
+    { key: 'nav.seafood', href: '/seafood' },
+    { key: 'nav.terms', href: '/terms' },
+    { key: 'nav.contact', href: '/#contact' },
   ];
 
   const allMobileItems = [
@@ -128,29 +129,12 @@ const Header = () => {
               ) : !loading ? (
                 <button onClick={() => navigate('/member')} className="flex items-center gap-1 hover:text-background transition-colors">
                   <User className="h-3 w-3" />
-                  {isVi ? 'Đăng nhập' : 'Sign in'}
+                  {t('nav.signin')}
                 </button>
               ) : null}
 
-              {/* Language */}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 hover:text-background transition-colors">
-                  <Globe className="h-3 w-3" />
-                  <span>{language.toUpperCase()}</span>
-                  <ChevronDown className="h-2.5 w-2.5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[120px]">
-                  {(Object.keys(langLabels) as Language[]).map((lang) => (
-                    <DropdownMenuItem
-                      key={lang}
-                      onClick={() => setLanguage(lang)}
-                      className={lang === language ? 'bg-secondary font-semibold' : ''}
-                    >
-                      {langLabels[lang]}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Language + Currency switcher */}
+              <LanguageCurrencySwitcher variant="full" />
             </div>
           </div>
         </div>
@@ -203,12 +187,12 @@ const Header = () => {
                 {/* More dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger className="px-3 py-2 text-[11px] xl:text-xs font-semibold uppercase tracking-widest text-foreground/70 hover:text-primary transition-colors flex items-center gap-1 whitespace-nowrap">
-                    {isVi ? 'Thêm' : 'More'} <ChevronDown className="h-3 w-3" />
+                    {t('nav.more')} <ChevronDown className="h-3 w-3" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {moreItems.map(item => (
                       <DropdownMenuItem key={item.href} onClick={() => handleNavClick(item.href)} className="cursor-pointer">
-                        {isVi ? item.labelVi : item.labelEn}
+                        {t(item.key)}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -221,7 +205,7 @@ const Header = () => {
                   className="ml-2 text-[11px] xl:text-xs uppercase tracking-wider font-bold px-5 rounded-sm"
                   onClick={() => navigate('/booking')}
                 >
-                  {isVi ? 'Đặt Ngay' : 'Book Now'}
+                  {t('nav.book_now')}
                 </Button>
               </nav>
             </div>
@@ -252,25 +236,8 @@ const Header = () => {
                   </Button>
                 </a>
 
-                {/* Language mobile */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Globe className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {(Object.keys(langLabels) as Language[]).map((lang) => (
-                      <DropdownMenuItem
-                        key={lang}
-                        onClick={() => setLanguage(lang)}
-                        className={lang === language ? 'bg-secondary font-semibold' : ''}
-                      >
-                        {langLabels[lang]}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Language + Currency switcher */}
+                <LanguageCurrencySwitcher variant="compact" />
 
                 {/* User button for auth */}
                 {!loading && user ? (
@@ -291,11 +258,11 @@ const Header = () => {
                       <DropdownMenuSeparator />
                       {isAdmin && (
                         <DropdownMenuItem onClick={() => navigate('/admin')}>
-                          <Shield className="h-4 w-4 mr-2" /> Quản trị
+                          <Shield className="h-4 w-4 mr-2" /> {t('nav.admin')}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => signOut()}>
-                        <LogOut className="h-4 w-4 mr-2" /> Đăng xuất
+                        <LogOut className="h-4 w-4 mr-2" /> {t('nav.signout')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -319,16 +286,16 @@ const Header = () => {
                   onClick={() => handleNavClick(item.href)}
                   className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors text-left"
                 >
-                  {item.key ? t(item.key) : (isVi ? item.labelVi : item.labelEn)}
+                  {t(item.key)}
                 </button>
               ))}
-              {moreItems.filter(i => !allMobileItems.some(m => m.href === i.href)).map((item) => (
+              {moreItems.filter(i => !allMobileItems.some((m: any) => m.href === i.href)).map((item) => (
                 <button
                   key={item.href}
                   onClick={() => handleNavClick(item.href)}
                   className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-secondary rounded-md transition-colors text-left"
                 >
-                  {isVi ? item.labelVi : item.labelEn}
+                  {t(item.key)}
                 </button>
               ))}
               {!loading && !user && (
@@ -337,7 +304,7 @@ const Header = () => {
                   className="mt-2 w-full gap-2"
                   onClick={() => { setMobileOpen(false); navigate('/member'); }}
                 >
-                  <User className="h-4 w-4" /> Đăng nhập / Đăng ký
+                  <User className="h-4 w-4" /> {t('nav.signup_signin')}
                 </Button>
               )}
               <Button
@@ -345,7 +312,7 @@ const Header = () => {
                 className="mt-2 w-full text-sm font-bold"
                 onClick={() => { setMobileOpen(false); navigate('/booking'); }}
               >
-                {isVi ? 'Đặt Ngay' : 'Book Now'}
+                {t('nav.book_now')}
               </Button>
             </nav>
           </div>
