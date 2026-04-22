@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle, Coins
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -46,8 +46,9 @@ import AdminPromoPopups from '@/components/admin/AdminPromoPopups';
 import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
 import AdminPersonalMealPlans from '@/components/admin/AdminPersonalMealPlans';
 import AdminTransport from '@/components/admin/AdminTransport';
+import AdminExchangeRates from '@/components/admin/AdminExchangeRates';
 
-type Tab = 'dashboard' | 'bookings' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -227,6 +228,7 @@ const AdminDashboard = () => {
       title: 'Hệ thống',
       items: [
         { id: 'settings', icon: Settings, label: 'Cài đặt website' },
+        { id: 'exchange-rates', icon: Coins, label: 'Tỷ giá ngoại tệ' },
         { id: 'trash', icon: Archive, label: 'Thùng rác', badge: trashItems.length || undefined },
       ],
     },
@@ -412,6 +414,7 @@ const AdminDashboard = () => {
           {tab === 'discount-config' && <AdminDiscountConfig />}
           {tab === 'about-images' && <AdminAboutImages />}
           {tab === 'intro-section' && <AdminIntroSection />}
+          {tab === 'exchange-rates' && <AdminExchangeRates />}
         </div>
       </main>
     </div>

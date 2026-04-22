@@ -203,7 +203,7 @@ const DiningHomeSection = () => {
         >
           <Button variant="gold" size="lg" onClick={() => navigate('/cuisine')} className="gap-2 group/btn">
             <UtensilsCrossed className="h-4 w-4" />
-            {isVi ? 'Khám phá ẩm thực' : 'Explore Cuisine'}
+            {t('dining.menu')}
             <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
           </Button>
         </motion.div>
