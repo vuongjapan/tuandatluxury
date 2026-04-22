@@ -303,9 +303,15 @@ const InvoicePage = () => {
               </div>
               <div className="mt-3 bg-secondary/70 rounded-lg p-3 space-y-3">
                 {roomBreakdown.map((room: any, index: number) => {
-                  const nightlyRate = room.average_nightly_rate || 0;
                   const quantity = room.quantity || 1;
                   const subtotal = room.subtotal || 0;
+                  // Tự tính lại giá / đêm từ subtotal để đảm bảo đúng kể cả khi
+                  // bản ghi cũ lưu sai (ví dụ: lưu tổng cả kỳ vào average_nightly_rate)
+                  const computedNightly = nights > 0 && quantity > 0 ? Math.round(subtotal / (nights * quantity)) : 0;
+                  const storedNightly = Number(room.average_nightly_rate) || 0;
+                  // Nếu giá trị lưu × đêm × phòng KHÔNG khớp subtotal → dùng giá trị tự tính
+                  const isStoredValid = storedNightly > 0 && Math.abs(storedNightly * nights * quantity - subtotal) <= Math.max(2, subtotal * 0.01);
+                  const nightlyRate = isStoredValid ? storedNightly : computedNightly;
                   return (
                     <div key={`${room.room_id || room.room_name}-${index}`} className="space-y-1">
                       <div className="flex justify-between text-xs font-semibold"><span className="text-foreground">{room.room_name || room.room_id}</span><span>{fmt(subtotal)}</span></div>

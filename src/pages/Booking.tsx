@@ -423,7 +423,9 @@ const Booking = () => {
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
       const roomBreakdown = roomTotals.map(rt => ({
         room_id: rt.roomId, room_name: rt.room.name[language],
-        quantity: rt.quantity, subtotal: rt.subtotal, average_nightly_rate: rt.totalPerRoom,
+        quantity: rt.quantity, subtotal: rt.subtotal,
+        // Giá trung bình / đêm / phòng (KHÔNG phải tổng cả kỳ)
+        average_nightly_rate: nightCount > 0 ? Math.round(rt.totalPerRoom / nightCount) : rt.totalPerRoom,
       }));
 
       const resp = await fetch(BOOKING_URL, {
