@@ -45,8 +45,9 @@ import AdminPromoBanners from '@/components/admin/AdminPromoBanners';
 import AdminPromoPopups from '@/components/admin/AdminPromoPopups';
 import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
 import AdminPersonalMealPlans from '@/components/admin/AdminPersonalMealPlans';
+import AdminTransport from '@/components/admin/AdminTransport';
 
-type Tab = 'dashboard' | 'bookings' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images';
+type Tab = 'dashboard' | 'bookings' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -178,6 +179,7 @@ const AdminDashboard = () => {
       title: 'Đặt phòng',
       items: [
         { id: 'bookings', icon: CalendarRange, label: 'Đơn đặt phòng', badge: pendingCount },
+        { id: 'transport', icon: MapPin, label: 'Đặt xe đưa đón' },
         { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
         { id: 'room-popup', icon: Eye, label: 'Popup phòng' },
         { id: 'amenities', icon: Sparkles, label: 'Tiện nghi phòng' },
@@ -380,6 +382,7 @@ const AdminDashboard = () => {
           {tab === 'bookings' && (
             <AdminBookings bookings={bookings} setBookings={setBookings} onMoveToTrash={moveBookingToTrash} onRefresh={fetchData} />
           )}
+          {tab === 'transport' && <AdminTransport />}
           {tab === 'rooms' && <AdminRooms rooms={rooms} onRefresh={fetchData} />}
           {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
