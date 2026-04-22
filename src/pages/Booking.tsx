@@ -55,7 +55,7 @@ interface RoomCartItem {
 const Booking = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { language, t, formatPrice } = useLanguage();
+  const { language, t, pick, formatPrice } = useLanguage();
   const { toast } = useToast();
   const { rooms, getRoomPrice, isDateAvailable, hasComboRequiredDays, getAvailability, isSpecialDate } = useRooms();
   const { items: diningItems, loading: diningLoading } = useDining();
@@ -170,10 +170,10 @@ const Booking = () => {
   // Meal time multiplier: "both" doubles all food totals (lunch + dinner served).
   const mealMultiplier = mealTime === 'both' ? 2 : 1;
   const mealTimeLabelText = mealTime === 'lunch'
-    ? (language === 'vi' ? 'Bữa trưa' : 'Lunch')
+    ? (pick('Bữa trưa', 'Lunch'))
     : mealTime === 'dinner'
-      ? (language === 'vi' ? 'Bữa tối' : 'Dinner')
-      : (language === 'vi' ? 'Cả 2 bữa' : 'Both meals');
+      ? (pick('Bữa tối', 'Dinner'))
+      : (pick('Cả 2 bữa', 'Both meals'));
   const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
 
   const personalMealTotal = useMemo(
@@ -472,10 +472,10 @@ const Booking = () => {
   const isVi = language === 'vi';
 
   const STEPS = [
-    { num: 1, label: isVi ? 'Chọn phòng' : 'Select Room', icon: '🏨' },
-    { num: 2, label: isVi ? 'Dịch vụ' : 'Services', icon: '🍽️' },
-    { num: 3, label: isVi ? 'Thông tin' : 'Info', icon: '👤' },
-    { num: 4, label: isVi ? 'Xác nhận' : 'Confirm', icon: '✅' },
+    { num: 1, label: pick('Chọn phòng', 'Select Room'), icon: '🏨' },
+    { num: 2, label: pick('Dịch vụ', 'Services'), icon: '🍽️' },
+    { num: 3, label: pick('Thông tin', 'Info'), icon: '👤' },
+    { num: 4, label: pick('Xác nhận', 'Confirm'), icon: '✅' },
   ];
 
   const canGoStep2 = hasRooms && !!checkIn && !!checkOut && nightCount > 0 && allNightsAvailable;
@@ -484,8 +484,8 @@ const Booking = () => {
 
   const nextStep = () => {
     if (currentStep === 1 && !canGoStep2) {
-      if (!checkIn || !checkOut) { toast({ title: isVi ? 'Vui lòng chọn ngày nhận & trả phòng' : 'Please select check-in & check-out dates', variant: 'destructive' }); return; }
-      if (!hasRooms) { toast({ title: isVi ? 'Vui lòng chọn ít nhất 1 phòng' : 'Please select at least 1 room', variant: 'destructive' }); return; }
+      if (!checkIn || !checkOut) { toast({ title: pick('Vui lòng chọn ngày nhận & trả phòng', 'Please select check-in & check-out dates'), variant: 'destructive' }); return; }
+      if (!hasRooms) { toast({ title: pick('Vui lòng chọn ít nhất 1 phòng', 'Please select at least 1 room'), variant: 'destructive' }); return; }
       return;
     }
     if (currentStep === 2) {
@@ -493,9 +493,7 @@ const Booking = () => {
       // Normal days: always allow proceeding (food is optional).
       if (comboValidationError) {
         toast({
-          title: isVi
-            ? '⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.'
-            : '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.',
+          title: pick('⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.', '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.'),
           variant: 'destructive',
         });
         const el = document.getElementById('combo-section') || document.getElementById('food-section');
@@ -508,7 +506,7 @@ const Booking = () => {
       if (multiComboNeedsNotes) { toast({ title: 'Vui lòng nhập ghi chú ăn uống', variant: 'destructive' }); return; }
     }
     if (currentStep === 3 && !canGoStep4) {
-      toast({ title: isVi ? 'Vui lòng điền họ tên và số điện thoại' : 'Please fill in name and phone', variant: 'destructive' }); return;
+      toast({ title: pick('Vui lòng điền họ tên và số điện thoại', 'Please fill in name and phone'), variant: 'destructive' }); return;
     }
     if (currentStep < 4) setCurrentStep(currentStep + 1);
   };
@@ -516,7 +514,7 @@ const Booking = () => {
 
   const handleSearchRooms = () => {
     if (!checkIn || !checkOut) {
-      toast({ title: isVi ? 'Vui lòng chọn ngày nhận và trả phòng' : 'Please select dates', variant: 'destructive' });
+      toast({ title: pick('Vui lòng chọn ngày nhận và trả phòng', 'Please select dates'), variant: 'destructive' });
       return;
     }
     setSearchDone(true);
@@ -577,9 +575,7 @@ const Booking = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
               <p className="text-sm text-foreground">
-                🏅 {isVi
-                  ? `Ưu đãi VIP: -${memberDiscountPercent}% tiền phòng (đã đặt ${userBookingCount} lần)`
-                  : `VIP discount: -${memberDiscountPercent}% on room (${userBookingCount} bookings)`}
+                🏅 {pick(`Ưu đãi VIP: -${memberDiscountPercent}% tiền phòng (đã đặt ${userBookingCount} lần)`, `VIP discount: -${memberDiscountPercent}% on room (${userBookingCount} bookings)`)}
               </p>
             </motion.div>
           )}
@@ -587,9 +583,9 @@ const Booking = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mb-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-center">
               <p className="text-sm text-amber-900 dark:text-amber-200">
-                ⭐ {isVi ? 'Đăng nhập để nhận ưu đãi thành viên VIP' : 'Sign in for VIP member discounts'}{' '}
+                ⭐ {pick('Đăng nhập để nhận ưu đãi thành viên VIP', 'Sign in for VIP member discounts')}{' '}
                 <button onClick={() => navigate('/member')} className="underline font-semibold">
-                  {isVi ? 'Đăng nhập' : 'Sign in'}
+                  {pick('Đăng nhập', 'Sign in')}
                 </button>
               </p>
             </motion.div>
@@ -605,7 +601,7 @@ const Booking = () => {
                   <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     {/* Search bar */}
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                      <h2 className="font-display text-xl font-semibold flex items-center gap-2">📅 {isVi ? 'Chọn ngày & số khách' : 'Select Dates & Guests'}</h2>
+                      <h2 className="font-display text-xl font-semibold flex items-center gap-2">📅 {pick('Chọn ngày & số khách', 'Select Dates & Guests')}</h2>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
@@ -636,34 +632,34 @@ const Booking = () => {
                           </Popover>
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Người lớn' : 'Adults'}</label>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Người lớn', 'Adults')}</label>
                           <Select value={adults} onValueChange={setAdults}>
                             <SelectTrigger>
                               <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
                             </SelectTrigger>
                             <SelectContent>
                               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người lớn' : 'adults'}</SelectItem>
+                                <SelectItem key={n} value={String(n)}>{n} {pick('người lớn', 'adults')}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Trẻ em' : 'Children'}</label>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Trẻ em', 'Children')}</label>
                           <Select value={children} onValueChange={setChildren}>
                             <SelectTrigger>
                               <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
                             </SelectTrigger>
                             <SelectContent>
                               {Array.from({ length: 6 }, (_, i) => i).map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'trẻ em' : 'children'}</SelectItem>
+                                <SelectItem key={n} value={String(n)}>{n} {pick('trẻ em', 'children')}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       <Button variant="gold" className="w-full gap-2" onClick={handleSearchRooms} disabled={!checkIn || !checkOut}>
-                        <Search className="h-4 w-4" /> {isVi ? 'Tìm phòng' : 'Search Rooms'}
+                        <Search className="h-4 w-4" /> {pick('Tìm phòng', 'Search Rooms')}
                       </Button>
                     </div>
 
@@ -672,7 +668,7 @@ const Booking = () => {
                       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 flex items-start gap-2">
                         <UserPlus className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                         <div className="text-sm">
-                          <p className="font-semibold text-amber-800 dark:text-amber-300">{isVi ? `Phụ thu thêm ${extraPersonCount} người` : `Surcharge for ${extraPersonCount} extra guests`}</p>
+                          <p className="font-semibold text-amber-800 dark:text-amber-300">{pick(`Phụ thu thêm ${extraPersonCount} người`, `Surcharge for ${extraPersonCount} extra guests`)}</p>
                           <p className="text-xs text-amber-700 dark:text-amber-400">30% = <strong>{formatPrice(extraPersonSurcharge)}</strong></p>
                         </div>
                       </div>
@@ -697,9 +693,9 @@ const Booking = () => {
                     {searchDone && (
                       <div className="space-y-4">
                         <h2 className="font-display text-xl font-semibold flex items-center gap-2">
-                          🏨 {isVi ? 'Chọn phòng' : 'Select Rooms'}
+                          🏨 {pick('Chọn phòng', 'Select Rooms')}
                         </h2>
-                        <p className="text-xs text-muted-foreground">{isVi ? 'Chọn số lượng phòng mong muốn' : 'Select the number of rooms you want'}</p>
+                        <p className="text-xs text-muted-foreground">{pick('Chọn số lượng phòng mong muốn', 'Select the number of rooms you want')}</p>
 
                         {rooms.map(room => {
                           const cartItem = roomCart.find(c => c.roomId === room.id);
@@ -718,7 +714,7 @@ const Booking = () => {
 
                         {!hasRooms && (
                           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-300 text-center">
-                            ⚠️ {isVi ? 'Vui lòng chọn ít nhất 1 phòng để tiếp tục' : 'Please select at least 1 room'}
+                            ⚠️ {pick('Vui lòng chọn ít nhất 1 phòng để tiếp tục', 'Please select at least 1 room')}
                           </div>
                         )}
                       </div>
@@ -727,21 +723,21 @@ const Booking = () => {
                     {!searchDone && (
                       <div className="bg-secondary/50 rounded-xl p-8 text-center">
                         <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground">{isVi ? 'Chọn ngày và nhấn "Tìm phòng" để xem phòng trống' : 'Select dates and click "Search Rooms" to see availability'}</p>
+                        <p className="text-muted-foreground">{pick('Chọn ngày và nhấn "Tìm phòng" để xem phòng trống', 'Select dates and click "Search Rooms" to see availability')}</p>
                       </div>
                     )}
 
                     {/* Group/Corporate promo form */}
                     {isGroupPromo && (
                       <div className="bg-card rounded-xl border-2 border-primary/30 p-6 space-y-4">
-                        <div className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" /><h2 className="font-display text-xl font-semibold">{isVi ? 'Thông tin đoàn / công ty' : 'Group Info'}</h2></div>
+                        <div className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" /><h2 className="font-display text-xl font-semibold">{pick('Thông tin đoàn / công ty', 'Group Info')}</h2></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Tên công ty *' : 'Company *'}</label>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Tên công ty *', 'Company *')}</label>
                             <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Công ty ABC" />
                           </div>
                           <div>
-                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Số lượng người *' : 'Group Size *'}</label>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Số lượng người *', 'Group Size *')}</label>
                             <Input type="number" value={groupSize} onChange={e => setGroupSize(e.target.value)} placeholder="20" min="1" />
                           </div>
                         </div>
@@ -750,7 +746,7 @@ const Booking = () => {
 
                     {isCouplePromo && (
                       <div className="bg-card rounded-xl border-2 border-pink-300 p-6 space-y-4">
-                        <div className="flex items-center gap-2"><Heart className="h-5 w-5 text-pink-500" /><h2 className="font-display text-xl font-semibold">{isVi ? 'Ưu đãi cặp đôi / gia đình' : 'Couple/Family'}</h2></div>
+                        <div className="flex items-center gap-2"><Heart className="h-5 w-5 text-pink-500" /><h2 className="font-display text-xl font-semibold">{pick('Ưu đãi cặp đôi / gia đình', 'Couple/Family')}</h2></div>
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu trang trí</label>
                           <Textarea value={decorationNotes} onChange={e => setDecorationNotes(e.target.value)} rows={2} placeholder="VD: Hoa, nến, bóng bay..." />
@@ -763,7 +759,7 @@ const Booking = () => {
                 {/* ===== STEP 2: Services ===== */}
                 {currentStep === 2 && (
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                    <h2 className="font-display text-2xl font-bold text-center">🍽️ {isVi ? 'Thêm dịch vụ' : 'Add Services'}</h2>
+                    <h2 className="font-display text-2xl font-bold text-center">🍽️ {pick('Thêm dịch vụ', 'Add Services')}</h2>
 
                     {/* Banner explaining whether food is mandatory or optional */}
                     <MealRuleBanner rule={mandatoryComboRange} />
@@ -773,9 +769,7 @@ const Booking = () => {
                       <MealTimeSelector value={mealTime} onChange={setMealTime} />
                       {mealTime === 'both' && (
                         <p className="text-[11px] text-muted-foreground mt-2">
-                          {isVi
-                            ? 'Giá đồ ăn sẽ được tính × 2 (phục vụ cả bữa trưa và tối)'
-                            : 'Food price will be × 2 (both lunch and dinner served)'}
+                          {pick('Giá đồ ăn sẽ được tính × 2 (phục vụ cả bữa trưa và tối)', 'Food price will be × 2 (both lunch and dinner served)')}
                         </p>
                       )}
                     </div>
@@ -797,7 +791,7 @@ const Booking = () => {
                         {hasSelectedPersonalMeal && (
                           <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
                             <Check className="h-3.5 w-3.5" />
-                            {isVi ? 'Đã chọn set — combo là tùy chọn thêm' : 'Set selected — combo is optional'}
+                            {pick('Đã chọn set — combo là tùy chọn thêm', 'Set selected — combo is optional')}
                           </div>
                         )}
                         <ComboSlotSelector
@@ -809,9 +803,7 @@ const Booking = () => {
                         />
                         {comboServingsError && (
                           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                            ⚠️ {isVi
-                              ? `Tổng số người trong combo (${totalAssignedPeople}) phải bằng số khách (${guestCount})`
-                              : `Combo people (${totalAssignedPeople}) must equal guest count (${guestCount})`}
+                            ⚠️ {pick(`Tổng số người trong combo (${totalAssignedPeople}) phải bằng số khách (${guestCount})`, `Combo people (${totalAssignedPeople}) must equal guest count (${guestCount})`)}
                           </div>
                         )}
                       </>
@@ -830,7 +822,7 @@ const Booking = () => {
 
                     {/* Service checkboxes */}
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                      <h3 className="font-display text-lg font-semibold flex items-center gap-2">🛎️ {isVi ? 'Dịch vụ bổ sung' : 'Additional Services'}</h3>
+                      <h3 className="font-display text-lg font-semibold flex items-center gap-2">🛎️ {pick('Dịch vụ bổ sung', 'Additional Services')}</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {availableServices.map(service => (
                           <label key={service.id} className={cn(
@@ -849,16 +841,14 @@ const Booking = () => {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h3 className="font-semibold flex items-center gap-2 text-base">
-                            🍤 {isVi ? 'Đặt món ăn riêng' : 'Order Individual Dishes'}
+                            🍤 {pick('Đặt món ăn riêng', 'Order Individual Dishes')}
                           </h3>
                           <p className="text-xs mt-0.5" style={{ color: '#888' }}>
-                            {isVi
-                              ? 'Đặt thêm món ngoài combo · Có thể thay thế suất/combo nếu đủ mức tối thiểu'
-                              : 'Order extras outside combos · Can substitute meal/combo if minimum is met'}
+                            {pick('Đặt thêm món ngoài combo · Có thể thay thế suất/combo nếu đủ mức tối thiểu', 'Order extras outside combos · Can substitute meal/combo if minimum is met')}
                           </p>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => setFoodSelectorOpen(true)} className="shrink-0">
-                          <ShoppingBag className="h-4 w-4 mr-1" /> {isVi ? 'Mở menu' : 'Open menu'}
+                          <ShoppingBag className="h-4 w-4 mr-1" /> {pick('Mở menu', 'Open menu')}
                         </Button>
                       </div>
 
@@ -879,25 +869,21 @@ const Booking = () => {
                               {formatPrice(individualFoodTotal)}
                             </span>
                             <span className="text-muted-foreground">
-                              {formatPrice(minRequiredIndividual)} {isVi ? `cần đạt (${guestCount} người × ${(minIndividualPerPerson / 1000).toFixed(0)}k)` : `required (${guestCount} × ${(minIndividualPerPerson / 1000).toFixed(0)}k)`}
+                              {formatPrice(minRequiredIndividual)} {pick(`cần đạt (${guestCount} người × ${(minIndividualPerPerson / 1000).toFixed(0)}k)`, `required (${guestCount} × ${(minIndividualPerPerson / 1000).toFixed(0)}k)`)}
                             </span>
                           </div>
                           {individualMeetsMinimum ? (
                             <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-                              <Check className="h-3.5 w-3.5" /> {isVi ? 'Đã đạt mức tối thiểu — có thể tiếp tục' : 'Minimum met — you can continue'}
+                              <Check className="h-3.5 w-3.5" /> {pick('Đã đạt mức tối thiểu — có thể tiếp tục', 'Minimum met — you can continue')}
                             </p>
                           ) : (
                             <p className="text-xs" style={{ color: '#888' }}>
-                              {isVi
-                                ? 'Hoặc chọn Suất ăn / Combo ở trên để không cần đạt mức tối thiểu này'
-                                : 'Or pick a Meal Plan / Combo above to skip this minimum'}
+                              {pick('Hoặc chọn Suất ăn / Combo ở trên để không cần đạt mức tối thiểu này', 'Or pick a Meal Plan / Combo above to skip this minimum')}
                             </p>
                           )}
                           {!individualMeetsMinimum && individualFoodTotal > 0 && (
                             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md p-2 text-xs text-amber-800 dark:text-amber-300">
-                              ⚠️ {isVi
-                                ? `Cần thêm ${formatPrice(minRequiredIndividual - individualFoodTotal)} nữa (hoặc chọn Suất ăn / Combo ở trên)`
-                                : `Need ${formatPrice(minRequiredIndividual - individualFoodTotal)} more (or pick Meal Plan / Combo above)`}
+                              ⚠️ {pick(`Cần thêm ${formatPrice(minRequiredIndividual - individualFoodTotal)} nữa (hoặc chọn Suất ăn / Combo ở trên)`, `Need ${formatPrice(minRequiredIndividual - individualFoodTotal)} more (or pick Meal Plan / Combo above)`)}
                             </div>
                           )}
                         </div>
@@ -909,12 +895,12 @@ const Booking = () => {
                 {/* ===== STEP 3: Guest Info (was Step 4) ===== */}
                 {currentStep === 3 && (
                   <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                    <h2 className="font-display text-2xl font-bold text-center">👤 {isVi ? 'Thông tin khách hàng' : 'Guest Information'}</h2>
+                    <h2 className="font-display text-2xl font-bold text-center">👤 {pick('Thông tin khách hàng', 'Guest Information')}</h2>
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.full_name')} *</label>
-                          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={isVi ? 'Họ và tên' : 'Full name'} />
+                          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={pick('Họ và tên', 'Full name')} />
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('booking.phone')} *</label>
@@ -925,25 +911,25 @@ const Booking = () => {
                           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Quốc gia' : 'Country'}</label>
-                          <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={isVi ? 'Việt Nam' : 'Vietnam'} />
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Quốc gia', 'Country')}</label>
+                          <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={pick('Việt Nam', 'Vietnam')} />
                         </div>
                         <div className="md:col-span-2">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Địa chỉ' : 'Address'}</label>
-                          <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={isVi ? 'Địa chỉ (không bắt buộc)' : 'Address (optional)'} />
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Địa chỉ', 'Address')}</label>
+                          <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={pick('Địa chỉ (không bắt buộc)', 'Address (optional)')} />
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Ngày sinh' : 'Date of birth'} <span className="text-muted-foreground/60 normal-case">({isVi ? 'không bắt buộc' : 'optional'})</span></label>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Ngày sinh', 'Date of birth')} <span className="text-muted-foreground/60 normal-case">({pick('không bắt buộc', 'optional')})</span></label>
                           <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'CCCD / Hộ chiếu' : 'ID / Passport'} <span className="text-muted-foreground/60 normal-case">({isVi ? 'không bắt buộc' : 'optional'})</span></label>
-                          <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder={isVi ? 'Số căn cước hoặc hộ chiếu' : 'ID or passport number'} />
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('CCCD / Hộ chiếu', 'ID / Passport')} <span className="text-muted-foreground/60 normal-case">({pick('không bắt buộc', 'optional')})</span></label>
+                          <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder={pick('Số căn cước hoặc hộ chiếu', 'ID or passport number')} />
                         </div>
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Yêu cầu đặc biệt' : 'Special requests'}</label>
-                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder={isVi ? 'Ví dụ: phòng tầng cao, giường extra, dị ứng...' : 'E.g. high floor, extra bed, allergies...'} />
+                        <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Yêu cầu đặc biệt', 'Special requests')}</label>
+                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder={pick('Ví dụ: phòng tầng cao, giường extra, dị ứng...', 'E.g. high floor, extra bed, allergies...')} />
                       </div>
                     </div>
                   </motion.div>
@@ -952,17 +938,17 @@ const Booking = () => {
                 {/* ===== STEP 4: Confirm & Pay (was Step 5) ===== */}
                 {currentStep === 4 && (
                   <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                    <h2 className="font-display text-2xl font-bold text-center">✅ {isVi ? 'Xác nhận đặt phòng' : 'Confirm Booking'}</h2>
+                    <h2 className="font-display text-2xl font-bold text-center">✅ {pick('Xác nhận đặt phòng', 'Confirm Booking')}</h2>
 
                     {/* Room summary */}
                     <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-                      <h3 className="font-semibold flex items-center gap-2">🏨 {isVi ? 'Phòng' : 'Rooms'}</h3>
+                      <h3 className="font-semibold flex items-center gap-2">🏨 {pick('Phòng', 'Rooms')}</h3>
                       {selectedRooms.map(sr => (
                         <div key={sr.roomId} className="flex items-center gap-3 bg-secondary/30 rounded-lg p-3">
                           <img src={sr.room!.image} alt="" className="w-16 h-12 object-cover rounded-lg" />
                           <div className="flex-1">
                             <p className="font-semibold text-sm">{sr.room!.name[language]}</p>
-                            <p className="text-xs text-muted-foreground">×{sr.quantity} {isVi ? 'phòng' : 'rooms'} · {nightCount} {isVi ? 'đêm' : 'nights'}</p>
+                            <p className="text-xs text-muted-foreground">×{sr.quantity} {pick('phòng', 'rooms')} · {nightCount} {pick('đêm', 'nights')}</p>
                           </div>
                           {roomTotals.find(rt => rt.roomId === sr.roomId) && (
                             <span className="font-bold text-primary">{formatPrice(roomTotals.find(rt => rt.roomId === sr.roomId)!.subtotal)}</span>
@@ -970,18 +956,18 @@ const Booking = () => {
                         </div>
                       ))}
                       <div className="flex justify-between text-sm pt-2 border-t border-border">
-                        <span>{isVi ? 'Check-in' : 'Check-in'}</span>
+                        <span>{pick('Check-in', 'Check-in')}</span>
                         <span className="font-medium">{checkIn ? format(checkIn, 'dd/MM/yyyy') : '—'}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>{isVi ? 'Check-out' : 'Check-out'}</span>
+                        <span>{pick('Check-out', 'Check-out')}</span>
                         <span className="font-medium">{checkOut ? format(checkOut, 'dd/MM/yyyy') : '—'}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>{isVi ? 'Số khách' : 'Guests'}</span>
+                        <span>{pick('Số khách', 'Guests')}</span>
                         <span className="font-medium">
-                          {parseInt(adults) || 0} {isVi ? 'người lớn' : 'adults'}
-                          {(parseInt(children) || 0) > 0 && ` · ${parseInt(children)} ${isVi ? 'trẻ em' : 'children'}`}
+                          {parseInt(adults) || 0} {pick('người lớn', 'adults')}
+                          {(parseInt(children) || 0) > 0 && ` · ${parseInt(children)} ${pick('trẻ em', 'children')}`}
                         </span>
                       </div>
                     </div>
@@ -1005,11 +991,11 @@ const Booking = () => {
                     {/* Personal meal plans summary */}
                     {personalMealSelections.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-                        <h3 className="font-semibold flex items-center gap-2">👥 {isVi ? 'Suất ăn theo số người' : 'Meal plans by group'}</h3>
+                        <h3 className="font-semibold flex items-center gap-2">👥 {pick('Suất ăn theo số người', 'Meal plans by group')}</h3>
                         {personalMealSelections.map((m, i) => (
                           <div key={i} className="space-y-1">
                             <div className="flex justify-between text-sm">
-                              <span>{m.name} ({m.guest_count} {isVi ? 'người' : 'guests'}) ×{m.quantity}</span>
+                              <span>{m.name} ({m.guest_count} {pick('người', 'guests')}) ×{m.quantity}</span>
                               <span className="font-medium">{formatPrice(m.price * m.quantity)}</span>
                             </div>
                             {m.items.length > 0 && (
@@ -1023,7 +1009,7 @@ const Booking = () => {
                     {/* Individual food */}
                     {individualFoods.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-                        <h3 className="font-semibold flex items-center gap-2">🍤 {isVi ? 'Món ăn riêng' : 'Individual Dishes'}</h3>
+                        <h3 className="font-semibold flex items-center gap-2">🍤 {pick('Món ăn riêng', 'Individual Dishes')}</h3>
                         {individualFoods.map(f => {
                           const isNeg = f.priceType === 'negotiable' || f.price === 0;
                           return (
@@ -1031,7 +1017,7 @@ const Booking = () => {
                               <span className="min-w-0">{f.name}{f.priceLabel ? ` (${f.priceLabel})` : ''} ×{f.quantity}</span>
                               {isNeg ? (
                                 <span className="font-semibold text-orange-600 whitespace-nowrap">
-                                  {isVi ? 'Thỏa thuận' : 'On request'}
+                                  {pick('Thỏa thuận', 'On request')}
                                 </span>
                               ) : (
                                 <span className="font-medium whitespace-nowrap">{formatPrice(f.price * f.quantity * mealMultiplier)}</span>
@@ -1041,9 +1027,7 @@ const Booking = () => {
                         })}
                         {individualFoods.some(f => f.priceType === 'negotiable' || f.price === 0) && (
                           <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
-                            {isVi
-                              ? '💬 Các món "Thỏa thuận" sẽ được tính riêng tại nhà hàng theo cân/thời giá.'
-                              : '💬 Negotiable items are billed separately at the restaurant.'}
+                            {pick('💬 Các món "Thỏa thuận" sẽ được tính riêng tại nhà hàng theo cân/thời giá.', '💬 Negotiable items are billed separately at the restaurant.')}
                           </p>
                         )}
                       </div>
@@ -1052,21 +1036,21 @@ const Booking = () => {
                     {/* Services */}
                     {specialServices.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-2">
-                        <h3 className="font-semibold flex items-center gap-2">🛎️ {isVi ? 'Dịch vụ' : 'Services'}</h3>
+                        <h3 className="font-semibold flex items-center gap-2">🛎️ {pick('Dịch vụ', 'Services')}</h3>
                         {specialServices.map(id => (
-                          <p key={id} className="text-sm text-muted-foreground">✓ {availableServices.find(s => s.id === id)?.[isVi ? 'label' : 'labelEn']}</p>
+                          <p key={id} className="text-sm text-muted-foreground">✓ {availableServices.find(s => s.id === id)?.[pick('label', 'labelEn')]}</p>
                         ))}
                       </div>
                     )}
 
                     {/* Guest info summary */}
                     <div className="bg-card rounded-xl border border-border p-5 space-y-2">
-                      <h3 className="font-semibold flex items-center gap-2">👤 {isVi ? 'Thông tin khách' : 'Guest Info'}</h3>
+                      <h3 className="font-semibold flex items-center gap-2">👤 {pick('Thông tin khách', 'Guest Info')}</h3>
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        <span className="text-muted-foreground">{isVi ? 'Họ tên' : 'Name'}</span><span className="font-medium">{name}</span>
-                        <span className="text-muted-foreground">{isVi ? 'SĐT' : 'Phone'}</span><span className="font-medium">{phone}</span>
+                        <span className="text-muted-foreground">{pick('Họ tên', 'Name')}</span><span className="font-medium">{name}</span>
+                        <span className="text-muted-foreground">{pick('SĐT', 'Phone')}</span><span className="font-medium">{phone}</span>
                         {email && <><span className="text-muted-foreground">Email</span><span className="font-medium">{email}</span></>}
-                        {country && <><span className="text-muted-foreground">{isVi ? 'Quốc gia' : 'Country'}</span><span className="font-medium">{country}</span></>}
+                        {country && <><span className="text-muted-foreground">{pick('Quốc gia', 'Country')}</span><span className="font-medium">{country}</span></>}
                       </div>
                       {(specialRequests || notes) && (
                         <div className="pt-2 border-t border-border">
@@ -1077,29 +1061,29 @@ const Booking = () => {
 
                     {/* Price breakdown */}
                     <div className="bg-card rounded-xl border-2 border-primary/30 p-5 space-y-3">
-                      <h3 className="font-semibold flex items-center gap-2">💰 {isVi ? 'Chi tiết thanh toán' : 'Payment Details'}</h3>
+                      <h3 className="font-semibold flex items-center gap-2">💰 {pick('Chi tiết thanh toán', 'Payment Details')}</h3>
                       <div className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span>🏨 {isVi ? 'Tiền phòng' : 'Room'}</span><span className="font-medium">{formatPrice(roomTotal)}</span></div>
-                        {extraPersonSurcharge > 0 && <div className="flex justify-between"><span>👤 {isVi ? 'Phụ thu' : 'Surcharge'}</span><span>+{formatPrice(extraPersonSurcharge)}</span></div>}
+                        <div className="flex justify-between"><span>🏨 {pick('Tiền phòng', 'Room')}</span><span className="font-medium">{formatPrice(roomTotal)}</span></div>
+                        {extraPersonSurcharge > 0 && <div className="flex justify-between"><span>👤 {pick('Phụ thu', 'Surcharge')}</span><span>+{formatPrice(extraPersonSurcharge)}</span></div>}
                         {comboTotal > 0 && <div className="flex justify-between"><span>🍽️ Combo</span><span>{formatPrice(comboTotal)}</span></div>}
-                        {individualFoodTotal > 0 && <div className="flex justify-between"><span>🍤 {isVi ? 'Món riêng' : 'Dishes'}</span><span>{formatPrice(individualFoodTotal)}</span></div>}
-                        <div className="flex justify-between border-t border-border pt-2"><span className="font-medium">{isVi ? 'Tổng trước giảm' : 'Subtotal'}</span><span className="font-medium">{formatPrice(originalPrice)}</span></div>
+                        {individualFoodTotal > 0 && <div className="flex justify-between"><span>🍤 {pick('Món riêng', 'Dishes')}</span><span>{formatPrice(individualFoodTotal)}</span></div>}
+                        <div className="flex justify-between border-t border-border pt-2"><span className="font-medium">{pick('Tổng trước giảm', 'Subtotal')}</span><span className="font-medium">{formatPrice(originalPrice)}</span></div>
                         {discountAmount > 0 && (
                           <>
                             {appliedPromotions.map((p, i) => (
                               <div key={i} className="flex justify-between text-primary"><span>{p.name}</span><span>-{formatPrice(p.amount)}</span></div>
                             ))}
-                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🏅 {isVi ? 'Ưu đãi VIP' : 'VIP'} ({memberDiscountPercent}% {isVi ? 'tiền phòng' : 'on room'})</span><span>-{formatPrice(memberDiscountAmount)}</span></div>}
+                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🏅 {pick('Ưu đãi VIP', 'VIP')} ({memberDiscountPercent}% {pick('tiền phòng', 'on room')})</span><span>-{formatPrice(memberDiscountAmount)}</span></div>}
                             {discountCodeAmount > 0 && appliedDiscountCodes.length > 0 && (
                               <div className="flex justify-between text-primary">
-                                <span>🎟️ {appliedDiscountCodes.length === 1 ? `Mã ${appliedDiscountCodes[0].code}` : `${appliedDiscountCodes.length} ${isVi ? 'mã' : 'codes'}: ${appliedDiscountCodes.map(c => c.code).join(', ')}`}</span>
+                                <span>🎟️ {appliedDiscountCodes.length === 1 ? `Mã ${appliedDiscountCodes[0].code}` : `${appliedDiscountCodes.length} ${pick('mã', 'codes')}: ${appliedDiscountCodes.map(c => c.code).join(', ')}`}</span>
                                 <span>-{formatPrice(discountCodeAmount)}</span>
                               </div>
                             )}
                           </>
                         )}
                         <div className="flex justify-between border-t-2 border-primary/30 pt-3 text-lg">
-                          <span className="font-bold">{isVi ? 'Tổng thanh toán' : 'Total'}</span>
+                          <span className="font-bold">{pick('Tổng thanh toán', 'Total')}</span>
                           <span className="font-bold text-primary">{formatPrice(totalPrice)}</span>
                         </div>
                         {isAdmin && (
@@ -1120,7 +1104,7 @@ const Booking = () => {
                         )}
                         {totalPrice > 0 && (
                           <div className="flex justify-between text-sm bg-primary/5 rounded-lg px-3 py-2">
-                            <span>💳 {isVi ? 'Đặt cọc 50%' : 'Deposit 50%'}</span>
+                            <span>💳 {pick('Đặt cọc 50%', 'Deposit 50%')}</span>
                             <span className="font-bold text-primary">{formatPrice(Math.round(totalPrice * 0.5))}</span>
                           </div>
                         )}
@@ -1131,7 +1115,7 @@ const Booking = () => {
                     {originalPrice > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5">
                         <h4 className="font-semibold text-sm mb-2">
-                          🎟️ {isVi ? 'Mã giảm giá (có thể nhập nhiều mã)' : 'Discount Codes (multiple allowed)'}
+                          🎟️ {pick('Mã giảm giá (có thể nhập nhiều mã)', 'Discount Codes (multiple allowed)')}
                         </h4>
                         <DiscountCodeInput
                           orderType="room"
@@ -1165,14 +1149,14 @@ const Booking = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">{isVi ? 'Chưa chọn phòng' : 'No rooms'}</p>
+                  <p className="text-sm text-muted-foreground italic">{pick('Chưa chọn phòng', 'No rooms')}</p>
                 )}
 
                 <div className="space-y-1 text-sm">
                   {checkIn && <div className="flex justify-between"><span className="text-muted-foreground">Check-in</span><span className="font-medium">{format(checkIn, 'dd/MM/yyyy')}</span></div>}
                   {checkOut && <div className="flex justify-between"><span className="text-muted-foreground">Check-out</span><span className="font-medium">{format(checkOut, 'dd/MM/yyyy')}</span></div>}
-                  {nightCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{isVi ? 'Số đêm' : 'Nights'}</span><span className="font-medium">{nightCount}</span></div>}
-                  <div className="flex justify-between"><span className="text-muted-foreground">{isVi ? 'Khách' : 'Guests'}</span><span className="font-medium">{parseInt(adults) || 0} {isVi ? 'NL' : 'A'}{(parseInt(children) || 0) > 0 ? ` · ${parseInt(children)} ${isVi ? 'TE' : 'C'}` : ''}</span></div>
+                  {nightCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{pick('Số đêm', 'Nights')}</span><span className="font-medium">{nightCount}</span></div>}
+                  <div className="flex justify-between"><span className="text-muted-foreground">{pick('Khách', 'Guests')}</span><span className="font-medium">{parseInt(adults) || 0} {pick('NL', 'A')}{(parseInt(children) || 0) > 0 ? ` · ${parseInt(children)} ${pick('TE', 'C')}` : ''}</span></div>
                 </div>
 
                 {roomTotals.length > 0 && (
@@ -1203,7 +1187,7 @@ const Booking = () => {
                     {filledComboSlots.map((c, i) => (
                       <div key={i} className="flex justify-between text-xs">
                         <span className="text-muted-foreground truncate pr-2">
-                          🍱 {c.packageName} × {c.people} {isVi ? 'người' : 'pax'} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
+                          🍱 {c.packageName} × {c.people} {pick('người', 'pax')} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
                         </span>
                         <span className="font-medium tabular-nums">{formatPrice(c.pricePerPerson * c.people * mealMultiplier)}</span>
                       </div>
@@ -1213,7 +1197,7 @@ const Booking = () => {
                 {individualFoodTotal > 0 && (
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">
-                      🍤 {isVi ? 'Món riêng' : 'Dishes'} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
+                      🍤 {pick('Món riêng', 'Dishes')} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
                     </span>
                     <span className="font-medium">{formatPrice(individualFoodTotal)}</span>
                   </div>
@@ -1221,7 +1205,7 @@ const Booking = () => {
 
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-xs text-primary border-t border-border pt-2">
-                    <span>{isVi ? 'Giảm giá' : 'Discount'}</span>
+                    <span>{pick('Giảm giá', 'Discount')}</span>
                     <span>-{formatPrice(discountAmount)}</span>
                   </div>
                 )}
@@ -1243,12 +1227,12 @@ const Booking = () => {
                 {!allNightsAvailable && nightCount > 0 && <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">Một số đêm đang đóng bán.</div>}
                 {currentStep === 2 && comboValidationError && (
                   <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">
-                    ⚠️ {isVi ? 'Dịp này bắt buộc đặt ăn trước.' : 'Meal selection required for this holiday.'}
+                    ⚠️ {pick('Dịp này bắt buộc đặt ăn trước.', 'Meal selection required for this holiday.')}
                   </div>
                 )}
                 {currentStep === 2 && !comboValidationError && !hasValidFoodSelection && !isComboMandatory && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2 text-xs text-blue-700 dark:text-blue-300">
-                    💡 {isVi ? 'Bạn có thể đặt đồ ăn sau khi nhận phòng' : 'You can order meals after check-in'}
+                    💡 {pick('Bạn có thể đặt đồ ăn sau khi nhận phòng', 'You can order meals after check-in')}
                   </div>
                 )}
                 {comboServingsError && <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">⚠️ Suất combo ({totalComboServings}) ≠ số khách ({guestCount}).</div>}
@@ -1259,15 +1243,15 @@ const Booking = () => {
           {/* Step navigation buttons */}
           <div className="flex items-center justify-between mt-8">
             <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="gap-2">
-              <ArrowLeft className="h-4 w-4" /> {isVi ? 'Quay lại' : 'Back'}
+              <ArrowLeft className="h-4 w-4" /> {pick('Quay lại', 'Back')}
             </Button>
             {currentStep < 4 ? (
               <Button variant="gold" onClick={nextStep} className="gap-2">
-                {isVi ? 'Tiếp tục' : 'Continue'} <ArrowRight className="h-4 w-4" />
+                {pick('Tiếp tục', 'Continue')} <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
               <Button variant="gold" onClick={handleSubmit} disabled={submitting || !canSubmit} className="gap-2 px-8">
-                {submitting ? (isVi ? 'Đang xử lý...' : 'Processing...') : (isVi ? '🎉 Đặt phòng ngay' : '🎉 Book Now')}
+                {submitting ? (pick('Đang xử lý...', 'Processing...')) : (pick('🎉 Đặt phòng ngay', '🎉 Book Now'))}
               </Button>
             )}
           </div>
@@ -1286,11 +1270,11 @@ const Booking = () => {
           </div>
           {currentStep < 4 ? (
             <Button variant="gold" className="px-8 py-6 text-sm font-bold rounded-lg shrink-0" onClick={nextStep}>
-              {isVi ? 'Tiếp tục' : 'Continue'} →
+              {pick('Tiếp tục', 'Continue')} →
             </Button>
           ) : (
             <Button variant="gold" className="px-8 py-6 text-sm font-bold rounded-lg shrink-0" onClick={handleSubmit} disabled={submitting || !canSubmit}>
-              {submitting ? '...' : (isVi ? 'Đặt phòng' : 'Book Now')}
+              {submitting ? '...' : (pick('Đặt phòng', 'Book Now'))}
             </Button>
           )}
         </div>
