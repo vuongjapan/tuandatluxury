@@ -21,8 +21,10 @@ export interface MenuItem {
   image_url: string | null;
   is_popular: boolean;
   sort_order: number;
-  /** "fixed" = show price; "negotiable" = show "Giá thỏa thuận" badge instead. */
+  /** "fixed" = show price; "negotiable" = show "Liên hệ" badge instead. */
   price_type?: 'fixed' | 'negotiable';
+  /** When false → render "Liên hệ" badge even if price > 0. */
+  show_price?: boolean;
   price_variants?: MenuItemPrice[];
 }
 

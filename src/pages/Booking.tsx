@@ -432,7 +432,8 @@ const Booking = () => {
           room_id: primaryRoomId, guest_name: name, guest_email: email, guest_phone: phone,
           guest_notes: [notes, specialRequests].filter(Boolean).join('\n---\n'),
           check_in: format(checkIn!, 'yyyy-MM-dd'), check_out: format(checkOut!, 'yyyy-MM-dd'),
-          guests_count: guestCount, total_price_vnd: totalPrice, original_price_vnd: originalPrice,
+          guests_count: guestCount, adults_count: parseInt(adults) || 0, children_count: parseInt(children) || 0,
+          total_price_vnd: totalPrice, original_price_vnd: originalPrice,
           room_subtotal: roomTotal, room_quantity: totalRoomQuantity, language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: comboTotal > 0 ? comboTotal : undefined,
@@ -977,7 +978,10 @@ const Booking = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>{isVi ? 'Số khách' : 'Guests'}</span>
-                        <span className="font-medium">{guestCount} {isVi ? 'người' : 'guests'}</span>
+                        <span className="font-medium">
+                          {parseInt(adults) || 0} {isVi ? 'người lớn' : 'adults'}
+                          {(parseInt(children) || 0) > 0 && ` · ${parseInt(children)} ${isVi ? 'trẻ em' : 'children'}`}
+                        </span>
                       </div>
                     </div>
 
@@ -1167,7 +1171,7 @@ const Booking = () => {
                   {checkIn && <div className="flex justify-between"><span className="text-muted-foreground">Check-in</span><span className="font-medium">{format(checkIn, 'dd/MM/yyyy')}</span></div>}
                   {checkOut && <div className="flex justify-between"><span className="text-muted-foreground">Check-out</span><span className="font-medium">{format(checkOut, 'dd/MM/yyyy')}</span></div>}
                   {nightCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{isVi ? 'Số đêm' : 'Nights'}</span><span className="font-medium">{nightCount}</span></div>}
-                  <div className="flex justify-between"><span className="text-muted-foreground">{isVi ? 'Khách' : 'Guests'}</span><span className="font-medium">{guestCount}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{isVi ? 'Khách' : 'Guests'}</span><span className="font-medium">{parseInt(adults) || 0} {isVi ? 'NL' : 'A'}{(parseInt(children) || 0) > 0 ? ` · ${parseInt(children)} ${isVi ? 'TE' : 'C'}` : ''}</span></div>
                 </div>
 
                 {roomTotals.length > 0 && (

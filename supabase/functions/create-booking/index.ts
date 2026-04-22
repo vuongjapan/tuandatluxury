@@ -35,7 +35,8 @@ serve(async (req) => {
     const body = await req.json();
     const { 
       room_id, guest_name, guest_email, guest_phone, guest_notes, 
-      check_in, check_out, guests_count, total_price_vnd, room_quantity, 
+      check_in, check_out, guests_count, adults_count, children_count,
+      total_price_vnd, room_quantity, 
       language, combos, combo_total, combo_notes,
       food_items, individual_food_total,
       extra_person_count, extra_person_surcharge,
@@ -46,6 +47,15 @@ serve(async (req) => {
       room_details, room_breakdown, room_subtotal,
       meal_time, meal_multiplier,
     } = body;
+
+    // Compose guest_notes with adults/children breakdown so it surfaces in admin + email.
+    const adults = Number(adults_count) || 0;
+    const children = Number(children_count) || 0;
+    let composedNotes = guest_notes || '';
+    if (adults > 0 || children > 0) {
+      const breakdown = `[Khách: ${adults} người lớn${children > 0 ? ` · ${children} trẻ em` : ''}]`;
+      composedNotes = composedNotes ? `${breakdown}\n${composedNotes}` : breakdown;
+    }
 
     if (!room_id || !guest_name || !guest_phone || !check_in || !check_out) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -90,7 +100,7 @@ serve(async (req) => {
         guest_name,
         guest_email,
         guest_phone,
-        guest_notes,
+        guest_notes: composedNotes || null,
         check_in,
         check_out,
         guests_count: guests_count || 2,

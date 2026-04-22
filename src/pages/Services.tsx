@@ -42,50 +42,55 @@ const Services = () => {
           {isLoading ? (
             <div className="text-center text-muted-foreground">Đang tải...</div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {active.map((s) => (
-                <div
-                  key={s.id}
-                  className="group bg-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 flex flex-col"
-                >
-                  <div className="relative h-[220px] overflow-hidden bg-secondary">
-                    {s.image_url && (
-                      <img
-                        src={s.image_url}
-                        alt={s.name}
-                        className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    )}
-                    {s.badge_text && (
-                      <span
-                        className={`absolute top-3 left-3 text-[11px] font-medium px-3 py-1 rounded-full ${
-                          s.badge_color === 'navy'
-                            ? 'bg-[#1B3A5C] text-white'
-                            : 'bg-[#C9A84C] text-[#1B3A5C]'
-                        }`}
-                      >
-                        {s.badge_text}
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="font-display text-xl font-semibold mb-2">{s.name}</h3>
-                    <p className="text-sm text-muted-foreground flex-1">{s.description}</p>
-                    {s.button_text && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleClick(s.button_link)}
-                        className="mt-4 self-start border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
-                      >
-                        {s.button_text}
-                      </Button>
-                    )}
-                  </div>
+            <>
+              <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory max-w-7xl mx-auto">
+                <div className="flex gap-6 pb-4">
+                  {active.map((s) => (
+                    <div
+                      key={s.id}
+                      className="snap-start shrink-0 w-[280px] sm:w-[320px] group bg-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 flex flex-col"
+                    >
+                      <div className="relative h-[200px] overflow-hidden bg-secondary">
+                        {s.image_url && (
+                          <img
+                            src={s.image_url}
+                            alt={s.name}
+                            className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        )}
+                        {s.badge_text && (
+                          <span
+                            className={`absolute top-3 left-3 text-[11px] font-medium px-3 py-1 rounded-full ${
+                              s.badge_color === 'navy'
+                                ? 'bg-[#1B3A5C] text-white'
+                                : 'bg-[#C9A84C] text-[#1B3A5C]'
+                            }`}
+                          >
+                            {s.badge_text}
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-5 flex-1 flex flex-col">
+                        <h3 className="font-display text-lg font-semibold mb-2">{s.name}</h3>
+                        <p className="text-sm text-muted-foreground flex-1 line-clamp-3">{s.description}</p>
+                        {s.button_text && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleClick(s.button_link)}
+                            className="mt-4 self-start border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
+                          >
+                            {s.button_text}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+              <p className="text-xs text-center text-muted-foreground mt-2">{isVi ? '← Vuốt ngang để xem thêm →' : '← Swipe to explore →'}</p>
+            </>
           )}
         </div>
       </section>
