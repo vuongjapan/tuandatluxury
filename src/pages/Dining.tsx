@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
 const Dining = () => {
-  const { t, language, formatPrice } = useLanguage();
+  const { t, language, pick, formatPrice } = useLanguage();
   const { categories, items, loading, getItemsByCategory } = useDining();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -24,7 +24,7 @@ const Dining = () => {
 
   const handleOrder = (itemName: string) => {
     toast({
-      title: language === 'vi' ? 'Đã thêm vào đơn' : 'Added to order',
+      title: pick('Đã thêm vào đơn', 'Added to order'),
       description: itemName,
     });
   };
@@ -50,9 +50,10 @@ const Dining = () => {
             </h1>
             <div className="w-20 h-1 bg-gold-gradient mx-auto rounded-full mb-6" />
             <p className="text-muted-foreground text-lg">
-              {language === 'vi'
-                ? 'Khám phá ẩm thực đa dạng từ hải sản tươi sống, buffet sáng đến dịch vụ phòng tiện lợi'
-                : 'Discover diverse cuisine from fresh seafood, breakfast buffet to convenient room service'}
+              {pick(
+                'Khám phá ẩm thực đa dạng từ hải sản tươi sống, buffet sáng đến dịch vụ phòng tiện lợi',
+                'Discover diverse cuisine from fresh seafood, breakfast buffet to convenient room service'
+              )}
             </p>
           </motion.div>
         </div>
@@ -70,7 +71,7 @@ const Dining = () => {
                   : 'bg-secondary text-muted-foreground hover:text-foreground'
               }`}
             >
-              {language === 'vi' ? 'Tất cả' : 'All'}
+              {pick('Tất cả', 'All')}
             </button>
             {categories.map(cat => (
               <button
@@ -94,7 +95,7 @@ const Dining = () => {
         <div className="container mx-auto px-4">
           {loading ? (
             <div className="text-center py-20 text-muted-foreground">
-              {language === 'vi' ? 'Đang tải...' : 'Loading...'}
+              {t('common.loading')}
             </div>
           ) : activeCategory === null ? (
             /* Overview - show all categories as cards */
@@ -139,7 +140,7 @@ const Dining = () => {
                           </span>
                         )}
                         <Badge variant="secondary" className="text-xs">
-                          {catItems.length} {language === 'vi' ? 'món' : 'items'}
+                          {catItems.length} {pick('món', 'items')}
                         </Badge>
                       </div>
                     </div>
@@ -172,7 +173,7 @@ const Dining = () => {
                       {selectedCategory.serving_hours && (
                         <span className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary font-medium">
                           <Clock className="h-4 w-4" />
-                          {language === 'vi' ? 'Giờ phục vụ' : 'Serving hours'}: {selectedCategory.serving_hours}
+                          {pick('Giờ phục vụ', 'Serving hours')}: {selectedCategory.serving_hours}
                         </span>
                       )}
                     </div>
@@ -217,7 +218,7 @@ const Dining = () => {
                       {item.is_combo && item.combo_serves && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
                           <Users className="h-3.5 w-3.5" />
-                          {item.combo_serves} {language === 'vi' ? 'người' : 'people'}
+                          {item.combo_serves} {pick('người', 'people')}
                         </span>
                       )}
                       <div className="flex items-center justify-between mt-auto">
@@ -231,7 +232,7 @@ const Dining = () => {
                           onClick={() => handleOrder(getName(item))}
                         >
                           <ShoppingCart className="h-3.5 w-3.5" />
-                          {language === 'vi' ? 'Đặt món' : 'Order'}
+                          {pick('Đặt món', 'Order')}
                         </Button>
                       </div>
                     </div>
@@ -239,7 +240,7 @@ const Dining = () => {
                 ))}
                 {getItemsByCategory(activeCategory).length === 0 && (
                   <div className="col-span-full text-center py-16 text-muted-foreground">
-                    {language === 'vi' ? 'Chưa có món ăn nào trong mục này' : 'No items in this category yet'}
+                    {pick('Chưa có món ăn nào trong mục này', 'No items in this category yet')}
                   </div>
                 )}
               </div>
