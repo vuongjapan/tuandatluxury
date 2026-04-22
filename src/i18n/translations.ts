@@ -54,6 +54,13 @@ export const translations: Record<string, Dict> = {
   // ───────── BOOKING SEARCH ─────────
   'book.checkin':      { vi: 'Nhận phòng',         en: 'Check-in',        ja: 'チェックイン',     zh: '入住' },
   'book.checkout':     { vi: 'Trả phòng',          en: 'Check-out',       ja: 'チェックアウト',   zh: '退房' },
+  'search.checkin':    { vi: 'Nhận phòng',         en: 'Check-in',        ja: 'チェックイン',     zh: '入住日期' },
+  'search.checkout':   { vi: 'Trả phòng',          en: 'Check-out',       ja: 'チェックアウト',   zh: '退房日期' },
+  'booking.summary':   { vi: 'Tóm tắt đặt phòng',  en: 'Booking Summary', ja: '予約概要',         zh: '预订摘要' },
+  'booking.total':     { vi: 'Tổng cộng',          en: 'Total',           ja: '合計',             zh: '总计' },
+  'booking.full_name': { vi: 'Họ và tên',          en: 'Full Name',       ja: 'お名前',           zh: '姓名' },
+  'booking.email':     { vi: 'Email',              en: 'Email',           ja: 'メール',           zh: '邮箱' },
+  'booking.phone':     { vi: 'Số điện thoại',      en: 'Phone',           ja: '電話番号',         zh: '电话号码' },
   'book.guests':       { vi: 'Số khách',           en: 'Guests',          ja: '宿泊人数',         zh: '入住人数' },
   'book.adults':       { vi: 'Người lớn',          en: 'Adults',          ja: '大人',             zh: '成人' },
   'book.children':     { vi: 'Trẻ em',             en: 'Children',        ja: 'お子様',           zh: '儿童' },
