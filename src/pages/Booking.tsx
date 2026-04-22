@@ -634,14 +634,27 @@ const Booking = () => {
                           </Popover>
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.guests')}</label>
-                          <Select value={guests} onValueChange={setGuests}>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Người lớn' : 'Adults'}</label>
+                          <Select value={adults} onValueChange={setAdults}>
                             <SelectTrigger>
                               <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
                             </SelectTrigger>
                             <SelectContent>
                               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người' : 'guests'}</SelectItem>
+                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'người lớn' : 'adults'}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{isVi ? 'Trẻ em' : 'Children'}</label>
+                          <Select value={children} onValueChange={setChildren}>
+                            <SelectTrigger>
+                              <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 6 }, (_, i) => i).map((n) => (
+                                <SelectItem key={n} value={String(n)}>{n} {isVi ? 'trẻ em' : 'children'}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
