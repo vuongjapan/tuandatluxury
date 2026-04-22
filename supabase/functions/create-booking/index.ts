@@ -249,7 +249,7 @@ serve(async (req) => {
         deposit_amount: depositAmount,
         remaining_amount: remainingAmount,
         payment_status: "PENDING",
-        status: "unpaid",
+        status: "issued",
       })
       .select()
       .single();
