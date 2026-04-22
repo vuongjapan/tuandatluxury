@@ -190,7 +190,7 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{getName(item)}</p>
-                        <p className="text-xs text-primary font-bold">{formatPrice(item.price_vnd)}</p>
+                        <PriceDisplay price={(item as any).price_vnd} priceType={(item as any).price_type} className="text-xs text-primary font-bold inline-block" />
                       </div>
                       <div className="flex items-center gap-1">
                         <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 rounded hover:bg-background">
@@ -201,7 +201,11 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <span className="text-sm font-bold w-24 text-right">{formatPrice(item.price_vnd * item.quantity)}</span>
+                      <span className="text-sm font-bold w-24 text-right">
+                        {(item as any).price_type === 'negotiable' || (item as any).price_vnd === 0
+                          ? <span className="text-[11px] text-orange-600">{isVi ? 'Tính tại NH' : 'At venue'}</span>
+                          : formatPrice((item as any).price_vnd * item.quantity)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -349,7 +353,7 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{getName(item)}</p>
-                          <p className="text-xs text-primary font-bold">{formatPrice(item.price_vnd)}</p>
+                          <PriceDisplay price={(item as any).price_vnd} priceType={(item as any).price_type} className="text-xs text-primary font-bold inline-block" />
                         </div>
                         <Button
                           size="sm"
