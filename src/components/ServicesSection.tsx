@@ -147,9 +147,9 @@ const ServiceCard = ({
 };
 
 const ServicesSection = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const isVi = t('nav.rooms') === 'Hạng phòng';
+  const isVi = language === 'vi';
   const { featured } = useServices();
   const sectionRef = useRef<HTMLElement>(null);
   const [sectionVisible, setSectionVisible] = useState(false);
@@ -197,10 +197,10 @@ const ServicesSection = () => {
           }}
         >
           <p className="text-primary font-display text-xs tracking-[0.3em] uppercase mb-3 font-medium">
-            {isVi ? 'TIỆN ÍCH' : 'AMENITIES'}
+            {t('service.label')}
           </p>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-foreground mb-4 tracking-tight">
-            {isVi ? 'Dịch Vụ Của Chúng Tôi' : 'Our Services'}
+            {t('service.title')}
           </h2>
           <div className="w-[50px] h-[2px] bg-primary mx-auto mb-4" />
           <p

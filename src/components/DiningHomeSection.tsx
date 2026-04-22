@@ -17,9 +17,9 @@ interface CuisineMedia {
 }
 
 const DiningHomeSection = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const isVi = t('nav.rooms') === 'Hạng phòng';
+  const isVi = language === 'vi';
 
   // Fetch real cuisine media (images, moments, short videos)
   const { data: cuisineMedia = [] } = useQuery({
@@ -67,15 +67,13 @@ const DiningHomeSection = () => {
           className="text-center mb-14"
         >
           <p className="text-primary font-display text-xs sm:text-sm tracking-[0.35em] uppercase mb-3">
-            {isVi ? 'Ẩm thực' : 'Cuisine'}
+            {t('dining.label')}
           </p>
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3">
-            {isVi ? 'Trải nghiệm ẩm thực' : 'Culinary Experience'}
+            {t('dining.title')}
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto text-sm mb-5">
-            {isVi
-              ? 'Hải sản tươi sống đánh bắt trong ngày, chế biến bởi đầu bếp giàu kinh nghiệm.'
-              : 'Fresh seafood caught daily, prepared by experienced chefs.'}
+            {t('dining.fresh')}
           </p>
           <div className="flex items-center justify-center gap-3">
             <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-primary/70" />

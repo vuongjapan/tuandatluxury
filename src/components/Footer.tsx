@@ -5,7 +5,6 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 const Footer = () => {
   const { t } = useLanguage();
   const { settings } = useSiteSettings();
-  const isVi = t('nav.rooms') === 'Hạng phòng';
 
   return (
     <footer id="contact" className="bg-foreground text-background">
@@ -16,15 +15,13 @@ const Footer = () => {
       <div className="bg-primary/5 border-b border-background/10">
         <div className="section-container py-10 sm:py-12 text-center">
           <p className="text-primary font-display text-xs tracking-[0.35em] uppercase mb-3">
-            {isVi ? 'Liên hệ ngay' : 'Get in Touch'}
+            {t('footer.cta_label')}
           </p>
           <h3 className="font-display text-2xl sm:text-3xl font-bold text-background mb-3">
-            {isVi ? 'Đặt phòng ngay hôm nay' : 'Book Your Stay Today'}
+            {t('footer.cta_title')}
           </h3>
           <p className="text-background/60 text-sm sm:text-base mb-6 max-w-xl mx-auto">
-            {isVi
-              ? 'Liên hệ trực tiếp để nhận giá tốt nhất và các ưu đãi độc quyền dành riêng cho bạn.'
-              : 'Contact us directly for the best rates and exclusive offers just for you.'}
+            {t('footer.cta_text')}
           </p>
           <a
             href="tel:0384418811"
@@ -51,22 +48,22 @@ const Footer = () => {
           {/* Col 2: Quick Links */}
           <div>
             <h4 className="font-display text-base font-semibold mb-5 text-primary">
-              {isVi ? 'Khám phá' : 'Explore'}
+              {t('footer.explore')}
             </h4>
             <div className="space-y-2.5">
               {[
-                { label: isVi ? 'Hạng phòng' : 'Rooms', href: '/#rooms' },
-                { label: isVi ? 'Ẩm thực' : 'Dining', href: '/dining' },
-                { label: isVi ? 'Dịch vụ' : 'Services', href: '/#services' },
-                { label: isVi ? 'Thư viện ảnh' : 'Gallery', href: '/#gallery' },
-                { label: isVi ? 'Ưu đãi' : 'Offers', href: '/#offers' },
+                { key: 'nav.rooms', href: '/#rooms' },
+                { key: 'nav.dining', href: '/dining' },
+                { key: 'nav.services', href: '/#services' },
+                { key: 'nav.gallery', href: '/#gallery' },
+                { key: 'nav.offers', href: '/#offers' },
               ].map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   className="block text-sm text-background/50 hover:text-primary hover:translate-x-1 transition-all duration-300"
                 >
-                  {link.label}
+                  {t(link.key)}
                 </a>
               ))}
             </div>
@@ -97,7 +94,7 @@ const Footer = () => {
           {/* Col 4: OTA Platforms */}
           <div>
             <h4 className="font-display text-base font-semibold mb-5 text-primary">
-              {isVi ? 'Đặt phòng qua' : 'Book via'}
+              {t('footer.book_via')}
             </h4>
             <div className="flex flex-col gap-2.5">
               {[
@@ -127,7 +124,7 @@ const Footer = () => {
             © {new Date().getFullYear()} Tuấn Đạt Luxury Hotel. All rights reserved.
           </p>
           <p className="text-xs text-background/30">
-            {isVi ? 'FLC Sầm Sơn, Thanh Hóa, Việt Nam' : 'FLC Sầm Sơn, Thanh Hóa, Vietnam'}
+            {t('footer.address_short')}
           </p>
         </div>
       </div>
