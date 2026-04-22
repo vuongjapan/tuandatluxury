@@ -132,7 +132,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   );
   const roomQty = booking.room_quantity || 1;
   const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity, 0);
-  const indFoodTotal = foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity, 0);
+  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity, 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
@@ -179,7 +179,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
 
   // === BUILD COMBO SECTION ===
   let comboHtml = '';
-  if (combos.length > 0) {
+  if (combos.length > 0 || booking.combo_notes) {
     let comboRows = '';
     combos.forEach((c, idx) => {
       const parts = c.combo_name?.split(' – ') || [c.combo_name];
@@ -224,6 +224,14 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       </div>`;
     }
 
+    if (combos.length === 0 && booking.combo_notes) {
+      comboRows = `
+      <div style="background:#f8f6f0;border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid #f0ebe0;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#666;">Chi tiết suất ăn đã chọn:</p>
+        <div style="font-size:13px;color:#333;line-height:1.7;white-space:pre-line;">${booking.combo_notes}</div>
+      </div>`;
+    }
+
     comboHtml = `
     <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">🍽️ a. Suất ăn (Combo)</h3>
     ${comboRows}
@@ -231,7 +239,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     ${comboNotesHtml}
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;">
       <table style="width:100%;font-size:13px;"><tr>
-        <td style="font-weight:600;color:#888;">Tổng suất ăn (${totalServings} suất):</td>
+        <td style="font-weight:600;color:#888;">Tổng suất ăn (${totalServings > 0 ? `${totalServings}` : 'đã chọn'} suất):</td>
         <td style="text-align:right;font-weight:700;color:#8B6914;">${fmt(comboTotal)}</td>
       </tr></table>
     </div>`;
