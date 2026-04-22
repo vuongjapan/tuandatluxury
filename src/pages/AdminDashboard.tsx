@@ -405,8 +405,6 @@ const AdminDashboard = () => {
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
           {tab === 'quick-import' && <AdminQuickImport />}
           {tab === 'analytics' && <AdminAnalytics />}
-          {tab === 'auction' && <AdminAuction />}
-          {tab === 'live' && <AdminLive />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'discount-config' && <AdminDiscountConfig />}
           {tab === 'about-images' && <AdminAboutImages />}

@@ -95,8 +95,8 @@ const RoomDetailPopup = ({ room, open, onOpenChange }: RoomDetailPopupProps) => 
           </div>
         </div>
 
-        {/* Body — scrollable */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Body — scrollable (mobile native momentum) */}
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-0">
             {/* Gallery */}
             <div className="lg:col-span-3 bg-muted/30">
