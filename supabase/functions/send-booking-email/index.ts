@@ -77,18 +77,28 @@ function getRoomBreakdown(
 ): RoomBreakdownItem[] {
   const breakdown = getArray<any>(booking.room_breakdown).filter(item => item && typeof item === 'object');
 
+  const computeNightly = (subtotal: number, qty: number, storedRate: number) => {
+    const computed = nights > 0 && qty > 0 ? Math.round(subtotal / (nights * qty)) : 0;
+    if (storedRate > 0) {
+      // Nếu giá lưu × đêm × phòng KHÔNG khớp subtotal → bản ghi cũ sai, dùng giá tự tính.
+      const tolerance = Math.max(2, subtotal * 0.01);
+      if (Math.abs(storedRate * nights * qty - subtotal) <= tolerance) return storedRate;
+    }
+    return computed;
+  };
+
   if (breakdown.length > 0) {
     return breakdown.map((item) => {
       const quantity = Number(item.quantity) || 1;
       const subtotal = Number(item.subtotal) || 0;
+      const stored = Number(item.average_nightly_rate) || 0;
 
       return {
         room_id: item.room_id,
         room_name: item.room_name || fallbackRoomName,
         quantity,
         subtotal,
-        average_nightly_rate: Number(item.average_nightly_rate)
-          || (nights > 0 && quantity > 0 ? Math.round(subtotal / (nights * quantity)) : 0),
+        average_nightly_rate: computeNightly(subtotal, quantity, stored),
       };
     });
   }
