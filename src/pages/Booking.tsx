@@ -604,7 +604,7 @@ const Booking = () => {
                     {/* Search bar */}
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <h2 className="font-display text-xl font-semibold flex items-center gap-2">📅 {isVi ? 'Chọn ngày & số khách' : 'Select Dates & Guests'}</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{t('search.checkin')}</label>
                           <Popover>
