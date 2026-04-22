@@ -469,15 +469,13 @@ const Booking = () => {
   const STEPS = [
     { num: 1, label: isVi ? 'Chọn phòng' : 'Select Room', icon: '🏨' },
     { num: 2, label: isVi ? 'Dịch vụ' : 'Services', icon: '🍽️' },
-    { num: 3, label: isVi ? 'Yêu cầu' : 'Requests', icon: '📝' },
-    { num: 4, label: isVi ? 'Thông tin' : 'Info', icon: '👤' },
-    { num: 5, label: isVi ? 'Xác nhận' : 'Confirm', icon: '✅' },
+    { num: 3, label: isVi ? 'Thông tin' : 'Info', icon: '👤' },
+    { num: 4, label: isVi ? 'Xác nhận' : 'Confirm', icon: '✅' },
   ];
 
   const canGoStep2 = hasRooms && !!checkIn && !!checkOut && nightCount > 0 && allNightsAvailable;
   const canGoStep3 = canGoStep2;
-  const canGoStep4 = canGoStep3;
-  const canGoStep5 = canGoStep4 && !!name && !!phone;
+  const canGoStep4 = canGoStep3 && !!name && !!phone;
 
   const nextStep = () => {
     if (currentStep === 1 && !canGoStep2) {
@@ -504,10 +502,10 @@ const Booking = () => {
       if (comboServingsError) { toast({ title: `Tổng suất combo (${totalComboServings}) phải bằng số người lớn (${guestCount})`, variant: 'destructive' }); return; }
       if (multiComboNeedsNotes) { toast({ title: 'Vui lòng nhập ghi chú ăn uống', variant: 'destructive' }); return; }
     }
-    if (currentStep === 4 && !canGoStep5) {
+    if (currentStep === 3 && !canGoStep4) {
       toast({ title: isVi ? 'Vui lòng điền họ tên và số điện thoại' : 'Please fill in name and phone', variant: 'destructive' }); return;
     }
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
+    if (currentStep < 4) setCurrentStep(currentStep + 1);
   };
   const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
 
@@ -890,25 +888,9 @@ const Booking = () => {
                   </motion.div>
                 )}
 
-                {/* ===== STEP 3: Special Requests ===== */}
+                {/* ===== STEP 3: Guest Info (was Step 4) ===== */}
                 {currentStep === 3 && (
                   <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                    <h2 className="font-display text-2xl font-bold text-center">📝 {isVi ? 'Yêu cầu đặc biệt' : 'Special Requests'}</h2>
-                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                      <p className="text-sm text-muted-foreground">{isVi ? 'Không bắt buộc – nhập yêu cầu riêng của bạn (giờ check-in sớm, tầng cao, phòng liền kề, v.v.)' : 'Optional – enter any special requests'}</p>
-                      <Textarea
-                        value={specialRequests}
-                        onChange={(e) => setSpecialRequests(e.target.value)}
-                        rows={5}
-                        placeholder={isVi ? 'VD: Check-in sớm 12h, phòng tầng cao, cần nôi em bé...' : 'E.g. Early check-in, high floor, baby crib...'}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* ===== STEP 4: Guest Info ===== */}
-                {currentStep === 4 && (
-                  <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="font-display text-2xl font-bold text-center">👤 {isVi ? 'Thông tin khách hàng' : 'Guest Information'}</h2>
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -949,9 +931,9 @@ const Booking = () => {
                   </motion.div>
                 )}
 
-                {/* ===== STEP 5: Confirm & Pay ===== */}
-                {currentStep === 5 && (
-                  <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                {/* ===== STEP 4: Confirm & Pay (was Step 5) ===== */}
+                {currentStep === 4 && (
+                  <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="font-display text-2xl font-bold text-center">✅ {isVi ? 'Xác nhận đặt phòng' : 'Confirm Booking'}</h2>
 
                     {/* Room summary */}
@@ -1258,7 +1240,7 @@ const Booking = () => {
             <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> {isVi ? 'Quay lại' : 'Back'}
             </Button>
-            {currentStep < 5 ? (
+            {currentStep < 4 ? (
               <Button variant="gold" onClick={nextStep} className="gap-2">
                 {isVi ? 'Tiếp tục' : 'Continue'} <ArrowRight className="h-4 w-4" />
               </Button>
@@ -1277,11 +1259,11 @@ const Booking = () => {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.1)] print:hidden">
         <div className="container mx-auto px-4 max-w-5xl py-3 flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground">{STEPS[currentStep - 1]?.label} ({currentStep}/5)</p>
+            <p className="text-xs text-muted-foreground">{STEPS[currentStep - 1]?.label} ({currentStep}/4)</p>
             <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">{totalPrice > 0 ? formatPrice(totalPrice) : '—'}</p>
             {totalPrice > 0 && discountAmount > 0 && <p className="text-[11px] text-muted-foreground line-through">{formatPrice(originalPrice)}</p>}
           </div>
-          {currentStep < 5 ? (
+          {currentStep < 4 ? (
             <Button variant="gold" className="px-8 py-6 text-sm font-bold rounded-lg shrink-0" onClick={nextStep}>
               {isVi ? 'Tiếp tục' : 'Continue'} →
             </Button>

@@ -29,8 +29,6 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Promotions = lazy(() => import("./pages/Promotions"));
 const Offers = lazy(() => import("./pages/Offers"));
 const OfferDetail = lazy(() => import("./pages/OfferDetail"));
-const Auction = lazy(() => import("./pages/Auction"));
-const Live = lazy(() => import("./pages/Live"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const Discovery = lazy(() => import("./pages/Discovery"));
 const About = lazy(() => import("./pages/About"));
@@ -118,8 +116,6 @@ const App = () => {
                     <Route path="/uu-dai" element={<Offers />} />
                     <Route path="/uu-dai/:slug" element={<OfferDetail />} />
                     <Route path="/khuyen-mai" element={<Offers />} />
-                    <Route path="/auction" element={<Auction />} />
-                    <Route path="/live" element={<Live />} />
                     <Route path="/reviews" element={<Reviews />} />
                     <Route path="/danh-gia" element={<Reviews />} />
                     <Route path="/discovery" element={<Discovery />} />
