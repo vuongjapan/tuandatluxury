@@ -1072,6 +1072,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          cny_rate: number
+          id: string
+          jpy_rate: number
+          updated_at: string
+          usd_rate: number
+        }
+        Insert: {
+          cny_rate?: number
+          id?: string
+          jpy_rate?: number
+          updated_at?: string
+          usd_rate?: number
+        }
+        Update: {
+          cny_rate?: number
+          id?: string
+          jpy_rate?: number
+          updated_at?: string
+          usd_rate?: number
+        }
+        Relationships: []
+      }
       external_hotels: {
         Row: {
           address: string | null
