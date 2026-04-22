@@ -830,7 +830,7 @@ const Booking = () => {
                             specialServices.includes(service.id) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                           )}>
                             <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
-                            {isVi ? service.label : service.labelEn}
+                            {pick(service.label, service.labelEn)}
                           </label>
                         ))}
                       </div>
