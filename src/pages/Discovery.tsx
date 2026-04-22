@@ -73,48 +73,51 @@ const Discovery = () => {
             </h2>
           </FadeIn>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {list.map((place, i) => (
-              <FadeIn key={place.id} delay={i * 60}>
-                <div className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 group h-full flex flex-col">
-                  {place.image_url ? (
-                    <div className="aspect-video overflow-hidden">
-                      <img
-                        src={place.image_url}
-                        alt={isVi ? place.name_vi : place.name_en}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-muted flex items-center justify-center text-5xl">{place.icon}</div>
-                  )}
-                  <div className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-display font-semibold text-base">{isVi ? place.name_vi : place.name_en}</h3>
-                      <span className="text-xs text-primary font-medium flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {place.distance}
-                      </span>
-                    </div>
-                    {(isVi ? place.description_vi : place.description_en) && (
-                      <p className="text-xs text-muted-foreground leading-relaxed flex-1">
-                        {isVi ? place.description_vi : place.description_en}
-                      </p>
+          <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+            <div className="flex gap-5 pb-4">
+              {list.map((place, i) => (
+                <FadeIn key={place.id} delay={i * 60} className="snap-start shrink-0 w-[280px] sm:w-[320px]">
+                  <div className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 group h-full flex flex-col">
+                    {place.image_url ? (
+                      <div className="aspect-video overflow-hidden">
+                        <img
+                          src={place.image_url}
+                          alt={isVi ? place.name_vi : place.name_en}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-muted flex items-center justify-center text-5xl">{place.icon}</div>
                     )}
-                    <Button variant="outline" size="sm" className="mt-4 w-full gap-2" asChild>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((isVi ? place.name_vi : place.name_en) + ' Sầm Sơn')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3 w-3" /> {isVi ? 'Xem đường đi' : 'Get directions'}
-                      </a>
-                    </Button>
+                    <div className="p-5 flex-1 flex flex-col">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-display font-semibold text-base">{isVi ? place.name_vi : place.name_en}</h3>
+                        <span className="text-xs text-primary font-medium flex items-center gap-1">
+                          <MapPin className="h-3 w-3" /> {place.distance}
+                        </span>
+                      </div>
+                      {(isVi ? place.description_vi : place.description_en) && (
+                        <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-3">
+                          {isVi ? place.description_vi : place.description_en}
+                        </p>
+                      )}
+                      <Button variant="outline" size="sm" className="mt-4 w-full gap-2" asChild>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((isVi ? place.name_vi : place.name_en) + ' Sầm Sơn')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3 w-3" /> {isVi ? 'Xem đường đi' : 'Get directions'}
+                        </a>
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </FadeIn>
-            ))}
+                </FadeIn>
+              ))}
+            </div>
           </div>
+          <p className="text-xs text-center text-muted-foreground mt-2">{isVi ? '← Vuốt ngang để xem thêm →' : '← Swipe to explore →'}</p>
         </div>
       </section>
 
