@@ -34,7 +34,7 @@ export const translations: Record<string, Dict> = {
   'nav.blog':          { vi: 'Blog',               en: 'Blog',            ja: 'ブログ',           zh: '博客' },
   'nav.seafood':       { vi: 'Hải sản khô',        en: 'Dried Seafood',   ja: '干物',             zh: '海鲜干货' },
   'nav.terms':         { vi: 'Điều khoản',         en: 'Terms',           ja: '規定',             zh: '条款' },
-  'nav.book_now':      { vi: 'Đặt ngay',           en: 'Book Now',        ja: '今すぐ予約',       ZH: '立即预订' as any, zh: '立即预订' },
+  'nav.book_now':      { vi: 'Đặt ngay',           en: 'Book Now',        ja: '今すぐ予約',       zh: '立即预订' },
   'nav.more':          { vi: 'Thêm',               en: 'More',            ja: 'その他',           zh: '更多' },
   'nav.signin':        { vi: 'Đăng nhập',          en: 'Sign in',         ja: 'ログイン',         zh: '登录' },
   'nav.signup_signin': { vi: 'Đăng nhập / Đăng ký',en: 'Sign in / Sign up',ja: 'ログイン / 登録',  zh: '登录 / 注册' },
