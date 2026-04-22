@@ -16,6 +16,21 @@ const HOTEL_MAP = 'https://www.google.com/maps/search/?api=1&query=Tu%E1%BA%A5n+
 const HOTEL_PHONES = '098.360.5768 | 036.984.5422 | 038.441.8811';
 const HOTEL_EMAIL = 'tuandatluxuryflc36hotel@gmail.com';
 
+const parseGuestBreakdown = (notes?: string | null) => {
+  const rawNotes = typeof notes === 'string' ? notes : '';
+  const match = rawNotes.match(/\[Khách:\s*(\d+)\s*người lớn(?:\s*·\s*(\d+)\s*trẻ em[^\]]*)?\]/i);
+
+  return {
+    adults: match ? parseInt(match[1] || '0', 10) : 0,
+    children: match ? parseInt(match[2] || '0', 10) : 0,
+    cleanedNotes: rawNotes
+      .replace(match?.[0] || '', '')
+      .replace(/^\s*---\s*$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
+  };
+};
+
 const InvoicePage = () => {
   const { bookingCode } = useParams();
   const navigate = useNavigate();
@@ -94,7 +109,7 @@ const InvoicePage = () => {
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
   const roomQty = booking.room_quantity || 1;
   const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + (c.price_vnd * c.quantity), 0);
-  const indFoodTotal = foodItems.reduce((s: number, f: any) => s + (f.price_vnd * f.quantity), 0);
+  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + (f.price_vnd * f.quantity), 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
@@ -102,6 +117,7 @@ const InvoicePage = () => {
   const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomSubtotal / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
+  const guestBreakdown = parseGuestBreakdown(booking.guest_notes);
   const roomDetails = Array.isArray(booking.room_details) && booking.room_details.length > 0
     ? booking.room_details
     : [{ room_id: booking.room_id, room_name: booking.rooms?.name_vi || booking.room_id, quantity: roomQty }];
