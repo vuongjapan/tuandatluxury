@@ -1018,6 +1018,60 @@ export type Database = {
         }
         Relationships: []
       }
+      dishes: {
+        Row: {
+          category: string
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_popular: boolean
+          name_en: string
+          name_vi: string
+          price: number
+          price_type: string
+          price_variants: Json
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_popular?: boolean
+          name_en?: string
+          name_vi: string
+          price?: number
+          price_type?: string
+          price_variants?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_popular?: boolean
+          name_en?: string
+          name_vi?: string
+          price?: number
+          price_type?: string
+          price_variants?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       external_hotels: {
         Row: {
           address: string | null

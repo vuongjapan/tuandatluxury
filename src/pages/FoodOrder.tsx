@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import FoodCheckout from '@/components/FoodCheckout';
+import PriceDisplay from '@/components/PriceDisplay';
 
 const PRICE_FILTERS = [
   { key: '<100k', label_vi: '<100k', label_en: '<100k' },
@@ -199,7 +200,7 @@ const FoodOrder = () => {
                         <h4 className="font-medium text-sm text-foreground leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
                           {getName(item)}
                         </h4>
-                        <p className="text-sm font-bold text-primary mb-2">{formatPrice(item.price_vnd)}</p>
+                        <PriceDisplay price={item.price_vnd} priceType={(item as any).price_type} className="text-sm font-bold text-primary mb-2 inline-block" />
 
                         {qty === 0 ? (
                           <Button size="sm" variant="gold" className="w-full text-xs gap-1" onClick={() => handleAddToCart(item)}>
@@ -298,7 +299,7 @@ const FoodOrder = () => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{getName(item)}</p>
-                        <p className="text-sm text-primary font-bold">{formatPrice(item.price_vnd)}</p>
+                        <PriceDisplay price={(item as any).price_vnd} priceType={(item as any).price_type} className="text-sm text-primary font-bold inline-block" />
                         <div className="flex items-center gap-2 mt-1">
                           <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-0.5 rounded hover:bg-background">
                             {item.quantity === 1 ? <Trash2 className="h-3.5 w-3.5 text-destructive" /> : <Minus className="h-3.5 w-3.5" />}
@@ -310,7 +311,9 @@ const FoodOrder = () => {
                         </div>
                       </div>
                       <div className="text-sm font-bold text-foreground self-center">
-                        {formatPrice(item.price_vnd * item.quantity)}
+                        {(item as any).price_type === 'negotiable' || (item as any).price_vnd === 0
+                          ? <span className="text-[11px] text-orange-600">{isVi ? 'Tính tại NH' : 'At venue'}</span>
+                          : formatPrice((item as any).price_vnd * item.quantity)}
                       </div>
                     </div>
                   ))
@@ -334,7 +337,7 @@ const FoodOrder = () => {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium truncate">{getName(item)}</p>
-                            <p className="text-xs text-primary font-bold">{formatPrice(item.price_vnd)}</p>
+                            <PriceDisplay price={item.price_vnd} priceType={(item as any).price_type} className="text-xs text-primary font-bold inline-block" />
                           </div>
                           <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" onClick={() => handleAddToCart(item)}>
                             <Plus className="h-3 w-3" />
