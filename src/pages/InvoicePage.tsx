@@ -16,6 +16,21 @@ const HOTEL_MAP = 'https://www.google.com/maps/search/?api=1&query=Tu%E1%BA%A5n+
 const HOTEL_PHONES = '098.360.5768 | 036.984.5422 | 038.441.8811';
 const HOTEL_EMAIL = 'tuandatluxuryflc36hotel@gmail.com';
 
+const parseGuestBreakdown = (notes?: string | null) => {
+  const rawNotes = typeof notes === 'string' ? notes : '';
+  const match = rawNotes.match(/\[Khách:\s*(\d+)\s*người lớn(?:\s*·\s*(\d+)\s*trẻ em[^\]]*)?\]/i);
+
+  return {
+    adults: match ? parseInt(match[1] || '0', 10) : 0,
+    children: match ? parseInt(match[2] || '0', 10) : 0,
+    cleanedNotes: rawNotes
+      .replace(match?.[0] || '', '')
+      .replace(/^\s*---\s*$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
+  };
+};
+
 const InvoicePage = () => {
   const { bookingCode } = useParams();
   const navigate = useNavigate();
@@ -94,7 +109,7 @@ const InvoicePage = () => {
   const nights = Math.ceil((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24));
   const roomQty = booking.room_quantity || 1;
   const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + (c.price_vnd * c.quantity), 0);
-  const indFoodTotal = foodItems.reduce((s: number, f: any) => s + (f.price_vnd * f.quantity), 0);
+  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + (f.price_vnd * f.quantity), 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
@@ -102,6 +117,7 @@ const InvoicePage = () => {
   const pricePerNight = nights > 0 && roomQty > 0 ? Math.round(roomSubtotal / nights / roomQty) : 0;
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
+  const guestBreakdown = parseGuestBreakdown(booking.guest_notes);
   const roomDetails = Array.isArray(booking.room_details) && booking.room_details.length > 0
     ? booking.room_details
     : [{ room_id: booking.room_id, room_name: booking.rooms?.name_vi || booking.room_id, quantity: roomQty }];
@@ -176,7 +192,10 @@ const InvoicePage = () => {
                 {booking.guest_email && <div className="flex justify-between"><span className="text-muted-foreground">Email:</span><span className="font-medium">{booking.guest_email}</span></div>}
                 <div className="flex justify-between"><span className="text-muted-foreground">Nhận phòng:</span><span className="font-medium">{format(new Date(booking.check_in), 'EEEE, dd/MM/yyyy', { locale: vi })}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Trả phòng:</span><span className="font-medium">{format(new Date(booking.check_out), 'EEEE, dd/MM/yyyy', { locale: vi })}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Số đêm / phòng / khách:</span><span className="font-medium">{nights} đêm · {roomQty} phòng · {booking.guests_count} khách</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Số đêm / phòng / khách:</span><span className="font-medium">{nights} đêm · {roomQty} phòng · {guestBreakdown.adults > 0 ? `${guestBreakdown.adults} người lớn` : `${booking.guests_count} khách`}</span></div>
+                {guestBreakdown.children > 0 && (
+                  <div className="flex justify-between gap-4"><span className="text-muted-foreground">Ghi chú trẻ em:</span><span className="font-medium text-right">{guestBreakdown.children} trẻ em đính kèm (không tính tiền)</span></div>
+                )}
               </div>
               {booking.company_name && (
                 <div className="mt-3 bg-secondary/50 rounded-lg p-3 space-y-1 text-xs">
@@ -311,11 +330,11 @@ const InvoicePage = () => {
               )}
 
               {/* Combo */}
-              {combos.length > 0 && (
+              {(combos.length > 0 || booking.combo_notes) && (
                 <div className="mt-4">
                   <p className="font-semibold text-sm mb-2">Suất ăn (Combo)</p>
                   <div className="space-y-3">
-                    {combos.map((c: any, idx: number) => {
+                    {combos.length > 0 ? combos.map((c: any, idx: number) => {
                       const parts = c.combo_name?.split(' – ') || [c.combo_name];
                       const packageName = c.combo_package_name || parts[0] || '';
                       const menuName = c.combo_menu_name || (parts.length > 1 ? parts.slice(1).join(' – ') : '');
@@ -342,11 +361,16 @@ const InvoicePage = () => {
                           )}
                         </div>
                       );
-                    })}
+                    }) : (
+                      <div className="bg-secondary/50 rounded-xl p-3 border border-border/50">
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">Chi tiết suất ăn đã chọn:</p>
+                        <div className="text-sm whitespace-pre-line leading-6">{booking.combo_notes}</div>
+                      </div>
+                    )}
                   </div>
                   {comboTotal > 0 && (
                     <div className="bg-secondary/70 rounded-lg p-3 mt-2 flex justify-between font-semibold text-sm">
-                      <span className="text-muted-foreground">Tổng combo ({combos.reduce((s: number, c: any) => s + c.quantity, 0)} suất):</span>
+                      <span className="text-muted-foreground">Tổng combo ({combos.length > 0 ? combos.reduce((s: number, c: any) => s + c.quantity, 0) : 'đã chọn'} suất):</span>
                       <span className="text-primary">{fmt(comboTotal)}</span>
                     </div>
                   )}
@@ -385,10 +409,10 @@ const InvoicePage = () => {
               )}
             </div>
 
-            {booking.guest_notes && (
+            {guestBreakdown.cleanedNotes && (
               <div>
                 <h3 className="font-display font-semibold text-base mb-2 border-b border-border pb-2">Ghi chú</h3>
-                <p className="text-muted-foreground bg-secondary rounded-lg p-3 text-sm">{booking.guest_notes}</p>
+                <p className="text-muted-foreground bg-secondary rounded-lg p-3 text-sm whitespace-pre-line">{guestBreakdown.cleanedNotes}</p>
               </div>
             )}
 

@@ -108,6 +108,21 @@ function getComboDishes(combo: any) {
   return getArray<any>(combo?.dishes);
 }
 
+function parseGuestBreakdown(notes?: string | null) {
+  const rawNotes = typeof notes === 'string' ? notes : '';
+  const match = rawNotes.match(/\[Khách:\s*(\d+)\s*người lớn(?:\s*·\s*(\d+)\s*trẻ em[^\]]*)?\]/i);
+
+  return {
+    adults: match ? parseInt(match[1] || '0', 10) : 0,
+    children: match ? parseInt(match[2] || '0', 10) : 0,
+    cleanedNotes: rawNotes
+      .replace(match?.[0] || '', '')
+      .replace(/^\s*---\s*$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
+  };
+}
+
 function buildBookingInvoiceHtml(data: EmailData): string {
   const { booking, roomName, invoiceNumber, combos, foodItems, isPaid } = data;
   const checkIn = formatDate(booking.check_in);
@@ -117,7 +132,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   );
   const roomQty = booking.room_quantity || 1;
   const comboTotal = booking.combo_total || combos.reduce((s: number, c: any) => s + c.price_vnd * c.quantity, 0);
-  const indFoodTotal = foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity, 0);
+  const indFoodTotal = booking.individual_food_total || foodItems.reduce((s: number, f: any) => s + f.price_vnd * f.quantity, 0);
   const extraSurcharge = booking.extra_person_surcharge || 0;
   const extraCount = booking.extra_person_count || 0;
   const originalPrice = booking.original_price_vnd || booking.total_price_vnd;
@@ -126,6 +141,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   const depositAmount = booking.deposit_amount || Math.round(booking.total_price_vnd * 0.5);
   const remainingAmount = booking.remaining_amount || (booking.total_price_vnd - depositAmount);
   const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(booking.booking_code)}`;
+  const guestBreakdown = parseGuestBreakdown(booking.guest_notes);
 
   const promotionDiscount = booking.promotion_discount_amount || 0;
   const memberDiscount = booking.member_discount_amount || 0;
@@ -163,7 +179,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
 
   // === BUILD COMBO SECTION ===
   let comboHtml = '';
-  if (combos.length > 0) {
+  if (combos.length > 0 || booking.combo_notes) {
     let comboRows = '';
     combos.forEach((c, idx) => {
       const parts = c.combo_name?.split(' – ') || [c.combo_name];
@@ -208,6 +224,14 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       </div>`;
     }
 
+    if (combos.length === 0 && booking.combo_notes) {
+      comboRows = `
+      <div style="background:#f8f6f0;border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid #f0ebe0;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#666;">Chi tiết suất ăn đã chọn:</p>
+        <div style="font-size:13px;color:#333;line-height:1.7;white-space:pre-line;">${booking.combo_notes}</div>
+      </div>`;
+    }
+
     comboHtml = `
     <h3 style="font-size:15px;font-weight:600;border-bottom:2px solid rgba(139,105,20,0.3);padding-bottom:8px;margin:20px 0 12px;">🍽️ a. Suất ăn (Combo)</h3>
     ${comboRows}
@@ -215,7 +239,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     ${comboNotesHtml}
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;">
       <table style="width:100%;font-size:13px;"><tr>
-        <td style="font-weight:600;color:#888;">Tổng suất ăn (${totalServings} suất):</td>
+        <td style="font-weight:600;color:#888;">Tổng suất ăn (${totalServings > 0 ? `${totalServings}` : 'đã chọn'} suất):</td>
         <td style="text-align:right;font-weight:700;color:#8B6914;">${fmt(comboTotal)}</td>
       </tr></table>
     </div>`;
@@ -355,7 +379,8 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       ${booking.guest_email ? `<tr><td style="color:#888;">Email:</td><td style="font-weight:500;text-align:right;">${booking.guest_email}</td></tr>` : ""}
       <tr><td style="color:#888;">Nhận phòng:</td><td style="font-weight:500;text-align:right;">${checkIn}</td></tr>
       <tr><td style="color:#888;">Trả phòng:</td><td style="font-weight:500;text-align:right;">${checkOut}</td></tr>
-      <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${(() => { const m = (booking.guest_notes || '').match(/\[Khách: (\d+) người lớn(?: · (\d+) trẻ em)?\]/); if (m) { const a = m[1]; const c = m[2] || '0'; return `${a} người lớn${parseInt(c) > 0 ? ` · ${c} trẻ em` : ''}`; } return `${booking.guests_count} khách`; })()}</td></tr>
+      <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${guestBreakdown.adults > 0 ? `${guestBreakdown.adults} người lớn` : `${booking.guests_count} khách`}</td></tr>
+      ${guestBreakdown.children > 0 ? `<tr><td style="color:#888;">Ghi chú trẻ em:</td><td style="font-weight:500;text-align:right;">${guestBreakdown.children} trẻ em đính kèm (không tính tiền)</td></tr>` : ''}
     </table>
     ${booking.company_name ? `
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;">
@@ -426,10 +451,10 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     ${comboHtml}
     ${foodHtml}
 
-    ${booking.guest_notes ? `
+    ${guestBreakdown.cleanedNotes ? `
     <div style="margin-top:20px;">
       <h3 style="font-size:15px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:8px;margin:0 0 12px;">Ghi chú</h3>
-      <p style="font-size:13px;color:#666;background:#f8f6f0;border-radius:8px;padding:10px 12px;">${booking.guest_notes}</p>
+      <p style="font-size:13px;color:#666;background:#f8f6f0;border-radius:8px;padding:10px 12px;white-space:pre-line;">${guestBreakdown.cleanedNotes}</p>
     </div>` : ''}
 
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;">
