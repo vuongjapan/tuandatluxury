@@ -45,7 +45,6 @@ const ROOM_GUEST_LIMITS: Record<string, number> = {
   deluxe: 4,
   family: 4,
 };
-const EXTRA_PERSON_SURCHARGE_PERCENT = 0.3;
 
 interface RoomCartItem {
   roomId: string;
@@ -68,6 +67,10 @@ const Booking = () => {
   const { settings } = useSiteSettings();
   const { getMatchingRange } = useMandatoryComboDates();
   const webDiscountPercent = parseInt(settings.web_discount_percent || '0', 10);
+  const extraPersonSurchargePercent = (() => {
+    const raw = parseFloat(settings.extra_person_surcharge_percent || '15');
+    return isNaN(raw) ? 0.15 : Math.max(0, raw) / 100;
+  })();
 
   const preselectedRoom = searchParams.get('room') || '';
   const preCheckin = searchParams.get('checkin');
@@ -209,8 +212,8 @@ const Booking = () => {
 
   const extraPersonSurcharge = useMemo(() => {
     if (extraPersonCount <= 0 || roomTotal <= 0) return 0;
-    return Math.round(roomTotal * EXTRA_PERSON_SURCHARGE_PERCENT * extraPersonCount / totalRoomQuantity);
-  }, [extraPersonCount, roomTotal, totalRoomQuantity]);
+    return Math.round(roomTotal * extraPersonSurchargePercent * extraPersonCount / totalRoomQuantity);
+  }, [extraPersonCount, roomTotal, totalRoomQuantity, extraPersonSurchargePercent]);
 
   // === FLASH SALE ===
   const activeFlashSaleItem = useMemo(() => {
@@ -660,18 +663,15 @@ const Booking = () => {
                           </Select>
                         </div>
                       </div>
-                      <Button variant="gold" className="w-full gap-2" onClick={handleSearchRooms} disabled={!checkIn || !checkOut}>
-                        <Search className="h-4 w-4" /> {pick('Tìm phòng', 'Search Rooms')}
-                      </Button>
                     </div>
 
-                    {/* Extra person surcharge */}
-                    {extraPersonCount > 0 && (
+                    {/* Extra person surcharge — only show when surcharge > 0 (i.e. guests exceed standard capacity) */}
+                    {extraPersonCount > 0 && extraPersonSurcharge > 0 && (
                       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 flex items-start gap-2">
                         <UserPlus className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                         <div className="text-sm">
                           <p className="font-semibold text-amber-800 dark:text-amber-300">{pick(`Phụ thu thêm ${extraPersonCount} người`, `Surcharge for ${extraPersonCount} extra guests`)}</p>
-                          <p className="text-xs text-amber-700 dark:text-amber-400">30% = <strong>{formatPrice(extraPersonSurcharge)}</strong></p>
+                          <p className="text-xs text-amber-700 dark:text-amber-400">{Math.round(extraPersonSurchargePercent * 100)}% = <strong>{formatPrice(extraPersonSurcharge)}</strong></p>
                         </div>
                       </div>
                     )}
@@ -691,43 +691,34 @@ const Booking = () => {
                       </div>
                     )}
 
-                    {/* Room list - only after search */}
-                    {searchDone && (
-                      <div className="space-y-4">
-                        <h2 className="font-display text-xl font-semibold flex items-center gap-2">
-                          🏨 {pick('Chọn phòng', 'Select Rooms')}
-                        </h2>
-                        <p className="text-xs text-muted-foreground">{pick('Chọn số lượng phòng mong muốn', 'Select the number of rooms you want')}</p>
+                    {/* Room list — always visible (auto-show, no need to click "Search") */}
+                    <div className="space-y-4">
+                      <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                        🏨 {pick('Chọn phòng', 'Select Rooms')}
+                      </h2>
+                      <p className="text-xs text-muted-foreground">{pick('Chọn số lượng phòng mong muốn', 'Select the number of rooms you want')}</p>
 
-                        {rooms.map(room => {
-                          const cartItem = roomCart.find(c => c.roomId === room.id);
-                          const qty = cartItem?.quantity || 0;
-                          return (
-                            <div key={room.id}>
-                              <BookingRoomCard
-                                room={room}
-                                quantity={qty}
-                                onQuantityChange={(newQty) => updateRoomQuantity(room.id, newQty)}
-                                nightlyPrice={formatPrice(room.priceVND)}
-                              />
-                            </div>
-                          );
-                        })}
-
-                        {!hasRooms && (
-                          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-300 text-center">
-                            ⚠️ {pick('Vui lòng chọn ít nhất 1 phòng để tiếp tục', 'Please select at least 1 room')}
+                      {rooms.map(room => {
+                        const cartItem = roomCart.find(c => c.roomId === room.id);
+                        const qty = cartItem?.quantity || 0;
+                        return (
+                          <div key={room.id}>
+                            <BookingRoomCard
+                              room={room}
+                              quantity={qty}
+                              onQuantityChange={(newQty) => updateRoomQuantity(room.id, newQty)}
+                              nightlyPrice={formatPrice(room.priceVND)}
+                            />
                           </div>
-                        )}
-                      </div>
-                    )}
+                        );
+                      })}
 
-                    {!searchDone && (
-                      <div className="bg-secondary/50 rounded-xl p-8 text-center">
-                        <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground">{pick('Chọn ngày và nhấn "Tìm phòng" để xem phòng trống', 'Select dates and click "Search Rooms" to see availability')}</p>
-                      </div>
-                    )}
+                      {!hasRooms && (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-300 text-center">
+                          ⚠️ {pick('Vui lòng chọn ít nhất 1 phòng để tiếp tục', 'Please select at least 1 room')}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Group/Corporate promo form */}
                     {isGroupPromo && (
@@ -919,14 +910,6 @@ const Booking = () => {
                         <div className="md:col-span-2">
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Địa chỉ', 'Address')}</label>
                           <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={pick('Địa chỉ (không bắt buộc)', 'Address (optional)')} />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Ngày sinh', 'Date of birth')} <span className="text-muted-foreground/60 normal-case">({pick('không bắt buộc', 'optional')})</span></label>
-                          <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('CCCD / Hộ chiếu', 'ID / Passport')} <span className="text-muted-foreground/60 normal-case">({pick('không bắt buộc', 'optional')})</span></label>
-                          <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder={pick('Số căn cước hoặc hộ chiếu', 'ID or passport number')} />
                         </div>
                       </div>
                       <div>
