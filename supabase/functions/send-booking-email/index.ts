@@ -847,6 +847,7 @@ serve(async (req) => {
       to: ADMIN_EMAIL,
       subject: `🔔 Đơn đặt phòng mới từ website [${booking.booking_code}] - ${booking.guest_name}`,
       html: adminHtml,
+      attachments,
     });
 
     return new Response(JSON.stringify({ success: true }), {
