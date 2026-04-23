@@ -788,12 +788,14 @@ serve(async (req) => {
         foodItems: food_items || [],
         isPaid: true,
       });
+      const attachments = await fetchBookingPdfs(booking.id, booking.booking_code, true);
       if (booking.guest_email) {
         await transporter.sendMail({
           from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
           to: booking.guest_email,
-          subject: `✅ Hóa đơn ${booking.booking_code} - Đã cọc 50%`,
+          subject: `[${HOTEL_NAME}] ✅ Xác nhận thanh toán thành công – ${booking.booking_code}`,
           html: emailHtml,
+          attachments,
         });
       }
       await transporter.sendMail({
@@ -801,6 +803,7 @@ serve(async (req) => {
         to: ADMIN_EMAIL,
         subject: `✅ Đã nhận cọc [${booking.booking_code}] - ${booking.guest_name}`,
         html: emailHtml,
+        attachments,
       });
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
@@ -818,13 +821,15 @@ serve(async (req) => {
       foodItems: food_items || [],
       isPaid: false,
     });
+    const attachments = await fetchBookingPdfs(booking.id, booking.booking_code, false);
 
     if (booking.guest_email) {
       await transporter.sendMail({
         from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
         to: booking.guest_email,
-        subject: `Hóa đơn ${booking.booking_code} - Chưa thanh toán`,
+        subject: `[${HOTEL_NAME}] Xác nhận đặt phòng ${booking.booking_code} – Chờ thanh toán cọc`,
         html: emailHtml,
+        attachments,
       });
     }
 
