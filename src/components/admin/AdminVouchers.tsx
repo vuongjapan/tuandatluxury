@@ -20,22 +20,31 @@ interface VoucherCode {
   usage_limit: number;
   used_count: number;
   status: string;
+  applies_to?: string;
   created_at: string;
 }
 
 const SITE_URL = window.location.origin;
+
+const SCOPE_LABELS: Record<string, string> = {
+  all: '🏨🍽️ Phòng + Ăn (Tổng đơn)',
+  room: '🏨 Chỉ tiền phòng',
+  food: '🍽️ Chỉ ăn / dịch vụ',
+};
 
 const AdminVouchers = () => {
   const { toast } = useToast();
   const [vouchers, setVouchers] = useState<VoucherCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterScope, setFilterScope] = useState<string>('all');
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [batchCount, setBatchCount] = useState(10);
   const [batchType, setBatchType] = useState('percent');
   const [batchValue, setBatchValue] = useState(10);
   const [batchCampaign, setBatchCampaign] = useState('');
   const [batchEndDate, setBatchEndDate] = useState('');
+  const [batchScope, setBatchScope] = useState<'all' | 'room' | 'food'>('all');
   const [creating, setCreating] = useState(false);
   const [qrDialog, setQrDialog] = useState<{ open: boolean; code: string; dataUrl: string }>({ open: false, code: '', dataUrl: '' });
 
@@ -76,13 +85,14 @@ const AdminVouchers = () => {
         code, discount_type: batchType, discount_value: batchValue,
         campaign_name: batchCampaign, end_date: new Date(batchEndDate).toISOString(),
         usage_limit: 1, used_count: 0, status: 'active',
+        applies_to: batchScope,
       });
     }
     const { error } = await supabase.from('voucher_codes').insert(codes as any);
     if (error) {
       toast({ title: 'Lỗi tạo mã', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: `Đã tạo ${batchCount} mã thành công ✓` });
+      toast({ title: `Đã tạo ${batchCount} mã (${SCOPE_LABELS[batchScope]}) ✓` });
       setShowBatchForm(false);
       fetchVouchers();
     }
@@ -164,7 +174,11 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
     toast({ title: 'Đã mở trang in PDF với QR Code ✓' });
   };
 
-  const filteredVouchers = filterStatus === 'all' ? vouchers : vouchers.filter(v => v.status === filterStatus);
+  const filteredVouchers = vouchers.filter(v => {
+    if (filterStatus !== 'all' && v.status !== filterStatus) return false;
+    if (filterScope !== 'all' && (v.applies_to || 'all') !== filterScope) return false;
+    return true;
+  });
 
   const getStatusBadge = (v: VoucherCode) => {
     if (v.used_count >= v.usage_limit) return <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Đã dùng</span>;
@@ -220,6 +234,20 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
               <label className="text-sm font-medium mb-1 block">Hạn sử dụng</label>
               <Input type="date" value={batchEndDate} onChange={e => setBatchEndDate(e.target.value)} />
             </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="text-sm font-medium mb-1 block">Phạm vi áp dụng</label>
+              <Select value={batchScope} onValueChange={(v) => setBatchScope(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{SCOPE_LABELS.all}</SelectItem>
+                  <SelectItem value="room">{SCOPE_LABELS.room}</SelectItem>
+                  <SelectItem value="food">{SCOPE_LABELS.food}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Mã chỉ giảm trên phần được chọn. <strong>Tự động vô hiệu hoá sau 1 lần dùng.</strong>
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleBatchCreate} disabled={creating}>
@@ -230,7 +258,7 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
         </div>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Filter className="h-4 w-4 text-muted-foreground" />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
@@ -238,6 +266,14 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
             <SelectItem value="all">Tất cả ({vouchers.length})</SelectItem>
             <SelectItem value="active">Active ({vouchers.filter(v => v.status === 'active').length})</SelectItem>
             <SelectItem value="used">Đã dùng ({vouchers.filter(v => v.used_count >= v.usage_limit).length})</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterScope} onValueChange={setFilterScope}>
+          <SelectTrigger className="w-56"><SelectValue placeholder="Phạm vi" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Mọi phạm vi</SelectItem>
+            <SelectItem value="room">{SCOPE_LABELS.room}</SelectItem>
+            <SelectItem value="food">{SCOPE_LABELS.food}</SelectItem>
           </SelectContent>
         </Select>
         <span className="text-sm text-muted-foreground">{filteredVouchers.length} mã</span>
@@ -250,6 +286,7 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
               <tr className="border-b border-border bg-secondary/50">
                 <th className="text-left p-3 font-semibold">Mã</th>
                 <th className="text-left p-3 font-semibold">Chiến dịch</th>
+                <th className="text-left p-3 font-semibold">Phạm vi</th>
                 <th className="text-left p-3 font-semibold">Giá trị</th>
                 <th className="text-left p-3 font-semibold">Hạn</th>
                 <th className="text-left p-3 font-semibold">Trạng thái</th>
@@ -258,15 +295,18 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Đang tải...</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Đang tải...</td></tr>
               ) : filteredVouchers.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Chưa có mã voucher nào</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Chưa có mã voucher nào</td></tr>
               ) : filteredVouchers.map(v => (
                 <tr key={v.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
                   <td className="p-3">
                     <code className="bg-primary/10 text-primary px-2 py-1 rounded font-bold text-xs tracking-wider">{v.code}</code>
                   </td>
                   <td className="p-3 text-muted-foreground">{v.campaign_name || '—'}</td>
+                  <td className="p-3 text-xs">
+                    <span className="px-2 py-0.5 rounded-full bg-secondary text-foreground">{SCOPE_LABELS[v.applies_to || 'all']}</span>
+                  </td>
                   <td className="p-3 font-semibold text-destructive">
                     {v.discount_type === 'percent' ? `${v.discount_value}%` : formatPriceFull(v.discount_value)}
                   </td>
