@@ -636,6 +636,34 @@ serve(async (req) => {
       auth: { user: SMTP_EMAIL, pass: smtpPassword },
     });
 
+    // Helper: fetch the 2 booking PDFs from generate-booking-pdf function
+    async function fetchBookingPdfs(bookingId: string, bookingCode: string, isPaid: boolean) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+        const res = await fetch(`${supabaseUrl}/functions/v1/generate-booking-pdf`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify({ booking_id: bookingId, booking_code: bookingCode, is_paid: isPaid }),
+        });
+        if (!res.ok) {
+          console.error("PDF gen failed:", await res.text());
+          return [];
+        }
+        const json = await res.json();
+        return [
+          { filename: json.pdf1_name, content: json.pdf1_base64, encoding: "base64", contentType: "application/pdf" },
+          { filename: json.pdf2_name, content: json.pdf2_base64, encoding: "base64", contentType: "application/pdf" },
+        ];
+      } catch (e) {
+        console.error("PDF attach error (non-blocking):", e);
+        return [];
+      }
+    }
+
     // Handle food order emails
     if (body.type === 'food_order') {
       const order = body.food_order;
