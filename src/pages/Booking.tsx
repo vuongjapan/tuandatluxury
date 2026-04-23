@@ -107,9 +107,6 @@ const Booking = () => {
   const [specialRequests, setSpecialRequests] = useState('');
   const [country, setCountry] = useState('');
   const [address, setAddress] = useState('');
-  const [dob, setDob] = useState('');
-  const [idNumber, setIdNumber] = useState('');
-  const [searchDone, setSearchDone] = useState(!!preselectedRoom);
   
 
   useEffect(() => {
@@ -517,14 +514,6 @@ const Booking = () => {
   };
   const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
 
-  const handleSearchRooms = () => {
-    if (!checkIn || !checkOut) {
-      toast({ title: pick('Vui lòng chọn ngày nhận và trả phòng', 'Please select dates'), variant: 'destructive' });
-      return;
-    }
-    setSearchDone(true);
-  };
-
   if (!rooms.length) return null;
 
   const maxGuestsTotal = standardCapacity + 6;
@@ -618,7 +607,7 @@ const Booking = () => {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={checkIn} onSelect={(d) => { setCheckIn(d); setSearchDone(false); }} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
+                              <Calendar mode="single" selected={checkIn} onSelect={(d) => setCheckIn(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -632,7 +621,7 @@ const Booking = () => {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={checkOut} onSelect={(d) => { setCheckOut(d); setSearchDone(false); }} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < (checkIn || new Date())} />
+                              <Calendar mode="single" selected={checkOut} onSelect={(d) => setCheckOut(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < (checkIn || new Date())} />
                             </PopoverContent>
                           </Popover>
                         </div>
