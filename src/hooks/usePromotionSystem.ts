@@ -216,6 +216,12 @@ export const validateDiscountCode = async (
   if (now > new Date(v.end_date)) return { valid: false, message: 'Mã đã hết hạn' };
   if (v.used_count >= v.usage_limit) return { valid: false, message: 'Mã đã được sử dụng' };
 
+  // Voucher scope: 'all' | 'room' | 'food'
+  const scope = (v.applies_to || 'all') as string;
+  if (scope !== 'all' && scope !== orderType) {
+    return { valid: false, message: scope === 'room' ? 'Mã chỉ áp dụng cho tiền phòng' : 'Mã chỉ áp dụng cho đồ ăn / dịch vụ' };
+  }
+
   // Map voucher_codes → DiscountCode shape so DiscountCodeInput can render & Booking flow can apply
   const mapped: DiscountCode = {
     id: v.id,
@@ -225,7 +231,7 @@ export const validateDiscountCode = async (
     discount_type: v.discount_type,
     discount_value: Number(v.discount_value),
     min_order_amount: 0,
-    applies_to: 'all',
+    applies_to: scope,
     max_uses: v.usage_limit,
     used_count: v.used_count,
     max_uses_per_user: 1,

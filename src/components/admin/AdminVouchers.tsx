@@ -286,6 +286,7 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
               <tr className="border-b border-border bg-secondary/50">
                 <th className="text-left p-3 font-semibold">Mã</th>
                 <th className="text-left p-3 font-semibold">Chiến dịch</th>
+                <th className="text-left p-3 font-semibold">Phạm vi</th>
                 <th className="text-left p-3 font-semibold">Giá trị</th>
                 <th className="text-left p-3 font-semibold">Hạn</th>
                 <th className="text-left p-3 font-semibold">Trạng thái</th>
@@ -294,15 +295,18 @@ ${Array.from({ length: Math.ceil(vouchersWithQR.length / 10) }, (_, pageIdx) => 
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Đang tải...</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Đang tải...</td></tr>
               ) : filteredVouchers.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Chưa có mã voucher nào</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Chưa có mã voucher nào</td></tr>
               ) : filteredVouchers.map(v => (
                 <tr key={v.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
                   <td className="p-3">
                     <code className="bg-primary/10 text-primary px-2 py-1 rounded font-bold text-xs tracking-wider">{v.code}</code>
                   </td>
                   <td className="p-3 text-muted-foreground">{v.campaign_name || '—'}</td>
+                  <td className="p-3 text-xs">
+                    <span className="px-2 py-0.5 rounded-full bg-secondary text-foreground">{SCOPE_LABELS[v.applies_to || 'all']}</span>
+                  </td>
                   <td className="p-3 font-semibold text-destructive">
                     {v.discount_type === 'percent' ? `${v.discount_value}%` : formatPriceFull(v.discount_value)}
                   </td>
