@@ -4,19 +4,37 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Award, Building2 } from 'lucide-react';
+import { Save, Award, Building2, UserPlus } from 'lucide-react';
 import { useDiscountConfig, updateDiscountConfig } from '@/hooks/useDiscountConfig';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useQueryClient } from '@tanstack/react-query';
 
 const AdminDiscountConfig = () => {
   const { toast } = useToast();
   const qc = useQueryClient();
   const { config, loading } = useDiscountConfig();
+  const { settings, updateSetting } = useSiteSettings();
 
   const [form, setForm] = useState(config);
   const [saving, setSaving] = useState(false);
+  const [extraPct, setExtraPct] = useState<string>('15');
+  const [savingExtra, setSavingExtra] = useState(false);
 
   useEffect(() => { if (!loading) setForm(config); }, [loading, config]);
+  useEffect(() => { setExtraPct(settings.extra_person_surcharge_percent || '15'); }, [settings.extra_person_surcharge_percent]);
+
+  const saveExtraPct = async () => {
+    const n = parseFloat(extraPct);
+    if (isNaN(n) || n < 0 || n > 100) {
+      toast({ title: 'Giá trị không hợp lệ (0–100)', variant: 'destructive' });
+      return;
+    }
+    setSavingExtra(true);
+    const err = await updateSetting('extra_person_surcharge_percent', String(n));
+    setSavingExtra(false);
+    if (err) toast({ title: 'Lỗi lưu', variant: 'destructive' });
+    else toast({ title: `Đã lưu phụ thu ${n}% ✓` });
+  };
 
   const set = (k: keyof typeof form, v: any) => setForm(prev => ({ ...prev, [k]: v }));
   const setNum = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -143,6 +161,26 @@ const AdminDiscountConfig = () => {
           <p className="text-xs text-muted-foreground mt-1">
             VD: 300.000đ → Đoàn 4 người cần đặt ≥ 1.200.000đ món riêng để bỏ qua Suất ăn / Combo.
           </p>
+        </div>
+      </div>
+
+      {/* Extra-person surcharge */}
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h3 className="font-semibold flex items-center gap-2">
+          <UserPlus className="h-4 w-4 text-primary" /> Phụ thu vượt định mức khách / phòng
+        </h3>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Khi số khách vượt định mức (Standard 2, Deluxe 4, Family 4), mỗi khách thêm bị phụ thu theo % tiền phòng. Banner phụ thu chỉ hiện khi vượt định mức.
+        </p>
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1">
+            <Label>Phụ thu mỗi khách thêm (%)</Label>
+            <Input type="number" min={0} max={100} step={1} value={extraPct} onChange={(e) => setExtraPct(e.target.value)} />
+            <p className="text-xs text-muted-foreground mt-1">Mặc định 15%. Hiện tại: <strong>{extraPct}%</strong></p>
+          </div>
+          <Button variant="gold" onClick={saveExtraPct} disabled={savingExtra} className="gap-2">
+            <Save className="h-4 w-4" /> {savingExtra ? 'Đang lưu...' : 'Lưu phụ thu'}
+          </Button>
         </div>
       </div>
 
