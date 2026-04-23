@@ -20,22 +20,31 @@ interface VoucherCode {
   usage_limit: number;
   used_count: number;
   status: string;
+  applies_to?: string;
   created_at: string;
 }
 
 const SITE_URL = window.location.origin;
+
+const SCOPE_LABELS: Record<string, string> = {
+  all: '🏨🍽️ Phòng + Ăn (Tổng đơn)',
+  room: '🏨 Chỉ tiền phòng',
+  food: '🍽️ Chỉ ăn / dịch vụ',
+};
 
 const AdminVouchers = () => {
   const { toast } = useToast();
   const [vouchers, setVouchers] = useState<VoucherCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterScope, setFilterScope] = useState<string>('all');
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [batchCount, setBatchCount] = useState(10);
   const [batchType, setBatchType] = useState('percent');
   const [batchValue, setBatchValue] = useState(10);
   const [batchCampaign, setBatchCampaign] = useState('');
   const [batchEndDate, setBatchEndDate] = useState('');
+  const [batchScope, setBatchScope] = useState<'all' | 'room' | 'food'>('all');
   const [creating, setCreating] = useState(false);
   const [qrDialog, setQrDialog] = useState<{ open: boolean; code: string; dataUrl: string }>({ open: false, code: '', dataUrl: '' });
 
@@ -76,13 +85,14 @@ const AdminVouchers = () => {
         code, discount_type: batchType, discount_value: batchValue,
         campaign_name: batchCampaign, end_date: new Date(batchEndDate).toISOString(),
         usage_limit: 1, used_count: 0, status: 'active',
+        applies_to: batchScope,
       });
     }
     const { error } = await supabase.from('voucher_codes').insert(codes as any);
     if (error) {
       toast({ title: 'Lỗi tạo mã', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: `Đã tạo ${batchCount} mã thành công ✓` });
+      toast({ title: `Đã tạo ${batchCount} mã (${SCOPE_LABELS[batchScope]}) ✓` });
       setShowBatchForm(false);
       fetchVouchers();
     }
