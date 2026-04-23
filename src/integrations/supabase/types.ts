@@ -3041,6 +3041,7 @@ export type Database = {
       }
       voucher_codes: {
         Row: {
+          applies_to: string
           campaign_name: string
           code: string
           created_at: string
@@ -3055,6 +3056,7 @@ export type Database = {
           used_count: number
         }
         Insert: {
+          applies_to?: string
           campaign_name?: string
           code: string
           created_at?: string
@@ -3069,6 +3071,7 @@ export type Database = {
           used_count?: number
         }
         Update: {
+          applies_to?: string
           campaign_name?: string
           code?: string
           created_at?: string
