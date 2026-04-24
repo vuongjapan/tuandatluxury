@@ -211,7 +211,7 @@ const InvoicePage = () => {
                 <div className="flex justify-between"><span className="text-muted-foreground">Trả phòng:</span><span className="font-medium">{format(new Date(booking.check_out), 'EEEE, dd/MM/yyyy', { locale: vi })}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Số đêm / phòng / khách:</span><span className="font-medium">{nights} đêm · {roomQty} phòng · {guestBreakdown.adults > 0 ? `${guestBreakdown.adults} người lớn` : `${booking.guests_count} khách`}</span></div>
                 {guestBreakdown.children > 0 && (
-                  <div className="flex justify-between gap-4"><span className="text-muted-foreground">Ghi chú trẻ em:</span><span className="font-medium text-right">{guestBreakdown.children} trẻ em đính kèm (không tính tiền)</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-muted-foreground">Trẻ em:</span><span className="font-medium text-right">{guestBreakdown.children} bé (không tính tiền)</span></div>
                 )}
               </div>
               {booking.company_name && (

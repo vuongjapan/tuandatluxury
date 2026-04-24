@@ -428,7 +428,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
       <tr><td style="color:#888;">Nhận phòng:</td><td style="font-weight:500;text-align:right;">${checkIn}</td></tr>
       <tr><td style="color:#888;">Trả phòng:</td><td style="font-weight:500;text-align:right;">${checkOut}</td></tr>
       <tr><td style="color:#888;">Số đêm / phòng / khách:</td><td style="font-weight:500;text-align:right;">${nights} đêm · ${roomQty} phòng · ${guestBreakdown.adults > 0 ? `${guestBreakdown.adults} người lớn` : `${booking.guests_count} khách`}</td></tr>
-      ${guestBreakdown.children > 0 ? `<tr><td style="color:#888;">Ghi chú trẻ em:</td><td style="font-weight:500;text-align:right;">${guestBreakdown.children} trẻ em đính kèm (không tính tiền)</td></tr>` : ''}
+      ${guestBreakdown.children > 0 ? `<tr><td style="color:#888;">Trẻ em:</td><td style="font-weight:500;text-align:right;">${guestBreakdown.children} bé (không tính tiền)</td></tr>` : ''}
     </table>
     ${booking.company_name ? `
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;">

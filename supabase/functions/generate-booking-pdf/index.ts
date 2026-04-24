@@ -195,27 +195,43 @@ function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number],
 
 function drawMapSection(ctx: DrawCtx): DrawCtx {
   ctx = drawSectionTitle(ctx, "📍 Vị trí khách sạn");
-  ctx = ensureSpace(ctx, 70);
-  ctx = drawBox(ctx, 66, [0.96, 0.91, 0.78], [0.78, 0.63, 0.25]);
-  drawText(ctx, HOTEL_NAME_VI, { size: 11, bold: true, color: [0.48, 0.37, 0.16] });
-  ctx.y -= 14;
-  drawText(ctx, HOTEL_ADDRESS, { size: 9, color: [0.4, 0.4, 0.4] });
-  ctx.y -= 16;
+  ctx = ensureSpace(ctx, 90);
+
+  // Box height 84 — draw box first as background
+  const boxTop = ctx.y;
+  ctx.page.drawRectangle({
+    x: ctx.margin - 4,
+    y: boxTop - 84 + 12,
+    width: ctx.width - 2 * ctx.margin + 8,
+    height: 84,
+    color: rgb(0.96, 0.91, 0.78),
+    borderColor: rgb(0.78, 0.63, 0.25),
+    borderWidth: 1,
+  });
+
+  // Hotel name
+  ctx.page.drawText(HOTEL_NAME_VI, {
+    x: ctx.margin, y: boxTop, size: 11, font: ctx.fontBold, color: rgb(0.48, 0.37, 0.16),
+  });
+  // Address
+  ctx.page.drawText(HOTEL_ADDRESS, {
+    x: ctx.margin, y: boxTop - 16, size: 9, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
+  });
 
   // Blue button "Mở Google Maps"
   const btnX = ctx.margin;
-  const btnY = ctx.y - 4;
+  const btnY = boxTop - 50;
   const btnW = 160;
-  const btnH = 22;
+  const btnH = 24;
   ctx.page.drawRectangle({
     x: btnX, y: btnY, width: btnW, height: btnH,
     color: rgb(0.08, 0.4, 0.75),
   });
-  const btnText = "🗺  Mở Google Maps";
+  const btnText = "Mở Google Maps";
   const tw = ctx.fontBold.widthOfTextAtSize(btnText, 10);
   ctx.page.drawText(btnText, {
     x: btnX + (btnW - tw) / 2,
-    y: btnY + 7,
+    y: btnY + 8,
     size: 10, font: ctx.fontBold, color: rgb(1, 1, 1),
   });
   // Real clickable link annotation
@@ -223,11 +239,18 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
 
   // Hint text next to the button
   ctx.page.drawText("Nhấn vào nút để mở bản đồ", {
-    x: btnX + btnW + 10, y: btnY + 7, size: 8.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
+    x: btnX + btnW + 12, y: btnY + 8, size: 8.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
   });
 
-  ctx.y -= 30;
+  ctx.y = boxTop - 90;
   return ctx;
+}
+
+// Parse children count from guest_notes (e.g. "· 2 trẻ em đính kèm" or "2 trẻ em")
+function parseChildren(notes?: string | null): number {
+  if (!notes) return 0;
+  const m = String(notes).match(/(\d+)\s*tr[ẻe]\s*em/i);
+  return m ? parseInt(m[1], 10) : 0;
 }
 
 // =========================================
@@ -274,6 +297,8 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
   ctx.y -= 22;
 
   // Guest info
+  const childrenCount = parseChildren(booking.guest_notes);
+  const adultsCount = Math.max((booking.guests_count || 1) - childrenCount, 0);
   ctx = drawSectionTitle(ctx, "👤 Thông tin khách hàng");
   ctx = drawRow(ctx, "Họ tên:", booking.guest_name || "", { bold: true });
   ctx = drawRow(ctx, "Số điện thoại:", booking.guest_phone || "");
@@ -285,26 +310,65 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
   );
   ctx = drawRow(ctx, "Số đêm:", `${nights} đêm`);
   ctx = drawRow(ctx, "Số phòng:", `${booking.room_quantity || 1} phòng`);
-  ctx = drawRow(ctx, "Số khách:", `${booking.guests_count || 1} người`);
+  ctx = drawRow(ctx, "Người lớn:", `${adultsCount} người`);
+  if (childrenCount > 0) {
+    ctx = drawRow(ctx, "Trẻ em:", `${childrenCount} bé`);
+  }
 
-  // Totals
-  ctx = drawSectionTitle(ctx, "💰 Tổng hóa đơn");
-  const original = booking.original_price_vnd || booking.total_price_vnd;
+  // Calculate sub-totals from booking + items
+  let roomsSubtotal = booking.room_subtotal || 0;
+  if (!roomsSubtotal && Array.isArray(booking.room_breakdown)) {
+    roomsSubtotal = booking.room_breakdown.reduce((s: number, r: any) => s + (r.subtotal || 0), 0);
+  }
+  let combosSubtotal = 0;
+  for (const c of (combos || [])) {
+    const m = Number(c.meal_multiplier) || 1;
+    combosSubtotal += (c.price_vnd || 0) * (c.quantity || 0) * m;
+  }
+  let foodSubtotal = 0;
+  for (const f of (foodItems || [])) {
+    const m = Number(f.meal_multiplier) || 1;
+    foodSubtotal += (f.price_vnd || 0) * (f.quantity || 0) * m;
+  }
+  const mealsSubtotal = combosSubtotal + foodSubtotal;
+  const extraSurcharge = booking.extra_person_surcharge || 0;
+
+  // Totals — well structured
+  ctx = drawSectionTitle(ctx, "💰 Tổng hợp hóa đơn");
+  ctx = drawRow(ctx, "Tổng tiền phòng:", fmt(roomsSubtotal));
+  if (extraSurcharge > 0) {
+    ctx = drawRow(ctx, `Phụ thu ${booking.extra_person_count || 0} người:`, `+${fmt(extraSurcharge)}`, {
+      valueColor: [0.85, 0.45, 0.05],
+    });
+  }
+  if (mealsSubtotal > 0) {
+    ctx = drawRow(ctx, "Tổng tiền ăn:", fmt(mealsSubtotal));
+  }
   const totalDiscount =
     (booking.member_discount_amount || 0) +
     (booking.promotion_discount_amount || 0) +
     (booking.discount_code_amount || 0);
-  if (original > booking.total_price_vnd) {
-    ctx = drawRow(ctx, "Tổng gốc:", fmt(original));
-  }
   if (totalDiscount > 0) {
-    ctx = drawRow(ctx, "Tổng tiết kiệm:", `-${fmt(totalDiscount)}`, { valueColor: [0.06, 0.6, 0.4] });
+    ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { valueColor: [0.06, 0.6, 0.4] });
+    if (booking.discount_code) {
+      ctx = drawRow(ctx, "  • Mã giảm giá:", `${booking.discount_code} (-${fmt(booking.discount_code_amount || 0)})`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
+    if ((booking.promotion_discount_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • ${booking.promotion_name || 'Khuyến mãi'}:`, `-${fmt(booking.promotion_discount_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
+    if ((booking.member_discount_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • Ưu đãi thành viên (${booking.member_discount_percent || 0}%):`, `-${fmt(booking.member_discount_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
   }
-  if (booking.discount_code) {
-    ctx = drawRow(ctx, "Mã giảm giá:", booking.discount_code);
-  }
+  ctx = drawHr(ctx);
   ctx = drawRow(ctx, "TỔNG THANH TOÁN:", fmt(booking.total_price_vnd), {
-    bold: true, valueColor: [0.55, 0.41, 0.08], size: 12,
+    bold: true, valueColor: [0.55, 0.41, 0.08], size: 13,
   });
 
   // Payment
@@ -319,42 +383,65 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     bold: true, valueColor: [0.85, 0.45, 0.05],
   });
 
-  // Payment details
+  // Payment details — bank info on LEFT, QR on RIGHT, no overlap
   if (!isPaid) {
     ctx = drawSectionTitle(ctx, "🏦 Hướng dẫn chuyển khoản đặt cọc");
-    ctx = ensureSpace(ctx, 220);
-    ctx = drawBox(ctx, 210, [1, 0.96, 0.84], [0.85, 0.45, 0.05]);
-    ctx = drawRow(ctx, "Ngân hàng:", VA_BANK, { bold: true });
-    ctx = drawRow(ctx, "Số tài khoản:", VA_ACCOUNT, { bold: true });
-    ctx = drawRow(ctx, "Chủ tài khoản:", VA_HOLDER, { bold: true });
-    ctx = drawRow(ctx, "Nội dung CK:", booking.booking_code, {
-      bold: true, valueColor: [0.85, 0.45, 0.05], size: 11,
+    ctx = ensureSpace(ctx, 160);
+
+    const boxTop = ctx.y;
+    const boxH = 150;
+    // Background box
+    ctx.page.drawRectangle({
+      x: ctx.margin - 4,
+      y: boxTop - boxH + 12,
+      width: ctx.width - 2 * ctx.margin + 8,
+      height: boxH,
+      color: rgb(1, 0.96, 0.84),
+      borderColor: rgb(0.85, 0.45, 0.05),
+      borderWidth: 1,
     });
-    ctx = drawRow(ctx, "Số tiền cần chuyển:", fmt(deposit), {
-      bold: true, valueColor: [0.86, 0.15, 0.15], size: 13,
-    });
-    // QR
+
+    // QR on the right
+    const qrSize = 120;
+    const qrX = ctx.width - ctx.margin - qrSize - 4;
+    const qrY = boxTop - boxH + 18;
     try {
       const qrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${deposit}&des=${encodeURIComponent(booking.booking_code)}`;
       const qrRes = await fetch(qrUrl);
       if (qrRes.ok) {
         const qrBytes = new Uint8Array(await qrRes.arrayBuffer());
         const qrImage = await pdf.embedPng(qrBytes).catch(async () => await pdf.embedJpg(qrBytes));
-        const qrSize = 110;
-        page.drawImage(qrImage, {
-          x: ctx.width - ctx.margin - qrSize - 4,
-          y: ctx.y - 6,
-          width: qrSize, height: qrSize,
-        });
+        page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
       }
     } catch (e) {
       console.error("QR fetch failed:", e);
     }
-    ctx.y -= 24;
+
+    // Bank info on the LEFT (limit width so it never reaches QR)
+    const labelX = ctx.margin;
+    const valueX = ctx.margin + 110;
+    let infoY = boxTop;
+    const drawInfo = (label: string, value: string, opts: { bold?: boolean; color?: [number, number, number]; size?: number } = {}) => {
+      const sz = opts.size ?? 10;
+      ctx.page.drawText(label, { x: labelX, y: infoY, size: sz, font, color: rgb(0.4, 0.4, 0.4) });
+      ctx.page.drawText(value, {
+        x: valueX, y: infoY, size: sz,
+        font: opts.bold ? fontBold : font,
+        color: opts.color ? rgb(...opts.color) : rgb(0.1, 0.1, 0.1),
+      });
+      infoY -= sz + 6;
+    };
+    drawInfo("Ngân hàng:", VA_BANK, { bold: true });
+    drawInfo("Số tài khoản:", VA_ACCOUNT, { bold: true });
+    drawInfo("Chủ tài khoản:", VA_HOLDER, { bold: true });
+    drawInfo("Nội dung CK:", booking.booking_code, { bold: true, color: [0.85, 0.45, 0.05], size: 11 });
+    drawInfo("Số tiền:", fmt(deposit), { bold: true, color: [0.86, 0.15, 0.15], size: 12 });
+
+    ctx.y = boxTop - boxH - 4;
     drawText(ctx, "⚠ Vui lòng chuyển ĐÚNG nội dung và số tiền để hệ thống tự xác nhận.", {
       size: 9, color: [0.7, 0.3, 0.05],
     });
-    ctx.y -= 14;
+    ctx.y -= 16;
   } else {
     ctx = drawSectionTitle(ctx, "✓ Xác nhận thanh toán");
     ctx = ensureSpace(ctx, 50);
@@ -515,22 +602,40 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     }
   }
 
-  // Totals
+  // Totals — detailed breakdown with reasons
   ctx = drawSectionTitle(ctx, "📊 Bảng tổng cộng");
-  ctx = drawRow(ctx, "Tiền phòng:", fmt(roomsTotal));
+  ctx = drawRow(ctx, `Tổng tiền phòng (${roomBreakdown.length} loại × ${nights} đêm):`, fmt(roomsTotal), { bold: true });
   if (booking.extra_person_surcharge > 0) {
-    ctx = drawRow(ctx, `Phụ thu ${booking.extra_person_count || 0} người:`, `+${fmt(booking.extra_person_surcharge)}`, {
-      valueColor: [0.85, 0.45, 0.05],
+    ctx = drawRow(ctx, `  Phụ thu ${booking.extra_person_count || 0} khách thêm:`, `+${fmt(booking.extra_person_surcharge)}`, {
+      size: 9, valueColor: [0.85, 0.45, 0.05],
     });
   }
-  if (comboTotal > 0) ctx = drawRow(ctx, "Suất ăn (combo):", fmt(comboTotal));
-  if (foodTotal > 0) ctx = drawRow(ctx, "Món ăn riêng:", fmt(foodTotal));
+  if (comboTotal > 0 || foodTotal > 0) {
+    ctx = drawRow(ctx, "Tổng tiền ăn:", fmt(comboTotal + foodTotal), { bold: true });
+    if (comboTotal > 0) ctx = drawRow(ctx, "  • Suất ăn (combo):", fmt(comboTotal), { size: 9 });
+    if (foodTotal > 0) ctx = drawRow(ctx, "  • Món ăn đặt riêng:", fmt(foodTotal), { size: 9 });
+  }
   const totalDiscount =
     (booking.member_discount_amount || 0) +
     (booking.promotion_discount_amount || 0) +
     (booking.discount_code_amount || 0);
   if (totalDiscount > 0) {
-    ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { valueColor: [0.06, 0.6, 0.4] });
+    ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { bold: true, valueColor: [0.06, 0.6, 0.4] });
+    if ((booking.discount_code_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • Mã ${booking.discount_code || ''}:`, `-${fmt(booking.discount_code_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
+    if ((booking.promotion_discount_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • ${booking.promotion_name || 'Khuyến mãi'} (${booking.promotion_discount_percent || 0}%):`, `-${fmt(booking.promotion_discount_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
+    if ((booking.member_discount_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • Ưu đãi thành viên (${booking.member_discount_percent || 0}%):`, `-${fmt(booking.member_discount_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
   }
   ctx = drawHr(ctx);
   ctx = drawRow(ctx, "TỔNG CỘNG:", fmt(booking.total_price_vnd), {
