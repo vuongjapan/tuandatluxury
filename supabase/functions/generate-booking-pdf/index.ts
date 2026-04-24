@@ -602,22 +602,40 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     }
   }
 
-  // Totals
+  // Totals — detailed breakdown with reasons
   ctx = drawSectionTitle(ctx, "📊 Bảng tổng cộng");
-  ctx = drawRow(ctx, "Tiền phòng:", fmt(roomsTotal));
+  ctx = drawRow(ctx, `Tổng tiền phòng (${roomBreakdown.length} loại × ${nights} đêm):`, fmt(roomsTotal), { bold: true });
   if (booking.extra_person_surcharge > 0) {
-    ctx = drawRow(ctx, `Phụ thu ${booking.extra_person_count || 0} người:`, `+${fmt(booking.extra_person_surcharge)}`, {
-      valueColor: [0.85, 0.45, 0.05],
+    ctx = drawRow(ctx, `  Phụ thu ${booking.extra_person_count || 0} khách thêm:`, `+${fmt(booking.extra_person_surcharge)}`, {
+      size: 9, valueColor: [0.85, 0.45, 0.05],
     });
   }
-  if (comboTotal > 0) ctx = drawRow(ctx, "Suất ăn (combo):", fmt(comboTotal));
-  if (foodTotal > 0) ctx = drawRow(ctx, "Món ăn riêng:", fmt(foodTotal));
+  if (comboTotal > 0 || foodTotal > 0) {
+    ctx = drawRow(ctx, "Tổng tiền ăn:", fmt(comboTotal + foodTotal), { bold: true });
+    if (comboTotal > 0) ctx = drawRow(ctx, "  • Suất ăn (combo):", fmt(comboTotal), { size: 9 });
+    if (foodTotal > 0) ctx = drawRow(ctx, "  • Món ăn đặt riêng:", fmt(foodTotal), { size: 9 });
+  }
   const totalDiscount =
     (booking.member_discount_amount || 0) +
     (booking.promotion_discount_amount || 0) +
     (booking.discount_code_amount || 0);
   if (totalDiscount > 0) {
-    ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { valueColor: [0.06, 0.6, 0.4] });
+    ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { bold: true, valueColor: [0.06, 0.6, 0.4] });
+    if ((booking.discount_code_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • Mã ${booking.discount_code || ''}:`, `-${fmt(booking.discount_code_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
+    if ((booking.promotion_discount_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • ${booking.promotion_name || 'Khuyến mãi'} (${booking.promotion_discount_percent || 0}%):`, `-${fmt(booking.promotion_discount_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
+    if ((booking.member_discount_amount || 0) > 0) {
+      ctx = drawRow(ctx, `  • Ưu đãi thành viên (${booking.member_discount_percent || 0}%):`, `-${fmt(booking.member_discount_amount)}`, {
+        size: 9, valueColor: [0.06, 0.6, 0.4],
+      });
+    }
   }
   ctx = drawHr(ctx);
   ctx = drawRow(ctx, "TỔNG CỘNG:", fmt(booking.total_price_vnd), {
