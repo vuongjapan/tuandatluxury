@@ -35,11 +35,20 @@ const SmartImage = memo(function SmartImage({
   return (
     <div className={cn('relative overflow-hidden bg-muted', wrapperClassName)}>
       {!loaded && (
-        <div
-          aria-hidden
-          className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted via-secondary to-muted"
-        />
+        <>
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-br from-muted via-secondary to-muted"
+          />
+          {/* Shimmer sweep */}
+          <div
+            aria-hidden
+            className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"
+            style={{ animationName: 'shimmer' }}
+          />
+        </>
       )}
+      <style>{`@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
       <img
         {...rest}
         src={finalSrc}
@@ -54,9 +63,9 @@ const SmartImage = memo(function SmartImage({
           (e.currentTarget as HTMLImageElement).style.background = 'hsl(var(--muted))';
         }}
         className={cn(
-          'w-full h-full transition-opacity duration-300',
+          'w-full h-full transition-all duration-700 ease-out',
           fit === 'cover' ? 'object-cover' : 'object-contain',
-          loaded ? 'opacity-100' : 'opacity-0',
+          loaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-105 blur-sm',
           className,
         )}
       />
