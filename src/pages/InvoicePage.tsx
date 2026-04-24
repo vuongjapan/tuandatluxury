@@ -193,7 +193,14 @@ const InvoicePage = () => {
               </div>
             </div>
 
-            {/* 2. THÔNG TIN KHÁCH HÀNG */}
+            {/* Tải PDF */}
+            <DownloadPDFButtons
+              bookingId={booking.id}
+              bookingCode={booking.booking_code}
+              isPaid={isDepositPaid}
+            />
+
+
             <div>
               <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Thông tin khách hàng</h3>
               <div className="space-y-2">
