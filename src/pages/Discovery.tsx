@@ -73,10 +73,10 @@ const Discovery = () => {
             </h2>
           </FadeIn>
 
-          <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-            <div className="flex gap-5 pb-4">
+          <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+            <div className="flex gap-5 pb-4 w-max">
               {list.map((place, i) => (
-                <FadeIn key={place.id} delay={i * 60} className="snap-start shrink-0 w-[280px] sm:w-[320px]">
+                <FadeIn key={place.id} delay={i * 60} className="snap-start shrink-0 w-[260px] sm:w-[300px]">
                   <div className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 group h-full flex flex-col">
                     {place.image_url ? (
                       <div className="aspect-video overflow-hidden">
