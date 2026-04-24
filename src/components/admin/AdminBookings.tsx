@@ -219,6 +219,12 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                       <a href={`/invoice/${b.booking_code}`} target="_blank" className="p-1 rounded hover:bg-secondary" title="Xem hóa đơn">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                       </a>
+                      <DownloadPDFButtons
+                        bookingId={b.id}
+                        bookingCode={b.booking_code}
+                        isPaid={b.payment_status === 'PAID'}
+                        compact
+                      />
                       <button
                         onClick={() => resendEmail(b)}
                         disabled={sendingEmail === b.id || !b.guest_email}
