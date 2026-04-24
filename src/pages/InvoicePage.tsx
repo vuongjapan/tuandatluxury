@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
 
 const VA_BANK = 'BIDV';
 const VA_ACCOUNT = '96247TUANDATLUXURY';
