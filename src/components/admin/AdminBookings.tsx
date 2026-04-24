@@ -8,6 +8,7 @@ import { Trash2, Search, X, Eye, FileText, Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
