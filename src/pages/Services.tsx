@@ -43,12 +43,12 @@ const Services = () => {
             <div className="text-center text-muted-foreground">Đang tải...</div>
           ) : (
             <>
-              <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory max-w-7xl mx-auto">
-                <div className="flex gap-6 pb-4">
+              <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+                <div className="flex gap-6 pb-4 w-max">
                   {active.map((s) => (
                     <div
                       key={s.id}
-                      className="snap-start shrink-0 w-[280px] sm:w-[320px] group bg-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 flex flex-col"
+                      className="snap-start shrink-0 w-[260px] sm:w-[300px] group bg-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-luxury hover:-translate-y-1 transition-all duration-500 flex flex-col"
                     >
                       <div className="relative h-[200px] overflow-hidden bg-secondary">
                         {s.image_url && (

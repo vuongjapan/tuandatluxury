@@ -275,26 +275,32 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
   const subtitle = isPaid ? "Đã thanh toán đặt cọc" : "Chờ thanh toán đặt cọc";
   ctx = drawHeader(ctx, "HÓA ĐƠN ĐẶT PHÒNG", subtitle);
 
-  // Booking code box
-  ctx = ensureSpace(ctx, 50);
-  ctx = drawBox(ctx, 46, [1, 0.97, 0.85], [0.85, 0.74, 0.5]);
-  drawText(ctx, "MÃ ĐẶT PHÒNG", { size: 9, color: [0.55, 0.41, 0.08] });
-  ctx.y -= 14;
-  drawText(ctx, booking.booking_code, { size: 22, bold: true, color: [0.55, 0.41, 0.08] });
-  // Status badge on right
+  // Booking code box — code on left, badge on right (no overlap)
+  ctx = ensureSpace(ctx, 56);
+  const codeBoxTop = ctx.y;
+  ctx = drawBox(ctx, 52, [1, 0.97, 0.85], [0.85, 0.74, 0.5]);
+  // Label
+  page.drawText("MÃ ĐẶT PHÒNG", {
+    x: ctx.margin, y: codeBoxTop, size: 9, font: fontBold, color: rgb(0.55, 0.41, 0.08),
+  });
+  // Status badge on right (same row as label)
   const badgeText = isPaid ? "✓ ĐÃ THANH TOÁN" : "⏳ CHƯA THANH TOÁN";
   const badgeColor: [number, number, number] = isPaid ? [0.06, 0.6, 0.4] : [0.85, 0.45, 0.05];
-  const badgeW = fontBold.widthOfTextAtSize(badgeText, 10) + 14;
+  const badgeW = fontBold.widthOfTextAtSize(badgeText, 9) + 14;
   page.drawRectangle({
     x: ctx.width - ctx.margin - badgeW,
-    y: ctx.y + 4, width: badgeW, height: 22,
+    y: codeBoxTop - 4, width: badgeW, height: 18,
     color: rgb(badgeColor[0], badgeColor[1], badgeColor[2]),
   });
   page.drawText(badgeText, {
     x: ctx.width - ctx.margin - badgeW + 7,
-    y: ctx.y + 11, size: 10, font: fontBold, color: rgb(1, 1, 1),
+    y: codeBoxTop, size: 9, font: fontBold, color: rgb(1, 1, 1),
   });
-  ctx.y -= 22;
+  // Booking code on its OWN line (below label) — no overlap with badge
+  page.drawText(booking.booking_code, {
+    x: ctx.margin, y: codeBoxTop - 22, size: 20, font: fontBold, color: rgb(0.55, 0.41, 0.08),
+  });
+  ctx.y = codeBoxTop - 46;
 
   // Guest info
   const childrenCount = parseChildren(booking.guest_notes);
@@ -452,8 +458,7 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     ctx.y -= 16;
   }
 
-  // Map
-  ctx = drawMapSection(ctx);
+  // Map removed from summary to keep within 1 A4 page (still in detail PDF)
   drawFooter(ctx);
 
   return await pdf.save();

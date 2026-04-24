@@ -216,43 +216,56 @@ const ServicesSection = () => {
           </p>
         </div>
 
-        {/* Row 1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {row1.map((s, idx) => (
-            <ServiceCard
-              key={s.id}
-              s={s}
-              index={idx}
-              sectionVisible={sectionVisible}
-              isVi={isVi}
-              onClick={handleClick}
-            />
-          ))}
+        {/* Mobile: horizontal scroll. Desktop (sm+): grid */}
+        <div className="sm:hidden overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+          <div className="flex gap-4 pb-4 w-max">
+            {featured.map((s, idx) => (
+              <div key={s.id} className="snap-start shrink-0 w-[260px]">
+                <ServiceCard s={s} index={idx} sectionVisible={sectionVisible} isVi={isVi} onClick={handleClick} />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-center text-muted-foreground mt-1">{isVi ? '← Vuốt ngang để xem thêm →' : '← Swipe to explore →'}</p>
         </div>
 
-        {/* Row 2 — centered remainder */}
-        {row2.length > 0 && (
-          <div
-            className={`mt-6 grid gap-6 max-w-6xl mx-auto ${
-              row2.length === 1
-                ? 'grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 lg:max-w-md'
-                : row2.length === 2
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:max-w-3xl'
-                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-            }`}
-          >
-            {row2.map((s, idx) => (
+        {/* Desktop grid */}
+        <div className="hidden sm:block">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {row1.map((s, idx) => (
               <ServiceCard
                 key={s.id}
                 s={s}
-                index={row1.length + idx}
+                index={idx}
                 sectionVisible={sectionVisible}
                 isVi={isVi}
                 onClick={handleClick}
               />
             ))}
           </div>
-        )}
+
+          {row2.length > 0 && (
+            <div
+              className={`mt-6 grid gap-6 max-w-6xl mx-auto ${
+                row2.length === 1
+                  ? 'sm:grid-cols-1 lg:grid-cols-1 lg:max-w-md'
+                  : row2.length === 2
+                  ? 'sm:grid-cols-2 lg:grid-cols-2 lg:max-w-3xl'
+                  : 'sm:grid-cols-2 lg:grid-cols-3'
+              }`}
+            >
+              {row2.map((s, idx) => (
+                <ServiceCard
+                  key={s.id}
+                  s={s}
+                  index={row1.length + idx}
+                  sectionVisible={sectionVisible}
+                  isVi={isVi}
+                  onClick={handleClick}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
