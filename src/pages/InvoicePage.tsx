@@ -224,13 +224,35 @@ const InvoicePage = () => {
             </div>
 
             {/* 3. TỔNG HÓA ĐƠN */}
-            <div className="bg-primary/5 border-2 border-primary/30 rounded-xl p-4">
-              <div className="flex justify-between items-center">
+            <div className="bg-primary/5 border-2 border-primary/30 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tổng tiền phòng:</span>
+                <span className="font-semibold">{fmt(roomSubtotal)}</span>
+              </div>
+              {extraSurcharge > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Phụ thu {extraCount} khách thêm:</span>
+                  <span className="font-semibold text-amber-600">+{fmt(extraSurcharge)}</span>
+                </div>
+              )}
+              {(comboTotal + indFoodTotal) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tổng tiền ăn:</span>
+                  <span className="font-semibold">{fmt(comboTotal + indFoodTotal)}</span>
+                </div>
+              )}
+              {totalDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tổng giảm giá:</span>
+                  <span className="font-semibold text-chart-2">-{fmt(totalDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center border-t border-primary/30 pt-2 mt-2">
                 <span className="font-bold text-foreground text-base">TỔNG HÓA ĐƠN:</span>
                 <span className="font-display font-bold text-primary text-2xl">{fmt(booking.total_price_vnd)}</span>
               </div>
               {hasDiscount && (
-                <p className="text-xs text-muted-foreground mt-1 text-right">Giá gốc: <span className="line-through">{fmt(originalPrice)}</span></p>
+                <p className="text-xs text-muted-foreground text-right">Giá gốc: <span className="line-through">{fmt(originalPrice)}</span></p>
               )}
             </div>
 
