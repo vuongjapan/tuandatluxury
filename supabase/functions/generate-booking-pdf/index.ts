@@ -195,27 +195,43 @@ function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number],
 
 function drawMapSection(ctx: DrawCtx): DrawCtx {
   ctx = drawSectionTitle(ctx, "📍 Vị trí khách sạn");
-  ctx = ensureSpace(ctx, 70);
-  ctx = drawBox(ctx, 66, [0.96, 0.91, 0.78], [0.78, 0.63, 0.25]);
-  drawText(ctx, HOTEL_NAME_VI, { size: 11, bold: true, color: [0.48, 0.37, 0.16] });
-  ctx.y -= 14;
-  drawText(ctx, HOTEL_ADDRESS, { size: 9, color: [0.4, 0.4, 0.4] });
-  ctx.y -= 16;
+  ctx = ensureSpace(ctx, 90);
+
+  // Box height 84 — draw box first as background
+  const boxTop = ctx.y;
+  ctx.page.drawRectangle({
+    x: ctx.margin - 4,
+    y: boxTop - 84 + 12,
+    width: ctx.width - 2 * ctx.margin + 8,
+    height: 84,
+    color: rgb(0.96, 0.91, 0.78),
+    borderColor: rgb(0.78, 0.63, 0.25),
+    borderWidth: 1,
+  });
+
+  // Hotel name
+  ctx.page.drawText(HOTEL_NAME_VI, {
+    x: ctx.margin, y: boxTop, size: 11, font: ctx.fontBold, color: rgb(0.48, 0.37, 0.16),
+  });
+  // Address
+  ctx.page.drawText(HOTEL_ADDRESS, {
+    x: ctx.margin, y: boxTop - 16, size: 9, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
+  });
 
   // Blue button "Mở Google Maps"
   const btnX = ctx.margin;
-  const btnY = ctx.y - 4;
+  const btnY = boxTop - 50;
   const btnW = 160;
-  const btnH = 22;
+  const btnH = 24;
   ctx.page.drawRectangle({
     x: btnX, y: btnY, width: btnW, height: btnH,
     color: rgb(0.08, 0.4, 0.75),
   });
-  const btnText = "🗺  Mở Google Maps";
+  const btnText = "Mở Google Maps";
   const tw = ctx.fontBold.widthOfTextAtSize(btnText, 10);
   ctx.page.drawText(btnText, {
     x: btnX + (btnW - tw) / 2,
-    y: btnY + 7,
+    y: btnY + 8,
     size: 10, font: ctx.fontBold, color: rgb(1, 1, 1),
   });
   // Real clickable link annotation
@@ -223,11 +239,18 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
 
   // Hint text next to the button
   ctx.page.drawText("Nhấn vào nút để mở bản đồ", {
-    x: btnX + btnW + 10, y: btnY + 7, size: 8.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
+    x: btnX + btnW + 12, y: btnY + 8, size: 8.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
   });
 
-  ctx.y -= 30;
+  ctx.y = boxTop - 90;
   return ctx;
+}
+
+// Parse children count from guest_notes (e.g. "· 2 trẻ em đính kèm" or "2 trẻ em")
+function parseChildren(notes?: string | null): number {
+  if (!notes) return 0;
+  const m = String(notes).match(/(\d+)\s*tr[ẻe]\s*em/i);
+  return m ? parseInt(m[1], 10) : 0;
 }
 
 // =========================================
