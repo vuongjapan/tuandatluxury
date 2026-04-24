@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
 
 const VA_BANK = 'BIDV';
 const VA_ACCOUNT = '96247TUANDATLUXURY';
@@ -192,7 +193,14 @@ const InvoicePage = () => {
               </div>
             </div>
 
-            {/* 2. THÔNG TIN KHÁCH HÀNG */}
+            {/* Tải PDF */}
+            <DownloadPDFButtons
+              bookingId={booking.id}
+              bookingCode={booking.booking_code}
+              isPaid={isDepositPaid}
+            />
+
+
             <div>
               <h3 className="font-display font-semibold text-base mb-3 border-b border-border pb-2">Thông tin khách hàng</h3>
               <div className="space-y-2">

@@ -8,6 +8,7 @@ import { Trash2, Search, X, Eye, FileText, Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -218,6 +219,12 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                       <a href={`/invoice/${b.booking_code}`} target="_blank" className="p-1 rounded hover:bg-secondary" title="Xem hóa đơn">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                       </a>
+                      <DownloadPDFButtons
+                        bookingId={b.id}
+                        bookingCode={b.booking_code}
+                        isPaid={b.payment_status === 'PAID'}
+                        compact
+                      />
                       <button
                         onClick={() => resendEmail(b)}
                         disabled={sendingEmail === b.id || !b.guest_email}

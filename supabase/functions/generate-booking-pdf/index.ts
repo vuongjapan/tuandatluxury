@@ -2,7 +2,7 @@
 // Returns { pdf1_base64, pdf2_base64, pdf1_name, pdf2_name }
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+import { PDFDocument, rgb, StandardFonts, PDFName, PDFArray, PDFDict, PDFString } from "https://esm.sh/pdf-lib@1.17.1";
 import fontkit from "https://esm.sh/@pdf-lib/fontkit@1.1.1";
 
 const corsHeaders = {
@@ -172,34 +172,61 @@ function drawFooter(ctx: DrawCtx) {
   });
 }
 
+function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number], url: string) {
+  const annot = ctx.pdf.context.obj({
+    Type: "Annot",
+    Subtype: "Link",
+    Rect: rect,
+    Border: [0, 0, 0],
+    A: {
+      Type: "Action",
+      S: "URI",
+      URI: PDFString.of(url),
+    },
+  });
+  const annotRef = ctx.pdf.context.register(annot);
+  let annots = ctx.page.node.lookup(PDFName.of("Annots"), PDFArray);
+  if (!annots) {
+    annots = ctx.pdf.context.obj([]) as PDFArray;
+    ctx.page.node.set(PDFName.of("Annots"), annots);
+  }
+  annots.push(annotRef);
+}
+
 function drawMapSection(ctx: DrawCtx): DrawCtx {
   ctx = drawSectionTitle(ctx, "📍 Vị trí khách sạn");
-  ctx = ensureSpace(ctx, 60);
-  ctx = drawBox(ctx, 56, [0.98, 0.96, 0.9], [0.85, 0.74, 0.5]);
-  drawText(ctx, HOTEL_NAME_VI, { size: 11, bold: true, color: [0.55, 0.41, 0.08] });
+  ctx = ensureSpace(ctx, 70);
+  ctx = drawBox(ctx, 66, [0.96, 0.91, 0.78], [0.78, 0.63, 0.25]);
+  drawText(ctx, HOTEL_NAME_VI, { size: 11, bold: true, color: [0.48, 0.37, 0.16] });
   ctx.y -= 14;
-  drawText(ctx, HOTEL_ADDRESS, { size: 9, color: [0.3, 0.3, 0.3] });
-  ctx.y -= 13;
-  // Clickable link
-  const linkText = "Mở Google Maps →";
-  ctx.page.drawText(linkText, {
-    x: ctx.margin, y: ctx.y, size: 10, font: ctx.fontBold, color: rgb(0.1, 0.4, 0.85),
+  drawText(ctx, HOTEL_ADDRESS, { size: 9, color: [0.4, 0.4, 0.4] });
+  ctx.y -= 16;
+
+  // Blue button "Mở Google Maps"
+  const btnX = ctx.margin;
+  const btnY = ctx.y - 4;
+  const btnW = 160;
+  const btnH = 22;
+  ctx.page.drawRectangle({
+    x: btnX, y: btnY, width: btnW, height: btnH,
+    color: rgb(0.08, 0.4, 0.75),
   });
-  const linkW = ctx.fontBold.widthOfTextAtSize(linkText, 10);
-  // Add link annotation
-  const linkAnnot = ctx.pdf.context.obj({
-    Type: "Annot", Subtype: "Link",
-    Rect: [ctx.margin, ctx.y - 2, ctx.margin + linkW, ctx.y + 12],
-    Border: [0, 0, 0],
-    A: { Type: "Action", S: "URI", URI: GOOGLE_MAPS_URL },
+  const btnText = "🗺  Mở Google Maps";
+  const tw = ctx.fontBold.widthOfTextAtSize(btnText, 10);
+  ctx.page.drawText(btnText, {
+    x: btnX + (btnW - tw) / 2,
+    y: btnY + 7,
+    size: 10, font: ctx.fontBold, color: rgb(1, 1, 1),
   });
-  const annots = ctx.page.node.lookup("Annots") as any;
-  if (annots) {
-    annots.push(linkAnnot);
-  } else {
-    ctx.page.node.set(ctx.pdf.context.obj("Annots"), ctx.pdf.context.obj([linkAnnot]) as any);
-  }
-  ctx.y -= 22;
+  // Real clickable link annotation
+  addLinkAnnotation(ctx, [btnX, btnY, btnX + btnW, btnY + btnH], GOOGLE_MAPS_URL);
+
+  // Hint text next to the button
+  ctx.page.drawText("Nhấn vào nút để mở bản đồ", {
+    x: btnX + btnW + 10, y: btnY + 7, size: 8.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
+  });
+
+  ctx.y -= 30;
   return ctx;
 }
 
