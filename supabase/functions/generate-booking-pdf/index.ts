@@ -173,14 +173,19 @@ function drawFooter(ctx: DrawCtx) {
 }
 
 function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number], url: string) {
+  // Build annotation in a way that mobile PDF readers (Adobe Mobile, Google Drive,
+  // iOS Files, Samsung viewer, etc.) reliably recognise as a clickable URI link.
   const annot = ctx.pdf.context.obj({
     Type: "Annot",
     Subtype: "Link",
     Rect: rect,
     Border: [0, 0, 0],
+    F: 4, // Print flag
+    H: PDFName.of("N"), // No highlight on click — but field present helps some viewers
+    BS: { W: 0, S: PDFName.of("S") },
     A: {
-      Type: "Action",
-      S: "URI",
+      Type: PDFName.of("Action"),
+      S: PDFName.of("URI"),
       URI: PDFString.of(url),
     },
   });
