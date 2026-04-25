@@ -251,10 +251,17 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
   // Real clickable link annotation
   addLinkAnnotation(ctx, [btnX, btnY, btnX + btnW, btnY + btnH], GOOGLE_MAPS_URL);
 
-  // Hint text next to the button
-  ctx.page.drawText("Nhấn vào nút để mở bản đồ", {
-    x: btnX + btnW + 12, y: btnY + 8, size: 8.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
+  // Hint text + plain URL (mobile PDF viewers auto-detect URLs in text)
+  ctx.page.drawText("Hoặc mở link bên dưới:", {
+    x: btnX + btnW + 12, y: btnY + 14, size: 8, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
   });
+  const urlShort = "https://maps.app.goo.gl/TuanDatLuxury";
+  ctx.page.drawText(urlShort, {
+    x: btnX + btnW + 12, y: btnY + 2, size: 8.5, font: ctx.fontBold, color: rgb(0.08, 0.4, 0.75),
+  });
+  // Make the plain URL text also clickable
+  const urlW = ctx.fontBold.widthOfTextAtSize(urlShort, 8.5);
+  addLinkAnnotation(ctx, [btnX + btnW + 12, btnY + 1, btnX + btnW + 12 + urlW, btnY + 11], GOOGLE_MAPS_URL);
 
   ctx.y = boxTop - 90;
   return ctx;
