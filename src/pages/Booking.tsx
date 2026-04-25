@@ -446,6 +446,8 @@ const Booking = () => {
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
           promotion_name: appliedPromotions.map(p => p.name).join(' | ') || undefined,
+          promotion_discount_amount: allAutoDiscounts > 0 ? allAutoDiscounts : undefined,
+          promotion_discount_percent: webDiscountPercent > 0 ? webDiscountPercent : undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountAmount > 0 ? memberDiscountAmount : undefined,
           discount_code: appliedDiscountCodes.length > 0 ? appliedDiscountCodes.map(c => c.code).join(',') : undefined,
