@@ -1799,6 +1799,149 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_invoice_items: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          item_type: string
+          name: string
+          note: string | null
+          quantity: number
+          ref_id: string | null
+          sort_order: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          item_type?: string
+          name: string
+          note?: string | null
+          quantity?: number
+          ref_id?: string | null
+          sort_order?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          item_type?: string
+          name?: string
+          note?: string | null
+          quantity?: number
+          ref_id?: string | null
+          sort_order?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "manual_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manual_invoices: {
+        Row: {
+          check_in: string | null
+          check_out: string | null
+          children_count: number
+          created_at: string
+          created_by: string | null
+          custom_subtotal: number
+          deposit_amount: number
+          discount_amount: number
+          discount_note: string | null
+          email_sent_at: string | null
+          food_subtotal: number
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          guests_count: number
+          id: string
+          invoice_code: string
+          nights: number
+          notes: string | null
+          payment_status: string
+          remaining_amount: number
+          room_id: string | null
+          room_name: string | null
+          room_price_per_night: number
+          room_quantity: number
+          room_subtotal: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          check_in?: string | null
+          check_out?: string | null
+          children_count?: number
+          created_at?: string
+          created_by?: string | null
+          custom_subtotal?: number
+          deposit_amount?: number
+          discount_amount?: number
+          discount_note?: string | null
+          email_sent_at?: string | null
+          food_subtotal?: number
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          guests_count?: number
+          id?: string
+          invoice_code: string
+          nights?: number
+          notes?: string | null
+          payment_status?: string
+          remaining_amount?: number
+          room_id?: string | null
+          room_name?: string | null
+          room_price_per_night?: number
+          room_quantity?: number
+          room_subtotal?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          check_in?: string | null
+          check_out?: string | null
+          children_count?: number
+          created_at?: string
+          created_by?: string | null
+          custom_subtotal?: number
+          deposit_amount?: number
+          discount_amount?: number
+          discount_note?: string | null
+          email_sent_at?: string | null
+          food_subtotal?: number
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          guests_count?: number
+          id?: string
+          invoice_code?: string
+          nights?: number
+          notes?: string | null
+          payment_status?: string
+          remaining_amount?: number
+          room_id?: string | null
+          room_name?: string | null
+          room_price_per_night?: number
+          room_quantity?: number
+          room_subtotal?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_item_prices: {
         Row: {
           created_at: string
