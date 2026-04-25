@@ -173,23 +173,32 @@ function drawFooter(ctx: DrawCtx) {
 }
 
 function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number], url: string) {
-  // Build annotation in a way that mobile PDF readers (Adobe Mobile, Google Drive,
-  // iOS Files, Samsung viewer, etc.) reliably recognise as a clickable URI link.
-  const annot = ctx.pdf.context.obj({
-    Type: "Annot",
-    Subtype: "Link",
+  // Build a fully-spec PDF Link annotation that mobile viewers (iOS Files, Safari,
+  // Adobe Mobile, Google Drive, Samsung viewer, Chrome PDF) reliably treat as tappable.
+  // Keys use PDFName.of() for ALL name values; URI uses PDFString (literal) which
+  // mobile parsers handle better than hex strings.
+  const pageRef = ctx.page.ref;
+  const annotDict = ctx.pdf.context.obj({
+    Type: PDFName.of("Annot"),
+    Subtype: PDFName.of("Link"),
     Rect: rect,
     Border: [0, 0, 0],
-    F: 4, // Print flag
-    H: PDFName.of("N"), // No highlight on click — but field present helps some viewers
-    BS: { W: 0, S: PDFName.of("S") },
-    A: {
+    F: 4, // Print flag — required by some mobile viewers to render annotation
+    H: PDFName.of("N"),
+    BS: ctx.pdf.context.obj({
+      Type: PDFName.of("Border"),
+      W: 0,
+      S: PDFName.of("S"),
+    }),
+    P: pageRef,
+    A: ctx.pdf.context.obj({
       Type: PDFName.of("Action"),
       S: PDFName.of("URI"),
       URI: PDFString.of(url),
-    },
+    }),
   });
-  const annotRef = ctx.pdf.context.register(annot);
+  const annotRef = ctx.pdf.context.register(annotDict);
+
   let annots = ctx.page.node.lookup(PDFName.of("Annots"), PDFArray);
   if (!annots) {
     annots = ctx.pdf.context.obj([]) as PDFArray;
@@ -242,10 +251,17 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
   // Real clickable link annotation
   addLinkAnnotation(ctx, [btnX, btnY, btnX + btnW, btnY + btnH], GOOGLE_MAPS_URL);
 
-  // Hint text next to the button
-  ctx.page.drawText("Nhấn vào nút để mở bản đồ", {
-    x: btnX + btnW + 12, y: btnY + 8, size: 8.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
+  // Hint text + plain URL (mobile PDF viewers auto-detect URLs in text)
+  ctx.page.drawText("Hoặc mở link bên dưới:", {
+    x: btnX + btnW + 12, y: btnY + 14, size: 8, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
   });
+  const urlShort = "https://maps.app.goo.gl/TuanDatLuxury";
+  ctx.page.drawText(urlShort, {
+    x: btnX + btnW + 12, y: btnY + 2, size: 8.5, font: ctx.fontBold, color: rgb(0.08, 0.4, 0.75),
+  });
+  // Make the plain URL text also clickable
+  const urlW = ctx.fontBold.widthOfTextAtSize(urlShort, 8.5);
+  addLinkAnnotation(ctx, [btnX + btnW + 12, btnY + 1, btnX + btnW + 12 + urlW, btnY + 11], GOOGLE_MAPS_URL);
 
   ctx.y = boxTop - 90;
   return ctx;
