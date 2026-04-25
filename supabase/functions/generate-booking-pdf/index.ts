@@ -173,23 +173,32 @@ function drawFooter(ctx: DrawCtx) {
 }
 
 function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number], url: string) {
-  // Build annotation in a way that mobile PDF readers (Adobe Mobile, Google Drive,
-  // iOS Files, Samsung viewer, etc.) reliably recognise as a clickable URI link.
-  const annot = ctx.pdf.context.obj({
-    Type: "Annot",
-    Subtype: "Link",
+  // Build a fully-spec PDF Link annotation that mobile viewers (iOS Files, Safari,
+  // Adobe Mobile, Google Drive, Samsung viewer, Chrome PDF) reliably treat as tappable.
+  // Keys use PDFName.of() for ALL name values; URI uses PDFString (literal) which
+  // mobile parsers handle better than hex strings.
+  const pageRef = ctx.page.ref;
+  const annotDict = ctx.pdf.context.obj({
+    Type: PDFName.of("Annot"),
+    Subtype: PDFName.of("Link"),
     Rect: rect,
     Border: [0, 0, 0],
-    F: 4, // Print flag
-    H: PDFName.of("N"), // No highlight on click — but field present helps some viewers
-    BS: { W: 0, S: PDFName.of("S") },
-    A: {
+    F: 4, // Print flag — required by some mobile viewers to render annotation
+    H: PDFName.of("N"),
+    BS: ctx.pdf.context.obj({
+      Type: PDFName.of("Border"),
+      W: 0,
+      S: PDFName.of("S"),
+    }),
+    P: pageRef,
+    A: ctx.pdf.context.obj({
       Type: PDFName.of("Action"),
       S: PDFName.of("URI"),
       URI: PDFString.of(url),
-    },
+    }),
   });
-  const annotRef = ctx.pdf.context.register(annot);
+  const annotRef = ctx.pdf.context.register(annotDict);
+
   let annots = ctx.page.node.lookup(PDFName.of("Annots"), PDFArray);
   if (!annots) {
     annots = ctx.pdf.context.obj([]) as PDFArray;
