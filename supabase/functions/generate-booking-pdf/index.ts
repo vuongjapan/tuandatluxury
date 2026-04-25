@@ -475,7 +475,8 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     ctx.y -= 16;
   }
 
-  // Map removed from summary to keep within 1 A4 page (still in detail PDF)
+  // Compact map block — always fits on the same A4 page
+  drawCompactMap(ctx);
   drawFooter(ctx);
 
   return await pdf.save();
