@@ -173,14 +173,19 @@ function drawFooter(ctx: DrawCtx) {
 }
 
 function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number], url: string) {
+  // Build annotation in a way that mobile PDF readers (Adobe Mobile, Google Drive,
+  // iOS Files, Samsung viewer, etc.) reliably recognise as a clickable URI link.
   const annot = ctx.pdf.context.obj({
     Type: "Annot",
     Subtype: "Link",
     Rect: rect,
     Border: [0, 0, 0],
+    F: 4, // Print flag
+    H: PDFName.of("N"), // No highlight on click — but field present helps some viewers
+    BS: { W: 0, S: PDFName.of("S") },
     A: {
-      Type: "Action",
-      S: "URI",
+      Type: PDFName.of("Action"),
+      S: PDFName.of("URI"),
       URI: PDFString.of(url),
     },
   });
@@ -244,6 +249,36 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
 
   ctx.y = boxTop - 90;
   return ctx;
+}
+
+// Compact one-line map button — fits in remaining A4 space on summary
+function drawCompactMap(ctx: DrawCtx) {
+  const y = 95;
+  ctx.page.drawRectangle({
+    x: ctx.margin - 4, y: y - 8,
+    width: ctx.width - 2 * ctx.margin + 8, height: 44,
+    color: rgb(0.96, 0.91, 0.78),
+    borderColor: rgb(0.78, 0.63, 0.25), borderWidth: 1,
+  });
+  ctx.page.drawText("📍 " + HOTEL_NAME_VI, {
+    x: ctx.margin, y: y + 22, size: 9.5, font: ctx.fontBold, color: rgb(0.48, 0.37, 0.16),
+  });
+  ctx.page.drawText(HOTEL_ADDRESS, {
+    x: ctx.margin, y: y + 10, size: 8, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
+  });
+  const btnX = ctx.width - ctx.margin - 140;
+  const btnY = y + 6;
+  const btnW = 136;
+  const btnH = 22;
+  ctx.page.drawRectangle({
+    x: btnX, y: btnY, width: btnW, height: btnH, color: rgb(0.08, 0.4, 0.75),
+  });
+  const btnText = "Mở Google Maps";
+  const tw = ctx.fontBold.widthOfTextAtSize(btnText, 9.5);
+  ctx.page.drawText(btnText, {
+    x: btnX + (btnW - tw) / 2, y: btnY + 7, size: 9.5, font: ctx.fontBold, color: rgb(1, 1, 1),
+  });
+  addLinkAnnotation(ctx, [btnX, btnY, btnX + btnW, btnY + btnH], GOOGLE_MAPS_URL);
 }
 
 // Parse children count from guest_notes (e.g. "· 2 trẻ em đính kèm" or "2 trẻ em")
@@ -356,13 +391,25 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     (booking.discount_code_amount || 0);
   if (totalDiscount > 0) {
     ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { valueColor: [0.06, 0.6, 0.4] });
-    if (booking.discount_code) {
-      ctx = drawRow(ctx, "  • Mã giảm giá:", `${booking.discount_code} (-${fmt(booking.discount_code_amount || 0)})`, {
-        size: 9, valueColor: [0.06, 0.6, 0.4],
-      });
-    }
     if ((booking.promotion_discount_amount || 0) > 0) {
-      ctx = drawRow(ctx, `  • ${booking.promotion_name || 'Khuyến mãi'}:`, `-${fmt(booking.promotion_discount_amount)}`, {
+      const promoNames = String(booking.promotion_name || 'Khuyến mãi').split('|').map((s: string) => s.trim()).filter(Boolean);
+      const promoTotal = booking.promotion_discount_amount || 0;
+      if (promoNames.length === 1) {
+        ctx = drawRow(ctx, `  • ${promoNames[0]}:`, `-${fmt(promoTotal)}`, {
+          size: 9, valueColor: [0.06, 0.6, 0.4],
+        });
+      } else {
+        // Multiple auto-discounts merged — list each label, show combined amount on the last row only
+        for (let i = 0; i < promoNames.length; i++) {
+          const isLast = i === promoNames.length - 1;
+          ctx = drawRow(ctx, `  • ${promoNames[i]}:`, isLast ? `-${fmt(promoTotal)}` : '', {
+            size: 9, valueColor: [0.06, 0.6, 0.4],
+          });
+        }
+      }
+    }
+    if (booking.discount_code) {
+      ctx = drawRow(ctx, `  • Mã ${booking.discount_code}:`, `-${fmt(booking.discount_code_amount || 0)}`, {
         size: 9, valueColor: [0.06, 0.6, 0.4],
       });
     }
@@ -458,7 +505,8 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     ctx.y -= 16;
   }
 
-  // Map removed from summary to keep within 1 A4 page (still in detail PDF)
+  // Compact map block — always fits on the same A4 page
+  drawCompactMap(ctx);
   drawFooter(ctx);
 
   return await pdf.save();
@@ -626,13 +674,24 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     (booking.discount_code_amount || 0);
   if (totalDiscount > 0) {
     ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { bold: true, valueColor: [0.06, 0.6, 0.4] });
+    if ((booking.promotion_discount_amount || 0) > 0) {
+      const promoNames = String(booking.promotion_name || 'Khuyến mãi').split('|').map((s: string) => s.trim()).filter(Boolean);
+      const promoTotal = booking.promotion_discount_amount || 0;
+      if (promoNames.length === 1) {
+        ctx = drawRow(ctx, `  • ${promoNames[0]}:`, `-${fmt(promoTotal)}`, {
+          size: 9, valueColor: [0.06, 0.6, 0.4],
+        });
+      } else {
+        for (let i = 0; i < promoNames.length; i++) {
+          const isLast = i === promoNames.length - 1;
+          ctx = drawRow(ctx, `  • ${promoNames[i]}:`, isLast ? `-${fmt(promoTotal)}` : '', {
+            size: 9, valueColor: [0.06, 0.6, 0.4],
+          });
+        }
+      }
+    }
     if ((booking.discount_code_amount || 0) > 0) {
       ctx = drawRow(ctx, `  • Mã ${booking.discount_code || ''}:`, `-${fmt(booking.discount_code_amount)}`, {
-        size: 9, valueColor: [0.06, 0.6, 0.4],
-      });
-    }
-    if ((booking.promotion_discount_amount || 0) > 0) {
-      ctx = drawRow(ctx, `  • ${booking.promotion_name || 'Khuyến mãi'} (${booking.promotion_discount_percent || 0}%):`, `-${fmt(booking.promotion_discount_amount)}`, {
         size: 9, valueColor: [0.06, 0.6, 0.4],
       });
     }

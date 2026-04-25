@@ -446,6 +446,8 @@ const Booking = () => {
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
           promotion_name: appliedPromotions.map(p => p.name).join(' | ') || undefined,
+          promotion_discount_amount: allAutoDiscounts > 0 ? allAutoDiscounts : undefined,
+          promotion_discount_percent: webDiscountPercent > 0 ? webDiscountPercent : undefined,
           member_discount_percent: memberDiscountPercent > 0 ? memberDiscountPercent : undefined,
           member_discount_amount: memberDiscountAmount > 0 ? memberDiscountAmount : undefined,
           discount_code: appliedDiscountCodes.length > 0 ? appliedDiscountCodes.map(c => c.code).join(',') : undefined,
@@ -607,7 +609,7 @@ const Booking = () => {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={checkIn} onSelect={(d) => setCheckIn(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
+                              <Calendar mode="single" selected={checkIn} onSelect={(d) => setCheckIn(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => { const t = new Date(); t.setHours(0,0,0,0); return d < t; }} />
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -621,7 +623,7 @@ const Booking = () => {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={checkOut} onSelect={(d) => setCheckOut(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < (checkIn || new Date())} />
+                              <Calendar mode="single" selected={checkOut} onSelect={(d) => setCheckOut(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => { const t = new Date(); t.setHours(0,0,0,0); const min = checkIn ? new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate() + 1) : t; return d < min; }} />
                             </PopoverContent>
                           </Popover>
                         </div>
