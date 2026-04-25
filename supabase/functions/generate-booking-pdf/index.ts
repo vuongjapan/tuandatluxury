@@ -643,13 +643,24 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     (booking.discount_code_amount || 0);
   if (totalDiscount > 0) {
     ctx = drawRow(ctx, "Tổng giảm giá:", `-${fmt(totalDiscount)}`, { bold: true, valueColor: [0.06, 0.6, 0.4] });
+    if ((booking.promotion_discount_amount || 0) > 0) {
+      const promoNames = String(booking.promotion_name || 'Khuyến mãi').split('|').map((s: string) => s.trim()).filter(Boolean);
+      const promoTotal = booking.promotion_discount_amount || 0;
+      if (promoNames.length === 1) {
+        ctx = drawRow(ctx, `  • ${promoNames[0]}:`, `-${fmt(promoTotal)}`, {
+          size: 9, valueColor: [0.06, 0.6, 0.4],
+        });
+      } else {
+        for (let i = 0; i < promoNames.length; i++) {
+          const isLast = i === promoNames.length - 1;
+          ctx = drawRow(ctx, `  • ${promoNames[i]}:`, isLast ? `-${fmt(promoTotal)}` : '', {
+            size: 9, valueColor: [0.06, 0.6, 0.4],
+          });
+        }
+      }
+    }
     if ((booking.discount_code_amount || 0) > 0) {
       ctx = drawRow(ctx, `  • Mã ${booking.discount_code || ''}:`, `-${fmt(booking.discount_code_amount)}`, {
-        size: 9, valueColor: [0.06, 0.6, 0.4],
-      });
-    }
-    if ((booking.promotion_discount_amount || 0) > 0) {
-      ctx = drawRow(ctx, `  • ${booking.promotion_name || 'Khuyến mãi'} (${booking.promotion_discount_percent || 0}%):`, `-${fmt(booking.promotion_discount_amount)}`, {
         size: 9, valueColor: [0.06, 0.6, 0.4],
       });
     }
