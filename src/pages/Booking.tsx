@@ -607,7 +607,7 @@ const Booking = () => {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={checkIn} onSelect={(d) => setCheckIn(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => d < new Date()} />
+                              <Calendar mode="single" selected={checkIn} onSelect={(d) => setCheckIn(d)} locale={calendarLocale} initialFocus className="p-3 pointer-events-auto" disabled={(d) => { const t = new Date(); t.setHours(0,0,0,0); return d < t; }} />
                             </PopoverContent>
                           </Popover>
                         </div>
