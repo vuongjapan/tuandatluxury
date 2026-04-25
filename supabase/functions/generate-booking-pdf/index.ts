@@ -279,6 +279,7 @@ function drawCompactMap(ctx: DrawCtx) {
     x: btnX + (btnW - tw) / 2, y: btnY + 7, size: 9.5, font: ctx.fontBold, color: rgb(1, 1, 1),
   });
   addLinkAnnotation(ctx, [btnX, btnY, btnX + btnW, btnY + btnH], GOOGLE_MAPS_URL);
+}
 
 // Parse children count from guest_notes (e.g. "· 2 trẻ em đính kèm" or "2 trẻ em")
 function parseChildren(notes?: string | null): number {
