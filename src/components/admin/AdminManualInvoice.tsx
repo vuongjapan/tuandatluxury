@@ -462,6 +462,8 @@ const AdminManualInvoice = () => {
           </table>
         </div>
       </div>
+      {emailDialogJsx}
+      </>
     );
   }
 
