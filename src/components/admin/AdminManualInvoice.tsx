@@ -397,16 +397,17 @@ const AdminManualInvoice = () => {
                       {i.payment_status === 'PAID' ? '✅' : i.payment_status === 'PARTIAL' ? '💰' : '⏳'}
                     </Badge>
                   </td>
-                  <td className="p-3 text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openDetail(i.id)}>
+                  <td className="p-3 text-right whitespace-nowrap">
+                    <Button variant="ghost" size="icon" onClick={() => openDetail(i.id)} title="Xem chi tiết">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {i.guest_email && (
-                      <Button variant="ghost" size="icon" onClick={() => sendEmail(i.id)} disabled={sendingEmail === i.id}>
-                        {sendingEmail === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => deleteInvoice(i.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => downloadPdf(i.id, i.invoice_code)} disabled={downloadingPdf === i.id} title="Tải PDF">
+                      {downloadingPdf === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openSendDialog(i.id, i.guest_email)} disabled={sendingEmail === i.id} title="Gửi email + PDF">
+                      {sendingEmail === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteInvoice(i.id)} title="Xóa">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </td>
