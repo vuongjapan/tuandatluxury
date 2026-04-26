@@ -7,7 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, FileText, Mail, Loader2, Search, Eye, Send } from 'lucide-react';
+import { Plus, Trash2, FileText, Mail, Loader2, Search, Eye, Send, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+
+const LAST_EMAIL_KEY = 'admin_manual_invoice_last_email';
 
 interface Room { id: string; name_vi: string; price_vnd: number }
 interface MenuItem { id: string; name_vi: string; price_vnd: number; category: string }
@@ -55,6 +58,8 @@ const AdminManualInvoice = () => {
   const [menuSearch, setMenuSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string }>({ open: false, invoiceId: null, email: '' });
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 1;
@@ -196,21 +201,51 @@ const AdminManualInvoice = () => {
     setView('detail');
   };
 
-  const sendEmail = async (invoiceId: string) => {
+  const sendEmail = async (invoiceId: string, recipientOverride?: string) => {
     setSendingEmail(invoiceId);
     try {
-      const { error } = await supabase.functions.invoke('send-manual-invoice-email', {
-        body: { invoice_id: invoiceId },
-      });
+      const body: any = { invoice_id: invoiceId };
+      if (recipientOverride) body.recipient_email = recipientOverride;
+      const { data, error } = await supabase.functions.invoke('send-manual-invoice-email', { body });
       if (error) throw error;
+      const sentTo = (data as any)?.sent_to || recipientOverride;
+      if (sentTo) localStorage.setItem(LAST_EMAIL_KEY, sentTo);
       await supabase.from('manual_invoices').update({ email_sent_at: new Date().toISOString() }).eq('id', invoiceId);
-      toast({ title: '✅ Đã gửi email cho khách' });
+      toast({ title: '✅ Đã gửi email + PDF', description: sentTo ? `Tới: ${sentTo}` : undefined });
       loadData();
       if (detailData?.id === invoiceId) openDetail(invoiceId);
     } catch (e: any) {
       toast({ title: 'Lỗi gửi email', description: e?.message, variant: 'destructive' });
     } finally {
       setSendingEmail(null);
+    }
+  };
+
+  const openSendDialog = (invoiceId: string, defaultEmail?: string) => {
+    const last = localStorage.getItem(LAST_EMAIL_KEY) || '';
+    setEmailDialog({ open: true, invoiceId, email: defaultEmail || last });
+  };
+
+  const downloadPdf = async (invoiceId: string, code: string) => {
+    setDownloadingPdf(invoiceId);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-manual-invoice-pdf', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      const { pdf_base64, pdf_name } = data as { pdf_base64: string; pdf_name: string };
+      const bytes = Uint8Array.from(atob(pdf_base64), c => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = pdf_name || `HoaDon-${code}.pdf`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast({ title: '✅ Đã tải PDF' });
+    } catch (e: any) {
+      toast({ title: 'Lỗi tải PDF', description: e?.message, variant: 'destructive' });
+    } finally {
+      setDownloadingPdf(null);
     }
   };
 
@@ -236,19 +271,60 @@ const AdminManualInvoice = () => {
     );
   }, [search, invoices]);
 
+  const emailDialogJsx = (
+    <Dialog open={emailDialog.open} onOpenChange={(o) => setEmailDialog(s => ({ ...s, open: o }))}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Gửi hóa đơn qua email</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label>Email người nhận</Label>
+          <Input
+            type="email"
+            value={emailDialog.email}
+            onChange={(e) => setEmailDialog(s => ({ ...s, email: e.target.value }))}
+            placeholder="khach@email.com"
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">
+            📎 Email sẽ kèm file PDF hóa đơn. Địa chỉ này sẽ được nhớ cho lần gửi sau.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setEmailDialog(s => ({ ...s, open: false }))}>Hủy</Button>
+          <Button
+            onClick={async () => {
+              if (!emailDialog.email.trim() || !emailDialog.invoiceId) return;
+              const id = emailDialog.invoiceId;
+              const to = emailDialog.email.trim();
+              setEmailDialog({ open: false, invoiceId: null, email: '' });
+              await sendEmail(id, to);
+            }}
+            disabled={!emailDialog.email.trim() || sendingEmail !== null}
+          >
+            <Send className="h-4 w-4 mr-2" /> Gửi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   // ====== DETAIL VIEW ======
   if (view === 'detail' && detailData) {
     return (
+      <>
       <div className="space-y-4 max-w-3xl">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => { setView('list'); setDetailData(null); }}>← Quay lại</Button>
-          <div className="flex gap-2">
-            {detailData.guest_email && (
-              <Button onClick={() => sendEmail(detailData.id)} disabled={sendingEmail === detailData.id}>
-                {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                Gửi email cho khách
-              </Button>
-            )}
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => downloadPdf(detailData.id, detailData.invoice_code)} disabled={downloadingPdf === detailData.id}>
+              {downloadingPdf === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              Tải PDF
+            </Button>
+            <Button onClick={() => openSendDialog(detailData.id, detailData.guest_email)} disabled={sendingEmail === detailData.id}>
+              {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+              Gửi email + PDF
+            </Button>
           </div>
         </div>
 
@@ -316,12 +392,15 @@ const AdminManualInvoice = () => {
           )}
         </div>
       </div>
+      {emailDialogJsx}
+      </>
     );
   }
 
   // ====== LIST VIEW ======
   if (view === 'list') {
     return (
+      <>
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-2">
           <div className="relative flex-1 max-w-md">
@@ -360,16 +439,17 @@ const AdminManualInvoice = () => {
                       {i.payment_status === 'PAID' ? '✅' : i.payment_status === 'PARTIAL' ? '💰' : '⏳'}
                     </Badge>
                   </td>
-                  <td className="p-3 text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openDetail(i.id)}>
+                  <td className="p-3 text-right whitespace-nowrap">
+                    <Button variant="ghost" size="icon" onClick={() => openDetail(i.id)} title="Xem chi tiết">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {i.guest_email && (
-                      <Button variant="ghost" size="icon" onClick={() => sendEmail(i.id)} disabled={sendingEmail === i.id}>
-                        {sendingEmail === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => deleteInvoice(i.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => downloadPdf(i.id, i.invoice_code)} disabled={downloadingPdf === i.id} title="Tải PDF">
+                      {downloadingPdf === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openSendDialog(i.id, i.guest_email)} disabled={sendingEmail === i.id} title="Gửi email + PDF">
+                      {sendingEmail === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteInvoice(i.id)} title="Xóa">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </td>
@@ -382,6 +462,8 @@ const AdminManualInvoice = () => {
           </table>
         </div>
       </div>
+      {emailDialogJsx}
+      </>
     );
   }
 
@@ -537,15 +619,16 @@ const AdminManualInvoice = () => {
         <Button
           variant="outline"
           size="lg"
-          disabled={submitting || !guestEmail}
+          disabled={submitting}
           onClick={async () => {
             const id = await saveInvoice();
-            if (id) sendEmail(id);
+            if (id) openSendDialog(id, guestEmail);
           }}
         >
           <Send className="h-4 w-4 mr-2" />Tạo + Gửi email
         </Button>
       </div>
+      {emailDialogJsx}
     </div>
   );
 };
