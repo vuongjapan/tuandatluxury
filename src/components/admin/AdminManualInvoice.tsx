@@ -392,6 +392,8 @@ const AdminManualInvoice = () => {
           )}
         </div>
       </div>
+      {emailDialogJsx}
+      </>
     );
   }
 
