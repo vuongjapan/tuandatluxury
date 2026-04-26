@@ -271,6 +271,44 @@ const AdminManualInvoice = () => {
     );
   }, [search, invoices]);
 
+  const emailDialogJsx = (
+    <Dialog open={emailDialog.open} onOpenChange={(o) => setEmailDialog(s => ({ ...s, open: o }))}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Gửi hóa đơn qua email</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label>Email người nhận</Label>
+          <Input
+            type="email"
+            value={emailDialog.email}
+            onChange={(e) => setEmailDialog(s => ({ ...s, email: e.target.value }))}
+            placeholder="khach@email.com"
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">
+            📎 Email sẽ kèm file PDF hóa đơn. Địa chỉ này sẽ được nhớ cho lần gửi sau.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setEmailDialog(s => ({ ...s, open: false }))}>Hủy</Button>
+          <Button
+            onClick={async () => {
+              if (!emailDialog.email.trim() || !emailDialog.invoiceId) return;
+              const id = emailDialog.invoiceId;
+              const to = emailDialog.email.trim();
+              setEmailDialog({ open: false, invoiceId: null, email: '' });
+              await sendEmail(id, to);
+            }}
+            disabled={!emailDialog.email.trim() || sendingEmail !== null}
+          >
+            <Send className="h-4 w-4 mr-2" /> Gửi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   // ====== DETAIL VIEW ======
   if (view === 'detail' && detailData) {
     return (
