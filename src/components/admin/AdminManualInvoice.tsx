@@ -277,13 +277,15 @@ const AdminManualInvoice = () => {
       <div className="space-y-4 max-w-3xl">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => { setView('list'); setDetailData(null); }}>← Quay lại</Button>
-          <div className="flex gap-2">
-            {detailData.guest_email && (
-              <Button onClick={() => sendEmail(detailData.id)} disabled={sendingEmail === detailData.id}>
-                {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                Gửi email cho khách
-              </Button>
-            )}
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => downloadPdf(detailData.id, detailData.invoice_code)} disabled={downloadingPdf === detailData.id}>
+              {downloadingPdf === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              Tải PDF
+            </Button>
+            <Button onClick={() => openSendDialog(detailData.id, detailData.guest_email)} disabled={sendingEmail === detailData.id}>
+              {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+              Gửi email + PDF
+            </Button>
           </div>
         </div>
 
