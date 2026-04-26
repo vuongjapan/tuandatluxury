@@ -312,6 +312,7 @@ const AdminManualInvoice = () => {
   // ====== DETAIL VIEW ======
   if (view === 'detail' && detailData) {
     return (
+      <>
       <div className="space-y-4 max-w-3xl">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => { setView('list'); setDetailData(null); }}>← Quay lại</Button>
