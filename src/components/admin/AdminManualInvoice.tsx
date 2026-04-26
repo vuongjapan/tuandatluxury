@@ -575,15 +575,16 @@ const AdminManualInvoice = () => {
         <Button
           variant="outline"
           size="lg"
-          disabled={submitting || !guestEmail}
+          disabled={submitting}
           onClick={async () => {
             const id = await saveInvoice();
-            if (id) sendEmail(id);
+            if (id) openSendDialog(id, guestEmail);
           }}
         >
           <Send className="h-4 w-4 mr-2" />Tạo + Gửi email
         </Button>
       </div>
+      {emailDialogJsx}
     </div>
   );
 };
