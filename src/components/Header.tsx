@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, User, LogOut, Shield, ChevronDown } from 'lucide-react';
+import { Menu, X, Phone, User, LogOut, Shield, ChevronDown, Radio } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
@@ -59,11 +60,35 @@ const Header = () => {
   };
 
   const [scrolled, setScrolled] = useState(false);
+  const [liveActive, setLiveActive] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Poll active live session
+  useEffect(() => {
+    const checkLive = async () => {
+      const { data } = await supabase
+        .from('live_sessions')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      setLiveActive(!!data);
+    };
+    checkLive();
+    const interval = setInterval(checkLive, 30000);
+    const channel = supabase
+      .channel('header-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_sessions' }, checkLive)
+      .subscribe();
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Split nav items: left side & right side of logo
@@ -87,6 +112,7 @@ const Header = () => {
     { key: 'nav.seafood', href: '/seafood' },
     { key: 'nav.terms', href: '/terms' },
     { key: 'nav.contact', href: '/#contact' },
+    { key: 'nav.live', href: '/live', isLive: true },
   ];
 
   const allMobileItems = [

@@ -33,6 +33,7 @@ const Reviews = lazy(() => import("./pages/Reviews"));
 const Discovery = lazy(() => import("./pages/Discovery"));
 const About = lazy(() => import("./pages/About"));
 const Transport = lazy(() => import("./pages/Transport"));
+const Live = lazy(() => import("./pages/Live"));
 
 // Auto-apply voucher code redirect
 const ApplyVoucher = lazy(() => import("./pages/ApplyVoucher"));
@@ -128,6 +129,7 @@ const App = () => {
                     <Route path="/apply" element={<ApplyVoucher />} />
                     <Route path="/dat-xe" element={<Transport />} />
                     <Route path="/transport" element={<Transport />} />
+                    <Route path="/live" element={<Live />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
