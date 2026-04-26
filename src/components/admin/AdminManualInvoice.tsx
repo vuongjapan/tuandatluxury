@@ -58,6 +58,8 @@ const AdminManualInvoice = () => {
   const [menuSearch, setMenuSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string }>({ open: false, invoiceId: null, email: '' });
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 1;
