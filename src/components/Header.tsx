@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, User, LogOut, Shield, ChevronDown } from 'lucide-react';
+import { Menu, X, Phone, User, LogOut, Shield, ChevronDown, Radio } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
@@ -59,11 +60,35 @@ const Header = () => {
   };
 
   const [scrolled, setScrolled] = useState(false);
+  const [liveActive, setLiveActive] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Poll active live session
+  useEffect(() => {
+    const checkLive = async () => {
+      const { data } = await supabase
+        .from('live_sessions')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      setLiveActive(!!data);
+    };
+    checkLive();
+    const interval = setInterval(checkLive, 30000);
+    const channel = supabase
+      .channel('header-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_sessions' }, checkLive)
+      .subscribe();
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Split nav items: left side & right side of logo
@@ -87,6 +112,7 @@ const Header = () => {
     { key: 'nav.seafood', href: '/seafood' },
     { key: 'nav.terms', href: '/terms' },
     { key: 'nav.contact', href: '/#contact' },
+    { key: 'nav.live', href: '/live', isLive: true },
   ];
 
   const allMobileItems = [
@@ -190,13 +216,37 @@ const Header = () => {
                     {t('nav.more')} <ChevronDown className="h-3 w-3" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {moreItems.map(item => (
-                      <DropdownMenuItem key={item.href} onClick={() => handleNavClick(item.href)} className="cursor-pointer">
-                        {t(item.key)}
+                    {moreItems.map((item: any) => (
+                      <DropdownMenuItem key={item.href} onClick={() => handleNavClick(item.href)} className="cursor-pointer flex items-center gap-2">
+                        {item.isLive && liveActive && (
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                          </span>
+                        )}
+                        {item.isLive && <Radio className="h-3.5 w-3.5 text-red-600" />}
+                        <span>{t(item.key)}</span>
+                        {item.isLive && liveActive && (
+                          <span className="ml-auto text-[9px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded">LIVE</span>
+                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Live indicator - shows in main nav when active */}
+                {liveActive && (
+                  <button
+                    onClick={() => handleNavClick('/live')}
+                    className="ml-1 flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-red-700 transition-colors"
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                    </span>
+                    Live
+                  </button>
+                )}
 
                 {/* Book Now CTA */}
                 <Button

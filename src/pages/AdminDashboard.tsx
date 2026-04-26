@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle, Coins
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle, Coins, Radio, FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -47,8 +47,10 @@ import AdminMandatoryCombo from '@/components/admin/AdminMandatoryCombo';
 import AdminPersonalMealPlans from '@/components/admin/AdminPersonalMealPlans';
 import AdminTransport from '@/components/admin/AdminTransport';
 import AdminExchangeRates from '@/components/admin/AdminExchangeRates';
+import AdminLive from '@/components/admin/AdminLive';
+import AdminManualInvoice from '@/components/admin/AdminManualInvoice';
 
-type Tab = 'dashboard' | 'bookings' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -180,6 +182,7 @@ const AdminDashboard = () => {
       title: 'Đặt phòng',
       items: [
         { id: 'bookings', icon: CalendarRange, label: 'Đơn đặt phòng', badge: pendingCount },
+        { id: 'manual-invoice', icon: FileText, label: 'Tạo hóa đơn thủ công' },
         { id: 'transport', icon: MapPin, label: 'Đặt xe đưa đón' },
         { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
         { id: 'room-popup', icon: Eye, label: 'Popup phòng' },
@@ -215,6 +218,7 @@ const AdminDashboard = () => {
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
         { id: 'about-images', icon: ImageIcon, label: 'Ảnh trang Giới thiệu' },
         { id: 'blog', icon: BookOpen, label: 'Blog' },
+        { id: 'live', icon: Radio, label: 'Live Stream' },
       ],
     },
     {
@@ -384,6 +388,8 @@ const AdminDashboard = () => {
           {tab === 'bookings' && (
             <AdminBookings bookings={bookings} setBookings={setBookings} onMoveToTrash={moveBookingToTrash} onRefresh={fetchData} />
           )}
+          {tab === 'manual-invoice' && <AdminManualInvoice />}
+          {tab === 'live' && <AdminLive />}
           {tab === 'transport' && <AdminTransport />}
           {tab === 'rooms' && <AdminRooms rooms={rooms} onRefresh={fetchData} />}
           {tab === 'room-popup' && <AdminRoomPopup />}
