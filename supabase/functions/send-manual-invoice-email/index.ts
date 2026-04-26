@@ -229,7 +229,7 @@ serve(async (req) => {
       html,
       attachments: [{
         filename: pdfName,
-        content: Buffer.from(pdfBytes),
+        content: pdfBytes,
         contentType: "application/pdf",
       }],
     });
