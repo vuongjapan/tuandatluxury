@@ -201,21 +201,51 @@ const AdminManualInvoice = () => {
     setView('detail');
   };
 
-  const sendEmail = async (invoiceId: string) => {
+  const sendEmail = async (invoiceId: string, recipientOverride?: string) => {
     setSendingEmail(invoiceId);
     try {
-      const { error } = await supabase.functions.invoke('send-manual-invoice-email', {
-        body: { invoice_id: invoiceId },
-      });
+      const body: any = { invoice_id: invoiceId };
+      if (recipientOverride) body.recipient_email = recipientOverride;
+      const { data, error } = await supabase.functions.invoke('send-manual-invoice-email', { body });
       if (error) throw error;
+      const sentTo = (data as any)?.sent_to || recipientOverride;
+      if (sentTo) localStorage.setItem(LAST_EMAIL_KEY, sentTo);
       await supabase.from('manual_invoices').update({ email_sent_at: new Date().toISOString() }).eq('id', invoiceId);
-      toast({ title: '✅ Đã gửi email cho khách' });
+      toast({ title: '✅ Đã gửi email + PDF', description: sentTo ? `Tới: ${sentTo}` : undefined });
       loadData();
       if (detailData?.id === invoiceId) openDetail(invoiceId);
     } catch (e: any) {
       toast({ title: 'Lỗi gửi email', description: e?.message, variant: 'destructive' });
     } finally {
       setSendingEmail(null);
+    }
+  };
+
+  const openSendDialog = (invoiceId: string, defaultEmail?: string) => {
+    const last = localStorage.getItem(LAST_EMAIL_KEY) || '';
+    setEmailDialog({ open: true, invoiceId, email: defaultEmail || last });
+  };
+
+  const downloadPdf = async (invoiceId: string, code: string) => {
+    setDownloadingPdf(invoiceId);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-manual-invoice-pdf', {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      const { pdf_base64, pdf_name } = data as { pdf_base64: string; pdf_name: string };
+      const bytes = Uint8Array.from(atob(pdf_base64), c => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = pdf_name || `HoaDon-${code}.pdf`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast({ title: '✅ Đã tải PDF' });
+    } catch (e: any) {
+      toast({ title: 'Lỗi tải PDF', description: e?.message, variant: 'destructive' });
+    } finally {
+      setDownloadingPdf(null);
     }
   };
 
