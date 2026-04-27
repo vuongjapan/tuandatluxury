@@ -4,11 +4,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Search, X, Eye, FileText, Mail, Loader2 } from 'lucide-react';
+import { Trash2, Search, X, Eye, FileText, MailWarning } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
+import { SendInvoiceEmailButton } from '@/components/admin/SendInvoiceEmailButton';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -43,7 +44,6 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
   const updateBookingStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
@@ -52,55 +52,17 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
     toast({ title: 'Cập nhật thành công' });
   };
 
-  const resendEmail = async (booking: any) => {
-    if (!booking.guest_email) {
-      toast({ title: 'Khách không có email', variant: 'destructive' });
-      return;
-    }
-    setSendingEmail(booking.id);
-    try {
-      const [{ data: combos }, { data: foods }] = await Promise.all([
-        supabase.from('booking_combos').select('*').eq('booking_id', booking.id),
-        supabase.from('booking_food_items').select('*').eq('booking_id', booking.id),
-      ]);
-      const combos_with_dishes = await Promise.all((combos || []).map(async (c: any) => {
-        let dishes = Array.isArray(c.dishes_snapshot) ? c.dishes_snapshot : [];
-        if (dishes.length === 0 && c.combo_menu_id) {
-          const { data: dd } = await supabase
-            .from('combo_menu_dishes')
-            .select('name_vi, name_en, sort_order')
-            .eq('combo_menu_id', c.combo_menu_id)
-            .order('sort_order');
-          dishes = dd || [];
-        }
-        return { ...c, dishes };
-      }));
-
-      const isPaid = booking.payment_status === 'PAID';
-      const payload: any = {
-        booking,
-        room_name: booking.rooms?.name_vi || booking.room_id,
-        invoice_number: booking.booking_code,
-        combos_with_dishes,
-        food_items: foods || [],
-      };
-      if (isPaid) payload.type = 'deposit_paid';
-
-      const { error } = await supabase.functions.invoke('send-booking-email', { body: payload });
-      if (error) throw error;
-      toast({
-        title: '✅ Đã gửi email + 2 PDF',
-        description: `Đã gửi tới ${booking.guest_email}`,
-      });
-    } catch (e: any) {
-      toast({ title: 'Gửi email lỗi', description: e?.message, variant: 'destructive' });
-    } finally {
-      setSendingEmail(null);
-    }
+  const handleEmailUpdated = (bookingId: string, newEmail: string) => {
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, guest_email: newEmail } : b));
   };
 
+
   const filtered = bookings.filter(b => {
-    if (filterStatus !== 'all' && b.status !== filterStatus) return false;
+    if (filterStatus === 'no_email') {
+      if (b.guest_email) return false;
+    } else if (filterStatus !== 'all' && b.status !== filterStatus) {
+      return false;
+    }
     if (search) {
       const s = search.toLowerCase();
       return (
@@ -112,6 +74,8 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
     }
     return true;
   });
+
+  const noEmailCount = bookings.filter(b => !b.guest_email).length;
 
   const stats = {
     total: bookings.length,
@@ -154,12 +118,18 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
           )}
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
             {Object.entries(statusLabels).map(([k, v]) => (
               <SelectItem key={k} value={k}>{v}</SelectItem>
             ))}
+            <SelectItem value="no_email">
+              <span className="flex items-center gap-1.5">
+                <MailWarning className="h-3.5 w-3.5" />
+                Chưa có email {noEmailCount > 0 && `(${noEmailCount})`}
+              </span>
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -182,7 +152,13 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                   <td className="px-3 py-3">
                     <p className="font-medium text-xs">{b.guest_name}</p>
                     <p className="text-[11px] text-muted-foreground">{b.guest_phone}</p>
-                    {b.guest_email && <p className="text-[10px] text-muted-foreground">{b.guest_email}</p>}
+                    {b.guest_email ? (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{b.guest_email}</p>
+                    ) : (
+                      <p className="text-[10px] text-destructive flex items-center gap-1">
+                        <MailWarning className="h-3 w-3" /> Chưa có email
+                      </p>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">
                     {b.rooms?.name_vi || b.room_id}
@@ -225,16 +201,10 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                         isPaid={b.payment_status === 'PAID'}
                         compact
                       />
-                      <button
-                        onClick={() => resendEmail(b)}
-                        disabled={sendingEmail === b.id || !b.guest_email}
-                        className="p-1 rounded hover:bg-primary/10 text-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={b.guest_email ? `Gửi email + 2 PDF tới ${b.guest_email}` : 'Khách không có email'}
-                      >
-                        {sendingEmail === b.id
-                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          : <Mail className="h-3.5 w-3.5" />}
-                      </button>
+                      <SendInvoiceEmailButton
+                        booking={b}
+                        onUpdated={(newEmail) => handleEmailUpdated(b.id, newEmail)}
+                      />
                       <button onClick={() => onMoveToTrash(b)} className="p-1 rounded hover:bg-destructive/10 text-destructive" title="Thùng rác">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

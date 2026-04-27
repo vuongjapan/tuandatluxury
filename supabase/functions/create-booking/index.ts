@@ -209,34 +209,41 @@ serve(async (req) => {
       else foodItemDetails = insertedFoods || [];
     }
 
-    // Increment voucher/discount usage if a code was applied
+    // Increment voucher/discount usage for ALL applied codes (comma-separated supported)
     if (discount_code) {
-      const upper = String(discount_code).toUpperCase();
-      // Try discount_codes first
-      const { data: dcRow } = await supabase
-        .from("discount_codes")
-        .select("id, used_count")
-        .eq("code", upper)
-        .maybeSingle();
-      if (dcRow) {
-        await supabase
+      const codes = String(discount_code)
+        .split(",")
+        .map((c) => c.trim().toUpperCase())
+        .filter(Boolean);
+
+      for (const upper of codes) {
+        // Try discount_codes first
+        const { data: dcRow } = await supabase
           .from("discount_codes")
-          .update({ used_count: (dcRow.used_count || 0) + 1 })
-          .eq("id", dcRow.id);
-      } else {
-        // Fallback: voucher_codes (batch QR vouchers)
-        const { data: vcRow } = await supabase
-          .from("voucher_codes")
-          .select("id, used_count, usage_limit")
+          .select("id, used_count")
           .eq("code", upper)
           .maybeSingle();
-        if (vcRow) {
+        if (dcRow) {
+          await supabase
+            .from("discount_codes")
+            .update({ used_count: (dcRow.used_count || 0) + 1 })
+            .eq("id", dcRow.id);
+          continue;
+        }
+        // Fallback: voucher_codes (batch QR vouchers) — only mark used if still active (race-safe)
+        const { data: vcRow } = await supabase
+          .from("voucher_codes")
+          .select("id, used_count, usage_limit, status")
+          .eq("code", upper)
+          .maybeSingle();
+        if (vcRow && vcRow.status === "active") {
           const newUsed = (vcRow.used_count || 0) + 1;
           const newStatus = newUsed >= (vcRow.usage_limit || 1) ? "used" : "active";
           await supabase
             .from("voucher_codes")
             .update({ used_count: newUsed, status: newStatus })
-            .eq("id", vcRow.id);
+            .eq("id", vcRow.id)
+            .eq("status", "active"); // race-safe guard
         }
       }
     }
