@@ -112,7 +112,7 @@ export const SendInvoiceEmailButton = ({ booking, onUpdated }: Props) => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 text-xs px-3 py-2 rounded-lg">
+            <div className="bg-amber-500/10 border border-amber-500/30 text-foreground text-xs px-3 py-2 rounded-lg">
               ⚠️ Đơn <strong>{booking.booking_code}</strong> chưa có email khách.
               Nhập email nhận hóa đơn (gồm 2 PDF: tóm tắt + chi tiết).
             </div>
