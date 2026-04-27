@@ -16,116 +16,7 @@ const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 038.441.8811";
 const FONT_REGULAR_URL = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf";
 const FONT_BOLD_URL = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf";
 
-let cachedR: Uint8Array | null = null;
-let cachedB: Uint8Array | null = null;
-async function loadFont(url: string, isBold: boolean) {
-  if (!isBold && cachedR) return cachedR;
-  if (isBold && cachedB) return cachedB;
-  const buf = new Uint8Array(await (await fetch(url)).arrayBuffer());
-  if (isBold) cachedB = buf; else cachedR = buf;
-  return buf;
-}
-
 const fmt = (n: number) => (n || 0).toLocaleString("vi-VN") + "₫";
-
-async function buildPdf(inv: any, items: any[]): Promise<{ bytes: Uint8Array; filename: string }> {
-  const pdf = await PDFDocument.create();
-  pdf.registerFontkit(fontkit);
-  const font = await pdf.embedFont(await loadFont(FONT_REGULAR_URL, false));
-  const fontBold = await pdf.embedFont(await loadFont(FONT_BOLD_URL, true));
-  const page = pdf.addPage([595.28, 841.89]);
-  const W = 595.28, H = 841.89, M = 40;
-  let y = H - 80;
-  const gold: [number, number, number] = [0.72, 0.53, 0.04];
-  const dark: [number, number, number] = [0.13, 0.13, 0.13];
-  const muted: [number, number, number] = [0.45, 0.45, 0.45];
-
-  page.drawRectangle({ x: 0, y: H - 80, width: W, height: 80, color: rgb(...gold) });
-  page.drawText(HOTEL_NAME, { x: M, y: H - 38, size: 18, font: fontBold, color: rgb(1, 1, 1) });
-  page.drawText(`HÓA ĐƠN ${inv.invoice_code}`, { x: M, y: H - 60, size: 11, font, color: rgb(1, 1, 1) });
-  page.drawText(new Date(inv.created_at).toLocaleString("vi-VN"), { x: W - M - 130, y: H - 60, size: 9, font, color: rgb(1, 1, 1) });
-  y = H - 100;
-
-  page.drawRectangle({ x: M, y: y - 70, width: W - 2 * M, height: 70, color: rgb(0.97, 0.95, 0.9) });
-  let yi = y - 14;
-  page.drawText("THÔNG TIN KHÁCH", { x: M + 10, y: yi, size: 9, font: fontBold, color: rgb(...gold) });
-  yi -= 14;
-  page.drawText(`Khách: ${inv.guest_name}`, { x: M + 10, y: yi, size: 10, font: fontBold, color: rgb(...dark) });
-  page.drawText(`SĐT: ${inv.guest_phone || "—"}`, { x: M + 280, y: yi, size: 10, font, color: rgb(...dark) });
-  yi -= 13;
-  if (inv.guest_email) page.drawText(`Email: ${inv.guest_email}`, { x: M + 10, y: yi, size: 9, font, color: rgb(...muted) });
-  page.drawText(`Số khách: ${inv.guests_count} NL + ${inv.children_count} TE`, { x: M + 280, y: yi, size: 9, font, color: rgb(...muted) });
-  yi -= 13;
-  if (inv.check_in) page.drawText(`Nhận: ${inv.check_in}  →  Trả: ${inv.check_out}  (${inv.nights} đêm)`, { x: M + 10, y: yi, size: 9, font, color: rgb(...muted) });
-  y -= 80;
-
-  if (inv.room_name) {
-    page.drawText("PHÒNG", { x: M, y, size: 10, font: fontBold, color: rgb(...gold) });
-    y -= 4;
-    page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1, color: rgb(...gold) });
-    y -= 14;
-    page.drawText(`${inv.room_name} × ${inv.room_quantity} phòng × ${inv.nights} đêm`, { x: M, y, size: 10, font, color: rgb(...dark) });
-    page.drawText(fmt(inv.room_subtotal), { x: W - M - 80, y, size: 10, font: fontBold, color: rgb(...dark) });
-    y -= 12;
-    page.drawText(`Đơn giá: ${fmt(inv.room_price_per_night)} / đêm`, { x: M, y, size: 8, font, color: rgb(...muted) });
-    y -= 18;
-  }
-
-  if (items && items.length > 0) {
-    page.drawText("DỊCH VỤ / THỰC ĐƠN", { x: M, y, size: 10, font: fontBold, color: rgb(...gold) });
-    y -= 4;
-    page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1, color: rgb(...gold) });
-    y -= 14;
-    page.drawText("Mục", { x: M, y, size: 9, font: fontBold, color: rgb(...muted) });
-    page.drawText("SL", { x: M + 300, y, size: 9, font: fontBold, color: rgb(...muted) });
-    page.drawText("Đơn giá", { x: M + 350, y, size: 9, font: fontBold, color: rgb(...muted) });
-    page.drawText("Thành tiền", { x: W - M - 80, y, size: 9, font: fontBold, color: rgb(...muted) });
-    y -= 12;
-    for (const it of items) {
-      if (y < 200) break;
-      page.drawText((it.name || "").slice(0, 50), { x: M, y, size: 9, font, color: rgb(...dark) });
-      page.drawText(String(it.quantity), { x: M + 305, y, size: 9, font, color: rgb(...dark) });
-      page.drawText(fmt(it.unit_price), { x: M + 350, y, size: 9, font, color: rgb(...dark) });
-      page.drawText(fmt(it.total_price), { x: W - M - 80, y, size: 9, font: fontBold, color: rgb(...dark) });
-      y -= 12;
-    }
-    y -= 8;
-  }
-
-  const boxH = inv.deposit_amount > 0 ? 100 : 70;
-  const boxY = Math.max(y - boxH, 90);
-  page.drawRectangle({ x: M, y: boxY, width: W - 2 * M, height: boxH, borderColor: rgb(...gold), borderWidth: 1.5, color: rgb(1, 0.97, 0.9) });
-  let ty = boxY + boxH - 14;
-  page.drawText("Tiền phòng", { x: M + 10, y: ty, size: 9, font, color: rgb(...dark) });
-  page.drawText(fmt(inv.room_subtotal), { x: W - M - 80, y: ty, size: 9, font, color: rgb(...dark) });
-  ty -= 13;
-  page.drawText("Tiền ăn / dịch vụ", { x: M + 10, y: ty, size: 9, font, color: rgb(...dark) });
-  page.drawText(fmt((inv.food_subtotal || 0) + (inv.custom_subtotal || 0)), { x: W - M - 80, y: ty, size: 9, font, color: rgb(...dark) });
-  ty -= 13;
-  if (inv.discount_amount > 0) {
-    page.drawText(`Giảm giá ${inv.discount_note ? `(${inv.discount_note})` : ""}`, { x: M + 10, y: ty, size: 9, font, color: rgb(0.7, 0, 0) });
-    page.drawText(`-${fmt(inv.discount_amount)}`, { x: W - M - 80, y: ty, size: 9, font, color: rgb(0.7, 0, 0) });
-    ty -= 13;
-  }
-  page.drawLine({ start: { x: M + 10, y: ty + 4 }, end: { x: W - M - 10, y: ty + 4 }, thickness: 0.7, color: rgb(...gold) });
-  page.drawText("TỔNG THANH TOÁN", { x: M + 10, y: ty - 6, size: 11, font: fontBold, color: rgb(...gold) });
-  page.drawText(fmt(inv.total_amount), { x: W - M - 100, y: ty - 6, size: 12, font: fontBold, color: rgb(...gold) });
-  if (inv.deposit_amount > 0) {
-    ty -= 22;
-    page.drawText("Đã đặt cọc", { x: M + 10, y: ty, size: 9, font, color: rgb(...dark) });
-    page.drawText(fmt(inv.deposit_amount), { x: W - M - 80, y: ty, size: 9, font, color: rgb(...dark) });
-    ty -= 12;
-    page.drawText("Còn lại", { x: M + 10, y: ty, size: 10, font: fontBold, color: rgb(...dark) });
-    page.drawText(fmt(inv.remaining_amount), { x: W - M - 80, y: ty, size: 10, font: fontBold, color: rgb(...dark) });
-  }
-
-  page.drawText(`Tel: ${HOTEL_PHONES}`, { x: M, y: 50, size: 8, font, color: rgb(...muted) });
-  page.drawText(HOTEL_ADDRESS, { x: M, y: 38, size: 8, font, color: rgb(...muted) });
-  page.drawText(`© ${new Date().getFullYear()} ${HOTEL_NAME}`, { x: W - M - 180, y: 38, size: 8, font, color: rgb(...muted) });
-
-  const bytes = await pdf.save();
-  return { bytes, filename: `HoaDon-${inv.invoice_code}.pdf` };
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -149,11 +40,8 @@ serve(async (req) => {
     const { data: items } = await supabase
       .from("manual_invoice_items").select("*").eq("invoice_id", invoice_id).order("sort_order");
 
-    const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD");
-    if (!SMTP_PASSWORD) throw new Error("SMTP_PASSWORD missing");
-
-    // Build PDF attachment
-    const { bytes: pdfBytes, filename: pdfName } = await buildPdf(inv, items || []);
+    // Build BOTH PDFs (Summary + Detail) — same flow as main booking emails
+    const { pdf1, pdf2, pdf1_name, pdf2_name } = await buildManualInvoicePdfs(invoice_id);
 
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com", port: 587, secure: false,
