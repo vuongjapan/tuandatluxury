@@ -4,11 +4,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Search, X, Eye, FileText, Mail, Loader2 } from 'lucide-react';
+import { Trash2, Search, X, Eye, FileText, MailWarning } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
+import { SendInvoiceEmailButton } from '@/components/admin/SendInvoiceEmailButton';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
