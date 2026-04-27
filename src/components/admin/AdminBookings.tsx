@@ -44,7 +44,6 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
   const updateBookingStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
