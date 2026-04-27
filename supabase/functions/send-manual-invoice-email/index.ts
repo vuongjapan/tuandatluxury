@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import nodemailer from "https://esm.sh/nodemailer@6.9.12";
-import { buildManualInvoicePdfs } from "../generate-manual-invoice-pdf/index.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,8 +42,24 @@ serve(async (req) => {
     const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD");
     if (!SMTP_PASSWORD) throw new Error("SMTP_PASSWORD missing");
 
-    // Build BOTH PDFs (Summary + Detail) — same flow as main booking emails
-    const { pdf1, pdf2, pdf1_name, pdf2_name } = await buildManualInvoicePdfs(invoice_id);
+    // Build BOTH PDFs (Summary + Detail) by invoking the generator function via HTTP
+    const pdfRes = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-manual-invoice-pdf`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ invoice_id }),
+      }
+    );
+    if (!pdfRes.ok) throw new Error(`PDF gen failed: ${await pdfRes.text()}`);
+    const pdfJson = await pdfRes.json();
+    const pdf1 = Uint8Array.from(atob(pdfJson.pdf1_base64), c => c.charCodeAt(0));
+    const pdf2 = Uint8Array.from(atob(pdfJson.pdf2_base64), c => c.charCodeAt(0));
+    const pdf1_name = pdfJson.pdf1_name;
+    const pdf2_name = pdfJson.pdf2_name;
 
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com", port: 587, secure: false,
