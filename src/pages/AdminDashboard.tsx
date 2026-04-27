@@ -37,6 +37,7 @@ import AdminWebDiscount from '@/components/admin/AdminWebDiscount';
 import AdminRoomPopup from '@/components/admin/AdminRoomPopup';
 import AdminQuickImport from '@/components/admin/AdminQuickImport';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
+import AdminPageAnalytics from '@/components/admin/AdminPageAnalytics';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminDiscountConfig from '@/components/admin/AdminDiscountConfig';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
@@ -50,7 +51,7 @@ import AdminExchangeRates from '@/components/admin/AdminExchangeRates';
 import AdminLive from '@/components/admin/AdminLive';
 import AdminManualInvoice from '@/components/admin/AdminManualInvoice';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -224,6 +225,7 @@ const AdminDashboard = () => {
     {
       title: 'AI Du Lịch',
       items: [
+        { id: 'page-analytics', icon: BarChart3, label: '📊 Thống kê lượt xem' },
         { id: 'analytics', icon: BarChart3, label: 'Analytics AI' },
         { id: 'quick-import', icon: Database, label: 'Quick Import Sầm Sơn' },
       ],
@@ -416,6 +418,7 @@ const AdminDashboard = () => {
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
           {tab === 'quick-import' && <AdminQuickImport />}
           {tab === 'analytics' && <AdminAnalytics />}
+          {tab === 'page-analytics' && <AdminPageAnalytics />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'discount-config' && <AdminDiscountConfig />}
           {tab === 'about-images' && <AdminAboutImages />}

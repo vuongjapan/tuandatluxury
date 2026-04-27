@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
+import PageTracker from "./components/PageTracker";
 
 // Lazy load all non-homepage routes
 const MemberAuth = lazy(() => import("./pages/MemberAuth"));
@@ -99,6 +100,7 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <ScrollToHash />
+                <PageTracker />
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
