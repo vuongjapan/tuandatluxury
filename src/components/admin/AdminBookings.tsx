@@ -52,52 +52,10 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
     toast({ title: 'Cập nhật thành công' });
   };
 
-  const resendEmail = async (booking: any) => {
-    if (!booking.guest_email) {
-      toast({ title: 'Khách không có email', variant: 'destructive' });
-      return;
-    }
-    setSendingEmail(booking.id);
-    try {
-      const [{ data: combos }, { data: foods }] = await Promise.all([
-        supabase.from('booking_combos').select('*').eq('booking_id', booking.id),
-        supabase.from('booking_food_items').select('*').eq('booking_id', booking.id),
-      ]);
-      const combos_with_dishes = await Promise.all((combos || []).map(async (c: any) => {
-        let dishes = Array.isArray(c.dishes_snapshot) ? c.dishes_snapshot : [];
-        if (dishes.length === 0 && c.combo_menu_id) {
-          const { data: dd } = await supabase
-            .from('combo_menu_dishes')
-            .select('name_vi, name_en, sort_order')
-            .eq('combo_menu_id', c.combo_menu_id)
-            .order('sort_order');
-          dishes = dd || [];
-        }
-        return { ...c, dishes };
-      }));
-
-      const isPaid = booking.payment_status === 'PAID';
-      const payload: any = {
-        booking,
-        room_name: booking.rooms?.name_vi || booking.room_id,
-        invoice_number: booking.booking_code,
-        combos_with_dishes,
-        food_items: foods || [],
-      };
-      if (isPaid) payload.type = 'deposit_paid';
-
-      const { error } = await supabase.functions.invoke('send-booking-email', { body: payload });
-      if (error) throw error;
-      toast({
-        title: '✅ Đã gửi email + 2 PDF',
-        description: `Đã gửi tới ${booking.guest_email}`,
-      });
-    } catch (e: any) {
-      toast({ title: 'Gửi email lỗi', description: e?.message, variant: 'destructive' });
-    } finally {
-      setSendingEmail(null);
-    }
+  const handleEmailUpdated = (bookingId: string, newEmail: string) => {
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, guest_email: newEmail } : b));
   };
+
 
   const filtered = bookings.filter(b => {
     if (filterStatus !== 'all' && b.status !== filterStatus) return false;
