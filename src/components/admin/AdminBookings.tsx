@@ -183,16 +183,10 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                         isPaid={b.payment_status === 'PAID'}
                         compact
                       />
-                      <button
-                        onClick={() => resendEmail(b)}
-                        disabled={sendingEmail === b.id || !b.guest_email}
-                        className="p-1 rounded hover:bg-primary/10 text-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={b.guest_email ? `Gửi email + 2 PDF tới ${b.guest_email}` : 'Khách không có email'}
-                      >
-                        {sendingEmail === b.id
-                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          : <Mail className="h-3.5 w-3.5" />}
-                      </button>
+                      <SendInvoiceEmailButton
+                        booking={b}
+                        onUpdated={(newEmail) => handleEmailUpdated(b.id, newEmail)}
+                      />
                       <button onClick={() => onMoveToTrash(b)} className="p-1 rounded hover:bg-destructive/10 text-destructive" title="Thùng rác">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
