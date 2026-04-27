@@ -152,7 +152,13 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                   <td className="px-3 py-3">
                     <p className="font-medium text-xs">{b.guest_name}</p>
                     <p className="text-[11px] text-muted-foreground">{b.guest_phone}</p>
-                    {b.guest_email && <p className="text-[10px] text-muted-foreground">{b.guest_email}</p>}
+                    {b.guest_email ? (
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{b.guest_email}</p>
+                    ) : (
+                      <p className="text-[10px] text-destructive flex items-center gap-1">
+                        <MailWarning className="h-3 w-3" /> Chưa có email
+                      </p>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">
                     {b.rooms?.name_vi || b.room_id}
