@@ -118,12 +118,18 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
           )}
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
             {Object.entries(statusLabels).map(([k, v]) => (
               <SelectItem key={k} value={k}>{v}</SelectItem>
             ))}
+            <SelectItem value="no_email">
+              <span className="flex items-center gap-1.5">
+                <MailWarning className="h-3.5 w-3.5" />
+                Chưa có email {noEmailCount > 0 && `(${noEmailCount})`}
+              </span>
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
