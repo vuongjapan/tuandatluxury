@@ -58,7 +58,11 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
 
 
   const filtered = bookings.filter(b => {
-    if (filterStatus !== 'all' && b.status !== filterStatus) return false;
+    if (filterStatus === 'no_email') {
+      if (b.guest_email) return false;
+    } else if (filterStatus !== 'all' && b.status !== filterStatus) {
+      return false;
+    }
     if (search) {
       const s = search.toLowerCase();
       return (
@@ -70,6 +74,8 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
     }
     return true;
   });
+
+  const noEmailCount = bookings.filter(b => !b.guest_email).length;
 
   const stats = {
     total: bookings.length,
