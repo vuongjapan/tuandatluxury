@@ -40,6 +40,9 @@ serve(async (req) => {
     const { data: items } = await supabase
       .from("manual_invoice_items").select("*").eq("invoice_id", invoice_id).order("sort_order");
 
+    const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD");
+    if (!SMTP_PASSWORD) throw new Error("SMTP_PASSWORD missing");
+
     // Build BOTH PDFs (Summary + Detail) — same flow as main booking emails
     const { pdf1, pdf2, pdf1_name, pdf2_name } = await buildManualInvoicePdfs(invoice_id);
 
@@ -100,7 +103,9 @@ serve(async (req) => {
     </div>
     ${inv.notes ? `<p style="margin-top:16px;padding:12px;background:#f5f5f5;border-radius:6px;font-size:13px"><strong>Ghi chú:</strong> ${inv.notes}</p>` : ""}
     <p style="margin-top:24px;font-size:13px;color:#666">
-      📎 File PDF hóa đơn được đính kèm.<br><br>
+      📎 Đính kèm 2 file PDF:<br>
+      • <strong>${pdf1_name}</strong> — Tóm tắt hóa đơn (có QR thanh toán & bản đồ)<br>
+      • <strong>${pdf2_name}</strong> — Chi tiết dịch vụ<br><br>
       Mọi thắc mắc xin liên hệ:<br>📞 ${HOTEL_PHONES}<br>📍 ${HOTEL_ADDRESS}
     </p>
   </div>
@@ -114,11 +119,10 @@ serve(async (req) => {
       to: toEmail,
       subject: `Hóa đơn ${inv.invoice_code} - ${HOTEL_NAME}`,
       html,
-      attachments: [{
-        filename: pdfName,
-        content: pdfBytes,
-        contentType: "application/pdf",
-      }],
+      attachments: [
+        { filename: pdf1_name, content: pdf1, contentType: "application/pdf" },
+        { filename: pdf2_name, content: pdf2, contentType: "application/pdf" },
+      ],
     });
 
     return new Response(JSON.stringify({ ok: true, sent_to: toEmail }), {
