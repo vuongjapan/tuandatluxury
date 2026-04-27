@@ -2136,6 +2136,54 @@ export type Database = {
         }
         Relationships: []
       }
+      page_views: {
+        Row: {
+          date: string
+          device: string | null
+          id: string
+          page_path: string | null
+          page_type: string
+          referrer: string | null
+          referrer_source: string | null
+          room_id: string | null
+          room_name: string | null
+          session_id: string | null
+          user_agent: string | null
+          viewed_at: string
+          visitor_id: string | null
+        }
+        Insert: {
+          date?: string
+          device?: string | null
+          id?: string
+          page_path?: string | null
+          page_type?: string
+          referrer?: string | null
+          referrer_source?: string | null
+          room_id?: string | null
+          room_name?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+          visitor_id?: string | null
+        }
+        Update: {
+          date?: string
+          device?: string | null
+          id?: string
+          page_path?: string | null
+          page_type?: string
+          referrer?: string | null
+          referrer_source?: string | null
+          room_id?: string | null
+          room_name?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       personal_meal_plans: {
         Row: {
           created_at: string
