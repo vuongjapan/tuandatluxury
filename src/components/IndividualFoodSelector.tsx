@@ -112,23 +112,23 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
   const negotiableCount = items.filter(i => i.priceType === 'negotiable').reduce((s, i) => s + i.quantity, 0);
 
   const catLabels: Record<string, string> = {
-    breakfast: '🍳 Ăn sáng',
-    main: '🍚 Cơm',
-    seafood: '🦐 Hải sản',
-    hotpot: '🍲 Lẩu',
-    drink: '🥤 Đồ uống',
-    dessert: '🍰 Tráng miệng',
-    bbq: '🥩 BBQ',
-    combo: '🥘 Combo',
-    shellfish: '🦪 Hàu - Sò',
-    fish: '🐟 Cá',
-    chicken: '🍗 Gà',
-    meat: '🥩 Thịt',
-    soup: '🍜 Canh',
-    vegetable: '🥬 Rau',
-    snack: '🍿 Ăn vặt',
-    other: '📦 Khác',
-    drinks: '🥤 Đồ uống',
+    breakfast: isVi ? 'Ăn sáng' : 'Breakfast',
+    main: isVi ? 'Cơm' : 'Rice',
+    seafood: isVi ? 'Hải sản' : 'Seafood',
+    hotpot: isVi ? 'Lẩu' : 'Hotpot',
+    drink: isVi ? 'Đồ uống' : 'Drinks',
+    dessert: isVi ? 'Tráng miệng' : 'Dessert',
+    bbq: 'BBQ',
+    combo: 'Combo',
+    shellfish: isVi ? 'Hàu · Sò' : 'Shellfish',
+    fish: isVi ? 'Cá' : 'Fish',
+    chicken: isVi ? 'Gà' : 'Chicken',
+    meat: isVi ? 'Thịt' : 'Meat',
+    soup: isVi ? 'Canh' : 'Soup',
+    vegetable: isVi ? 'Rau' : 'Vegetables',
+    snack: isVi ? 'Ăn vặt' : 'Snacks',
+    other: isVi ? 'Khác' : 'Other',
+    drinks: isVi ? 'Đồ uống' : 'Drinks',
   };
 
   if (!open) return null;
@@ -146,63 +146,82 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           exit={{ y: 100 }}
-          className="bg-card w-full max-w-2xl max-h-[85vh] rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col"
+          className="bg-card w-full max-w-2xl max-h-[88vh] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-border/40"
           onClick={e => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="p-4 border-b border-border flex items-center justify-between shrink-0 gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <ShoppingBag className="h-5 w-5 text-primary shrink-0" />
-              <h2 className="font-display text-lg font-bold truncate">{isVi ? 'Đặt món riêng' : 'Order dishes'}</h2>
-              {totalItems > 0 && (
-                <Badge className="bg-primary text-primary-foreground shrink-0">{totalItems}</Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setMenuViewerOpen(true)}>
-                <BookOpen className="h-3.5 w-3.5" /> {isVi ? 'Xem thực đơn' : 'Full menu'}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+          {/* Header — Japanese minimalist */}
+          <div className="px-5 pt-5 pb-4 border-b border-border/60 shrink-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
+                  {isVi ? 'Lựa chọn riêng' : 'À la carte'}
+                </p>
+                <h2 className="font-display text-xl font-bold text-foreground tracking-tight mt-1 flex items-center gap-2">
+                  {isVi ? 'Đặt món riêng' : 'Order dishes'}
+                  {totalItems > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-semibold">
+                      {totalItems}
+                    </span>
+                  )}
+                </h2>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8" onClick={() => setMenuViewerOpen(true)}>
+                  <BookOpen className="h-3.5 w-3.5" /> {isVi ? 'Thực đơn' : 'Menu'}
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Search */}
-          <div className="p-3 border-b border-border shrink-0">
+          <div className="px-5 pt-3 pb-3 border-b border-border/60 shrink-0 bg-secondary/30">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Tìm món ăn..."
+                placeholder={isVi ? 'Tìm món ăn...' : 'Search dishes...'}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 h-9 rounded-full border-border/60 bg-card text-sm"
               />
             </div>
-            <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1">
-              <Button
-                variant={selectedCat === null ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs shrink-0"
+            <div className="flex gap-1.5 mt-2.5 overflow-x-auto pb-1 scrollbar-hide">
+              <button
                 onClick={() => setSelectedCat(null)}
+                className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium tracking-wide border transition-all ${
+                  selectedCat === null
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-transparent text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground'
+                }`}
               >
-                Tất cả
-              </Button>
+                {isVi ? 'Tất cả' : 'All'}
+              </button>
               {categories.map((cat: string) => (
-                <Button
+                <button
                   key={cat}
-                  variant={selectedCat === cat ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs shrink-0"
                   onClick={() => setSelectedCat(cat)}
+                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium tracking-wide border transition-all ${
+                    selectedCat === cat
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-transparent text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground'
+                  }`}
                 >
                   {catLabels[cat] || cat}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
 
           {/* Items list */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-            {loading && <div className="text-center py-8 text-muted-foreground">Đang tải...</div>}
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+            {loading && <div className="text-center py-10 text-muted-foreground text-sm tracking-wider">{isVi ? 'Đang tải thực đơn...' : 'Loading...'}</div>}
+            {!loading && filteredItems.length === 0 && (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                {isVi ? 'Không tìm thấy món phù hợp' : 'No matching dishes'}
+              </div>
+            )}
             {filteredItems.map(item => {
               const hasVariants = item.price_variants && item.price_variants.length > 0;
               const selectedVariantId = selectedVariants[item.id];
@@ -217,15 +236,24 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
               const itemInCart = cartEntries.length > 0;
 
               return (
-                <div key={item.id} className={`p-2.5 rounded-lg border transition-all ${itemInCart ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+                <div key={item.id} className={`p-3 rounded-xl border transition-all ${itemInCart ? 'border-primary/60 bg-primary/5' : 'border-border/60 hover:border-foreground/30'}`}>
                   <div className="flex items-center gap-3">
-                    {item.image_url && (
-                      <img src={item.image_url} alt={item.name_vi} className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.name_vi} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                        <ShoppingBag className="h-5 w-5 text-muted-foreground/30" strokeWidth={1.2} />
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.name_vi}</p>
+                      <p className="font-display text-sm font-medium truncate text-foreground">{isVi ? item.name_vi : (item.name_en || item.name_vi)}</p>
                       {!hasVariants && (
-                        <PriceDisplay price={item.price_vnd} priceType={itemPriceType} className="text-xs text-primary font-bold" />
+                        <PriceDisplay price={item.price_vnd} priceType={itemPriceType} className="text-xs text-primary font-bold mt-0.5 inline-block" />
+                      )}
+                      {hasVariants && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 tracking-wide uppercase">
+                          {isVi ? 'Chọn kích cỡ' : 'Select size'}
+                        </p>
                       )}
                     </div>
 
@@ -233,13 +261,17 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
                       const cartKey = getCartKey(item.id);
                       const inCart = items.find(i => i.id === cartKey);
                       return inCart ? (
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, -1)}><Minus className="h-3 w-3" /></Button>
+                        <div className="flex items-center gap-1 shrink-0 bg-secondary rounded-full p-0.5">
+                          <button onClick={() => updateQty(cartKey, -1)} className="w-7 h-7 rounded-full bg-card hover:bg-background flex items-center justify-center border border-border/60">
+                            <Minus className="h-3 w-3" />
+                          </button>
                           <span className="font-bold w-6 text-center text-sm">{inCart.quantity}</span>
-                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(cartKey, 1)}><Plus className="h-3 w-3" /></Button>
+                          <button onClick={() => updateQty(cartKey, 1)} className="w-7 h-7 rounded-full bg-card hover:bg-background flex items-center justify-center border border-border/60">
+                            <Plus className="h-3 w-3" />
+                          </button>
                         </div>
                       ) : (
-                        <Button variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => addItem(item)}>
+                        <Button variant="outline" size="sm" className="shrink-0 text-xs rounded-full px-4 border-foreground/20 hover:bg-foreground hover:text-background hover:border-foreground" onClick={() => addItem(item)}>
                           <Plus className="h-3 w-3 mr-1" /> {isVi ? 'Thêm' : 'Add'}
                         </Button>
                       );
@@ -248,16 +280,16 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
                     {hasVariants && (
                       <div className="flex items-center gap-1.5 shrink-0">
                         <Select value={selectedVariantId || ''} onValueChange={v => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}>
-                          <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue placeholder={isVi ? 'Chọn giá' : 'Pick'} /></SelectTrigger>
+                          <SelectTrigger className="h-8 w-[120px] text-xs rounded-full"><SelectValue placeholder={isVi ? 'Chọn giá' : 'Pick'} /></SelectTrigger>
                           <SelectContent>
                             {item.price_variants!.map(v => (
                               <SelectItem key={v.id} value={v.id} className="text-xs">
-                                {v.label_vi} – {itemPriceType === 'negotiable' ? (isVi ? 'Thỏa thuận' : 'On request') : formatPrice(v.price_vnd)}
+                                {v.label_vi} — {itemPriceType === 'negotiable' ? (isVi ? 'Thỏa thuận' : 'On request') : formatPrice(v.price_vnd)}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button variant="outline" size="sm" className="shrink-0 text-xs" disabled={!selectedVariant} onClick={() => { if (selectedVariant) addItem(item, selectedVariant); }}>
+                        <Button variant="outline" size="sm" className="shrink-0 text-xs rounded-full border-foreground/20 hover:bg-foreground hover:text-background hover:border-foreground" disabled={!selectedVariant} onClick={() => { if (selectedVariant) addItem(item, selectedVariant); }}>
                           <Plus className="h-3 w-3 mr-1" /> {isVi ? 'Thêm' : 'Add'}
                         </Button>
                       </div>
@@ -265,16 +297,18 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
                   </div>
 
                   {hasVariants && cartEntries.length > 0 && (
-                    <div className="mt-2 space-y-1 pl-2 border-l-2 border-primary/30 ml-2">
+                    <div className="mt-2.5 space-y-1 pl-3 border-l border-primary/30 ml-2">
                       {cartEntries.map(entry => (
                         <div key={entry.id} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground inline-flex items-center gap-1">
-                            {entry.priceLabel} – <PriceDisplay price={entry.price} priceType={entry.priceType} compact />
+                          <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                            <span className="font-medium text-foreground">{entry.priceLabel}</span>
+                            <span>—</span>
+                            <PriceDisplay price={entry.price} priceType={entry.priceType} compact />
                           </span>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, -1)}><Minus className="h-3 w-3" /></Button>
+                            <button onClick={() => updateQty(entry.id, -1)} className="w-6 h-6 rounded-full hover:bg-secondary flex items-center justify-center"><Minus className="h-3 w-3" /></button>
                             <span className="font-bold w-5 text-center">{entry.quantity}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(entry.id, 1)}><Plus className="h-3 w-3" /></Button>
+                            <button onClick={() => updateQty(entry.id, 1)} className="w-6 h-6 rounded-full hover:bg-secondary flex items-center justify-center"><Plus className="h-3 w-3" /></button>
                           </div>
                         </div>
                       ))}
@@ -286,17 +320,23 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           </div>
 
           {/* Footer / cart summary */}
-          <div className="p-4 border-t border-border bg-secondary/50 shrink-0 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{totalItems} {isVi ? 'món đã chọn' : 'items'}</p>
-                <p className="font-bold text-primary text-lg">{formatPrice(total)}</p>
+          <div className="px-5 py-4 border-t border-border/60 bg-secondary/40 shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+                  {totalItems > 0
+                    ? (isVi ? `${totalItems} món đã chọn` : `${totalItems} item(s) selected`)
+                    : (isVi ? 'Chưa chọn món' : 'Nothing selected')}
+                </p>
+                <p className="font-display font-bold text-primary text-xl mt-0.5">{formatPrice(total)}</p>
               </div>
-              <Button variant="gold" onClick={onClose}>{isVi ? 'Xong' : 'Done'}</Button>
+              <Button variant="gold" className="rounded-full px-6 tracking-wide" onClick={onClose}>
+                {isVi ? 'Xong' : 'Done'}
+              </Button>
             </div>
             {negotiableCount > 0 && (
-              <p className="text-[11px] text-muted-foreground">
-                * {isVi ? `${negotiableCount} món giá thỏa thuận sẽ được tính riêng tại nhà hàng` : `${negotiableCount} negotiable item(s) will be billed at the restaurant`}
+              <p className="text-[11px] text-muted-foreground mt-2 italic">
+                * {isVi ? `${negotiableCount} món giá thỏa thuận sẽ được tính tại nhà hàng` : `${negotiableCount} negotiable item(s) will be billed at the restaurant`}
               </p>
             )}
           </div>
