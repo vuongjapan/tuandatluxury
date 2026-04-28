@@ -306,6 +306,9 @@ const Header = () => {
                         </span>
                       </div>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/account')}>
+                        <User className="h-4 w-4 mr-2" /> Tài khoản của tôi
+                      </DropdownMenuItem>
                       {isAdmin && (
                         <DropdownMenuItem onClick={() => navigate('/admin')}>
                           <Shield className="h-4 w-4 mr-2" /> {t('nav.admin')}
