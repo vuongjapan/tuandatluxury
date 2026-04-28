@@ -50,8 +50,9 @@ import AdminTransport from '@/components/admin/AdminTransport';
 import AdminExchangeRates from '@/components/admin/AdminExchangeRates';
 import AdminLive from '@/components/admin/AdminLive';
 import AdminManualInvoice from '@/components/admin/AdminManualInvoice';
+import AdminCustomers from '@/components/admin/AdminCustomers';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -215,6 +216,7 @@ const AdminDashboard = () => {
         { id: 'services', icon: Sparkles, label: 'Dịch vụ' },
         { id: 'intro-section', icon: ImageIcon, label: 'Section Giới thiệu (Trang chủ)' },
         { id: 'members', icon: Users, label: 'Khách & Thành viên' },
+        { id: 'customers', icon: Users, label: '👥 Quản lý khách hàng' },
         { id: 'reviews', icon: BookOpen, label: 'Đánh giá khách' },
         { id: 'gallery', icon: ImageIcon, label: 'Thư viện ảnh' },
         { id: 'about-images', icon: ImageIcon, label: 'Ảnh trang Giới thiệu' },
@@ -404,6 +406,7 @@ const AdminDashboard = () => {
           {tab === 'services' && <AdminServices />}
           {tab === 'food-menu' && <AdminFoodMenu />}
           {tab === 'members' && <AdminMembers />}
+          {tab === 'customers' && <AdminCustomers />}
           {tab === 'revenue' && <AdminRevenue bookings={bookings} rooms={rooms} />}
           {tab === 'blog' && <AdminBlog />}
           {tab === 'combos' && <AdminCombo />}
