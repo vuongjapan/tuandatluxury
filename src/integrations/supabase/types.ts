@@ -432,6 +432,7 @@ export type Database = {
           status: string
           total_price_vnd: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           booking_code: string
@@ -481,6 +482,7 @@ export type Database = {
           status?: string
           total_price_vnd?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           booking_code?: string
@@ -530,6 +532,7 @@ export type Database = {
           status?: string
           total_price_vnd?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1942,6 +1945,33 @@ export type Database = {
         }
         Relationships: []
       }
+      member_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          sender: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       menu_item_prices: {
         Row: {
           created_at: string
@@ -2228,32 +2258,71 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string | null
+          address: string | null
+          admin_notes: string | null
+          admin_tags: string[] | null
           avatar_url: string | null
+          cover_url: string | null
           created_at: string
+          date_of_birth: string | null
           email: string | null
           full_name: string | null
+          gender: string | null
           id: string
+          id_card: string | null
+          manual_tier: string | null
+          manual_tier_note: string | null
+          nationality: string | null
           phone: string | null
+          room_preferences: string | null
+          special_requests: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_status?: string | null
+          address?: string | null
+          admin_notes?: string | null
+          admin_tags?: string[] | null
           avatar_url?: string | null
+          cover_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          id_card?: string | null
+          manual_tier?: string | null
+          manual_tier_note?: string | null
+          nationality?: string | null
           phone?: string | null
+          room_preferences?: string | null
+          special_requests?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_status?: string | null
+          address?: string | null
+          admin_notes?: string | null
+          admin_tags?: string[] | null
           avatar_url?: string | null
+          cover_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          id_card?: string | null
+          manual_tier?: string | null
+          manual_tier_note?: string | null
+          nationality?: string | null
           phone?: string | null
+          room_preferences?: string | null
+          special_requests?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -3322,6 +3391,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      sync_user_bookings: {
+        Args: { _email: string; _phone: string; _user_id: string }
+        Returns: number
       }
     }
     Enums: {
