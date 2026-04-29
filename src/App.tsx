@@ -135,6 +135,8 @@ const App = () => {
                     <Route path="/transport" element={<Transport />} />
                     <Route path="/live" element={<Live />} />
                     <Route path="/account" element={<Account />} />
+                    <Route path="/account/booking/:bookingCode" element={<Account />} />
+                    <Route path="/tra-cuu" element={<Lookup />} />
                     <Route path="/lookup" element={<Lookup />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="*" element={<NotFound />} />
