@@ -105,6 +105,7 @@ const Header = () => {
   ] as any[];
 
   const moreItems = [
+    { key: 'nav.lookup', href: '/lookup', label: 'Tra cứu đặt phòng' },
     { key: 'nav.food_order', href: '/food-order' },
     { key: 'nav.reviews', href: '/danh-gia' },
     { key: 'nav.gallery', href: '/#gallery' },
