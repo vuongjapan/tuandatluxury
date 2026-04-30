@@ -84,6 +84,7 @@ const Account = () => {
         supabase
           .from('bookings')
           .select('*')
+          .eq('visibility', 'visible')
           .or(
             phoneNorm
               ? `user_id.eq.${supabaseUser.id},guest_email.eq.${email},guest_phone.eq.${phoneNorm}`
