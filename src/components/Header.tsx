@@ -282,6 +282,13 @@ const Header = () => {
                   </button>
                 )}
 
+                {/* User menu (desktop) when logged in */}
+                {!loading && user && (
+                  <div className="ml-2">
+                    <UserMenu avatarUrl={avatarUrl} unreadCount={unreadCount} upcomingCount={upcomingCount} />
+                  </div>
+                )}
+
                 {/* Book Now CTA */}
                 <Button
                   variant="gold"
