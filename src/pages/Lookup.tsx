@@ -290,6 +290,38 @@ const Lookup = () => {
                 </div>
               ))}
 
+              {manualInvoices.map((m) => (
+                <div key={m.id} className="bg-card rounded-xl border border-border p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="font-mono font-semibold text-foreground">{m.invoice_code}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-800">Hóa đơn thủ công</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {m.guest_name} · {(m.guest_phone || '').replace(/(\d{4})\d{3}(\d{3})/, '$1•••$2')}
+                      </p>
+                      {m.check_in && m.check_out && (
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {format(new Date(m.check_in), 'dd/MM')} → {format(new Date(m.check_out), 'dd/MM/yyyy')} · {m.room_quantity || 1} phòng · {m.guests_count || 1} khách
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="border-t border-border pt-3 grid grid-cols-3 gap-2 text-xs">
+                    <div><p className="text-muted-foreground">Tổng</p><p className="font-semibold text-foreground">{formatVnd(m.total_amount)}</p></div>
+                    <div><p className="text-muted-foreground">Đã cọc</p><p className="font-semibold text-green-700">{formatVnd(m.deposit_amount)}</p></div>
+                    <div><p className="text-muted-foreground">Còn lại</p><p className={`font-semibold ${m.remaining_amount > 0 ? 'text-amber-700' : 'text-foreground'}`}>{formatVnd(m.remaining_amount)}</p></div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+                    <a href="tel:0983605768">
+                      <Button size="sm" variant="outline" className="gap-1.5"><Phone className="h-3.5 w-3.5" /> Hỗ trợ</Button>
+                    </a>
+                  </div>
+                </div>
+              ))}
+
               {totalFound > 0 && (
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 text-sm">
                   <p className="font-semibold text-foreground flex items-center gap-2">
