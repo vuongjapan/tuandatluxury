@@ -232,6 +232,15 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                         booking={b}
                         onUpdated={(newEmail) => handleEmailUpdated(b.id, newEmail)}
                       />
+                      {b.visibility === 'hidden' ? (
+                        <button onClick={() => toggleVisibility(b, false)} className="p-1 rounded hover:bg-secondary text-green-700" title="Hiện lại">
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <button onClick={() => { setHideTarget(b); setHideReason(''); }} className="p-1 rounded hover:bg-secondary text-amber-600" title="Ẩn khỏi tra cứu">
+                          <EyeOff className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button onClick={() => onMoveToTrash(b)} className="p-1 rounded hover:bg-destructive/10 text-destructive" title="Thùng rác">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
