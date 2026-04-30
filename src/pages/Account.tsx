@@ -408,12 +408,14 @@ const Account = () => {
                         <ViewRow icon={Cake} label="Ngày sinh" value={form.date_of_birth ? format(new Date(form.date_of_birth), 'dd/MM/yyyy') : ''} />
                         <ViewRow icon={UserCircle2} label="Giới tính" value={form.gender} />
                         <ViewRow icon={MapPin} label="Địa chỉ" value={form.address} />
-                        <ViewRow icon={IdCard} label="CCCD" value={form.id_card ? (showCccd ? form.id_card : '••••••••') : ''} action={form.id_card ? (
-                          <button onClick={() => setShowCccd(!showCccd)} className="text-xs text-primary inline-flex items-center gap-1">
-                            {showCccd ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                            {showCccd ? 'Ẩn' : 'Hiện'}
-                          </button>
-                        ) : null} />
+                        {form.id_card && (
+                          <ViewRow icon={IdCard} label="CCCD (admin)" value={showCccd ? form.id_card : '••••••••'} action={
+                            <button onClick={() => setShowCccd(!showCccd)} className="text-xs text-primary inline-flex items-center gap-1">
+                              {showCccd ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              {showCccd ? 'Ẩn' : 'Hiện'}
+                            </button>
+                          } />
+                        )}
                         <ViewRow icon={Heart} label="Sở thích phòng" value={form.room_preferences} />
                         <ViewRow icon={Sparkles} label="Yêu cầu đặc biệt" value={form.special_requests} />
 
