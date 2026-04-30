@@ -56,7 +56,7 @@ const AdminManualInvoice = () => {
   const [detailData, setDetailData] = useState<any>(null);
 
   // form state
-  const [code, setCode] = useState(genCode());
+  const [code, setCode] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
@@ -105,8 +105,8 @@ const AdminManualInvoice = () => {
 
   useEffect(() => { loadData(); }, []);
 
-  const resetForm = () => {
-    setCode(genCode());
+  const resetForm = async () => {
+    setCode(await generateInvoiceCode());
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
     setRoomId(''); setRoomName(''); setRoomQty(1); setRoomPricePerNight(0);
