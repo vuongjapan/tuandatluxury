@@ -14,6 +14,7 @@ import { useSyncBookings } from '@/hooks/useSyncBookings';
 import { useMemberChat } from '@/hooks/useMemberChat';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { ChangePasswordCard } from '@/components/ChangePasswordCard';
+import { MemberVouchersList } from '@/components/MemberVouchersList';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
