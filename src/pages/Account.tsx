@@ -435,23 +435,77 @@ const Account = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        <Field label="Họ tên *" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
-                        <Field label="Số điện thoại" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-                        <Field label="Ngày sinh" type="date" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} />
-                        <Field label="Giới tính (Nam/Nữ/Khác)" value={form.gender} onChange={(v) => setForm({ ...form, gender: v })} />
-                        <Field label="Địa chỉ" value={form.address} onChange={(v) => setForm({ ...form, address: v })} className="sm:col-span-2" />
-                        <Field label="CCCD" value={form.id_card} onChange={(v) => setForm({ ...form, id_card: v })} />
-                        <Field label="Quốc tịch" value={form.nationality} onChange={(v) => setForm({ ...form, nationality: v })} />
-                        <Field label="URL ảnh đại diện" value={form.avatar_url} onChange={(v) => setForm({ ...form, avatar_url: v })} className="sm:col-span-2" />
-                        <Field label="URL ảnh bìa" value={form.cover_url} onChange={(v) => setForm({ ...form, cover_url: v })} className="sm:col-span-2" />
-                        <div className="sm:col-span-2">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Sở thích phòng</label>
-                          <Textarea rows={2} value={form.room_preferences} onChange={(e) => setForm({ ...form, room_preferences: e.target.value })} placeholder="VD: View biển, tầng cao..." />
+                      <div className="space-y-4">
+                        {/* Photo uploads */}
+                        <div className="border border-border rounded-xl p-4 bg-secondary/30 space-y-4">
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Ảnh đại diện</p>
+                            <div className="flex items-center gap-4">
+                              <div className="w-20 h-20 rounded-full overflow-hidden bg-gold-gradient flex items-center justify-center shrink-0 border border-border">
+                                {form.avatar_url ? (
+                                  <img src={form.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <UserCircle2 className="h-10 w-10 text-primary-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <AvatarUpload
+                                  userId={supabaseUser!.id}
+                                  currentUrl={form.avatar_url}
+                                  kind="avatar"
+                                  onChange={(url) => setForm({ ...form, avatar_url: url })}
+                                />
+                                <p className="text-[11px] text-muted-foreground mt-1.5">JPG, PNG, WEBP · Tối đa 5MB</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-border pt-3">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Ảnh bìa (tuỳ chọn)</p>
+                            <div className="aspect-[16/9] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-secondary mb-2 border border-border">
+                              {form.cover_url && (
+                                <img src={form.cover_url} alt="" className="w-full h-full object-cover" />
+                              )}
+                            </div>
+                            <AvatarUpload
+                              userId={supabaseUser!.id}
+                              currentUrl={form.cover_url}
+                              kind="cover"
+                              onChange={(url) => setForm({ ...form, cover_url: url })}
+                            />
+                          </div>
                         </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu đặc biệt</label>
-                          <Textarea rows={2} value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} placeholder="VD: Không hành, gối thấp..." />
+
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <Field label="Họ tên *" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+                          <Field label="Số điện thoại" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+                          <Field label="Ngày sinh" type="date" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} />
+                          <div>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Giới tính</label>
+                            <div className="flex gap-2">
+                              {['Nam', 'Nữ', 'Khác'].map((g) => (
+                                <button
+                                  key={g}
+                                  type="button"
+                                  onClick={() => setForm({ ...form, gender: g })}
+                                  className={`px-3 py-2 text-sm rounded-lg border flex-1 ${
+                                    form.gender === g ? 'border-primary bg-primary/10 text-primary font-semibold' : 'border-border text-muted-foreground'
+                                  }`}
+                                >
+                                  {g}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <Field label="Địa chỉ" value={form.address} onChange={(v) => setForm({ ...form, address: v })} className="sm:col-span-2" />
+                          <div className="sm:col-span-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Sở thích phòng</label>
+                            <Textarea rows={2} value={form.room_preferences} onChange={(e) => setForm({ ...form, room_preferences: e.target.value })} placeholder="VD: View biển, tầng cao..." />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu đặc biệt</label>
+                            <Textarea rows={2} value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} placeholder="VD: Không hành, gối thấp..." />
+                          </div>
                         </div>
                       </div>
                     )}
