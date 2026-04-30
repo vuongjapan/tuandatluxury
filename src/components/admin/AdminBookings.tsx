@@ -4,7 +4,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Search, X, Eye, FileText, MailWarning } from 'lucide-react';
+import { Trash2, Search, X, Eye, FileText, MailWarning, EyeOff } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -45,6 +50,9 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  const [hideTarget, setHideTarget] = useState<any>(null);
+  const [hideReason, setHideReason] = useState('');
+
   const updateBookingStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
     if (error) { toast({ title: 'Lỗi', variant: 'destructive' }); return; }
@@ -54,6 +62,18 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
 
   const handleEmailUpdated = (bookingId: string, newEmail: string) => {
     setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, guest_email: newEmail } : b));
+  };
+
+  const toggleVisibility = async (b: any, hide: boolean) => {
+    const payload: any = hide
+      ? { visibility: 'hidden', hidden_reason: hideReason || null, hidden_at: new Date().toISOString() }
+      : { visibility: 'visible', hidden_reason: null, hidden_at: null };
+    const { error } = await supabase.from('bookings').update(payload).eq('id', b.id);
+    if (error) { toast({ title: 'Lỗi', description: error.message, variant: 'destructive' }); return; }
+    setBookings(prev => prev.map(x => x.id === b.id ? { ...x, ...payload } : x));
+    toast({ title: hide ? '👁 Đã ẩn đơn khỏi tra cứu' : '✅ Đã hiện lại đơn' });
+    setHideTarget(null);
+    setHideReason('');
   };
 
 
@@ -148,7 +168,14 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
             <tbody className="divide-y divide-border">
               {filtered.map(b => (
                 <tr key={b.id} className="hover:bg-secondary/50 transition-colors">
-                  <td className="px-3 py-3 font-mono text-xs font-bold text-primary">{b.booking_code}</td>
+                  <td className="px-3 py-3 font-mono text-xs font-bold text-primary">
+                    {b.booking_code}
+                    {b.visibility === 'hidden' && (
+                      <span className="ml-1 inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold">
+                        <EyeOff className="h-2.5 w-2.5" /> Đã ẩn
+                      </span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">
                     <p className="font-medium text-xs">{b.guest_name}</p>
                     <p className="text-[11px] text-muted-foreground">{b.guest_phone}</p>
@@ -205,6 +232,15 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                         booking={b}
                         onUpdated={(newEmail) => handleEmailUpdated(b.id, newEmail)}
                       />
+                      {b.visibility === 'hidden' ? (
+                        <button onClick={() => toggleVisibility(b, false)} className="p-1 rounded hover:bg-secondary text-green-700" title="Hiện lại">
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <button onClick={() => { setHideTarget(b); setHideReason(''); }} className="p-1 rounded hover:bg-secondary text-amber-600" title="Ẩn khỏi tra cứu">
+                          <EyeOff className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button onClick={() => onMoveToTrash(b)} className="p-1 rounded hover:bg-destructive/10 text-destructive" title="Thùng rác">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -223,6 +259,31 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
       </div>
 
       <p className="text-xs text-muted-foreground">Hiển thị {filtered.length} / {bookings.length} đơn</p>
+      <AlertDialog open={!!hideTarget} onOpenChange={(o) => !o && setHideTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <EyeOff className="h-4 w-4" /> Ẩn đơn {hideTarget?.booking_code}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Đơn này sẽ bị <strong>ẩn khỏi trang tra cứu của khách</strong> và lịch sử của thành viên.</p>
+                <p className="text-muted-foreground">✓ Vẫn hiển thị trong admin · ✓ Dữ liệu không bị xóa</p>
+                <div className="pt-2">
+                  <label className="text-xs font-semibold uppercase block mb-1">Lý do ẩn (tuỳ chọn)</label>
+                  <Textarea rows={2} value={hideReason} onChange={(e) => setHideReason(e.target.value)} placeholder="VD: Hủy đơn đột xuất, đã xử lý..." />
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={() => hideTarget && toggleVisibility(hideTarget, true)}>
+              <EyeOff className="h-4 w-4 mr-1.5" /> Xác nhận ẩn
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

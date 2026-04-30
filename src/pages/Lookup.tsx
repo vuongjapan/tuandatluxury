@@ -59,7 +59,7 @@ const Lookup = () => {
     setFoodOrders([]);
 
     try {
-      let bQuery = supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(30);
+      let bQuery = supabase.from('bookings').select('*').eq('visibility', 'visible').order('created_at', { ascending: false }).limit(30);
       let fQuery = supabase.from('food_orders').select('*').order('created_at', { ascending: false }).limit(30);
 
       if (query.trim()) {
@@ -74,11 +74,9 @@ const Lookup = () => {
           bQuery = bQuery.eq('guest_phone', d.value);
           fQuery = fQuery.eq('phone', d.value);
         } else {
-          // unknown — try OR
           bQuery = bQuery.or(`booking_code.eq.${d.value.toUpperCase()},guest_phone.eq.${d.value},guest_email.eq.${d.value.toLowerCase()}`);
         }
       } else {
-        // Advanced search
         const conds: string[] = [];
         if (advPhone.trim()) conds.push(`guest_phone.eq.${advPhone.trim()}`);
         if (advEmail.trim()) conds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`);

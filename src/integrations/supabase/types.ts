@@ -406,6 +406,9 @@ export type Database = {
           guest_notes: string | null
           guest_phone: string
           guests_count: number
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
           id: string
           individual_food_total: number | null
           language: string | null
@@ -433,6 +436,7 @@ export type Database = {
           total_price_vnd: number
           updated_at: string
           user_id: string | null
+          visibility: string
         }
         Insert: {
           booking_code: string
@@ -456,6 +460,9 @@ export type Database = {
           guest_notes?: string | null
           guest_phone: string
           guests_count?: number
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           individual_food_total?: number | null
           language?: string | null
@@ -483,6 +490,7 @@ export type Database = {
           total_price_vnd?: number
           updated_at?: string
           user_id?: string | null
+          visibility?: string
         }
         Update: {
           booking_code?: string
@@ -506,6 +514,9 @@ export type Database = {
           guest_notes?: string | null
           guest_phone?: string
           guests_count?: number
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           individual_food_total?: number | null
           language?: string | null
@@ -533,6 +544,7 @@ export type Database = {
           total_price_vnd?: number
           updated_at?: string
           user_id?: string | null
+          visibility?: string
         }
         Relationships: [
           {

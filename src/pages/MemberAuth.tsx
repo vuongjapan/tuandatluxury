@@ -183,6 +183,22 @@ const MemberAuth = () => {
               <Button variant="hero" className="w-full" type="submit" disabled={loading || (mode === 'register' && password !== confirmPassword)}>
                 {loading ? 'Đang xử lý...' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
               </Button>
+              {mode === 'login' && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!email.trim()) { toast({ title: 'Nhập email trước', variant: 'destructive' }); return; }
+                    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                      redirectTo: `${window.location.origin}/reset-password`,
+                    });
+                    if (error) toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
+                    else toast({ title: '📧 Đã gửi link đặt lại', description: `Kiểm tra hộp thư ${email}` });
+                  }}
+                  className="block mx-auto text-xs text-muted-foreground hover:text-primary mt-2"
+                >
+                  Quên mật khẩu?
+                </button>
+              )}
             </form>
 
             {mode === 'register' && (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, User, LogOut, Shield, ChevronDown, Radio } from 'lucide-react';
+import { Menu, X, Phone, User, LogOut, Shield, ChevronDown, Radio, Calendar, MessageSquare, Gift, Settings as SettingsIcon, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { UserMenu } from '@/components/UserMenu';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,6 +62,9 @@ const Header = () => {
 
   const [scrolled, setScrolled] = useState(false);
   const [liveActive, setLiveActive] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [upcomingCount, setUpcomingCount] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -90,6 +94,40 @@ const Header = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Load avatar + unread + upcoming for logged-in member
+  useEffect(() => {
+    if (!user) {
+      setAvatarUrl(null);
+      setUnreadCount(0);
+      setUpcomingCount(0);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      const [pRes, mRes, bRes] = await Promise.all([
+        supabase.from('profiles').select('avatar_url').eq('user_id', user.id).maybeSingle(),
+        supabase.from('member_messages' as any).select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id).eq('sender', 'admin').eq('is_read', false),
+        supabase.from('bookings').select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id).gte('check_in', new Date().toISOString().slice(0, 10))
+          .neq('status', 'cancelled'),
+      ]);
+      if (cancelled) return;
+      setAvatarUrl((pRes.data as any)?.avatar_url || null);
+      setUnreadCount(mRes.count || 0);
+      setUpcomingCount(bRes.count || 0);
+    };
+    load();
+    // realtime new admin messages
+    const ch = supabase
+      .channel(`hdr_msgs_${user.id}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'member_messages', filter: `user_id=eq.${user.id}` },
+        (p: any) => { if (p.new?.sender === 'admin' && !p.new?.is_read) setUnreadCount((c) => c + 1); })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user]);
 
   // Split nav items: left side & right side of logo
   const leftNavItems = [
@@ -147,13 +185,8 @@ const Header = () => {
             <div className="flex items-center gap-4">
               <span className="text-background/50">LK29-20 FLC Sầm Sơn, Thanh Hóa</span>
 
-              {/* Auth quick links */}
-              {!loading && user ? (
-                <button onClick={() => navigate(isAdmin ? '/admin' : '/')} className="flex items-center gap-1 hover:text-background transition-colors">
-                  <User className="h-3 w-3" />
-                  <span className="max-w-[100px] truncate">{user.fullName}</span>
-                </button>
-              ) : !loading ? (
+              {/* Auth quick links — guest only (logged-in user uses UserMenu in main bar) */}
+              {!loading && !user ? (
                 <button onClick={() => navigate('/member')} className="flex items-center gap-1 hover:text-background transition-colors">
                   <User className="h-3 w-3" />
                   {t('nav.signin')}
@@ -249,6 +282,13 @@ const Header = () => {
                   </button>
                 )}
 
+                {/* User menu (desktop) when logged in */}
+                {!loading && user && (
+                  <div className="ml-2">
+                    <UserMenu avatarUrl={avatarUrl} unreadCount={unreadCount} upcomingCount={upcomingCount} />
+                  </div>
+                )}
+
                 {/* Book Now CTA */}
                 <Button
                   variant="gold"
@@ -292,34 +332,7 @@ const Header = () => {
 
                 {/* User button for auth */}
                 {!loading && user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <User className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <div className="px-3 py-2">
-                        <p className="text-sm font-semibold">{user.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${TIER_COLORS[user.tier]}`}>
-                          {TIER_LABELS[user.tier][language]}
-                        </span>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate('/account')}>
-                        <User className="h-4 w-4 mr-2" /> Tài khoản của tôi
-                      </DropdownMenuItem>
-                      {isAdmin && (
-                        <DropdownMenuItem onClick={() => navigate('/admin')}>
-                          <Shield className="h-4 w-4 mr-2" /> {t('nav.admin')}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => signOut()}>
-                        <LogOut className="h-4 w-4 mr-2" /> {t('nav.signout')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <UserMenu avatarUrl={avatarUrl} unreadCount={unreadCount} upcomingCount={upcomingCount} compact />
                 ) : !loading ? (
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/member')}>
                     <User className="h-4 w-4" />
