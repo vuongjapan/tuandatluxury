@@ -25,7 +25,26 @@ interface InvoiceItem {
 
 const fmt = (v: number) => (v || 0).toLocaleString('vi-VN') + '₫';
 
-const genCode = () => 'TD-MAN-' + Date.now().toString().slice(-8);
+// Format: TDTD + YYYYMM + C + 5-digit sequence (per month)
+const generateInvoiceCode = async (): Promise<string> => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const prefix = `TDTD${year}${month}C`;
+  const { data } = await supabase
+    .from('manual_invoices')
+    .select('invoice_code')
+    .like('invoice_code', `${prefix}%`)
+    .order('invoice_code', { ascending: false })
+    .limit(1);
+  let next = 1;
+  if (data && data.length > 0) {
+    const last = (data[0] as any).invoice_code as string;
+    const n = parseInt(last.replace(prefix, ''), 10);
+    if (!isNaN(n)) next = n + 1;
+  }
+  return `${prefix}${String(next).padStart(5, '0')}`;
+};
 
 const AdminManualInvoice = () => {
   const { toast } = useToast();
