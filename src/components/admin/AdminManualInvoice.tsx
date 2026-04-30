@@ -25,7 +25,26 @@ interface InvoiceItem {
 
 const fmt = (v: number) => (v || 0).toLocaleString('vi-VN') + '₫';
 
-const genCode = () => 'TD-MAN-' + Date.now().toString().slice(-8);
+// Format: TDTD + YYYYMM + C + 5-digit sequence (per month)
+const generateInvoiceCode = async (): Promise<string> => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const prefix = `TDTD${year}${month}C`;
+  const { data } = await supabase
+    .from('manual_invoices')
+    .select('invoice_code')
+    .like('invoice_code', `${prefix}%`)
+    .order('invoice_code', { ascending: false })
+    .limit(1);
+  let next = 1;
+  if (data && data.length > 0) {
+    const last = (data[0] as any).invoice_code as string;
+    const n = parseInt(last.replace(prefix, ''), 10);
+    if (!isNaN(n)) next = n + 1;
+  }
+  return `${prefix}${String(next).padStart(5, '0')}`;
+};
 
 const AdminManualInvoice = () => {
   const { toast } = useToast();
@@ -37,7 +56,7 @@ const AdminManualInvoice = () => {
   const [detailData, setDetailData] = useState<any>(null);
 
   // form state
-  const [code, setCode] = useState(genCode());
+  const [code, setCode] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
@@ -86,8 +105,8 @@ const AdminManualInvoice = () => {
 
   useEffect(() => { loadData(); }, []);
 
-  const resetForm = () => {
-    setCode(genCode());
+  const resetForm = async () => {
+    setCode(await generateInvoiceCode());
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
     setRoomId(''); setRoomName(''); setRoomQty(1); setRoomPricePerNight(0);
@@ -137,8 +156,10 @@ const AdminManualInvoice = () => {
       return null;
     }
     setSubmitting(true);
+    const finalCode = code || (await generateInvoiceCode());
+    if (!code) setCode(finalCode);
     const { data: inv, error } = await supabase.from('manual_invoices').insert({
-      invoice_code: code,
+      invoice_code: finalCode,
       guest_name: guestName,
       guest_phone: guestPhone,
       guest_email: guestEmail || null,
@@ -184,7 +205,7 @@ const AdminManualInvoice = () => {
     }
 
     setSubmitting(false);
-    toast({ title: '✅ Đã tạo hóa đơn ' + code });
+    toast({ title: '✅ Đã tạo hóa đơn ' + finalCode });
     resetForm();
     loadData();
     setView('list');

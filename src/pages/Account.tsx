@@ -14,6 +14,7 @@ import { useSyncBookings } from '@/hooks/useSyncBookings';
 import { useMemberChat } from '@/hooks/useMemberChat';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { ChangePasswordCard } from '@/components/ChangePasswordCard';
+import { MemberVouchersList } from '@/components/MemberVouchersList';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -81,7 +82,7 @@ const Account = () => {
       const email = user.email.toLowerCase();
       const phoneNorm = (user.phone || '').replace(/\s+/g, '');
 
-      const [pRes, bRes, vRes] = await Promise.all([
+      const [pRes, bRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', supabaseUser.id).maybeSingle(),
         supabase
           .from('bookings')
@@ -93,12 +94,6 @@ const Account = () => {
               : `user_id.eq.${supabaseUser.id},guest_email.eq.${email}`,
           )
           .order('created_at', { ascending: false }),
-        supabase
-          .from('voucher_codes' as any)
-          .select('*')
-          .eq('status', 'active')
-          .order('end_date', { ascending: true })
-          .limit(50),
       ]);
 
       const p: any = pRes.data || {};
@@ -125,7 +120,12 @@ const Account = () => {
         return true;
       });
       setBookings(uniq);
-      setVouchers((vRes.data as any[]) || []);
+      const { data: mv } = await supabase
+        .from('member_vouchers' as any)
+        .select('id, used_at')
+        .eq('user_id', supabaseUser.id)
+        .eq('is_visible', true);
+      setVouchers((mv as any[]) || []);
       setLoading(false);
     };
     if (supabaseUser) load();
@@ -408,12 +408,14 @@ const Account = () => {
                         <ViewRow icon={Cake} label="Ngày sinh" value={form.date_of_birth ? format(new Date(form.date_of_birth), 'dd/MM/yyyy') : ''} />
                         <ViewRow icon={UserCircle2} label="Giới tính" value={form.gender} />
                         <ViewRow icon={MapPin} label="Địa chỉ" value={form.address} />
-                        <ViewRow icon={IdCard} label="CCCD" value={form.id_card ? (showCccd ? form.id_card : '••••••••') : ''} action={form.id_card ? (
-                          <button onClick={() => setShowCccd(!showCccd)} className="text-xs text-primary inline-flex items-center gap-1">
-                            {showCccd ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                            {showCccd ? 'Ẩn' : 'Hiện'}
-                          </button>
-                        ) : null} />
+                        {form.id_card && (
+                          <ViewRow icon={IdCard} label="CCCD (admin)" value={showCccd ? form.id_card : '••••••••'} action={
+                            <button onClick={() => setShowCccd(!showCccd)} className="text-xs text-primary inline-flex items-center gap-1">
+                              {showCccd ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              {showCccd ? 'Ẩn' : 'Hiện'}
+                            </button>
+                          } />
+                        )}
                         <ViewRow icon={Heart} label="Sở thích phòng" value={form.room_preferences} />
                         <ViewRow icon={Sparkles} label="Yêu cầu đặc biệt" value={form.special_requests} />
 
@@ -435,23 +437,77 @@ const Account = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        <Field label="Họ tên *" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
-                        <Field label="Số điện thoại" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-                        <Field label="Ngày sinh" type="date" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} />
-                        <Field label="Giới tính (Nam/Nữ/Khác)" value={form.gender} onChange={(v) => setForm({ ...form, gender: v })} />
-                        <Field label="Địa chỉ" value={form.address} onChange={(v) => setForm({ ...form, address: v })} className="sm:col-span-2" />
-                        <Field label="CCCD" value={form.id_card} onChange={(v) => setForm({ ...form, id_card: v })} />
-                        <Field label="Quốc tịch" value={form.nationality} onChange={(v) => setForm({ ...form, nationality: v })} />
-                        <Field label="URL ảnh đại diện" value={form.avatar_url} onChange={(v) => setForm({ ...form, avatar_url: v })} className="sm:col-span-2" />
-                        <Field label="URL ảnh bìa" value={form.cover_url} onChange={(v) => setForm({ ...form, cover_url: v })} className="sm:col-span-2" />
-                        <div className="sm:col-span-2">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Sở thích phòng</label>
-                          <Textarea rows={2} value={form.room_preferences} onChange={(e) => setForm({ ...form, room_preferences: e.target.value })} placeholder="VD: View biển, tầng cao..." />
+                      <div className="space-y-4">
+                        {/* Photo uploads */}
+                        <div className="border border-border rounded-xl p-4 bg-secondary/30 space-y-4">
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Ảnh đại diện</p>
+                            <div className="flex items-center gap-4">
+                              <div className="w-20 h-20 rounded-full overflow-hidden bg-gold-gradient flex items-center justify-center shrink-0 border border-border">
+                                {form.avatar_url ? (
+                                  <img src={form.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <UserCircle2 className="h-10 w-10 text-primary-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <AvatarUpload
+                                  userId={supabaseUser!.id}
+                                  currentUrl={form.avatar_url}
+                                  kind="avatar"
+                                  onChange={(url) => setForm({ ...form, avatar_url: url })}
+                                />
+                                <p className="text-[11px] text-muted-foreground mt-1.5">JPG, PNG, WEBP · Tối đa 5MB</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-border pt-3">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Ảnh bìa (tuỳ chọn)</p>
+                            <div className="aspect-[16/9] rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-secondary mb-2 border border-border">
+                              {form.cover_url && (
+                                <img src={form.cover_url} alt="" className="w-full h-full object-cover" />
+                              )}
+                            </div>
+                            <AvatarUpload
+                              userId={supabaseUser!.id}
+                              currentUrl={form.cover_url}
+                              kind="cover"
+                              onChange={(url) => setForm({ ...form, cover_url: url })}
+                            />
+                          </div>
                         </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu đặc biệt</label>
-                          <Textarea rows={2} value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} placeholder="VD: Không hành, gối thấp..." />
+
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <Field label="Họ tên *" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+                          <Field label="Số điện thoại" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+                          <Field label="Ngày sinh" type="date" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} />
+                          <div>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Giới tính</label>
+                            <div className="flex gap-2">
+                              {['Nam', 'Nữ', 'Khác'].map((g) => (
+                                <button
+                                  key={g}
+                                  type="button"
+                                  onClick={() => setForm({ ...form, gender: g })}
+                                  className={`px-3 py-2 text-sm rounded-lg border flex-1 ${
+                                    form.gender === g ? 'border-primary bg-primary/10 text-primary font-semibold' : 'border-border text-muted-foreground'
+                                  }`}
+                                >
+                                  {g}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <Field label="Địa chỉ" value={form.address} onChange={(v) => setForm({ ...form, address: v })} className="sm:col-span-2" />
+                          <div className="sm:col-span-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Sở thích phòng</label>
+                            <Textarea rows={2} value={form.room_preferences} onChange={(e) => setForm({ ...form, room_preferences: e.target.value })} placeholder="VD: View biển, tầng cao..." />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Yêu cầu đặc biệt</label>
+                            <Textarea rows={2} value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} placeholder="VD: Không hành, gối thấp..." />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -516,35 +572,21 @@ const Account = () => {
 
                     <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 mb-6">
                       <p className="font-semibold text-foreground flex items-center gap-2">
-                        <Crown className="h-4 w-4 text-primary" /> {TIER_LABELS[user.tier][language]}
+                        <Crown className="h-4 w-4 text-primary" /> Hạng: {TIER_LABELS[user.tier][language]}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {user.tier === 'normal' ? 'Đặt 3 lần để nâng hạng VIP, nhận giảm 5–10% tiền phòng.' :
                          user.tier === 'vip' ? 'Tự động giảm 5–10% tiền phòng khi đặt.' :
                          'Tự động giảm tối đa khi đặt phòng.'}
                       </p>
+                      {user.tier !== 'super_vip' && (
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden mt-3">
+                          <div className="h-full bg-gold-gradient transition-all" style={{ width: `${progress}%` }} />
+                        </div>
+                      )}
                     </div>
 
-                    <p className="text-xs text-muted-foreground mb-3">Voucher khả dụng ({vouchers.length}):</p>
-                    {vouchers.length === 0 ? (
-                      <EmptyState text="Hiện chưa có voucher khả dụng." />
-                    ) : (
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {vouchers.map((v) => (
-                          <div key={v.id} className="border border-primary/20 rounded-xl p-4 bg-primary/5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono font-bold text-base text-primary tracking-wider">{v.code}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-semibold">
-                                {v.discount_type === 'percent' ? `-${v.discount_value}%` : `-${formatVnd(v.discount_value)}`}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              HSD: {v.end_date ? format(new Date(v.end_date), 'dd/MM/yyyy') : '—'}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {supabaseUser && <MemberVouchersList userId={supabaseUser.id} />}
                   </div>
                 )}
 

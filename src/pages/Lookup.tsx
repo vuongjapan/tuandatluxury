@@ -38,12 +38,14 @@ const Lookup = () => {
   const [loading, setLoading] = useState(false);
   const [bookings, setBookings] = useState<any[] | null>(null);
   const [foodOrders, setFoodOrders] = useState<any[]>([]);
+  const [manualInvoices, setManualInvoices] = useState<any[]>([]);
 
   const detect = (q: string): { kind: 'code' | 'email' | 'phone' | 'unknown'; value: string } => {
     const v = q.trim();
     if (!v) return { kind: 'unknown', value: v };
     if (v.includes('@')) return { kind: 'email', value: v.toLowerCase() };
-    if (/^[A-Z]{2,3}\d{6,}/i.test(v)) return { kind: 'code', value: v.toUpperCase() };
+    // Booking codes: TD202604A00014, TDTD202604C00001, TD-MAN-12345678, etc.
+    if (/^TD/i.test(v) || /^[A-Z]{2,4}[-A-Z0-9]{4,}/i.test(v)) return { kind: 'code', value: v.toUpperCase() };
     if (/^[\d\s+()-]{6,}$/.test(v)) return { kind: 'phone', value: v.replace(/\s+/g, '') };
     return { kind: 'unknown', value: v };
   };
@@ -57,31 +59,39 @@ const Lookup = () => {
     setLoading(true);
     setBookings(null);
     setFoodOrders([]);
+    setManualInvoices([]);
 
     try {
       let bQuery = supabase.from('bookings').select('*').eq('visibility', 'visible').order('created_at', { ascending: false }).limit(30);
       let fQuery = supabase.from('food_orders').select('*').order('created_at', { ascending: false }).limit(30);
+      let mQuery = supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(30);
 
       if (query.trim()) {
         const d = detect(query);
         if (d.kind === 'code') {
           bQuery = bQuery.eq('booking_code', d.value);
           fQuery = fQuery.eq('food_order_id', d.value);
+          mQuery = mQuery.eq('invoice_code', d.value);
         } else if (d.kind === 'email') {
           bQuery = bQuery.eq('guest_email', d.value);
           fQuery = fQuery.eq('guest_email', d.value);
+          mQuery = mQuery.eq('guest_email', d.value);
         } else if (d.kind === 'phone') {
           bQuery = bQuery.eq('guest_phone', d.value);
           fQuery = fQuery.eq('phone', d.value);
+          mQuery = mQuery.eq('guest_phone', d.value);
         } else {
           bQuery = bQuery.or(`booking_code.eq.${d.value.toUpperCase()},guest_phone.eq.${d.value},guest_email.eq.${d.value.toLowerCase()}`);
+          mQuery = mQuery.or(`invoice_code.eq.${d.value.toUpperCase()},guest_phone.eq.${d.value},guest_email.eq.${d.value.toLowerCase()}`);
         }
       } else {
         const conds: string[] = [];
-        if (advPhone.trim()) conds.push(`guest_phone.eq.${advPhone.trim()}`);
-        if (advEmail.trim()) conds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`);
+        const mConds: string[] = [];
+        if (advPhone.trim()) { conds.push(`guest_phone.eq.${advPhone.trim()}`); mConds.push(`guest_phone.eq.${advPhone.trim()}`); }
+        if (advEmail.trim()) { conds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`); mConds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`); }
         if (conds.length) bQuery = bQuery.or(conds.join(','));
-        if (advDate) bQuery = bQuery.eq('check_in', advDate);
+        if (mConds.length) mQuery = mQuery.or(mConds.join(','));
+        if (advDate) { bQuery = bQuery.eq('check_in', advDate); mQuery = mQuery.eq('check_in', advDate); }
 
         const fConds: string[] = [];
         if (advPhone.trim()) fConds.push(`phone.eq.${advPhone.trim()}`);
@@ -89,15 +99,16 @@ const Lookup = () => {
         if (fConds.length) fQuery = fQuery.or(fConds.join(','));
       }
 
-      const [b, f] = await Promise.all([bQuery, fQuery]);
+      const [b, f, m] = await Promise.all([bQuery, fQuery, mQuery]);
       setBookings(b.data || []);
       setFoodOrders(f.data || []);
+      setManualInvoices(m.data || []);
     } finally {
       setLoading(false);
     }
   };
 
-  const totalFound = (bookings?.length || 0) + foodOrders.length;
+  const totalFound = (bookings?.length || 0) + foodOrders.length + manualInvoices.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -275,6 +286,38 @@ const Lookup = () => {
                         <FileText className="h-3.5 w-3.5" /> Xem
                       </Button>
                     </Link>
+                  </div>
+                </div>
+              ))}
+
+              {manualInvoices.map((m) => (
+                <div key={m.id} className="bg-card rounded-xl border border-border p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="font-mono font-semibold text-foreground">{m.invoice_code}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-800">Hóa đơn thủ công</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {m.guest_name} · {(m.guest_phone || '').replace(/(\d{4})\d{3}(\d{3})/, '$1•••$2')}
+                      </p>
+                      {m.check_in && m.check_out && (
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {format(new Date(m.check_in), 'dd/MM')} → {format(new Date(m.check_out), 'dd/MM/yyyy')} · {m.room_quantity || 1} phòng · {m.guests_count || 1} khách
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="border-t border-border pt-3 grid grid-cols-3 gap-2 text-xs">
+                    <div><p className="text-muted-foreground">Tổng</p><p className="font-semibold text-foreground">{formatVnd(m.total_amount)}</p></div>
+                    <div><p className="text-muted-foreground">Đã cọc</p><p className="font-semibold text-green-700">{formatVnd(m.deposit_amount)}</p></div>
+                    <div><p className="text-muted-foreground">Còn lại</p><p className={`font-semibold ${m.remaining_amount > 0 ? 'text-amber-700' : 'text-foreground'}`}>{formatVnd(m.remaining_amount)}</p></div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+                    <a href="tel:0983605768">
+                      <Button size="sm" variant="outline" className="gap-1.5"><Phone className="h-3.5 w-3.5" /> Hỗ trợ</Button>
+                    </a>
                   </div>
                 </div>
               ))}

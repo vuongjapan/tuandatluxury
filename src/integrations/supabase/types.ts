@@ -1984,6 +1984,48 @@ export type Database = {
         }
         Relationships: []
       }
+      member_vouchers: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assigned_note: string | null
+          created_at: string
+          id: string
+          is_visible: boolean
+          notified: boolean
+          notified_at: string | null
+          used_at: string | null
+          user_id: string
+          voucher_code: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assigned_note?: string | null
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          notified?: boolean
+          notified_at?: string | null
+          used_at?: string | null
+          user_id: string
+          voucher_code: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assigned_note?: string | null
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          notified?: boolean
+          notified_at?: string | null
+          used_at?: string | null
+          user_id?: string
+          voucher_code?: string
+        }
+        Relationships: []
+      }
       menu_item_prices: {
         Row: {
           created_at: string
