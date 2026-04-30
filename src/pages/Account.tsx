@@ -120,7 +120,7 @@ const Account = () => {
         return true;
       });
       setBookings(uniq);
-      setVouchers((vRes.data as any[]) || []);
+      // Vouchers handled by <MemberVouchersList /> separately
       setLoading(false);
     };
     if (supabaseUser) load();
