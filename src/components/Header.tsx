@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, User, LogOut, Shield, ChevronDown, Radio } from 'lucide-react';
+import { Menu, X, Phone, User, LogOut, Shield, ChevronDown, Radio, Calendar, MessageSquare, Gift, Settings as SettingsIcon, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
