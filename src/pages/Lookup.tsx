@@ -38,6 +38,7 @@ const Lookup = () => {
   const [loading, setLoading] = useState(false);
   const [bookings, setBookings] = useState<any[] | null>(null);
   const [foodOrders, setFoodOrders] = useState<any[]>([]);
+  const [manualInvoices, setManualInvoices] = useState<any[]>([]);
 
   const detect = (q: string): { kind: 'code' | 'email' | 'phone' | 'unknown'; value: string } => {
     const v = q.trim();
