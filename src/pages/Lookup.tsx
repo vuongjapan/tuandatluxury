@@ -44,7 +44,8 @@ const Lookup = () => {
     const v = q.trim();
     if (!v) return { kind: 'unknown', value: v };
     if (v.includes('@')) return { kind: 'email', value: v.toLowerCase() };
-    if (/^[A-Z]{2,3}\d{6,}/i.test(v)) return { kind: 'code', value: v.toUpperCase() };
+    // Booking codes: TD202604A00014, TDTD202604C00001, TD-MAN-12345678, etc.
+    if (/^TD/i.test(v) || /^[A-Z]{2,4}[-A-Z0-9]{4,}/i.test(v)) return { kind: 'code', value: v.toUpperCase() };
     if (/^[\d\s+()-]{6,}$/.test(v)) return { kind: 'phone', value: v.replace(/\s+/g, '') };
     return { kind: 'unknown', value: v };
   };
