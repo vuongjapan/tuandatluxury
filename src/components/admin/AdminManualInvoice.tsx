@@ -205,7 +205,7 @@ const AdminManualInvoice = () => {
     }
 
     setSubmitting(false);
-    toast({ title: '✅ Đã tạo hóa đơn ' + code });
+    toast({ title: '✅ Đã tạo hóa đơn ' + finalCode });
     resetForm();
     loadData();
     setView('list');
