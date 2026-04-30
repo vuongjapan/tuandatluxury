@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import PageTracker from "./components/PageTracker";
+import MobileBottomNav from "./components/MobileBottomNav";
 
 // Lazy load all non-homepage routes
 const MemberAuth = lazy(() => import("./pages/MemberAuth"));
@@ -144,6 +145,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
+                <MobileBottomNav />
               </BrowserRouter>
             </TooltipProvider>
           </CartProvider>
