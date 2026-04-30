@@ -59,31 +59,39 @@ const Lookup = () => {
     setLoading(true);
     setBookings(null);
     setFoodOrders([]);
+    setManualInvoices([]);
 
     try {
       let bQuery = supabase.from('bookings').select('*').eq('visibility', 'visible').order('created_at', { ascending: false }).limit(30);
       let fQuery = supabase.from('food_orders').select('*').order('created_at', { ascending: false }).limit(30);
+      let mQuery = supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(30);
 
       if (query.trim()) {
         const d = detect(query);
         if (d.kind === 'code') {
           bQuery = bQuery.eq('booking_code', d.value);
           fQuery = fQuery.eq('food_order_id', d.value);
+          mQuery = mQuery.eq('invoice_code', d.value);
         } else if (d.kind === 'email') {
           bQuery = bQuery.eq('guest_email', d.value);
           fQuery = fQuery.eq('guest_email', d.value);
+          mQuery = mQuery.eq('guest_email', d.value);
         } else if (d.kind === 'phone') {
           bQuery = bQuery.eq('guest_phone', d.value);
           fQuery = fQuery.eq('phone', d.value);
+          mQuery = mQuery.eq('guest_phone', d.value);
         } else {
           bQuery = bQuery.or(`booking_code.eq.${d.value.toUpperCase()},guest_phone.eq.${d.value},guest_email.eq.${d.value.toLowerCase()}`);
+          mQuery = mQuery.or(`invoice_code.eq.${d.value.toUpperCase()},guest_phone.eq.${d.value},guest_email.eq.${d.value.toLowerCase()}`);
         }
       } else {
         const conds: string[] = [];
-        if (advPhone.trim()) conds.push(`guest_phone.eq.${advPhone.trim()}`);
-        if (advEmail.trim()) conds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`);
+        const mConds: string[] = [];
+        if (advPhone.trim()) { conds.push(`guest_phone.eq.${advPhone.trim()}`); mConds.push(`guest_phone.eq.${advPhone.trim()}`); }
+        if (advEmail.trim()) { conds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`); mConds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`); }
         if (conds.length) bQuery = bQuery.or(conds.join(','));
-        if (advDate) bQuery = bQuery.eq('check_in', advDate);
+        if (mConds.length) mQuery = mQuery.or(mConds.join(','));
+        if (advDate) { bQuery = bQuery.eq('check_in', advDate); mQuery = mQuery.eq('check_in', advDate); }
 
         const fConds: string[] = [];
         if (advPhone.trim()) fConds.push(`phone.eq.${advPhone.trim()}`);
@@ -91,15 +99,16 @@ const Lookup = () => {
         if (fConds.length) fQuery = fQuery.or(fConds.join(','));
       }
 
-      const [b, f] = await Promise.all([bQuery, fQuery]);
+      const [b, f, m] = await Promise.all([bQuery, fQuery, mQuery]);
       setBookings(b.data || []);
       setFoodOrders(f.data || []);
+      setManualInvoices(m.data || []);
     } finally {
       setLoading(false);
     }
   };
 
-  const totalFound = (bookings?.length || 0) + foodOrders.length;
+  const totalFound = (bookings?.length || 0) + foodOrders.length + manualInvoices.length;
 
   return (
     <div className="min-h-screen bg-background">
