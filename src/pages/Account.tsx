@@ -82,7 +82,7 @@ const Account = () => {
       const email = user.email.toLowerCase();
       const phoneNorm = (user.phone || '').replace(/\s+/g, '');
 
-      const [pRes, bRes, vRes] = await Promise.all([
+      const [pRes, bRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', supabaseUser.id).maybeSingle(),
         supabase
           .from('bookings')
@@ -94,12 +94,6 @@ const Account = () => {
               : `user_id.eq.${supabaseUser.id},guest_email.eq.${email}`,
           )
           .order('created_at', { ascending: false }),
-        supabase
-          .from('voucher_codes' as any)
-          .select('*')
-          .eq('status', 'active')
-          .order('end_date', { ascending: true })
-          .limit(50),
       ]);
 
       const p: any = pRes.data || {};
