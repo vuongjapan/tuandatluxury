@@ -61,6 +61,9 @@ const Header = () => {
 
   const [scrolled, setScrolled] = useState(false);
   const [liveActive, setLiveActive] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [upcomingCount, setUpcomingCount] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -90,6 +93,40 @@ const Header = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Load avatar + unread + upcoming for logged-in member
+  useEffect(() => {
+    if (!user) {
+      setAvatarUrl(null);
+      setUnreadCount(0);
+      setUpcomingCount(0);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      const [pRes, mRes, bRes] = await Promise.all([
+        supabase.from('profiles').select('avatar_url').eq('user_id', user.id).maybeSingle(),
+        supabase.from('member_messages' as any).select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id).eq('sender', 'admin').eq('is_read', false),
+        supabase.from('bookings').select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id).gte('check_in', new Date().toISOString().slice(0, 10))
+          .neq('status', 'cancelled'),
+      ]);
+      if (cancelled) return;
+      setAvatarUrl((pRes.data as any)?.avatar_url || null);
+      setUnreadCount(mRes.count || 0);
+      setUpcomingCount(bRes.count || 0);
+    };
+    load();
+    // realtime new admin messages
+    const ch = supabase
+      .channel(`hdr_msgs_${user.id}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'member_messages', filter: `user_id=eq.${user.id}` },
+        (p: any) => { if (p.new?.sender === 'admin' && !p.new?.is_read) setUnreadCount((c) => c + 1); })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user]);
 
   // Split nav items: left side & right side of logo
   const leftNavItems = [
