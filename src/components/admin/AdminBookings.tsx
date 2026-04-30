@@ -259,6 +259,31 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
       </div>
 
       <p className="text-xs text-muted-foreground">Hiển thị {filtered.length} / {bookings.length} đơn</p>
+      <AlertDialog open={!!hideTarget} onOpenChange={(o) => !o && setHideTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <EyeOff className="h-4 w-4" /> Ẩn đơn {hideTarget?.booking_code}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Đơn này sẽ bị <strong>ẩn khỏi trang tra cứu của khách</strong> và lịch sử của thành viên.</p>
+                <p className="text-muted-foreground">✓ Vẫn hiển thị trong admin · ✓ Dữ liệu không bị xóa</p>
+                <div className="pt-2">
+                  <label className="text-xs font-semibold uppercase block mb-1">Lý do ẩn (tuỳ chọn)</label>
+                  <Textarea rows={2} value={hideReason} onChange={(e) => setHideReason(e.target.value)} placeholder="VD: Hủy đơn đột xuất, đã xử lý..." />
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={() => hideTarget && toggleVisibility(hideTarget, true)}>
+              <EyeOff className="h-4 w-4 mr-1.5" /> Xác nhận ẩn
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
