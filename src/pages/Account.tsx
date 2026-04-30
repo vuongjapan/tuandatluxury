@@ -572,35 +572,21 @@ const Account = () => {
 
                     <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 mb-6">
                       <p className="font-semibold text-foreground flex items-center gap-2">
-                        <Crown className="h-4 w-4 text-primary" /> {TIER_LABELS[user.tier][language]}
+                        <Crown className="h-4 w-4 text-primary" /> Hạng: {TIER_LABELS[user.tier][language]}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {user.tier === 'normal' ? 'Đặt 3 lần để nâng hạng VIP, nhận giảm 5–10% tiền phòng.' :
                          user.tier === 'vip' ? 'Tự động giảm 5–10% tiền phòng khi đặt.' :
                          'Tự động giảm tối đa khi đặt phòng.'}
                       </p>
+                      {user.tier !== 'super_vip' && (
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden mt-3">
+                          <div className="h-full bg-gold-gradient transition-all" style={{ width: `${progress}%` }} />
+                        </div>
+                      )}
                     </div>
 
-                    <p className="text-xs text-muted-foreground mb-3">Voucher khả dụng ({vouchers.length}):</p>
-                    {vouchers.length === 0 ? (
-                      <EmptyState text="Hiện chưa có voucher khả dụng." />
-                    ) : (
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {vouchers.map((v) => (
-                          <div key={v.id} className="border border-primary/20 rounded-xl p-4 bg-primary/5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono font-bold text-base text-primary tracking-wider">{v.code}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-semibold">
-                                {v.discount_type === 'percent' ? `-${v.discount_value}%` : `-${formatVnd(v.discount_value)}`}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              HSD: {v.end_date ? format(new Date(v.end_date), 'dd/MM/yyyy') : '—'}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {supabaseUser && <MemberVouchersList userId={supabaseUser.id} />}
                   </div>
                 )}
 
