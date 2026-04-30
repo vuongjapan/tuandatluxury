@@ -12,6 +12,8 @@ import { useAuth, TIER_LABELS, TIER_COLORS } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSyncBookings } from '@/hooks/useSyncBookings';
 import { useMemberChat } from '@/hooks/useMemberChat';
+import { AvatarUpload } from '@/components/AvatarUpload';
+import { ChangePasswordCard } from '@/components/ChangePasswordCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -556,7 +558,9 @@ const Account = () => {
                       <div className="border border-border rounded-xl p-4">
                         <p className="font-semibold mb-1">Email đăng nhập</p>
                         <p className="text-muted-foreground">{user.email}</p>
+                        <p className="text-xs text-amber-700 mt-2">⚠️ Để thay đổi email, liên hệ: 098.360.5768</p>
                       </div>
+                      <ChangePasswordCard email={user.email} />
                       <div className="border border-border rounded-xl p-4">
                         <p className="font-semibold mb-2">Hỗ trợ</p>
                         <p className="text-muted-foreground">📞 098.360.5768 · 💬 Zalo 038.441.8811</p>
