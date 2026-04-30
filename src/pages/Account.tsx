@@ -120,7 +120,12 @@ const Account = () => {
         return true;
       });
       setBookings(uniq);
-      // Vouchers handled by <MemberVouchersList /> separately
+      const { data: mv } = await supabase
+        .from('member_vouchers' as any)
+        .select('id, used_at')
+        .eq('user_id', supabaseUser.id)
+        .eq('is_visible', true);
+      setVouchers((mv as any[]) || []);
       setLoading(false);
     };
     if (supabaseUser) load();
