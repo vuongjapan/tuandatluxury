@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { UserMenu } from '@/components/UserMenu';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -184,13 +185,8 @@ const Header = () => {
             <div className="flex items-center gap-4">
               <span className="text-background/50">LK29-20 FLC Sầm Sơn, Thanh Hóa</span>
 
-              {/* Auth quick links */}
-              {!loading && user ? (
-                <button onClick={() => navigate(isAdmin ? '/admin' : '/')} className="flex items-center gap-1 hover:text-background transition-colors">
-                  <User className="h-3 w-3" />
-                  <span className="max-w-[100px] truncate">{user.fullName}</span>
-                </button>
-              ) : !loading ? (
+              {/* Auth quick links — guest only (logged-in user uses UserMenu in main bar) */}
+              {!loading && !user ? (
                 <button onClick={() => navigate('/member')} className="flex items-center gap-1 hover:text-background transition-colors">
                   <User className="h-3 w-3" />
                   {t('nav.signin')}
