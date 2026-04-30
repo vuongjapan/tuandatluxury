@@ -332,34 +332,7 @@ const Header = () => {
 
                 {/* User button for auth */}
                 {!loading && user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <User className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <div className="px-3 py-2">
-                        <p className="text-sm font-semibold">{user.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${TIER_COLORS[user.tier]}`}>
-                          {TIER_LABELS[user.tier][language]}
-                        </span>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate('/account')}>
-                        <User className="h-4 w-4 mr-2" /> Tài khoản của tôi
-                      </DropdownMenuItem>
-                      {isAdmin && (
-                        <DropdownMenuItem onClick={() => navigate('/admin')}>
-                          <Shield className="h-4 w-4 mr-2" /> {t('nav.admin')}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => signOut()}>
-                        <LogOut className="h-4 w-4 mr-2" /> {t('nav.signout')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <UserMenu avatarUrl={avatarUrl} unreadCount={unreadCount} upcomingCount={upcomingCount} compact />
                 ) : !loading ? (
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/member')}>
                     <User className="h-4 w-4" />
