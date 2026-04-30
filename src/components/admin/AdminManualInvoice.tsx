@@ -156,8 +156,10 @@ const AdminManualInvoice = () => {
       return null;
     }
     setSubmitting(true);
+    const finalCode = code || (await generateInvoiceCode());
+    if (!code) setCode(finalCode);
     const { data: inv, error } = await supabase.from('manual_invoices').insert({
-      invoice_code: code,
+      invoice_code: finalCode,
       guest_name: guestName,
       guest_phone: guestPhone,
       guest_email: guestEmail || null,
