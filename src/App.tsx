@@ -37,6 +37,7 @@ const Transport = lazy(() => import("./pages/Transport"));
 const Live = lazy(() => import("./pages/Live"));
 const Account = lazy(() => import("./pages/Account"));
 const Lookup = lazy(() => import("./pages/Lookup"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Auto-apply voucher code redirect
 const ApplyVoucher = lazy(() => import("./pages/ApplyVoucher"));
@@ -138,6 +139,7 @@ const App = () => {
                     <Route path="/account/booking/:bookingCode" element={<Account />} />
                     <Route path="/tra-cuu" element={<Lookup />} />
                     <Route path="/lookup" element={<Lookup />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
