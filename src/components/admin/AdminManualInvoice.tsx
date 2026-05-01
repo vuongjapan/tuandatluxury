@@ -25,12 +25,13 @@ interface InvoiceItem {
 
 const fmt = (v: number) => (v || 0).toLocaleString('vi-VN') + '₫';
 
-// Format: TDTD + YYYYMM + C + 5-digit sequence (per month)
+// Format: TD + YYYYMM + M + 5-digit sequence (per month)
+// M = Manual (admin-created), giống flow tự động (A) để webhook nhận diện chung
 const generateInvoiceCode = async (): Promise<string> => {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const prefix = `TDTD${year}${month}C`;
+  const prefix = `TD${year}${month}M`;
   const { data } = await supabase
     .from('manual_invoices')
     .select('invoice_code')
