@@ -491,7 +491,10 @@ const AdminManualInvoice = () => {
             <tbody>
               {filteredInvoices.map(i => (
                 <tr key={i.id} className="border-t border-border hover:bg-secondary/50">
-                  <td className="p-3 font-mono text-xs">{i.invoice_code}</td>
+                  <td className="p-3 font-mono text-xs">
+                    <div>{i.invoice_code}</div>
+                    <span className="text-[9px] text-muted-foreground">🖊 Thủ công</span>
+                  </td>
                   <td className="p-3">
                     <p className="font-medium">{i.guest_name}</p>
                     <p className="text-xs text-muted-foreground">{i.guest_phone}</p>
