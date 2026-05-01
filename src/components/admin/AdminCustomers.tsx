@@ -448,6 +448,16 @@ const CustomerDetail = ({ customer, tab, setTab, editing, setEditing, onClose, o
           )}
         </div>
       </div>
+
+      {c.userId && (
+        <AssignVoucherDialog
+          open={voucherOpen}
+          onOpenChange={setVoucherOpen}
+          userId={c.userId}
+          customerName={c.name}
+          customerEmail={c.email}
+        />
+      )}
     </div>
   );
 };
