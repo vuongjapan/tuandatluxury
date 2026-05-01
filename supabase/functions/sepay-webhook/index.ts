@@ -15,8 +15,9 @@ function normalizeBookingCode(desc: string): string | null {
   const foodMatch = cleaned.match(/(TD\d{6}[A-Z]\d{5}FOOD\d*)/);
   if (foodMatch) return foodMatch[1];
 
-  const matchNew = cleaned.match(/TD(\d{6})A(\d+)(?!FOOD)/);
-  if (matchNew) return `TD${matchNew[1]}A${matchNew[2].padStart(5, "0")}`;
+  // Match cả A (auto) và M (manual admin) — KHÔNG match TA (food order)
+  const matchNew = cleaned.match(/TD(\d{6})([AM])(\d+)(?!FOOD)/);
+  if (matchNew) return `TD${matchNew[1]}${matchNew[2]}${matchNew[3].padStart(5, "0")}`;
   
   const matchOld2 = cleaned.match(/TDLH2026A(\d+)/);
   if (matchOld2) return "TDLH2026A" + matchOld2[1].padStart(5, "0");
@@ -25,6 +26,11 @@ function normalizeBookingCode(desc: string): string | null {
   if (matchOld) return "TDLH-" + matchOld[1].padStart(5, "0");
   
   return null;
+}
+
+// Detect mã thủ công (TDyyyyMMM00000)
+function isManualInvoiceCode(code: string): boolean {
+  return /^TD\d{6}M\d{5}$/.test(code);
 }
 
 async function fetchCombosWithDishes(supabase: any, bookingId: string) {
