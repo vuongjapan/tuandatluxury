@@ -351,15 +351,57 @@ const AdminManualInvoice = () => {
         </div>
 
         <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-border pb-3">
+          <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
             <div>
               <p className="text-xs text-muted-foreground">Mã hóa đơn</p>
               <p className="font-display text-xl font-bold">{detailData.invoice_code}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">🖊 Thủ công · Webhook tự nhận diện mã M</p>
             </div>
-            <Badge variant={detailData.payment_status === 'PAID' ? 'default' : 'secondary'}>
-              {detailData.payment_status === 'PAID' ? '✅ Đã thanh toán' : detailData.payment_status === 'PARTIAL' ? '💰 Đặt cọc' : '⏳ Chưa thanh toán'}
+            <Badge variant={detailData.payment_status === 'PAID' ? 'default' : detailData.payment_status === 'DEPOSIT_PAID' ? 'default' : 'secondary'}>
+              {detailData.payment_status === 'PAID' ? '✅ Đã thanh toán đủ'
+                : detailData.payment_status === 'DEPOSIT_PAID' ? '🟢 Đã nhận cọc'
+                : detailData.payment_status === 'PARTIAL' ? '💰 Đặt cọc một phần'
+                : '🟠 Chờ thanh toán cọc'}
             </Badge>
           </div>
+
+          {/* Action panel theo trạng thái */}
+          {(detailData.payment_status === 'PENDING' || !detailData.payment_status) && detailData.deposit_amount === 0 && (
+            <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-lg p-3 space-y-2 text-sm">
+              <p className="font-medium">🔄 Đang chờ webhook tự động (khách chuyển khoản)</p>
+              <p className="text-xs text-muted-foreground">Hoặc xác nhận thủ công nếu khách trả tiền mặt:</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const amt = parseInt(prompt('Số tiền đã nhận (VNĐ):', String(Math.round(detailData.total_amount * 0.5))) || '0');
+                  if (!amt || amt <= 0) return;
+                  const isFull = amt >= detailData.total_amount - 1000;
+                  await supabase.from('manual_invoices').update({
+                    payment_status: isFull ? 'PAID' : 'DEPOSIT_PAID',
+                    deposit_amount: amt,
+                    remaining_amount: Math.max(0, detailData.total_amount - amt),
+                  }).eq('id', detailData.id);
+                  toast({ title: '✅ Đã xác nhận cọc thủ công' });
+                  if (detailData.guest_email) {
+                    sendEmail(detailData.id, detailData.guest_email);
+                  } else {
+                    openDetail(detailData.id);
+                  }
+                }}
+              >
+                ✅ Xác nhận đã nhận cọc thủ công
+              </Button>
+            </div>
+          )}
+          {(detailData.payment_status === 'DEPOSIT_PAID' || detailData.payment_status === 'PAID') && (
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded-lg p-3 text-sm">
+              <p className="font-medium">💰 Đã nhận: {fmt(detailData.deposit_amount)}</p>
+              {detailData.email_sent_at && (
+                <p className="text-xs text-muted-foreground mt-1">📧 Đã gửi email xác nhận lúc {new Date(detailData.email_sent_at).toLocaleString('vi-VN')}</p>
+              )}
+            </div>
+          )}
 
           <div className="grid sm:grid-cols-2 gap-3 text-sm">
             <div><span className="text-muted-foreground">Khách:</span> <strong>{detailData.guest_name}</strong></div>
