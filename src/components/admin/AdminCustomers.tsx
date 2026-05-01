@@ -303,6 +303,7 @@ const AdminCustomers = () => {
 // ==================== Customer Detail Drawer ====================
 const CustomerDetail = ({ customer, tab, setTab, editing, setEditing, onClose, onSaved, toast }: any) => {
   const c: CustomerRow = customer;
+  const [voucherOpen, setVoucherOpen] = useState(false);
   const avgPerBooking = c.confirmedBookings > 0 ? Math.round(c.totalSpent / c.confirmedBookings) : 0;
 
   const totalNights = c.bookings.reduce((s, b) => {
