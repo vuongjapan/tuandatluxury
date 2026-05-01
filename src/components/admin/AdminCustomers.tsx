@@ -347,6 +347,11 @@ const CustomerDetail = ({ customer, tab, setTab, editing, setEditing, onClose, o
             <Button size="sm" variant="outline" onClick={() => setTab('messages')} className="gap-1.5">
               <MessageSquare className="h-3.5 w-3.5" /> Nhắn tin
             </Button>
+            {c.isMember && c.userId && (
+              <Button size="sm" variant="outline" onClick={() => setVoucherOpen(true)} className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10">
+                <Gift className="h-3.5 w-3.5" /> Gửi voucher
+              </Button>
+            )}
             {c.phone && (
               <a href={`tel:${c.phone}`}><Button size="sm" variant="outline" className="gap-1.5"><Phone className="h-3.5 w-3.5" /> Gọi</Button></a>
             )}
