@@ -15,8 +15,9 @@ function normalizeBookingCode(desc: string): string | null {
   const foodMatch = cleaned.match(/(TD\d{6}[A-Z]\d{5}FOOD\d*)/);
   if (foodMatch) return foodMatch[1];
 
-  const matchNew = cleaned.match(/TD(\d{6})A(\d+)(?!FOOD)/);
-  if (matchNew) return `TD${matchNew[1]}A${matchNew[2].padStart(5, "0")}`;
+  // Match cả A (auto) và M (manual admin) — KHÔNG match TA (food order)
+  const matchNew = cleaned.match(/TD(\d{6})([AM])(\d+)(?!FOOD)/);
+  if (matchNew) return `TD${matchNew[1]}${matchNew[2]}${matchNew[3].padStart(5, "0")}`;
   
   const matchOld2 = cleaned.match(/TDLH2026A(\d+)/);
   if (matchOld2) return "TDLH2026A" + matchOld2[1].padStart(5, "0");
@@ -25,6 +26,11 @@ function normalizeBookingCode(desc: string): string | null {
   if (matchOld) return "TDLH-" + matchOld[1].padStart(5, "0");
   
   return null;
+}
+
+// Detect mã thủ công (TDyyyyMMM00000)
+function isManualInvoiceCode(code: string): boolean {
+  return /^TD\d{6}M\d{5}$/.test(code);
 }
 
 async function fetchCombosWithDishes(supabase: any, bookingId: string) {
@@ -230,6 +236,78 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ success: true, message: "Food payment confirmed" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle MANUAL invoice payment (mã M)
+    if (isManualInvoiceCode(matchedCode)) {
+      const { data: inv } = await supabase
+        .from("manual_invoices")
+        .select("*")
+        .eq("invoice_code", matchedCode)
+        .maybeSingle();
+
+      if (!inv) {
+        console.log("Manual invoice not found:", matchedCode);
+        return new Response(JSON.stringify({ success: true, message: "Manual invoice not found" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (inv.payment_status === "DEPOSIT_PAID" || inv.payment_status === "PAID") {
+        await supabase.from("webhook_logs")
+          .update({ processed: true, matched_booking_code: matchedCode })
+          .eq("transaction_id", String(transactionId));
+        return new Response(JSON.stringify({ success: true, message: "Already paid" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const expectedDeposit = inv.deposit_amount > 0 ? inv.deposit_amount : Math.round(inv.total_amount * 0.5);
+      if (amount < expectedDeposit - 1000) {
+        console.log(`Manual amount ${amount} < deposit ${expectedDeposit}`);
+        return new Response(JSON.stringify({ success: true, message: "Amount insufficient" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const isFullPayment = amount >= inv.total_amount - 1000;
+      await supabase
+        .from("manual_invoices")
+        .update({
+          payment_status: isFullPayment ? "PAID" : "DEPOSIT_PAID",
+          deposit_amount: Math.max(inv.deposit_amount, amount),
+          remaining_amount: Math.max(0, inv.total_amount - Math.max(inv.deposit_amount, amount)),
+        })
+        .eq("id", inv.id);
+
+      await supabase.from("webhook_logs")
+        .update({ processed: true, matched_booking_code: matchedCode })
+        .eq("transaction_id", String(transactionId));
+
+      // Gửi email xác nhận đã cọc cho khách
+      try {
+        if (inv.guest_email) {
+          await fetch(`${supabaseUrl}/functions/v1/send-manual-invoice-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ invoice_id: inv.id }),
+          });
+        }
+      } catch (e) {
+        console.error("Manual invoice email error:", e);
+      }
+
+      console.log("Manual invoice deposit confirmed:", matchedCode);
+      return new Response(JSON.stringify({ success: true, message: "Manual deposit confirmed" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2, Download, Search, X, User, Calendar, UtensilsCrossed, Crown, Mail, Phone,
-  MessageSquare, Clock, Save, Edit3, Send, ShieldCheck, Tag,
+  MessageSquare, Clock, Save, Edit3, Send, ShieldCheck, Tag, Gift,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemberChat } from '@/hooks/useMemberChat';
 import { useToast } from '@/hooks/use-toast';
+import { AssignVoucherDialog } from '@/components/admin/AssignVoucherDialog';
 
 const formatVnd = (n: number) => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
 
@@ -302,6 +303,7 @@ const AdminCustomers = () => {
 // ==================== Customer Detail Drawer ====================
 const CustomerDetail = ({ customer, tab, setTab, editing, setEditing, onClose, onSaved, toast }: any) => {
   const c: CustomerRow = customer;
+  const [voucherOpen, setVoucherOpen] = useState(false);
   const avgPerBooking = c.confirmedBookings > 0 ? Math.round(c.totalSpent / c.confirmedBookings) : 0;
 
   const totalNights = c.bookings.reduce((s, b) => {
@@ -345,6 +347,11 @@ const CustomerDetail = ({ customer, tab, setTab, editing, setEditing, onClose, o
             <Button size="sm" variant="outline" onClick={() => setTab('messages')} className="gap-1.5">
               <MessageSquare className="h-3.5 w-3.5" /> Nhắn tin
             </Button>
+            {c.isMember && c.userId && (
+              <Button size="sm" variant="outline" onClick={() => setVoucherOpen(true)} className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10">
+                <Gift className="h-3.5 w-3.5" /> Gửi voucher
+              </Button>
+            )}
             {c.phone && (
               <a href={`tel:${c.phone}`}><Button size="sm" variant="outline" className="gap-1.5"><Phone className="h-3.5 w-3.5" /> Gọi</Button></a>
             )}
@@ -441,6 +448,16 @@ const CustomerDetail = ({ customer, tab, setTab, editing, setEditing, onClose, o
           )}
         </div>
       </div>
+
+      {c.userId && (
+        <AssignVoucherDialog
+          open={voucherOpen}
+          onOpenChange={setVoucherOpen}
+          userId={c.userId}
+          customerName={c.name}
+          customerEmail={c.email}
+        />
+      )}
     </div>
   );
 };

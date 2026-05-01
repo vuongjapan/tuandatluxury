@@ -65,15 +65,51 @@ export const AssignVoucherDialog = ({ open, onOpenChange, userId, customerName, 
       user_id: userId,
       voucher_code: selected,
       assigned_note: note || null,
-      notified: notify !== 'none',
-      notified_at: notify !== 'none' ? new Date().toISOString() : null,
+      notified: false,
+      notified_at: null,
     });
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       toast({ title: 'Lỗi gán voucher', description: error.message, variant: 'destructive' });
       return;
     }
-    toast({ title: '🎁 Đã gán voucher', description: `${selected} cho ${customerName}` });
+
+    // Gửi email nếu chọn
+    if (notify === 'email') {
+      try {
+        const { data, error: emailErr } = await supabase.functions.invoke('send-voucher-email', {
+          body: {
+            user_id: userId,
+            voucher_code: selected,
+            recipient_email: customerEmail,
+            recipient_name: customerName,
+            note: note || undefined,
+          },
+        });
+        if (emailErr || !(data as any)?.success) {
+          toast({
+            title: '⚠️ Voucher đã gán, email lỗi',
+            description: (data as any)?.error || emailErr?.message || 'Không gửi được email',
+            variant: 'destructive',
+          });
+        } else {
+          toast({ title: '🎁 Đã gán + gửi email', description: `${selected} → ${(data as any).sent_to}` });
+        }
+      } catch (e: any) {
+        toast({ title: '⚠️ Voucher đã gán, email lỗi', description: e?.message, variant: 'destructive' });
+      }
+    } else if (notify === 'app') {
+      // Chỉ đánh dấu đã thông báo (chat trong app sẽ xử lý sau)
+      await supabase.from('member_vouchers' as any)
+        .update({ notified: true, notified_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('voucher_code', selected);
+      toast({ title: '🎁 Đã gán voucher', description: `${selected} cho ${customerName}` });
+    } else {
+      toast({ title: '🎁 Đã gán voucher', description: `${selected} cho ${customerName}` });
+    }
+
+    setSubmitting(false);
     onOpenChange(false);
   };
 
@@ -151,7 +187,7 @@ export const AssignVoucherDialog = ({ open, onOpenChange, userId, customerName, 
               </label>
             </div>
             <p className="text-[11px] text-muted-foreground mt-1.5">
-              ⚠️ Hiện tại chỉ ghi cờ "đã thông báo". Email/tin nhắn tự động sẽ bổ sung sau.
+              ✉️ Email gửi qua SMTP nội bộ (Nodemailer). "Trong app" chỉ đánh dấu, sẽ tích hợp chat sau.
             </p>
           </div>
         </div>
