@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2, Download, Search, X, User, Calendar, UtensilsCrossed, Crown, Mail, Phone,
-  MessageSquare, Clock, Save, Edit3, Send, ShieldCheck, Tag,
+  MessageSquare, Clock, Save, Edit3, Send, ShieldCheck, Tag, Gift,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemberChat } from '@/hooks/useMemberChat';
 import { useToast } from '@/hooks/use-toast';
+import { AssignVoucherDialog } from '@/components/admin/AssignVoucherDialog';
 
 const formatVnd = (n: number) => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
 
