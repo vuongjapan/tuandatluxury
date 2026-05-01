@@ -187,7 +187,7 @@ export const AssignVoucherDialog = ({ open, onOpenChange, userId, customerName, 
               </label>
             </div>
             <p className="text-[11px] text-muted-foreground mt-1.5">
-              ⚠️ Hiện tại chỉ ghi cờ "đã thông báo". Email/tin nhắn tự động sẽ bổ sung sau.
+              ✉️ Email gửi qua SMTP nội bộ (Nodemailer). "Trong app" chỉ đánh dấu, sẽ tích hợp chat sau.
             </p>
           </div>
         </div>
