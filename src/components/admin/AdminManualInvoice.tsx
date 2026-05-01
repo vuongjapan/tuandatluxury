@@ -502,8 +502,8 @@ const AdminManualInvoice = () => {
                   <td className="p-3 hidden sm:table-cell text-xs">{i.room_name || '—'}</td>
                   <td className="p-3 text-right font-semibold text-primary">{fmt(i.total_amount)}</td>
                   <td className="p-3 text-center">
-                    <Badge variant={i.payment_status === 'PAID' ? 'default' : 'secondary'} className="text-[10px]">
-                      {i.payment_status === 'PAID' ? '✅' : i.payment_status === 'PARTIAL' ? '💰' : '⏳'}
+                    <Badge variant={i.payment_status === 'PAID' || i.payment_status === 'DEPOSIT_PAID' ? 'default' : 'secondary'} className="text-[10px]">
+                      {i.payment_status === 'PAID' ? '✅' : i.payment_status === 'DEPOSIT_PAID' ? '🟢' : i.payment_status === 'PARTIAL' ? '💰' : '⏳'}
                     </Badge>
                   </td>
                   <td className="p-3 text-right whitespace-nowrap">
