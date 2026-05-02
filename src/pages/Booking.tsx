@@ -482,6 +482,10 @@ const Booking = () => {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Lỗi đặt phòng');
+      trackPageView(
+        { page_type: 'booking_done', page_label: `Đặt phòng thành công - ${data.booking_code}` },
+        `/booking/success`,
+      );
       navigate(`/invoice/${data.booking_code}`);
     } catch (err: any) {
       toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
