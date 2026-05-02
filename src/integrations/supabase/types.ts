@@ -2239,7 +2239,10 @@ export type Database = {
         Row: {
           date: string
           device: string | null
+          domain: string | null
+          full_url: string | null
           id: string
+          page_label: string | null
           page_path: string | null
           page_type: string
           referrer: string | null
@@ -2254,7 +2257,10 @@ export type Database = {
         Insert: {
           date?: string
           device?: string | null
+          domain?: string | null
+          full_url?: string | null
           id?: string
+          page_label?: string | null
           page_path?: string | null
           page_type?: string
           referrer?: string | null
@@ -2269,7 +2275,10 @@ export type Database = {
         Update: {
           date?: string
           device?: string | null
+          domain?: string | null
+          full_url?: string | null
           id?: string
+          page_label?: string | null
           page_path?: string | null
           page_type?: string
           referrer?: string | null
