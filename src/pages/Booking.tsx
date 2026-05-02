@@ -368,6 +368,22 @@ const Booking = () => {
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Analytics: track each booking step transition (does not affect booking logic)
+  useEffect(() => {
+    const stepLabels: Record<number, string> = {
+      1: 'Đặt phòng - Bước 1 (Chọn phòng & ngày)',
+      2: 'Đặt phòng - Bước 2 (Dịch vụ & ăn uống)',
+      3: 'Đặt phòng - Bước 3 (Thông tin khách)',
+      4: 'Đặt phòng - Bước 4 (Xác nhận)',
+    };
+    const t = `booking_step${currentStep}` as
+      | 'booking_step1' | 'booking_step2' | 'booking_step3' | 'booking_step4';
+    trackPageView(
+      { page_type: t, page_label: stepLabels[currentStep] || `Bước ${currentStep}` },
+      `/booking?step=${currentStep}`,
+    );
+  }, [currentStep]);
+
   const canSubmit = useMemo(() => {
     if (!name || !phone || !checkIn || !checkOut) return false;
     if (!hasRooms) return false;
