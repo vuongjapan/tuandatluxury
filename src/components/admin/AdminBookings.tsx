@@ -36,6 +36,7 @@ const statusLabels: Record<string, string> = {
 const paymentLabels: Record<string, string> = {
   PENDING: '⏳ Chưa thanh toán',
   PARTIAL: '💰 Đặt cọc',
+  DEPOSIT_PAID: '🟢 Đã đặt cọc',
   PAID: '✅ Đã thanh toán',
 };
 
