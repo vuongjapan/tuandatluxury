@@ -231,13 +231,22 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                       <DownloadPDFButtons
                         bookingId={b.id}
                         bookingCode={b.booking_code}
-                        isPaid={b.payment_status === 'PAID'}
+                        isPaid={b.payment_status === 'PAID' || b.payment_status === 'DEPOSIT_PAID'}
                         compact
                       />
                       <SendInvoiceEmailButton
                         booking={b}
                         onUpdated={(newEmail) => handleEmailUpdated(b.id, newEmail)}
                       />
+                      {b.payment_status === 'PENDING' && (
+                        <button
+                          onClick={() => setConfirmTarget(b)}
+                          className="p-1 rounded hover:bg-emerald-50 text-emerald-700"
+                          title="Xác nhận đã nhận cọc thủ công (khi khách CK sai nội dung)"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       {b.visibility === 'hidden' ? (
                         <button onClick={() => toggleVisibility(b, false)} className="p-1 rounded hover:bg-secondary text-green-700" title="Hiện lại">
                           <Eye className="h-3.5 w-3.5" />
