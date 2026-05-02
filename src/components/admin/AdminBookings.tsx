@@ -207,6 +207,9 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                   </td>
                   <td className="px-3 py-3">
                     <span className="text-xs">{paymentLabels[b.payment_status] || b.payment_status}</span>
+                    {b.deposit_manually_confirmed && (
+                      <p className="text-[9px] text-emerald-700 mt-0.5">🖐 Xác nhận thủ công</p>
+                    )}
                   </td>
                   <td className="px-3 py-3">
                     <Select value={b.status} onValueChange={(v) => updateBookingStatus(b.id, v)}>
