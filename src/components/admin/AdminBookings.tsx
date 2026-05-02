@@ -54,6 +54,7 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
 
   const [hideTarget, setHideTarget] = useState<any>(null);
   const [hideReason, setHideReason] = useState('');
+  const [confirmTarget, setConfirmTarget] = useState<any>(null);
 
   const updateBookingStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
