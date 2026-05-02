@@ -50,8 +50,33 @@ function detectReferrerSource(ref: string): string {
   } catch { return 'direct'; }
 }
 
+export type PageType =
+  | 'home'
+  | 'rooms_list'
+  | 'room_detail'
+  | 'booking_step1'
+  | 'booking_step2'
+  | 'booking_step3'
+  | 'booking_step4'
+  | 'booking_done'
+  | 'about'
+  | 'food_order'
+  | 'services'
+  | 'promotions'
+  | 'explore'
+  | 'lookup'
+  | 'account'
+  | 'invoice'
+  | 'dining'
+  | 'blog'
+  | 'reviews'
+  | 'live'
+  | 'transport'
+  | 'other';
+
 interface TrackingPayload {
-  page_type: 'home' | 'room_detail' | 'booking' | 'food_order' | 'dining' | 'offers' | 'blog' | 'other';
+  page_type: PageType;
+  page_label?: string | null;
   room_id?: string | null;
   room_name?: string | null;
 }
@@ -64,11 +89,14 @@ export function trackPageView(payload: TrackingPayload, pathname: string) {
     supabase.from('page_views').insert({
       page_type: payload.page_type,
       page_path: pathname,
+      page_label: payload.page_label || null,
+      domain: window.location.hostname,
+      full_url: window.location.href.slice(0, 1000),
       room_id: payload.room_id || null,
       room_name: payload.room_name || null,
       visitor_id: getVisitorId(),
       session_id: getSessionId(),
-      referrer: ref || null,
+      referrer: ref ? ref.slice(0, 500) : null,
       referrer_source: detectReferrerSource(ref),
       device: detectDevice(),
       user_agent: navigator.userAgent.slice(0, 500),

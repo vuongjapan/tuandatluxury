@@ -13,6 +13,7 @@ import MealRuleBanner from '@/components/MealRuleBanner';
 import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
 
 import { Button } from '@/components/ui/button';
+import { trackPageView } from '@/hooks/usePageTracking';
 import { Input } from '@/components/ui/input';
 import { type DiscountCode, useFlashSales, useGlobalDiscounts, useSmartPricing } from '@/hooks/usePromotionSystem';
 import { Textarea } from '@/components/ui/textarea';
@@ -367,6 +368,22 @@ const Booking = () => {
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Analytics: track each booking step transition (does not affect booking logic)
+  useEffect(() => {
+    const stepLabels: Record<number, string> = {
+      1: 'Đặt phòng - Bước 1 (Chọn phòng & ngày)',
+      2: 'Đặt phòng - Bước 2 (Dịch vụ & ăn uống)',
+      3: 'Đặt phòng - Bước 3 (Thông tin khách)',
+      4: 'Đặt phòng - Bước 4 (Xác nhận)',
+    };
+    const t = `booking_step${currentStep}` as
+      | 'booking_step1' | 'booking_step2' | 'booking_step3' | 'booking_step4';
+    trackPageView(
+      { page_type: t, page_label: stepLabels[currentStep] || `Bước ${currentStep}` },
+      `/booking?step=${currentStep}`,
+    );
+  }, [currentStep]);
+
   const canSubmit = useMemo(() => {
     if (!name || !phone || !checkIn || !checkOut) return false;
     if (!hasRooms) return false;
@@ -465,6 +482,10 @@ const Booking = () => {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Lỗi đặt phòng');
+      trackPageView(
+        { page_type: 'booking_done', page_label: `Đặt phòng thành công - ${data.booking_code}` },
+        `/booking/success`,
+      );
       navigate(`/invoice/${data.booking_code}`);
     } catch (err: any) {
       toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
