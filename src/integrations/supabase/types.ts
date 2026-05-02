@@ -394,6 +394,10 @@ export type Database = {
           created_at: string
           decoration_notes: string | null
           deposit_amount: number
+          deposit_email_sent_at: string | null
+          deposit_manually_confirmed: boolean
+          deposit_paid_amount: number | null
+          deposit_paid_at: string | null
           discount_code: string | null
           discount_code_amount: number | null
           discount_code_type: string | null
@@ -417,6 +421,7 @@ export type Database = {
           member_discount_amount: number | null
           member_discount_percent: number | null
           original_price_vnd: number | null
+          payment_auto_detected: boolean
           payment_status: string
           promotion_discount_amount: number | null
           promotion_discount_percent: number | null
@@ -448,6 +453,10 @@ export type Database = {
           created_at?: string
           decoration_notes?: string | null
           deposit_amount?: number
+          deposit_email_sent_at?: string | null
+          deposit_manually_confirmed?: boolean
+          deposit_paid_amount?: number | null
+          deposit_paid_at?: string | null
           discount_code?: string | null
           discount_code_amount?: number | null
           discount_code_type?: string | null
@@ -471,6 +480,7 @@ export type Database = {
           member_discount_amount?: number | null
           member_discount_percent?: number | null
           original_price_vnd?: number | null
+          payment_auto_detected?: boolean
           payment_status?: string
           promotion_discount_amount?: number | null
           promotion_discount_percent?: number | null
@@ -502,6 +512,10 @@ export type Database = {
           created_at?: string
           decoration_notes?: string | null
           deposit_amount?: number
+          deposit_email_sent_at?: string | null
+          deposit_manually_confirmed?: boolean
+          deposit_paid_amount?: number | null
+          deposit_paid_at?: string | null
           discount_code?: string | null
           discount_code_amount?: number | null
           discount_code_type?: string | null
@@ -525,6 +539,7 @@ export type Database = {
           member_discount_amount?: number | null
           member_discount_percent?: number | null
           original_price_vnd?: number | null
+          payment_auto_detected?: boolean
           payment_status?: string
           promotion_discount_amount?: number | null
           promotion_discount_percent?: number | null

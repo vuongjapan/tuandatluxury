@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Search, X, Eye, FileText, MailWarning, EyeOff } from 'lucide-react';
+import { Trash2, Search, X, Eye, FileText, MailWarning, EyeOff, CheckCircle2 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
 import { SendInvoiceEmailButton } from '@/components/admin/SendInvoiceEmailButton';
+import { ConfirmDepositDialog } from '@/components/admin/ConfirmDepositDialog';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -35,6 +36,7 @@ const statusLabels: Record<string, string> = {
 const paymentLabels: Record<string, string> = {
   PENDING: '⏳ Chưa thanh toán',
   PARTIAL: '💰 Đặt cọc',
+  DEPOSIT_PAID: '🟢 Đã đặt cọc',
   PAID: '✅ Đã thanh toán',
 };
 
@@ -52,6 +54,7 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
 
   const [hideTarget, setHideTarget] = useState<any>(null);
   const [hideReason, setHideReason] = useState('');
+  const [confirmTarget, setConfirmTarget] = useState<any>(null);
 
   const updateBookingStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
@@ -204,6 +207,9 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                   </td>
                   <td className="px-3 py-3">
                     <span className="text-xs">{paymentLabels[b.payment_status] || b.payment_status}</span>
+                    {b.deposit_manually_confirmed && (
+                      <p className="text-[9px] text-emerald-700 mt-0.5">🖐 Xác nhận thủ công</p>
+                    )}
                   </td>
                   <td className="px-3 py-3">
                     <Select value={b.status} onValueChange={(v) => updateBookingStatus(b.id, v)}>
@@ -225,13 +231,22 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                       <DownloadPDFButtons
                         bookingId={b.id}
                         bookingCode={b.booking_code}
-                        isPaid={b.payment_status === 'PAID'}
+                        isPaid={b.payment_status === 'PAID' || b.payment_status === 'DEPOSIT_PAID'}
                         compact
                       />
                       <SendInvoiceEmailButton
                         booking={b}
                         onUpdated={(newEmail) => handleEmailUpdated(b.id, newEmail)}
                       />
+                      {b.payment_status === 'PENDING' && (
+                        <button
+                          onClick={() => setConfirmTarget(b)}
+                          className="p-1 rounded hover:bg-emerald-50 text-emerald-700"
+                          title="Xác nhận đã nhận cọc thủ công (khi khách CK sai nội dung)"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       {b.visibility === 'hidden' ? (
                         <button onClick={() => toggleVisibility(b, false)} className="p-1 rounded hover:bg-secondary text-green-700" title="Hiện lại">
                           <Eye className="h-3.5 w-3.5" />
@@ -284,6 +299,18 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {confirmTarget && (
+        <ConfirmDepositDialog
+          booking={confirmTarget}
+          open={!!confirmTarget}
+          onOpenChange={(o) => !o && setConfirmTarget(null)}
+          onConfirmed={(updated) => {
+            setBookings(prev => prev.map(x => x.id === updated.id ? { ...x, ...updated } : x));
+            onRefresh?.();
+          }}
+        />
+      )}
     </div>
   );
 };

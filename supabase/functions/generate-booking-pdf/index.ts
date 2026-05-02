@@ -779,7 +779,7 @@ serve(async (req) => {
     const { data: foodItems } = await supabase
       .from("booking_food_items").select("*").eq("booking_id", booking.id);
 
-    const isPaid = is_paid !== undefined ? is_paid : booking.payment_status === "PAID";
+    const isPaid = is_paid !== undefined ? is_paid : (booking.payment_status === "PAID" || booking.payment_status === "DEPOSIT_PAID");
     const data = {
       booking,
       roomName: booking.rooms?.name_vi || booking.room_id,

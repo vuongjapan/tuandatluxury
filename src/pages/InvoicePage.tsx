@@ -80,6 +80,29 @@ const InvoicePage = () => {
 
   useEffect(() => { fetchBooking(); }, [fetchBooking]);
 
+  // Realtime: instantly refresh when admin confirms deposit
+  useEffect(() => {
+    if (!booking?.id) return;
+    const channel = supabase
+      .channel(`invoice-${booking.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'bookings', filter: `id=eq.${booking.id}` },
+        (payload: any) => {
+          const next = payload.new;
+          const prevStatus = booking.payment_status;
+          setBooking((b: any) => ({ ...(b || {}), ...next }));
+          if (next.payment_status !== prevStatus &&
+              (next.payment_status === 'DEPOSIT_PAID' || next.payment_status === 'PAID')) {
+            toast({ title: '✅ Khách sạn đã xác nhận thanh toán cọc!' });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [booking?.id, booking?.payment_status, toast]);
+
+  // Fallback polling for browsers without realtime
   useEffect(() => {
     if (!booking || booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID') return;
     const interval = setInterval(async () => {
