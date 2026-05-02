@@ -13,6 +13,7 @@ import MealRuleBanner from '@/components/MealRuleBanner';
 import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
 
 import { Button } from '@/components/ui/button';
+import { trackPageView } from '@/hooks/usePageTracking';
 import { Input } from '@/components/ui/input';
 import { type DiscountCode, useFlashSales, useGlobalDiscounts, useSmartPricing } from '@/hooks/usePromotionSystem';
 import { Textarea } from '@/components/ui/textarea';
