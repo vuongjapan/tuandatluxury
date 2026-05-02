@@ -299,6 +299,18 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {confirmTarget && (
+        <ConfirmDepositDialog
+          booking={confirmTarget}
+          open={!!confirmTarget}
+          onOpenChange={(o) => !o && setConfirmTarget(null)}
+          onConfirmed={(updated) => {
+            setBookings(prev => prev.map(x => x.id === updated.id ? { ...x, ...updated } : x));
+            onRefresh?.();
+          }}
+        />
+      )}
     </div>
   );
 };
