@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Facebook, Loader2, Trash2, CalendarDays, Users, Moon, CreditCard, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { MessageCircle, X, Send, Facebook, Loader2, Trash2, CalendarDays, Users, Moon, CreditCard, ChevronLeft, ChevronRight, ExternalLink, Mic } from 'lucide-react';
+import VoiceChatModal from './VoiceChatModal';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -186,6 +187,7 @@ const FloatingButtons = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [chatOpen, setChatOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(loadCachedMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -226,6 +228,8 @@ const FloatingButtons = () => {
         body: JSON.stringify({
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
           session_id: sessionId.current,
+          entry_page: window.location.pathname,
+          device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
         }),
       });
 
@@ -472,6 +476,15 @@ const FloatingButtons = () => {
                 <Button variant="gold" size="icon" className="h-9 w-9 shrink-0" onClick={handleSend} disabled={isLoading || !input.trim()}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={() => setVoiceOpen(true)}
+                  title="Nói chuyện với Linh bằng giọng nói"
+                >
+                  <Mic className="h-4 w-4" />
+                </Button>
               </div>
             </motion.div>
           )}
@@ -488,6 +501,14 @@ const FloatingButtons = () => {
           )}
         </button>
       </div>
+
+      <VoiceChatModal
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        sessionId={sessionId.current}
+        baseMessages={messages as any}
+        onMessagesChange={(m) => setMessages(m)}
+      />
     </>
   );
 };

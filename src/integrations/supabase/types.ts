@@ -642,22 +642,115 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          is_admin_message: boolean | null
+          is_voice_input: boolean | null
+          is_voice_output: boolean | null
+          response_time_ms: number | null
           role: string
           session_id: string
+          tokens_used: number | null
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          is_admin_message?: boolean | null
+          is_voice_input?: boolean | null
+          is_voice_output?: boolean | null
+          response_time_ms?: number | null
           role: string
           session_id: string
+          tokens_used?: number | null
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          is_admin_message?: boolean | null
+          is_voice_input?: boolean | null
+          is_voice_output?: boolean | null
+          response_time_ms?: number | null
           role?: string
           session_id?: string
+          tokens_used?: number | null
+        }
+        Relationships: []
+      }
+      chatbot_sessions: {
+        Row: {
+          admin_note: string | null
+          admin_tag: string | null
+          booking_code: string | null
+          booking_id: string | null
+          device_type: string | null
+          duration_minutes: number | null
+          email_sent_to: string | null
+          ended_at: string | null
+          entry_page: string | null
+          extracted_info: Json | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          id: string
+          last_activity: string | null
+          member_id: string | null
+          message_count: number | null
+          outcome: string | null
+          session_key: string
+          started_at: string | null
+          used_voice: boolean | null
+          user_agent: string | null
+          voice_messages_count: number | null
+        }
+        Insert: {
+          admin_note?: string | null
+          admin_tag?: string | null
+          booking_code?: string | null
+          booking_id?: string | null
+          device_type?: string | null
+          duration_minutes?: number | null
+          email_sent_to?: string | null
+          ended_at?: string | null
+          entry_page?: string | null
+          extracted_info?: Json | null
+          guest_email?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
+          id?: string
+          last_activity?: string | null
+          member_id?: string | null
+          message_count?: number | null
+          outcome?: string | null
+          session_key: string
+          started_at?: string | null
+          used_voice?: boolean | null
+          user_agent?: string | null
+          voice_messages_count?: number | null
+        }
+        Update: {
+          admin_note?: string | null
+          admin_tag?: string | null
+          booking_code?: string | null
+          booking_id?: string | null
+          device_type?: string | null
+          duration_minutes?: number | null
+          email_sent_to?: string | null
+          ended_at?: string | null
+          entry_page?: string | null
+          extracted_info?: Json | null
+          guest_email?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
+          id?: string
+          last_activity?: string | null
+          member_id?: string | null
+          message_count?: number | null
+          outcome?: string | null
+          session_key?: string
+          started_at?: string | null
+          used_voice?: boolean | null
+          user_agent?: string | null
+          voice_messages_count?: number | null
         }
         Relationships: []
       }
