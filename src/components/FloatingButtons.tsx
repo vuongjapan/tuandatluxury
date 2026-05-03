@@ -476,6 +476,15 @@ const FloatingButtons = () => {
                 <Button variant="gold" size="icon" className="h-9 w-9 shrink-0" onClick={handleSend} disabled={isLoading || !input.trim()}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={() => setVoiceOpen(true)}
+                  title="Nói chuyện với Linh bằng giọng nói"
+                >
+                  <Mic className="h-4 w-4" />
+                </Button>
               </div>
             </motion.div>
           )}
