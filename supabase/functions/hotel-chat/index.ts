@@ -334,7 +334,14 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, session_id } = await req.json();
+    const {
+      messages,
+      session_id,
+      entry_page,
+      device_type,
+      is_voice_input,
+      member_id,
+    } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -342,14 +349,55 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Save user message
+    // Upsert chatbot session
+    if (session_id) {
+      const { data: existing } = await supabase
+        .from("chatbot_sessions")
+        .select("id, extracted_info, email_sent_to")
+        .eq("session_key", session_id)
+        .maybeSingle();
+
+      if (!existing) {
+        await supabase.from("chatbot_sessions").insert({
+          session_key: session_id,
+          entry_page: entry_page || null,
+          device_type: device_type || null,
+          user_agent: req.headers.get("user-agent") || null,
+          member_id: member_id || null,
+          used_voice: !!is_voice_input,
+        });
+      }
+    }
+
+    // Save user message (with voice metadata)
     const lastUserMsg = messages[messages.length - 1];
     if (lastUserMsg?.role === "user" && session_id) {
       await supabase.from("chat_messages").insert({
         session_id,
         role: "user",
         content: lastUserMsg.content,
+        is_voice_input: !!is_voice_input,
       });
+
+      // Auto-extract guest info from accumulated user messages
+      const allUserText = messages
+        .filter((m: any) => m.role === "user")
+        .map((m: any) => m.content)
+        .join(" ");
+      const phoneMatch = allUserText.match(/(0\d{9,10})/);
+      const emailMatch = allUserText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      const nameMatch = allUserText.match(/(?:tên\s+(?:em|tôi|mình|anh|chị|là)\s*[:\s]?\s*)([A-ZÀ-Ỹ][a-zà-ỹA-ZÀ-Ỹ\s]{2,30})/i);
+
+      const updateFields: any = {};
+      if (phoneMatch) updateFields.guest_phone = phoneMatch[1];
+      if (emailMatch) updateFields.guest_email = emailMatch[0].toLowerCase();
+      if (nameMatch) updateFields.guest_name = nameMatch[1].trim();
+
+      if (Object.keys(updateFields).length > 0) {
+        await supabase.from("chatbot_sessions")
+          .update(updateFields)
+          .eq("session_key", session_id);
+      }
     }
 
     // Fetch real room data for accurate pricing + images
