@@ -187,6 +187,7 @@ const FloatingButtons = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [chatOpen, setChatOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(loadCachedMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
