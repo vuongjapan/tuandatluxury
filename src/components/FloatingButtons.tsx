@@ -501,6 +501,14 @@ const FloatingButtons = () => {
           )}
         </button>
       </div>
+
+      <VoiceChatModal
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        sessionId={sessionId.current}
+        baseMessages={messages as any}
+        onMessagesChange={(m) => setMessages(m)}
+      />
     </>
   );
 };
