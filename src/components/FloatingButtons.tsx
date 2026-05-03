@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Facebook, Loader2, Trash2, CalendarDays, Users, Moon, CreditCard, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { MessageCircle, X, Send, Facebook, Loader2, Trash2, CalendarDays, Users, Moon, CreditCard, ChevronLeft, ChevronRight, ExternalLink, Mic } from 'lucide-react';
+import VoiceChatModal from './VoiceChatModal';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
