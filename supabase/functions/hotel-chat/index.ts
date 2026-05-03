@@ -562,7 +562,47 @@ ${pastSummary ? "\nCuộc trò chuyện trước:\n" + pastSummary : ""}
             session_id,
             role: "assistant",
             content: fullContent,
+            is_voice_output: !!is_voice_input, // mirror voice mode
           });
+
+          // Auto trigger quote email if we have email + booking summary in response
+          try {
+            const { data: sess } = await supabase
+              .from("chatbot_sessions")
+              .select("guest_email, guest_name, guest_phone, email_sent_to, extracted_info")
+              .eq("session_key", session_id)
+              .maybeSingle();
+
+            const hasBookingBlock = /---BOOKING_SUMMARY---/.test(fullContent);
+            if (sess?.guest_email && !sess.email_sent_to && hasBookingBlock) {
+              // Parse booking block
+              const m = fullContent.match(/---BOOKING_SUMMARY---([\s\S]*?)---END_BOOKING---/);
+              const fields: Record<string, string> = {};
+              if (m) {
+                m[1].trim().split("\n").forEach((line) => {
+                  const idx = line.indexOf(":");
+                  if (idx > 0) fields[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+                });
+              }
+
+              await supabase.functions.invoke("send-chat-quote-email", {
+                body: {
+                  to: sess.guest_email,
+                  guest_name: sess.guest_name || "Quý khách",
+                  guest_phone: sess.guest_phone || "",
+                  booking: fields,
+                },
+              });
+
+              await supabase.from("chatbot_sessions").update({
+                email_sent_to: sess.guest_email,
+                outcome: "quote_sent",
+                extracted_info: { ...(sess.extracted_info || {}), ...fields },
+              }).eq("session_key", session_id);
+            }
+          } catch (emailErr) {
+            console.error("Auto quote email failed:", emailErr);
+          }
         }
       },
     });
