@@ -228,6 +228,8 @@ const FloatingButtons = () => {
         body: JSON.stringify({
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
           session_id: sessionId.current,
+          entry_page: window.location.pathname,
+          device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
         }),
       });
 
