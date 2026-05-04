@@ -51,8 +51,9 @@ import AdminExchangeRates from '@/components/admin/AdminExchangeRates';
 import AdminLive from '@/components/admin/AdminLive';
 import AdminManualInvoice from '@/components/admin/AdminManualInvoice';
 import AdminCustomers from '@/components/admin/AdminCustomers';
+import AdminChatbot from '@/components/admin/AdminChatbot';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -227,6 +228,7 @@ const AdminDashboard = () => {
     {
       title: 'AI Du Lịch',
       items: [
+        { id: 'chatbot', icon: MessageSquare, label: '🤖 Chatbot Chị Linh' },
         { id: 'page-analytics', icon: BarChart3, label: '📊 Thống kê lượt xem' },
         { id: 'analytics', icon: BarChart3, label: 'Analytics AI' },
         { id: 'quick-import', icon: Database, label: 'Quick Import Sầm Sơn' },
@@ -427,6 +429,7 @@ const AdminDashboard = () => {
           {tab === 'about-images' && <AdminAboutImages />}
           {tab === 'intro-section' && <AdminIntroSection />}
           {tab === 'exchange-rates' && <AdminExchangeRates />}
+          {tab === 'chatbot' && <AdminChatbot />}
         </div>
       </main>
     </div>
