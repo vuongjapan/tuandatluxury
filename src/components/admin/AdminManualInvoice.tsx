@@ -106,6 +106,24 @@ const AdminManualInvoice = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  // Prefill from chatbot session if any
+  useEffect(() => {
+    const raw = sessionStorage.getItem('chat_to_invoice');
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      if (d.guest_name) setGuestName(d.guest_name);
+      if (d.guest_phone) setGuestPhone(d.guest_phone);
+      if (d.guest_email) setGuestEmail(d.guest_email);
+      if (d.check_in) setCheckIn(d.check_in);
+      if (d.check_out) setCheckOut(d.check_out);
+      if (d.guests) setGuestsCount(Number(d.guests) || 2);
+      if (d.notes) setNotes(d.notes);
+      setView('create');
+    } catch {}
+    sessionStorage.removeItem('chat_to_invoice');
+  }, []);
+
   const resetForm = async () => {
     setCode(await generateInvoiceCode());
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
