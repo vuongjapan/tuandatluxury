@@ -53,6 +53,10 @@ const AdminManualInvoice = () => {
   const { toast } = useToast();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [diningItems, setDiningItems] = useState<DiningItem[]>([]);
+  const [diningCats, setDiningCats] = useState<DiningCategory[]>([]);
+  const [diningCatFilter, setDiningCatFilter] = useState<string>('all');
+  const [menuSource, setMenuSource] = useState<'dining' | 'menu'>('dining');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -73,6 +77,7 @@ const AdminManualInvoice = () => {
   const [roomPricePerNight, setRoomPricePerNight] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountNote, setDiscountNote] = useState('');
+  const [depositPercent, setDepositPercent] = useState<number>(50); // 30 | 50 | 70 | 100 | -1 (custom)
   const [depositAmount, setDepositAmount] = useState(0);
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([]);
