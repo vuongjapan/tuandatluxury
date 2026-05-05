@@ -44,8 +44,10 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
 
   const recognitionRef = useRef<any>(null);
   const silenceTimer = useRef<any>(null);
-  const lastTranscript = useRef('');
+  const finalTranscript = useRef('');
   const isStoppingRef = useRef(false);
+  const isProcessingRef = useRef(false);
+  const lastSentRef = useRef('');
   const lastResponseRef = useRef('');
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
