@@ -100,6 +100,12 @@ const AdminManualInvoice = () => {
   const totalAmount = Math.max(0, roomSubtotal + foodSubtotal + customSubtotal - discountAmount);
   const remainingAmount = Math.max(0, totalAmount - depositAmount);
 
+  // Auto-recalc deposit when total or % changes (skip if custom -1)
+  useEffect(() => {
+    if (depositPercent < 0) return;
+    setDepositAmount(Math.round(totalAmount * depositPercent / 100));
+  }, [totalAmount, depositPercent]);
+
   const loadData = async () => {
     const [{ data: r }, { data: m }, { data: inv }, { data: dc }, { data: di }] = await Promise.all([
       supabase.from('rooms').select('id, name_vi, price_vnd').eq('is_active', true).order('price_vnd'),
