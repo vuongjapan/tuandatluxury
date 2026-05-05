@@ -735,12 +735,46 @@ const AdminManualInvoice = () => {
         <div className="grid sm:grid-cols-2 gap-3">
           <div><Label>Giảm giá (VNĐ)</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(parseInt(e.target.value) || 0)} /></div>
           <div><Label>Lý do giảm</Label><Input value={discountNote} onChange={e => setDiscountNote(e.target.value)} placeholder="Khách quen, voucher..." /></div>
-          <div><Label>Đã đặt cọc (VNĐ)</Label><Input type="number" value={depositAmount} onChange={e => setDepositAmount(parseInt(e.target.value) || 0)} /></div>
-          <div className="flex items-end">
-            <div className="bg-primary/10 border border-primary/30 p-3 rounded-lg w-full">
-              <p className="text-xs text-muted-foreground">Tổng thanh toán</p>
-              <p className="text-2xl font-bold text-primary">{fmt(totalAmount)}</p>
-              <p className="text-xs">Còn lại: <strong>{fmt(remainingAmount)}</strong></p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>% Đặt cọc *</Label>
+          <div className="flex flex-wrap gap-2">
+            {[30, 50, 70, 100].map(p => (
+              <Button
+                key={p}
+                type="button"
+                size="sm"
+                variant={depositPercent === p ? 'default' : 'outline'}
+                onClick={() => setDepositPercent(p)}
+              >
+                {p}% {p === 50 && <span className="ml-1 text-[10px] opacity-70">(mặc định)</span>}
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant={depositPercent < 0 ? 'default' : 'outline'}
+              onClick={() => setDepositPercent(-1)}
+            >
+              Tùy chỉnh
+            </Button>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3 mt-2">
+            <div>
+              <Label>Đã đặt cọc (VNĐ) {depositPercent >= 0 && <span className="text-xs text-muted-foreground">— tự tính từ {depositPercent}%</span>}</Label>
+              <Input
+                type="number"
+                value={depositAmount}
+                onChange={e => { setDepositPercent(-1); setDepositAmount(parseInt(e.target.value) || 0); }}
+              />
+            </div>
+            <div className="flex items-end">
+              <div className="bg-primary/10 border border-primary/30 p-3 rounded-lg w-full">
+                <p className="text-xs text-muted-foreground">Tổng thanh toán</p>
+                <p className="text-2xl font-bold text-primary">{fmt(totalAmount)}</p>
+                <p className="text-xs">Cọc: <strong>{fmt(depositAmount)}</strong> · Còn lại: <strong>{fmt(remainingAmount)}</strong></p>
+              </div>
             </div>
           </div>
         </div>
