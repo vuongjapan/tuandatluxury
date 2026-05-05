@@ -140,7 +140,7 @@ const AdminManualInvoice = () => {
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
     setRoomId(''); setRoomName(''); setRoomQty(1); setRoomPricePerNight(0);
-    setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setNotes('');
+    setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setDepositPercent(50); setNotes('');
     setItems([]);
   };
 
