@@ -651,18 +651,39 @@ const AdminManualInvoice = () => {
           </Button>
         </div>
 
-        <div>
-          <Label>Tìm món thêm vào hóa đơn</Label>
-          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder="Gõ tên món..." />
-          {menuSearch && (
-            <div className="mt-2 max-h-40 overflow-y-auto border border-border rounded-lg">
-              {filteredMenu.map(mi => (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Label className="m-0">Nguồn:</Label>
+            <Button type="button" size="sm" variant={menuSource === 'dining' ? 'default' : 'outline'} onClick={() => setMenuSource('dining')}>
+              🍽️ Dining (web)
+            </Button>
+            <Button type="button" size="sm" variant={menuSource === 'menu' ? 'default' : 'outline'} onClick={() => setMenuSource('menu')}>
+              📋 Menu cũ
+            </Button>
+            {menuSource === 'dining' && diningCats.length > 0 && (
+              <Select value={diningCatFilter} onValueChange={setDiningCatFilter}>
+                <SelectTrigger className="w-[200px] h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả danh mục</SelectItem>
+                  {diningCats.map(c => <SelectItem key={c.id} value={c.id}>{c.name_vi}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder="Gõ tên món... (để trống để xem 30 món đầu)" />
+          {(menuSearch || (menuSource === 'dining' && diningCatFilter !== 'all')) && (
+            <div className="mt-2 max-h-56 overflow-y-auto border border-border rounded-lg">
+              {filteredMenu.map((mi: any) => (
                 <button
                   key={mi.id}
-                  onClick={() => { addMenuItem(mi); setMenuSearch(''); }}
+                  onClick={() => {
+                    if (menuSource === 'dining') addDiningItem(mi as DiningItem);
+                    else addMenuItem(mi as MenuItem);
+                    setMenuSearch('');
+                  }}
                   className="w-full text-left px-3 py-2 hover:bg-secondary text-sm flex justify-between border-b border-border/50 last:border-0"
                 >
-                  <span>{mi.name_vi}</span>
+                  <span>{mi.name_vi} {mi.is_combo ? <Badge variant="secondary" className="ml-1 text-[10px]">Combo</Badge> : null}</span>
                   <span className="text-muted-foreground">{fmt(mi.price_vnd)}</span>
                 </button>
               ))}
