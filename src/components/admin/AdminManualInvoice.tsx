@@ -14,6 +14,8 @@ const LAST_EMAIL_KEY = 'admin_manual_invoice_last_email';
 
 interface Room { id: string; name_vi: string; price_vnd: number }
 interface MenuItem { id: string; name_vi: string; price_vnd: number; category: string }
+interface DiningItem { id: string; name_vi: string; price_vnd: number; category_id: string; is_combo?: boolean }
+interface DiningCategory { id: string; name_vi: string }
 interface InvoiceItem {
   id: string; // local
   item_type: 'food' | 'combo' | 'custom' | 'service';
@@ -51,6 +53,10 @@ const AdminManualInvoice = () => {
   const { toast } = useToast();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [diningItems, setDiningItems] = useState<DiningItem[]>([]);
+  const [diningCats, setDiningCats] = useState<DiningCategory[]>([]);
+  const [diningCatFilter, setDiningCatFilter] = useState<string>('all');
+  const [menuSource, setMenuSource] = useState<'dining' | 'menu'>('dining');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -71,6 +77,7 @@ const AdminManualInvoice = () => {
   const [roomPricePerNight, setRoomPricePerNight] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountNote, setDiscountNote] = useState('');
+  const [depositPercent, setDepositPercent] = useState<number>(50); // 30 | 50 | 70 | 100 | -1 (custom)
   const [depositAmount, setDepositAmount] = useState(0);
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([]);
@@ -93,15 +100,25 @@ const AdminManualInvoice = () => {
   const totalAmount = Math.max(0, roomSubtotal + foodSubtotal + customSubtotal - discountAmount);
   const remainingAmount = Math.max(0, totalAmount - depositAmount);
 
+  // Auto-recalc deposit when total or % changes (skip if custom -1)
+  useEffect(() => {
+    if (depositPercent < 0) return;
+    setDepositAmount(Math.round(totalAmount * depositPercent / 100));
+  }, [totalAmount, depositPercent]);
+
   const loadData = async () => {
-    const [{ data: r }, { data: m }, { data: inv }] = await Promise.all([
+    const [{ data: r }, { data: m }, { data: inv }, { data: dc }, { data: di }] = await Promise.all([
       supabase.from('rooms').select('id, name_vi, price_vnd').eq('is_active', true).order('price_vnd'),
       supabase.from('menu_items').select('id, name_vi, price_vnd, category').eq('is_active', true).order('sort_order'),
       supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('dining_categories').select('id, name_vi').eq('is_active', true).order('sort_order'),
+      supabase.from('dining_items').select('id, name_vi, price_vnd, category_id, is_combo').eq('is_active', true).order('sort_order'),
     ]);
     setRooms(r as any || []);
     setMenuItems(m as any || []);
     setInvoices(inv || []);
+    setDiningCats(dc as any || []);
+    setDiningItems(di as any || []);
   };
 
   useEffect(() => { loadData(); }, []);
@@ -129,7 +146,7 @@ const AdminManualInvoice = () => {
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
     setRoomId(''); setRoomName(''); setRoomQty(1); setRoomPricePerNight(0);
-    setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setNotes('');
+    setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setDepositPercent(50); setNotes('');
     setItems([]);
   };
 
@@ -298,8 +315,24 @@ const AdminManualInvoice = () => {
 
   const filteredMenu = useMemo(() => {
     const q = menuSearch.trim().toLowerCase();
-    return q ? menuItems.filter(m => m.name_vi.toLowerCase().includes(q)) : menuItems.slice(0, 30);
-  }, [menuSearch, menuItems]);
+    if (menuSource === 'menu') {
+      return q ? menuItems.filter(m => m.name_vi.toLowerCase().includes(q)) : menuItems.slice(0, 30);
+    }
+    let pool = diningItems;
+    if (diningCatFilter !== 'all') pool = pool.filter(d => d.category_id === diningCatFilter);
+    return q ? pool.filter(d => d.name_vi.toLowerCase().includes(q)) : pool.slice(0, 30);
+  }, [menuSearch, menuItems, diningItems, diningCatFilter, menuSource]);
+
+  const addDiningItem = (di: DiningItem) => {
+    setItems(prev => [...prev, {
+      id: crypto.randomUUID(),
+      item_type: di.is_combo ? 'combo' : 'food',
+      ref_id: di.id,
+      name: di.name_vi,
+      quantity: 1,
+      unit_price: di.price_vnd,
+    }]);
+  };
 
   const filteredInvoices = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -618,18 +651,39 @@ const AdminManualInvoice = () => {
           </Button>
         </div>
 
-        <div>
-          <Label>Tìm món thêm vào hóa đơn</Label>
-          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder="Gõ tên món..." />
-          {menuSearch && (
-            <div className="mt-2 max-h-40 overflow-y-auto border border-border rounded-lg">
-              {filteredMenu.map(mi => (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Label className="m-0">Nguồn:</Label>
+            <Button type="button" size="sm" variant={menuSource === 'dining' ? 'default' : 'outline'} onClick={() => setMenuSource('dining')}>
+              🍽️ Dining (web)
+            </Button>
+            <Button type="button" size="sm" variant={menuSource === 'menu' ? 'default' : 'outline'} onClick={() => setMenuSource('menu')}>
+              📋 Menu cũ
+            </Button>
+            {menuSource === 'dining' && diningCats.length > 0 && (
+              <Select value={diningCatFilter} onValueChange={setDiningCatFilter}>
+                <SelectTrigger className="w-[200px] h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả danh mục</SelectItem>
+                  {diningCats.map(c => <SelectItem key={c.id} value={c.id}>{c.name_vi}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder="Gõ tên món... (để trống để xem 30 món đầu)" />
+          {(menuSearch || (menuSource === 'dining' && diningCatFilter !== 'all')) && (
+            <div className="mt-2 max-h-56 overflow-y-auto border border-border rounded-lg">
+              {filteredMenu.map((mi: any) => (
                 <button
                   key={mi.id}
-                  onClick={() => { addMenuItem(mi); setMenuSearch(''); }}
+                  onClick={() => {
+                    if (menuSource === 'dining') addDiningItem(mi as DiningItem);
+                    else addMenuItem(mi as MenuItem);
+                    setMenuSearch('');
+                  }}
                   className="w-full text-left px-3 py-2 hover:bg-secondary text-sm flex justify-between border-b border-border/50 last:border-0"
                 >
-                  <span>{mi.name_vi}</span>
+                  <span>{mi.name_vi} {mi.is_combo ? <Badge variant="secondary" className="ml-1 text-[10px]">Combo</Badge> : null}</span>
                   <span className="text-muted-foreground">{fmt(mi.price_vnd)}</span>
                 </button>
               ))}
@@ -681,12 +735,46 @@ const AdminManualInvoice = () => {
         <div className="grid sm:grid-cols-2 gap-3">
           <div><Label>Giảm giá (VNĐ)</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(parseInt(e.target.value) || 0)} /></div>
           <div><Label>Lý do giảm</Label><Input value={discountNote} onChange={e => setDiscountNote(e.target.value)} placeholder="Khách quen, voucher..." /></div>
-          <div><Label>Đã đặt cọc (VNĐ)</Label><Input type="number" value={depositAmount} onChange={e => setDepositAmount(parseInt(e.target.value) || 0)} /></div>
-          <div className="flex items-end">
-            <div className="bg-primary/10 border border-primary/30 p-3 rounded-lg w-full">
-              <p className="text-xs text-muted-foreground">Tổng thanh toán</p>
-              <p className="text-2xl font-bold text-primary">{fmt(totalAmount)}</p>
-              <p className="text-xs">Còn lại: <strong>{fmt(remainingAmount)}</strong></p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>% Đặt cọc *</Label>
+          <div className="flex flex-wrap gap-2">
+            {[30, 50, 70, 100].map(p => (
+              <Button
+                key={p}
+                type="button"
+                size="sm"
+                variant={depositPercent === p ? 'default' : 'outline'}
+                onClick={() => setDepositPercent(p)}
+              >
+                {p}% {p === 50 && <span className="ml-1 text-[10px] opacity-70">(mặc định)</span>}
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant={depositPercent < 0 ? 'default' : 'outline'}
+              onClick={() => setDepositPercent(-1)}
+            >
+              Tùy chỉnh
+            </Button>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3 mt-2">
+            <div>
+              <Label>Đã đặt cọc (VNĐ) {depositPercent >= 0 && <span className="text-xs text-muted-foreground">— tự tính từ {depositPercent}%</span>}</Label>
+              <Input
+                type="number"
+                value={depositAmount}
+                onChange={e => { setDepositPercent(-1); setDepositAmount(parseInt(e.target.value) || 0); }}
+              />
+            </div>
+            <div className="flex items-end">
+              <div className="bg-primary/10 border border-primary/30 p-3 rounded-lg w-full">
+                <p className="text-xs text-muted-foreground">Tổng thanh toán</p>
+                <p className="text-2xl font-bold text-primary">{fmt(totalAmount)}</p>
+                <p className="text-xs">Cọc: <strong>{fmt(depositAmount)}</strong> · Còn lại: <strong>{fmt(remainingAmount)}</strong></p>
+              </div>
             </div>
           </div>
         </div>

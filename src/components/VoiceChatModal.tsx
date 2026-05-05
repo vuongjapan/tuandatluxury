@@ -44,8 +44,10 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
 
   const recognitionRef = useRef<any>(null);
   const silenceTimer = useRef<any>(null);
-  const lastTranscript = useRef('');
+  const finalTranscript = useRef('');
   const isStoppingRef = useRef(false);
+  const isProcessingRef = useRef(false);
+  const lastSentRef = useRef('');
   const lastResponseRef = useRef('');
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
@@ -94,13 +96,25 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
   }, []);
 
   const sendToAI = useCallback(async (transcript: string) => {
-    if (!transcript.trim()) {
+    const cleaned = transcript.trim();
+    if (!cleaned || cleaned.length < 2) {
       setStatus('listening');
       startListening();
       return;
     }
+    // Prevent duplicate sends
+    if (isProcessingRef.current) return;
+    if (cleaned === lastSentRef.current) {
+      setStatus('listening');
+      startListening();
+      return;
+    }
+    isProcessingRef.current = true;
+    lastSentRef.current = cleaned;
+    finalTranscript.current = '';
+
     setStatus('thinking');
-    const userMsg: VoiceMsg = { role: 'user', content: transcript };
+    const userMsg: VoiceMsg = { role: 'user', content: cleaned };
     const newMsgs = [...messages, userMsg];
     setMessages(newMsgs);
     setInterim('');
@@ -160,9 +174,11 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
       lastResponseRef.current = assistantContent;
       setStatus('speaking');
       await speak(assistantContent);
+      isProcessingRef.current = false;
       setStatus('listening');
       startListening();
     } catch (err) {
+      isProcessingRef.current = false;
       setMessages((p) => [...p, { role: 'assistant', content: '❌ Linh đang gặp sự cố, anh/chị thử lại nhé!' }]);
       setStatus('listening');
       startListening();
@@ -182,23 +198,37 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
     r.continuous = true;
     r.interimResults = true;
     isStoppingRef.current = false;
-    lastTranscript.current = '';
+    finalTranscript.current = '';
 
     r.onresult = (event: any) => {
-      const t = Array.from(event.results)
-        .map((res: any) => res[0].transcript)
-        .join('');
-      lastTranscript.current = t;
-      setInterim(t);
+      // Block any input while we're processing a previous response
+      if (isProcessingRef.current) return;
+
+      let interimText = '';
+      let newFinal = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        const txt = res[0].transcript;
+        if (res.isFinal) {
+          newFinal += txt;
+        } else {
+          interimText += txt;
+        }
+      }
+      if (newFinal) {
+        finalTranscript.current = (finalTranscript.current + ' ' + newFinal).trim();
+      }
+      setInterim(finalTranscript.current + (interimText ? ' ' + interimText : ''));
 
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
       silenceTimer.current = setTimeout(() => {
-        if (lastTranscript.current.trim().length > 1) {
+        const toSend = finalTranscript.current.trim();
+        if (toSend.length > 1 && !isProcessingRef.current) {
           isStoppingRef.current = true;
           try { r.stop(); } catch {}
-          sendToAI(lastTranscript.current);
+          sendToAI(toSend);
         }
-      }, 1500);
+      }, 1200);
     };
 
     r.onerror = (e: any) => {
