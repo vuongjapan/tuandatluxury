@@ -198,23 +198,37 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
     r.continuous = true;
     r.interimResults = true;
     isStoppingRef.current = false;
-    lastTranscript.current = '';
+    finalTranscript.current = '';
 
     r.onresult = (event: any) => {
-      const t = Array.from(event.results)
-        .map((res: any) => res[0].transcript)
-        .join('');
-      lastTranscript.current = t;
-      setInterim(t);
+      // Block any input while we're processing a previous response
+      if (isProcessingRef.current) return;
+
+      let interimText = '';
+      let newFinal = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        const txt = res[0].transcript;
+        if (res.isFinal) {
+          newFinal += txt;
+        } else {
+          interimText += txt;
+        }
+      }
+      if (newFinal) {
+        finalTranscript.current = (finalTranscript.current + ' ' + newFinal).trim();
+      }
+      setInterim(finalTranscript.current + (interimText ? ' ' + interimText : ''));
 
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
       silenceTimer.current = setTimeout(() => {
-        if (lastTranscript.current.trim().length > 1) {
+        const toSend = finalTranscript.current.trim();
+        if (toSend.length > 1 && !isProcessingRef.current) {
           isStoppingRef.current = true;
           try { r.stop(); } catch {}
-          sendToAI(lastTranscript.current);
+          sendToAI(toSend);
         }
-      }, 1500);
+      }, 1200);
     };
 
     r.onerror = (e: any) => {
