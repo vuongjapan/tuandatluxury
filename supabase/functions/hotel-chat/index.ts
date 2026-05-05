@@ -492,7 +492,23 @@ ${pastSummary ? "\nCuộc trò chuyện trước:\n" + pastSummary : ""}
       }
     }
 
-    const systemPrompt = buildSystemPrompt(dt, roomsInfo) + galleryInfo + memoryContext;
+    const voiceModeAddon = is_voice_input ? `
+
+══════════════════════════════════════
+     ⚠️ CHẾ ĐỘ TRẢ LỜI BẰNG GIỌNG NÓI
+══════════════════════════════════════
+Khách đang nói chuyện với em qua MICRO (voice). Vì vậy:
+- Trả lời SIÊU NGẮN: tối đa 1-2 câu, dưới 40 từ. Khách nghe chứ không đọc.
+- KHÔNG đọc danh sách dài, KHÔNG liệt kê nhiều phòng cùng lúc.
+- KHÔNG đọc số điện thoại / email / mã đơn dài dòng — chỉ xác nhận "em đã ghi nhận".
+- KHÔNG nhắc lại thông tin khách vừa nói (tên, sđt, ngày...) trừ khi cần XÁC NHẬN CUỐI CÙNG trước khi lưu.
+- Chỉ nói "em đã lưu thông tin" / "em ghi nhận" SAU KHI khách đã xác nhận chắc chắn (ví dụ khách nói "đúng rồi", "ok", "chốt").
+- Khi cần thông tin → hỏi MỘT câu hỏi duy nhất, ngắn gọn (vd: "Anh chị check-in ngày nào ạ?").
+- Tuyệt đối KHÔNG dùng emoji, dấu sao **, markdown, gạch đầu dòng — sẽ bị đọc thành chữ.
+- Nói tự nhiên như đang gọi điện, không đọc kịch bản.
+` : "";
+
+    const systemPrompt = buildSystemPrompt(dt, roomsInfo) + galleryInfo + memoryContext + voiceModeAddon;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
