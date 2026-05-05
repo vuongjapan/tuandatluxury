@@ -96,13 +96,25 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
   }, []);
 
   const sendToAI = useCallback(async (transcript: string) => {
-    if (!transcript.trim()) {
+    const cleaned = transcript.trim();
+    if (!cleaned || cleaned.length < 2) {
       setStatus('listening');
       startListening();
       return;
     }
+    // Prevent duplicate sends
+    if (isProcessingRef.current) return;
+    if (cleaned === lastSentRef.current) {
+      setStatus('listening');
+      startListening();
+      return;
+    }
+    isProcessingRef.current = true;
+    lastSentRef.current = cleaned;
+    finalTranscript.current = '';
+
     setStatus('thinking');
-    const userMsg: VoiceMsg = { role: 'user', content: transcript };
+    const userMsg: VoiceMsg = { role: 'user', content: cleaned };
     const newMsgs = [...messages, userMsg];
     setMessages(newMsgs);
     setInterim('');
@@ -162,9 +174,11 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
       lastResponseRef.current = assistantContent;
       setStatus('speaking');
       await speak(assistantContent);
+      isProcessingRef.current = false;
       setStatus('listening');
       startListening();
     } catch (err) {
+      isProcessingRef.current = false;
       setMessages((p) => [...p, { role: 'assistant', content: '❌ Linh đang gặp sự cố, anh/chị thử lại nhé!' }]);
       setStatus('listening');
       startListening();
