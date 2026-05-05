@@ -31,12 +31,42 @@ function cleanForSpeech(t: string): string {
     .replace(/[#`*_~]/g, '')
     .replace(/[\u{1F300}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{2600}-\u{27BF}]/gu, '')
     .replace(/\n+/g, '. ')
+    .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Cap TTS length to avoid the "kéo dài lê thê" feel — take first 1-2 sentences, max ~280 chars
+function shortenForSpeech(t: string): string {
+  const clean = cleanForSpeech(t);
+  if (clean.length <= 280) return clean;
+  const sentences = clean.split(/(?<=[.!?])\s+/);
+  let out = '';
+  for (const s of sentences) {
+    if ((out + ' ' + s).trim().length > 280) break;
+    out = (out + ' ' + s).trim();
+  }
+  if (!out) out = clean.slice(0, 280);
+  return out + '…';
+}
+
+// Remove duplicated trailing words (Web Speech API hay lặp "phòng phòng phòng")
+function dedupeTranscript(t: string): string {
+  const words = t.split(/\s+/).filter(Boolean);
+  const out: string[] = [];
+  for (const w of words) {
+    // skip if same as previous word (case-insensitive)
+    if (out.length && out[out.length - 1].toLowerCase() === w.toLowerCase()) continue;
+    // skip if last 2 words form a repeating pair
+    if (out.length >= 2 && out[out.length - 2].toLowerCase() === w.toLowerCase() && out[out.length - 1].toLowerCase() === words[words.indexOf(w) - 1]?.toLowerCase()) continue;
+    out.push(w);
+  }
+  return out.join(' ');
 }
 
 const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChange }: Props) => {
   const { settings } = useSiteSettings();
   const [status, setStatus] = useState<Status>('idle');
+  const statusRef = useRef<Status>('idle');
   const [interim, setInterim] = useState('');
   const [messages, setMessages] = useState<VoiceMsg[]>(baseMessages);
   const [supported, setSupported] = useState(true);
@@ -50,6 +80,13 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
   const lastSentRef = useRef('');
   const lastResponseRef = useRef('');
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const lastFinalIndexRef = useRef(0); // track which result indices we've committed
+  const pausedRef = useRef(false);
+
+  const setStatusBoth = (s: Status) => {
+    statusRef.current = s;
+    setStatus(s);
+  };
 
   // Sync to parent on changes
   useEffect(() => { onMessagesChange(messages); }, [messages]);
@@ -75,17 +112,25 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
     window.speechSynthesis.onvoiceschanged = load;
   }, []);
 
+  const hardStopRecognition = () => {
+    isStoppingRef.current = true;
+    if (silenceTimer.current) { clearTimeout(silenceTimer.current); silenceTimer.current = null; }
+    try { recognitionRef.current?.abort?.(); } catch {}
+    try { recognitionRef.current?.stop?.(); } catch {}
+    recognitionRef.current = null;
+  };
+
   const speak = useCallback(async (text: string): Promise<void> => {
     return new Promise((resolve) => {
-      const clean = cleanForSpeech(text);
+      const clean = shortenForSpeech(text);
       if (!clean) return resolve();
       try {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(clean);
         if (voiceRef.current) u.voice = voiceRef.current;
         u.lang = 'vi-VN';
-        u.rate = 0.95;
-        u.pitch = 1.1;
+        u.rate = 1.02;
+        u.pitch = 1.05;
         u.onend = () => resolve();
         u.onerror = () => resolve();
         window.speechSynthesis.speak(u);
@@ -95,25 +140,106 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
     });
   }, []);
 
+  const startListening = useCallback(() => {
+    if (pausedRef.current) return;
+    if (statusRef.current === 'thinking' || statusRef.current === 'speaking') return;
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+
+    // Always tear down any prior instance to avoid double-listeners (root cause of "kéo dài chữ")
+    hardStopRecognition();
+
+    const r = new SR();
+    r.lang = 'vi-VN';
+    r.continuous = false; // single utterance — prevents accumulating duplicates
+    r.interimResults = true;
+    r.maxAlternatives = 1;
+    isStoppingRef.current = false;
+    finalTranscript.current = '';
+    lastFinalIndexRef.current = 0;
+
+    r.onresult = (event: any) => {
+      // Block any input while we're processing a previous response or speaking
+      if (isProcessingRef.current || statusRef.current === 'speaking' || statusRef.current === 'thinking') return;
+
+      let interimText = '';
+      // Only process results we haven't seen before
+      for (let i = lastFinalIndexRef.current; i < event.results.length; i++) {
+        const res = event.results[i];
+        const txt = (res[0].transcript || '').trim();
+        if (!txt) continue;
+        if (res.isFinal) {
+          // Commit final once
+          if (i >= lastFinalIndexRef.current) {
+            finalTranscript.current = dedupeTranscript((finalTranscript.current + ' ' + txt).trim());
+            lastFinalIndexRef.current = i + 1;
+          }
+        } else {
+          interimText = txt; // overwrite — don't accumulate
+        }
+      }
+      const display = dedupeTranscript((finalTranscript.current + ' ' + interimText).trim());
+      setInterim(display);
+
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+      silenceTimer.current = setTimeout(() => {
+        const toSend = finalTranscript.current.trim();
+        if (toSend.length > 1 && !isProcessingRef.current) {
+          isStoppingRef.current = true;
+          try { r.stop(); } catch {}
+          sendToAI(toSend);
+        }
+      }, 1100);
+    };
+
+    r.onerror = (e: any) => {
+      if (e.error === 'not-allowed') setPermError('Vui lòng cho phép truy cập microphone trong trình duyệt');
+      // 'no-speech' / 'aborted' → handled by onend
+    };
+
+    r.onend = () => {
+      // Auto-restart only if still in listening mode and not paused/processing
+      if (
+        !isStoppingRef.current &&
+        !pausedRef.current &&
+        !isProcessingRef.current &&
+        statusRef.current === 'listening'
+      ) {
+        setTimeout(() => {
+          if (statusRef.current === 'listening' && !isProcessingRef.current && !pausedRef.current) {
+            startListening();
+          }
+        }, 300);
+      }
+    };
+
+    recognitionRef.current = r;
+    try {
+      r.start();
+      setStatusBoth('listening');
+    } catch {}
+  }, []);
+
   const sendToAI = useCallback(async (transcript: string) => {
-    const cleaned = transcript.trim();
+    const cleaned = dedupeTranscript(transcript.trim());
     if (!cleaned || cleaned.length < 2) {
-      setStatus('listening');
+      setStatusBoth('listening');
       startListening();
       return;
     }
-    // Prevent duplicate sends
     if (isProcessingRef.current) return;
     if (cleaned === lastSentRef.current) {
-      setStatus('listening');
+      setStatusBoth('listening');
       startListening();
       return;
     }
     isProcessingRef.current = true;
     lastSentRef.current = cleaned;
     finalTranscript.current = '';
+    lastFinalIndexRef.current = 0;
+    hardStopRecognition();
 
-    setStatus('thinking');
+    setStatusBoth('thinking');
     const userMsg: VoiceMsg = { role: 'user', content: cleaned };
     const newMsgs = [...messages, userMsg];
     setMessages(newMsgs);
@@ -172,91 +298,31 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
       }
 
       lastResponseRef.current = assistantContent;
-      setStatus('speaking');
+      setStatusBoth('speaking');
+      // Mute the mic completely while speaking to avoid TTS feedback being recognized
+      hardStopRecognition();
       await speak(assistantContent);
       isProcessingRef.current = false;
-      setStatus('listening');
-      startListening();
+      if (!pausedRef.current) {
+        setStatusBoth('listening');
+        // small gap before re-enabling mic so TTS tail doesn't bleed in
+        setTimeout(() => { if (!pausedRef.current) startListening(); }, 400);
+      }
     } catch (err) {
       isProcessingRef.current = false;
       setMessages((p) => [...p, { role: 'assistant', content: '❌ Linh đang gặp sự cố, anh/chị thử lại nhé!' }]);
-      setStatus('listening');
-      startListening();
+      if (!pausedRef.current) {
+        setStatusBoth('listening');
+        setTimeout(() => { if (!pausedRef.current) startListening(); }, 400);
+      }
     }
-  }, [messages, sessionId, speak]);
-
-  const startListening = useCallback(() => {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return;
-
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
-    }
-
-    const r = new SR();
-    r.lang = 'vi-VN';
-    r.continuous = true;
-    r.interimResults = true;
-    isStoppingRef.current = false;
-    finalTranscript.current = '';
-
-    r.onresult = (event: any) => {
-      // Block any input while we're processing a previous response
-      if (isProcessingRef.current) return;
-
-      let interimText = '';
-      let newFinal = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const res = event.results[i];
-        const txt = res[0].transcript;
-        if (res.isFinal) {
-          newFinal += txt;
-        } else {
-          interimText += txt;
-        }
-      }
-      if (newFinal) {
-        finalTranscript.current = (finalTranscript.current + ' ' + newFinal).trim();
-      }
-      setInterim(finalTranscript.current + (interimText ? ' ' + interimText : ''));
-
-      if (silenceTimer.current) clearTimeout(silenceTimer.current);
-      silenceTimer.current = setTimeout(() => {
-        const toSend = finalTranscript.current.trim();
-        if (toSend.length > 1 && !isProcessingRef.current) {
-          isStoppingRef.current = true;
-          try { r.stop(); } catch {}
-          sendToAI(toSend);
-        }
-      }, 1200);
-    };
-
-    r.onerror = (e: any) => {
-      if (e.error === 'not-allowed') setPermError('Vui lòng cho phép truy cập microphone trong trình duyệt');
-      if (e.error === 'no-speech') {
-        // restart silently
-        setTimeout(() => { if (status === 'listening') startListening(); }, 500);
-      }
-    };
-
-    r.onend = () => {
-      if (!isStoppingRef.current && status === 'listening') {
-        // auto-restart
-        setTimeout(() => { try { r.start(); } catch {} }, 200);
-      }
-    };
-
-    recognitionRef.current = r;
-    try {
-      r.start();
-      setStatus('listening');
-    } catch {}
-  }, [status, sendToAI]);
+  }, [messages, sessionId, speak, startListening]);
 
   // Open: greet + start
   useEffect(() => {
     if (!open || !supported) return;
     let cancelled = false;
+    pausedRef.current = false;
 
     (async () => {
       try {
@@ -270,42 +336,48 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
 
       // Greet only if no prior conversation
       if (messages.length === 0) {
-        setStatus('speaking');
-        await speak('Dạ em chào anh chị! Em là Linh, lễ tân của Tuấn Đạt Luxury Hotel ạ. Anh chị cần em tư vấn gì không ạ?');
+        setStatusBoth('speaking');
+        await speak('Dạ em chào anh chị! Em là Linh, lễ tân Tuấn Đạt Luxury. Anh chị cần em tư vấn gì ạ?');
       }
-      if (!cancelled) startListening();
+      if (!cancelled && !pausedRef.current) {
+        setStatusBoth('listening');
+        setTimeout(() => startListening(), 300);
+      }
     })();
 
     return () => {
       cancelled = true;
-      try { recognitionRef.current?.stop(); } catch {}
+      pausedRef.current = true;
+      hardStopRecognition();
       window.speechSynthesis.cancel();
-      if (silenceTimer.current) clearTimeout(silenceTimer.current);
-      setStatus('idle');
+      setStatusBoth('idle');
       setInterim('');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, supported]);
 
   const togglePause = () => {
-    if (status === 'paused') {
+    if (pausedRef.current) {
+      pausedRef.current = false;
+      setStatusBoth('listening');
       startListening();
     } else {
-      isStoppingRef.current = true;
-      try { recognitionRef.current?.stop(); } catch {}
+      pausedRef.current = true;
+      hardStopRecognition();
       window.speechSynthesis.cancel();
-      setStatus('paused');
+      setStatusBoth('paused');
     }
   };
 
   const repeatLast = async () => {
     if (!lastResponseRef.current) return;
-    isStoppingRef.current = true;
-    try { recognitionRef.current?.stop(); } catch {}
-    setStatus('speaking');
+    hardStopRecognition();
+    setStatusBoth('speaking');
     await speak(lastResponseRef.current);
-    setStatus('listening');
-    startListening();
+    if (!pausedRef.current) {
+      setStatusBoth('listening');
+      setTimeout(() => startListening(), 400);
+    }
   };
 
   const statusText: Record<Status, { label: string; color: string }> = {
