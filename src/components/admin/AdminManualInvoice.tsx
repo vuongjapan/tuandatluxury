@@ -315,8 +315,24 @@ const AdminManualInvoice = () => {
 
   const filteredMenu = useMemo(() => {
     const q = menuSearch.trim().toLowerCase();
-    return q ? menuItems.filter(m => m.name_vi.toLowerCase().includes(q)) : menuItems.slice(0, 30);
-  }, [menuSearch, menuItems]);
+    if (menuSource === 'menu') {
+      return q ? menuItems.filter(m => m.name_vi.toLowerCase().includes(q)) : menuItems.slice(0, 30);
+    }
+    let pool = diningItems;
+    if (diningCatFilter !== 'all') pool = pool.filter(d => d.category_id === diningCatFilter);
+    return q ? pool.filter(d => d.name_vi.toLowerCase().includes(q)) : pool.slice(0, 30);
+  }, [menuSearch, menuItems, diningItems, diningCatFilter, menuSource]);
+
+  const addDiningItem = (di: DiningItem) => {
+    setItems(prev => [...prev, {
+      id: crypto.randomUUID(),
+      item_type: di.is_combo ? 'combo' : 'food',
+      ref_id: di.id,
+      name: di.name_vi,
+      quantity: 1,
+      unit_price: di.price_vnd,
+    }]);
+  };
 
   const filteredInvoices = useMemo(() => {
     const q = search.trim().toLowerCase();
