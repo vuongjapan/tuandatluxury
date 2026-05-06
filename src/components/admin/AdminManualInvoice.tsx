@@ -780,25 +780,40 @@ const AdminManualInvoice = () => {
             )}
           </div>
           <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder="Gõ tên món... (để trống để xem 30 món đầu)" />
-          {(menuSearch || (menuSource === 'dining' && diningCatFilter !== 'all')) && (
-            <div className="mt-2 max-h-56 overflow-y-auto border border-border rounded-lg">
-              {filteredMenu.map((mi: any) => (
-                <button
-                  key={mi.id}
-                  onClick={() => {
-                    if (menuSource === 'dining') addDiningItem(mi as DiningItem);
-                    else addMenuItem(mi as MenuItem);
-                    setMenuSearch('');
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-secondary text-sm flex justify-between border-b border-border/50 last:border-0"
-                >
-                  <span>{mi.name_vi} {mi.is_combo ? <Badge variant="secondary" className="ml-1 text-[10px]">Combo</Badge> : null}</span>
-                  <span className="text-muted-foreground">{fmt(mi.price_vnd)}</span>
-                </button>
-              ))}
-              {filteredMenu.length === 0 && <p className="text-xs text-muted-foreground p-3">Không tìm thấy</p>}
-            </div>
-          )}
+          <div className="mt-2 max-h-56 overflow-y-auto border border-border rounded-lg">
+            {filteredMenu.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-3">
+                {menuSource === 'dining' && diningItems.length === 0
+                  ? 'Chưa có món nào trong Dining (web). Vào Admin → Dining để thêm.'
+                  : menuSource === 'menu' && menuItems.length === 0
+                    ? 'Chưa có món nào trong Menu cũ.'
+                    : 'Không tìm thấy món phù hợp'}
+              </p>
+            ) : (
+              <>
+                {filteredMenu.map((mi: any) => (
+                  <button
+                    key={mi.id}
+                    type="button"
+                    onClick={() => {
+                      if (menuSource === 'dining') addDiningItem(mi as DiningItem);
+                      else addMenuItem(mi as MenuItem);
+                      setMenuSearch('');
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-secondary text-sm flex justify-between border-b border-border/50 last:border-0"
+                  >
+                    <span>{mi.name_vi} {mi.is_combo ? <Badge variant="secondary" className="ml-1 text-[10px]">Combo</Badge> : null}</span>
+                    <span className="text-muted-foreground">{fmt(mi.price_vnd)}</span>
+                  </button>
+                ))}
+                {!menuSearch && diningCatFilter === 'all' && (
+                  <p className="text-[11px] text-muted-foreground p-2 text-center bg-muted/30">
+                    Hiện 30 món đầu — gõ để tìm thêm
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
