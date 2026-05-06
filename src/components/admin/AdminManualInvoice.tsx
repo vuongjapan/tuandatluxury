@@ -90,8 +90,7 @@ const AdminManualInvoice = () => {
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceParsing, setVoiceParsing] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
-  const recognitionRef = useState<any>(null)[0];
-  const recognitionStateRef = (typeof window !== 'undefined' ? (window as any) : {}) as any;
+  const recognitionRef = useRef<any>(null);
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 1;
