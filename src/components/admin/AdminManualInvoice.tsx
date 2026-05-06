@@ -676,7 +676,33 @@ const AdminManualInvoice = () => {
         <p className="text-sm text-muted-foreground">Mã: <strong className="font-mono text-foreground">{code}</strong></p>
       </div>
 
-      {/* Guest info */}
+      {/* Voice input */}
+      <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-4 space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="font-semibold text-sm flex items-center gap-2">
+              🎙️ Tạo nhanh bằng giọng nói
+              {voiceParsing && <Loader2 className="h-3 w-3 animate-spin" />}
+            </p>
+            <p className="text-xs text-muted-foreground">Bấm mic, đọc: "Khách Nguyễn Văn A, sđt 0987654321, phòng Deluxe 2 đêm từ ngày mai, 2 người, cọc 50%"</p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant={voiceListening ? 'destructive' : 'default'}
+            onClick={voiceListening ? stopVoice : startVoice}
+            disabled={voiceParsing}
+          >
+            {voiceListening ? <><MicOff className="h-4 w-4 mr-1" />Dừng & điền</> : <><Mic className="h-4 w-4 mr-1" />Bắt đầu nói</>}
+          </Button>
+        </div>
+        {(voiceListening || voiceTranscript) && (
+          <div className="text-xs bg-background/60 border border-border rounded p-2 italic">
+            {voiceTranscript || 'Đang nghe...'}
+          </div>
+        )}
+      </div>
+
       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
         <h3 className="font-semibold">👤 Thông tin khách</h3>
         <div className="grid sm:grid-cols-2 gap-3">
