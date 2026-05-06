@@ -145,6 +145,85 @@ const AdminManualInvoice = () => {
     sessionStorage.removeItem('chat_to_invoice');
   }, []);
 
+  // ===== VOICE INPUT FOR ADMIN =====
+  const applyParsed = (p: any) => {
+    if (!p) return;
+    if (p.guest_name) setGuestName(p.guest_name);
+    if (p.guest_phone) setGuestPhone(p.guest_phone);
+    if (p.guest_email) setGuestEmail(p.guest_email);
+    if (p.check_in) setCheckIn(p.check_in);
+    if (p.check_out) setCheckOut(p.check_out);
+    if (p.guests_count) setGuestsCount(p.guests_count);
+    if (p.children_count != null) setChildrenCount(p.children_count);
+    if (p.room_quantity) setRoomQty(p.room_quantity);
+    if (p.room_price_per_night) setRoomPricePerNight(p.room_price_per_night);
+    if (p.discount_amount != null) setDiscountAmount(p.discount_amount);
+    if (p.discount_note) setDiscountNote(p.discount_note);
+    if (p.deposit_percent != null && [30, 50, 70, 100].includes(p.deposit_percent)) setDepositPercent(p.deposit_percent);
+    if (p.notes) setNotes((prev) => prev ? `${prev}\n${p.notes}` : p.notes);
+    // Match room by name if possible
+    if (p.room_name) {
+      const match = rooms.find(r => r.name_vi.toLowerCase().includes(String(p.room_name).toLowerCase()) || String(p.room_name).toLowerCase().includes(r.name_vi.toLowerCase()));
+      if (match) {
+        setRoomId(match.id);
+        setRoomName(match.name_vi);
+        if (!p.room_price_per_night) setRoomPricePerNight(match.price_vnd);
+      } else {
+        setRoomName(p.room_name);
+      }
+    }
+  };
+
+  const stopVoice = () => {
+    try { recognitionRef.current?.stop(); } catch {}
+    setVoiceListening(false);
+  };
+
+  const startVoice = () => {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      toast({ title: 'Trình duyệt không hỗ trợ giọng nói', description: 'Dùng Chrome / Edge nha', variant: 'destructive' });
+      return;
+    }
+    const rec = new SR();
+    rec.lang = 'vi-VN';
+    rec.continuous = true;
+    rec.interimResults = true;
+    let finalText = '';
+    rec.onresult = (e: any) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t + ' ';
+        else interim += t;
+      }
+      setVoiceTranscript((finalText + interim).trim());
+    };
+    rec.onerror = () => stopVoice();
+    rec.onend = async () => {
+      setVoiceListening(false);
+      const final = finalText.trim();
+      if (!final) return;
+      setVoiceParsing(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('parse-invoice-voice', {
+          body: { transcript: final },
+        });
+        if (error) throw error;
+        applyParsed((data as any)?.data);
+        toast({ title: '✅ Đã điền tự động', description: 'Kiểm tra lại các trường trước khi lưu' });
+      } catch (err: any) {
+        toast({ title: 'Lỗi nhận diện', description: err?.message, variant: 'destructive' });
+      } finally {
+        setVoiceParsing(false);
+      }
+    };
+    recognitionRef.current = rec;
+    setVoiceTranscript('');
+    setVoiceListening(true);
+    try { rec.start(); } catch { setVoiceListening(false); }
+  };
+
   const resetForm = async () => {
     setCode(await generateInvoiceCode());
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
