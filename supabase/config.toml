@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.generate-booking-pdf]
 verify_jwt = false
+
+[functions.parse-invoice-voice]
+verify_jwt = false

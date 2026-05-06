@@ -581,7 +581,7 @@ Khách đang nói chuyện với em qua MICRO (voice). Vì vậy:
             is_voice_output: !!is_voice_input, // mirror voice mode
           });
 
-          // Auto trigger quote email if we have email + booking summary in response
+          // Auto trigger booking creation + email if we have full info + booking summary
           try {
             const { data: sess } = await supabase
               .from("chatbot_sessions")
@@ -590,8 +590,13 @@ Khách đang nói chuyện với em qua MICRO (voice). Vì vậy:
               .maybeSingle();
 
             const hasBookingBlock = /---BOOKING_SUMMARY---/.test(fullContent);
-            if (sess?.guest_email && !sess.email_sent_to && hasBookingBlock) {
-              // Parse booking block
+            if (
+              sess?.guest_email &&
+              sess?.guest_phone &&
+              sess?.guest_name &&
+              !sess.email_sent_to &&
+              hasBookingBlock
+            ) {
               const m = fullContent.match(/---BOOKING_SUMMARY---([\s\S]*?)---END_BOOKING---/);
               const fields: Record<string, string> = {};
               if (m) {
@@ -601,23 +606,57 @@ Khách đang nói chuyện với em qua MICRO (voice). Vì vậy:
                 });
               }
 
-              await supabase.functions.invoke("send-chat-quote-email", {
-                body: {
-                  to: sess.guest_email,
-                  guest_name: sess.guest_name || "Quý khách",
-                  guest_phone: sess.guest_phone || "",
-                  booking: fields,
-                },
-              });
+              const room_id = fields.room_id;
+              const check_in = fields.checkin;
+              const check_out = fields.checkout;
+              const guests = parseInt(fields.guests || "2") || 2;
+              const total = parseInt((fields.total_price || "0").replace(/\D/g, "")) || 0;
 
-              await supabase.from("chatbot_sessions").update({
-                email_sent_to: sess.guest_email,
-                outcome: "quote_sent",
-                extracted_info: { ...(sess.extracted_info || {}), ...fields },
-              }).eq("session_key", session_id);
+              if (room_id && check_in && check_out && total > 0) {
+                // Create real PENDING booking → auto-sends booking email with QR
+                await supabase.functions.invoke("create-booking", {
+                  body: {
+                    room_id,
+                    guest_name: sess.guest_name,
+                    guest_email: sess.guest_email,
+                    guest_phone: sess.guest_phone,
+                    guest_notes: `[Tạo từ chatbot Linh - session ${session_id}]`,
+                    check_in,
+                    check_out,
+                    guests_count: guests,
+                    adults_count: guests,
+                    children_count: 0,
+                    total_price_vnd: total,
+                    original_price_vnd: total,
+                    room_quantity: 1,
+                    language: "vi",
+                  },
+                });
+
+                await supabase.from("chatbot_sessions").update({
+                  email_sent_to: sess.guest_email,
+                  outcome: "booking_created",
+                  extracted_info: { ...(sess.extracted_info || {}), ...fields },
+                }).eq("session_key", session_id);
+              } else {
+                // Fallback: just send quote email if booking data incomplete
+                await supabase.functions.invoke("send-chat-quote-email", {
+                  body: {
+                    to: sess.guest_email,
+                    guest_name: sess.guest_name || "Quý khách",
+                    guest_phone: sess.guest_phone || "",
+                    booking: fields,
+                  },
+                });
+                await supabase.from("chatbot_sessions").update({
+                  email_sent_to: sess.guest_email,
+                  outcome: "quote_sent",
+                  extracted_info: { ...(sess.extracted_info || {}), ...fields },
+                }).eq("session_key", session_id);
+              }
             }
-          } catch (emailErr) {
-            console.error("Auto quote email failed:", emailErr);
+          } catch (autoErr) {
+            console.error("Auto booking/email failed:", autoErr);
           }
         }
       },

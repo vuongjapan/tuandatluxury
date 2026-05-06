@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, FileText, Mail, Loader2, Search, Eye, Send, Download } from 'lucide-react';
+import { Plus, Trash2, FileText, Mail, Loader2, Search, Eye, Send, Download, Mic, MicOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const LAST_EMAIL_KEY = 'admin_manual_invoice_last_email';
@@ -87,6 +87,10 @@ const AdminManualInvoice = () => {
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
   const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string }>({ open: false, invoiceId: null, email: '' });
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceParsing, setVoiceParsing] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const recognitionRef = useRef<any>(null);
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 1;
@@ -140,6 +144,85 @@ const AdminManualInvoice = () => {
     } catch {}
     sessionStorage.removeItem('chat_to_invoice');
   }, []);
+
+  // ===== VOICE INPUT FOR ADMIN =====
+  const applyParsed = (p: any) => {
+    if (!p) return;
+    if (p.guest_name) setGuestName(p.guest_name);
+    if (p.guest_phone) setGuestPhone(p.guest_phone);
+    if (p.guest_email) setGuestEmail(p.guest_email);
+    if (p.check_in) setCheckIn(p.check_in);
+    if (p.check_out) setCheckOut(p.check_out);
+    if (p.guests_count) setGuestsCount(p.guests_count);
+    if (p.children_count != null) setChildrenCount(p.children_count);
+    if (p.room_quantity) setRoomQty(p.room_quantity);
+    if (p.room_price_per_night) setRoomPricePerNight(p.room_price_per_night);
+    if (p.discount_amount != null) setDiscountAmount(p.discount_amount);
+    if (p.discount_note) setDiscountNote(p.discount_note);
+    if (p.deposit_percent != null && [30, 50, 70, 100].includes(p.deposit_percent)) setDepositPercent(p.deposit_percent);
+    if (p.notes) setNotes((prev) => prev ? `${prev}\n${p.notes}` : p.notes);
+    // Match room by name if possible
+    if (p.room_name) {
+      const match = rooms.find(r => r.name_vi.toLowerCase().includes(String(p.room_name).toLowerCase()) || String(p.room_name).toLowerCase().includes(r.name_vi.toLowerCase()));
+      if (match) {
+        setRoomId(match.id);
+        setRoomName(match.name_vi);
+        if (!p.room_price_per_night) setRoomPricePerNight(match.price_vnd);
+      } else {
+        setRoomName(p.room_name);
+      }
+    }
+  };
+
+  const stopVoice = () => {
+    try { recognitionRef.current?.stop(); } catch {}
+    setVoiceListening(false);
+  };
+
+  const startVoice = () => {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      toast({ title: 'Trình duyệt không hỗ trợ giọng nói', description: 'Dùng Chrome / Edge nha', variant: 'destructive' });
+      return;
+    }
+    const rec = new SR();
+    rec.lang = 'vi-VN';
+    rec.continuous = true;
+    rec.interimResults = true;
+    let finalText = '';
+    rec.onresult = (e: any) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t + ' ';
+        else interim += t;
+      }
+      setVoiceTranscript((finalText + interim).trim());
+    };
+    rec.onerror = () => stopVoice();
+    rec.onend = async () => {
+      setVoiceListening(false);
+      const final = finalText.trim();
+      if (!final) return;
+      setVoiceParsing(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('parse-invoice-voice', {
+          body: { transcript: final },
+        });
+        if (error) throw error;
+        applyParsed((data as any)?.data);
+        toast({ title: '✅ Đã điền tự động', description: 'Kiểm tra lại các trường trước khi lưu' });
+      } catch (err: any) {
+        toast({ title: 'Lỗi nhận diện', description: err?.message, variant: 'destructive' });
+      } finally {
+        setVoiceParsing(false);
+      }
+    };
+    recognitionRef.current = rec;
+    setVoiceTranscript('');
+    setVoiceListening(true);
+    try { rec.start(); } catch { setVoiceListening(false); }
+  };
 
   const resetForm = async () => {
     setCode(await generateInvoiceCode());
@@ -593,7 +676,33 @@ const AdminManualInvoice = () => {
         <p className="text-sm text-muted-foreground">Mã: <strong className="font-mono text-foreground">{code}</strong></p>
       </div>
 
-      {/* Guest info */}
+      {/* Voice input */}
+      <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-4 space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="font-semibold text-sm flex items-center gap-2">
+              🎙️ Tạo nhanh bằng giọng nói
+              {voiceParsing && <Loader2 className="h-3 w-3 animate-spin" />}
+            </p>
+            <p className="text-xs text-muted-foreground">Bấm mic, đọc: "Khách Nguyễn Văn A, sđt 0987654321, phòng Deluxe 2 đêm từ ngày mai, 2 người, cọc 50%"</p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant={voiceListening ? 'destructive' : 'default'}
+            onClick={voiceListening ? stopVoice : startVoice}
+            disabled={voiceParsing}
+          >
+            {voiceListening ? <><MicOff className="h-4 w-4 mr-1" />Dừng & điền</> : <><Mic className="h-4 w-4 mr-1" />Bắt đầu nói</>}
+          </Button>
+        </div>
+        {(voiceListening || voiceTranscript) && (
+          <div className="text-xs bg-background/60 border border-border rounded p-2 italic">
+            {voiceTranscript || 'Đang nghe...'}
+          </div>
+        )}
+      </div>
+
       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
         <h3 className="font-semibold">👤 Thông tin khách</h3>
         <div className="grid sm:grid-cols-2 gap-3">
