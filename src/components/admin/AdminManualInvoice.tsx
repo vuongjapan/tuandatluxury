@@ -87,6 +87,11 @@ const AdminManualInvoice = () => {
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
   const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string }>({ open: false, invoiceId: null, email: '' });
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceParsing, setVoiceParsing] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const recognitionRef = useState<any>(null)[0];
+  const recognitionStateRef = (typeof window !== 'undefined' ? (window as any) : {}) as any;
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 1;
