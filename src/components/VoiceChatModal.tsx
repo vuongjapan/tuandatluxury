@@ -381,6 +381,29 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
     }
   };
 
+  // Manually stop listening and send whatever has been captured
+  const stopAndSend = () => {
+    const toSend = (finalTranscript.current + ' ' + interim).trim();
+    if (silenceTimer.current) { clearTimeout(silenceTimer.current); silenceTimer.current = null; }
+    if (!toSend || toSend.length < 2) {
+      // Nothing captured yet — just stop listening
+      hardStopRecognition();
+      pausedRef.current = true;
+      setStatusBoth('paused');
+      return;
+    }
+    if (isProcessingRef.current) return;
+    isStoppingRef.current = true;
+    hardStopRecognition();
+    sendToAI(toSend);
+  };
+
+  const startListeningManual = () => {
+    pausedRef.current = false;
+    setStatusBoth('listening');
+    startListening();
+  };
+
   const statusText: Record<Status, { label: string; color: string }> = {
     idle: { label: 'Chuẩn bị...', color: 'text-muted-foreground' },
     listening: { label: '🔴 Đang nghe anh/chị nói...', color: 'text-red-500' },
