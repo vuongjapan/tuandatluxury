@@ -181,6 +181,7 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
       const display = dedupeTranscript((finalTranscript.current + ' ' + interimText).trim());
       setInterim(display);
 
+      // Auto-send fallback after long silence (4s) — but user can press "Dừng & Gửi" anytime
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
       silenceTimer.current = setTimeout(() => {
         const toSend = finalTranscript.current.trim();
@@ -189,7 +190,7 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
           try { r.stop(); } catch {}
           sendToAI(toSend);
         }
-      }, 1100);
+      }, 4000);
     };
 
     r.onerror = (e: any) => {
