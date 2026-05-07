@@ -108,18 +108,16 @@ const AdminManualInvoice = () => {
   }, [totalAmount, depositPercent]);
 
   const loadData = async () => {
-    const [{ data: r }, { data: m }, { data: inv }, { data: dc }, { data: di }] = await Promise.all([
+    const [{ data: r }, { data: m }, { data: inv }, { data: mp }] = await Promise.all([
       supabase.from('rooms').select('id, name_vi, price_vnd').eq('is_active', true).order('price_vnd'),
       supabase.from('menu_items').select('id, name_vi, price_vnd, category').eq('is_active', true).order('sort_order'),
       supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(100),
-      supabase.from('dining_categories').select('id, name_vi').eq('is_active', true).order('sort_order'),
-      supabase.from('dining_items').select('id, name_vi, price_vnd, category_id, is_combo').eq('is_active', true).order('sort_order'),
+      (supabase as any).from('personal_meal_plans').select('id, name, price, guest_count').eq('is_active', true).order('guest_count').order('sort_order'),
     ]);
     setRooms(r as any || []);
     setMenuItems(m as any || []);
     setInvoices(inv || []);
-    setDiningCats(dc as any || []);
-    setDiningItems(di as any || []);
+    setMealPlans((mp as any) || []);
   };
 
   useEffect(() => { loadData(); }, []);
