@@ -196,7 +196,6 @@ const AdminDashboard = () => {
       title: 'Ẩm thực',
       items: [
         { id: 'cuisine-media', icon: Film, label: 'Trang Ẩm thực' },
-        { id: 'dining', icon: UtensilsCrossed, label: 'Nhà hàng' },
         { id: 'food-menu', icon: ShoppingCart, label: 'Menu đồ ăn' },
         { id: 'combos', icon: Gift, label: 'Combo ăn uống (≥6 khách)' },
         { id: 'personal-meal-plans', icon: Users, label: 'Suất ăn theo số người' },
@@ -228,9 +227,8 @@ const AdminDashboard = () => {
       title: 'AI Du Lịch',
       items: [
         { id: 'chatbot', icon: MessageSquare, label: '🤖 Chatbot Chị Linh' },
+        { id: 'competitor-research', icon: Search, label: '🔍 Nghiên cứu đối thủ' },
         { id: 'page-analytics', icon: BarChart3, label: '📊 Thống kê lượt xem' },
-        { id: 'analytics', icon: BarChart3, label: 'Analytics AI' },
-        { id: 'quick-import', icon: Database, label: 'Quick Import Sầm Sơn' },
       ],
     },
     {
