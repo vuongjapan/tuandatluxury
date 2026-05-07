@@ -14,8 +14,7 @@ const LAST_EMAIL_KEY = 'admin_manual_invoice_last_email';
 
 interface Room { id: string; name_vi: string; price_vnd: number }
 interface MenuItem { id: string; name_vi: string; price_vnd: number; category: string }
-interface DiningItem { id: string; name_vi: string; price_vnd: number; category_id: string; is_combo?: boolean }
-interface DiningCategory { id: string; name_vi: string }
+interface MealPlan { id: string; name: string; price: number; guest_count: number }
 interface InvoiceItem {
   id: string; // local
   item_type: 'food' | 'combo' | 'custom' | 'service';
@@ -53,10 +52,8 @@ const AdminManualInvoice = () => {
   const { toast } = useToast();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [diningItems, setDiningItems] = useState<DiningItem[]>([]);
-  const [diningCats, setDiningCats] = useState<DiningCategory[]>([]);
-  const [diningCatFilter, setDiningCatFilter] = useState<string>('all');
-  const [menuSource, setMenuSource] = useState<'dining' | 'menu'>('dining');
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [menuSource, setMenuSource] = useState<'meals' | 'menu'>('meals');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -111,18 +108,16 @@ const AdminManualInvoice = () => {
   }, [totalAmount, depositPercent]);
 
   const loadData = async () => {
-    const [{ data: r }, { data: m }, { data: inv }, { data: dc }, { data: di }] = await Promise.all([
+    const [{ data: r }, { data: m }, { data: inv }, { data: mp }] = await Promise.all([
       supabase.from('rooms').select('id, name_vi, price_vnd').eq('is_active', true).order('price_vnd'),
       supabase.from('menu_items').select('id, name_vi, price_vnd, category').eq('is_active', true).order('sort_order'),
       supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(100),
-      supabase.from('dining_categories').select('id, name_vi').eq('is_active', true).order('sort_order'),
-      supabase.from('dining_items').select('id, name_vi, price_vnd, category_id, is_combo').eq('is_active', true).order('sort_order'),
+      (supabase as any).from('personal_meal_plans').select('id, name, price, guest_count').eq('is_active', true).order('guest_count').order('sort_order'),
     ]);
     setRooms(r as any || []);
     setMenuItems(m as any || []);
     setInvoices(inv || []);
-    setDiningCats(dc as any || []);
-    setDiningItems(di as any || []);
+    setMealPlans((mp as any) || []);
   };
 
   useEffect(() => { loadData(); }, []);
@@ -401,19 +396,29 @@ const AdminManualInvoice = () => {
     if (menuSource === 'menu') {
       return q ? menuItems.filter(m => m.name_vi.toLowerCase().includes(q)) : menuItems.slice(0, 30);
     }
-    let pool = diningItems;
-    if (diningCatFilter !== 'all') pool = pool.filter(d => d.category_id === diningCatFilter);
-    return q ? pool.filter(d => d.name_vi.toLowerCase().includes(q)) : pool.slice(0, 30);
-  }, [menuSearch, menuItems, diningItems, diningCatFilter, menuSource]);
+    const pool = mealPlans;
+    return q ? pool.filter(d => d.name.toLowerCase().includes(q)) : pool;
+  }, [menuSearch, menuItems, mealPlans, menuSource]);
 
-  const addDiningItem = (di: DiningItem) => {
+  // Group meal plans by guest_count for nicer display
+  const mealPlansGrouped = useMemo(() => {
+    const groups: Record<number, MealPlan[]> = {};
+    filteredMenu.forEach((p: any) => {
+      if (menuSource !== 'meals') return;
+      const k = p.guest_count || 0;
+      (groups[k] ||= []).push(p);
+    });
+    return Object.entries(groups).sort((a, b) => Number(a[0]) - Number(b[0]));
+  }, [filteredMenu, menuSource]);
+
+  const addMealPlan = (mp: MealPlan) => {
     setItems(prev => [...prev, {
       id: crypto.randomUUID(),
-      item_type: di.is_combo ? 'combo' : 'food',
-      ref_id: di.id,
-      name: di.name_vi,
+      item_type: 'food',
+      ref_id: mp.id,
+      name: `${mp.name} (${mp.guest_count} người)`,
       quantity: 1,
-      unit_price: di.price_vnd,
+      unit_price: mp.price,
     }]);
   };
 
@@ -763,31 +768,45 @@ const AdminManualInvoice = () => {
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2 items-center">
             <Label className="m-0">Nguồn:</Label>
-            <Button type="button" size="sm" variant={menuSource === 'dining' ? 'default' : 'outline'} onClick={() => setMenuSource('dining')}>
-              🍽️ Dining (web)
+            <Button type="button" size="sm" variant={menuSource === 'meals' ? 'default' : 'outline'} onClick={() => setMenuSource('meals')}>
+              👥 Suất ăn theo số người
             </Button>
             <Button type="button" size="sm" variant={menuSource === 'menu' ? 'default' : 'outline'} onClick={() => setMenuSource('menu')}>
               📋 Menu cũ
             </Button>
-            {menuSource === 'dining' && diningCats.length > 0 && (
-              <Select value={diningCatFilter} onValueChange={setDiningCatFilter}>
-                <SelectTrigger className="w-[200px] h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả danh mục</SelectItem>
-                  {diningCats.map(c => <SelectItem key={c.id} value={c.id}>{c.name_vi}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
           </div>
-          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder="Gõ tên món... (để trống để xem 30 món đầu)" />
-          <div className="mt-2 max-h-56 overflow-y-auto border border-border rounded-lg">
-            {filteredMenu.length === 0 ? (
+          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder={menuSource === 'meals' ? 'Gõ tên suất... (để trống xem tất cả)' : 'Gõ tên món... (để trống để xem 30 món đầu)'} />
+          <div className="mt-2 max-h-72 overflow-y-auto border border-border rounded-lg">
+            {menuSource === 'meals' ? (
+              mealPlans.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-3">
+                  Chưa có suất ăn nào. Vào Admin → Suất ăn theo số người để thêm.
+                </p>
+              ) : mealPlansGrouped.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-3">Không tìm thấy suất phù hợp</p>
+              ) : (
+                mealPlansGrouped.map(([gc, list]) => (
+                  <div key={gc}>
+                    <div className="px-3 py-1 bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {Number(gc) >= 6 ? `${gc} người (≥6 khách)` : `${gc} người`}
+                    </div>
+                    {list.map(mp => (
+                      <button
+                        key={mp.id}
+                        type="button"
+                        onClick={() => { addMealPlan(mp); setMenuSearch(''); }}
+                        className="w-full text-left px-3 py-2 hover:bg-secondary text-sm flex justify-between border-b border-border/50 last:border-0"
+                      >
+                        <span>{mp.name}</span>
+                        <span className="text-muted-foreground">{fmt(mp.price)}</span>
+                      </button>
+                    ))}
+                  </div>
+                ))
+              )
+            ) : filteredMenu.length === 0 ? (
               <p className="text-xs text-muted-foreground p-3">
-                {menuSource === 'dining' && diningItems.length === 0
-                  ? 'Chưa có món nào trong Dining (web). Vào Admin → Dining để thêm.'
-                  : menuSource === 'menu' && menuItems.length === 0
-                    ? 'Chưa có món nào trong Menu cũ.'
-                    : 'Không tìm thấy món phù hợp'}
+                {menuItems.length === 0 ? 'Chưa có món nào trong Menu cũ.' : 'Không tìm thấy món phù hợp'}
               </p>
             ) : (
               <>
@@ -795,18 +814,14 @@ const AdminManualInvoice = () => {
                   <button
                     key={mi.id}
                     type="button"
-                    onClick={() => {
-                      if (menuSource === 'dining') addDiningItem(mi as DiningItem);
-                      else addMenuItem(mi as MenuItem);
-                      setMenuSearch('');
-                    }}
+                    onClick={() => { addMenuItem(mi as MenuItem); setMenuSearch(''); }}
                     className="w-full text-left px-3 py-2 hover:bg-secondary text-sm flex justify-between border-b border-border/50 last:border-0"
                   >
-                    <span>{mi.name_vi} {mi.is_combo ? <Badge variant="secondary" className="ml-1 text-[10px]">Combo</Badge> : null}</span>
+                    <span>{mi.name_vi}</span>
                     <span className="text-muted-foreground">{fmt(mi.price_vnd)}</span>
                   </button>
                 ))}
-                {!menuSearch && diningCatFilter === 'all' && (
+                {!menuSearch && (
                   <p className="text-[11px] text-muted-foreground p-2 text-center bg-muted/30">
                     Hiện 30 món đầu — gõ để tìm thêm
                   </p>

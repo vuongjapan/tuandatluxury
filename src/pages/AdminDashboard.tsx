@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle, Coins, Radio, FileText, MessageSquare
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle, Coins, Radio, FileText, MessageSquare, Search
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -35,9 +35,8 @@ import AdminAmenities from '@/components/admin/AdminAmenities';
 import AdminVouchers from '@/components/admin/AdminVouchers';
 import AdminWebDiscount from '@/components/admin/AdminWebDiscount';
 import AdminRoomPopup from '@/components/admin/AdminRoomPopup';
-import AdminQuickImport from '@/components/admin/AdminQuickImport';
-import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminPageAnalytics from '@/components/admin/AdminPageAnalytics';
+import AdminCompetitorResearch from '@/components/admin/AdminCompetitorResearch';
 import AdminReviews from '@/components/admin/AdminReviews';
 import AdminDiscountConfig from '@/components/admin/AdminDiscountConfig';
 import AdminAboutImages from '@/components/admin/AdminAboutImages';
@@ -53,7 +52,7 @@ import AdminManualInvoice from '@/components/admin/AdminManualInvoice';
 import AdminCustomers from '@/components/admin/AdminCustomers';
 import AdminChatbot from '@/components/admin/AdminChatbot';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'dining' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'quick-import' | 'analytics' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -197,7 +196,6 @@ const AdminDashboard = () => {
       title: 'Ẩm thực',
       items: [
         { id: 'cuisine-media', icon: Film, label: 'Trang Ẩm thực' },
-        { id: 'dining', icon: UtensilsCrossed, label: 'Nhà hàng' },
         { id: 'food-menu', icon: ShoppingCart, label: 'Menu đồ ăn' },
         { id: 'combos', icon: Gift, label: 'Combo ăn uống (≥6 khách)' },
         { id: 'personal-meal-plans', icon: Users, label: 'Suất ăn theo số người' },
@@ -229,9 +227,8 @@ const AdminDashboard = () => {
       title: 'AI Du Lịch',
       items: [
         { id: 'chatbot', icon: MessageSquare, label: '🤖 Chatbot Chị Linh' },
+        { id: 'competitor-research', icon: Search, label: '🔍 Nghiên cứu đối thủ' },
         { id: 'page-analytics', icon: BarChart3, label: '📊 Thống kê lượt xem' },
-        { id: 'analytics', icon: BarChart3, label: 'Analytics AI' },
-        { id: 'quick-import', icon: Database, label: 'Quick Import Sầm Sơn' },
       ],
     },
     {
@@ -400,7 +397,7 @@ const AdminDashboard = () => {
           {tab === 'rooms' && <AdminRooms rooms={rooms} onRefresh={fetchData} />}
           {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
-          {tab === 'dining' && <AdminDining />}
+          {tab === 'competitor-research' && <AdminCompetitorResearch />}
           {tab === 'promo-banners' && <AdminPromoBanners />}
           {tab === 'promo-popups' && <AdminPromoPopups />}
           {tab === 'offers' && <AdminOffers />}
@@ -421,8 +418,6 @@ const AdminDashboard = () => {
           {tab === 'vouchers' && <AdminVouchers />}
           {tab === 'settings' && <AdminSettings onBackup={handleBackup} onRestore={handleRestore} />}
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
-          {tab === 'quick-import' && <AdminQuickImport />}
-          {tab === 'analytics' && <AdminAnalytics />}
           {tab === 'page-analytics' && <AdminPageAnalytics />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'discount-config' && <AdminDiscountConfig />}

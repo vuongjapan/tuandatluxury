@@ -884,6 +884,84 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_research: {
+        Row: {
+          address: string | null
+          admin_rating: number | null
+          amenities: string[] | null
+          area: string | null
+          created_at: string
+          cuisine_types: string[] | null
+          google_rating: number | null
+          google_review_count: number | null
+          id: string
+          last_updated: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          price_per_person_max: number | null
+          price_per_person_min: number | null
+          room_prices: Json | null
+          signature_dishes: string | null
+          star_rating: number | null
+          strengths: string | null
+          type: string
+          updated_at: string
+          weaknesses: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          admin_rating?: number | null
+          amenities?: string[] | null
+          area?: string | null
+          created_at?: string
+          cuisine_types?: string[] | null
+          google_rating?: number | null
+          google_review_count?: number | null
+          id?: string
+          last_updated?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          price_per_person_max?: number | null
+          price_per_person_min?: number | null
+          room_prices?: Json | null
+          signature_dishes?: string | null
+          star_rating?: number | null
+          strengths?: string | null
+          type: string
+          updated_at?: string
+          weaknesses?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          admin_rating?: number | null
+          amenities?: string[] | null
+          area?: string | null
+          created_at?: string
+          cuisine_types?: string[] | null
+          google_rating?: number | null
+          google_review_count?: number | null
+          id?: string
+          last_updated?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          price_per_person_max?: number | null
+          price_per_person_min?: number | null
+          room_prices?: Json | null
+          signature_dishes?: string | null
+          star_rating?: number | null
+          strengths?: string | null
+          type?: string
+          updated_at?: string
+          weaknesses?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       cuisine_media: {
         Row: {
           caption: string | null
