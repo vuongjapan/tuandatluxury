@@ -482,11 +482,23 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
                 {statusText[status].label}
               </p>
 
-              {/* Interim transcript */}
-              {interim && status === 'listening' && (
-                <div className="bg-secondary/60 rounded-lg p-3 text-sm text-foreground italic text-center">
-                  "{interim}"
+              {/* Interim transcript — show whenever there's content, not just listening */}
+              {(interim || (status === 'listening' && finalTranscript.current)) && (
+                <div className="bg-secondary/60 rounded-lg p-3 text-sm text-foreground italic text-center min-h-[2.5rem]">
+                  "{interim || finalTranscript.current}"
                 </div>
+              )}
+
+              {/* Hint */}
+              {status === 'listening' && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Nói xong nhấn <span className="font-semibold text-primary">"Dừng & Gửi"</span> để gửi cho Linh
+                </p>
+              )}
+              {status === 'paused' && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Nhấn <span className="font-semibold text-primary">"Bắt đầu nói"</span> để tiếp tục
+                </p>
               )}
 
               {/* Last 3 messages */}
@@ -503,13 +515,40 @@ const VoiceChatModal = ({ open, onClose, sessionId, baseMessages, onMessagesChan
             </div>
 
             {/* Controls */}
-            <div className="border-t border-border p-4 flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1" onClick={togglePause} disabled={!supported}>
-                {status === 'paused' ? <><Mic className="h-4 w-4 mr-1" /> Tiếp tục</> : <><MicOff className="h-4 w-4 mr-1" /> Tạm dừng</>}
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1" onClick={repeatLast} disabled={!lastResponseRef.current}>
-                <RefreshCw className="h-4 w-4 mr-1" /> Nói lại
-              </Button>
+            <div className="border-t border-border p-4 space-y-2">
+              {/* Primary action — big start/stop button */}
+              {status === 'listening' ? (
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  className="w-full font-semibold"
+                  onClick={stopAndSend}
+                  disabled={!supported}
+                >
+                  <Send className="h-5 w-5 mr-2" /> Dừng & Gửi
+                </Button>
+              ) : (
+                <Button
+                  variant="gold"
+                  size="lg"
+                  className="w-full font-semibold"
+                  onClick={startListeningManual}
+                  disabled={!supported || status === 'thinking' || status === 'speaking'}
+                >
+                  <Mic className="h-5 w-5 mr-2" />
+                  {status === 'thinking' || status === 'speaking' ? 'Đợi Linh trả lời...' : 'Bắt đầu nói'}
+                </Button>
+              )}
+
+              {/* Secondary actions */}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1" onClick={togglePause} disabled={!supported || status === 'thinking' || status === 'speaking'}>
+                  {status === 'paused' ? <><Mic className="h-4 w-4 mr-1" /> Tiếp tục</> : <><Square className="h-4 w-4 mr-1" /> Tạm dừng</>}
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={repeatLast} disabled={!lastResponseRef.current || status === 'speaking'}>
+                  <RefreshCw className="h-4 w-4 mr-1" /> Nói lại
+                </Button>
+              </div>
             </div>
           </motion.div>
         </motion.div>
