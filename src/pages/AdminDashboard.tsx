@@ -397,7 +397,7 @@ const AdminDashboard = () => {
           {tab === 'rooms' && <AdminRooms rooms={rooms} onRefresh={fetchData} />}
           {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
-          {tab === 'dining' && <AdminDining />}
+          {tab === 'competitor-research' && <AdminCompetitorResearch />}
           {tab === 'promo-banners' && <AdminPromoBanners />}
           {tab === 'promo-popups' && <AdminPromoPopups />}
           {tab === 'offers' && <AdminOffers />}
