@@ -52,10 +52,8 @@ const AdminManualInvoice = () => {
   const { toast } = useToast();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [diningItems, setDiningItems] = useState<DiningItem[]>([]);
-  const [diningCats, setDiningCats] = useState<DiningCategory[]>([]);
-  const [diningCatFilter, setDiningCatFilter] = useState<string>('all');
-  const [menuSource, setMenuSource] = useState<'dining' | 'menu'>('dining');
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [menuSource, setMenuSource] = useState<'meals' | 'menu'>('meals');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
   const [detailId, setDetailId] = useState<string | null>(null);
