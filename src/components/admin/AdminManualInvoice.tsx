@@ -396,19 +396,29 @@ const AdminManualInvoice = () => {
     if (menuSource === 'menu') {
       return q ? menuItems.filter(m => m.name_vi.toLowerCase().includes(q)) : menuItems.slice(0, 30);
     }
-    let pool = diningItems;
-    if (diningCatFilter !== 'all') pool = pool.filter(d => d.category_id === diningCatFilter);
-    return q ? pool.filter(d => d.name_vi.toLowerCase().includes(q)) : pool.slice(0, 30);
-  }, [menuSearch, menuItems, diningItems, diningCatFilter, menuSource]);
+    const pool = mealPlans;
+    return q ? pool.filter(d => d.name.toLowerCase().includes(q)) : pool;
+  }, [menuSearch, menuItems, mealPlans, menuSource]);
 
-  const addDiningItem = (di: DiningItem) => {
+  // Group meal plans by guest_count for nicer display
+  const mealPlansGrouped = useMemo(() => {
+    const groups: Record<number, MealPlan[]> = {};
+    filteredMenu.forEach((p: any) => {
+      if (menuSource !== 'meals') return;
+      const k = p.guest_count || 0;
+      (groups[k] ||= []).push(p);
+    });
+    return Object.entries(groups).sort((a, b) => Number(a[0]) - Number(b[0]));
+  }, [filteredMenu, menuSource]);
+
+  const addMealPlan = (mp: MealPlan) => {
     setItems(prev => [...prev, {
       id: crypto.randomUUID(),
-      item_type: di.is_combo ? 'combo' : 'food',
-      ref_id: di.id,
-      name: di.name_vi,
+      item_type: 'food',
+      ref_id: mp.id,
+      name: `${mp.name} (${mp.guest_count} người)`,
       quantity: 1,
-      unit_price: di.price_vnd,
+      unit_price: mp.price,
     }]);
   };
 
