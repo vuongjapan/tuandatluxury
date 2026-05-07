@@ -418,8 +418,6 @@ const AdminDashboard = () => {
           {tab === 'vouchers' && <AdminVouchers />}
           {tab === 'settings' && <AdminSettings onBackup={handleBackup} onRestore={handleRestore} />}
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
-          {tab === 'quick-import' && <AdminQuickImport />}
-          {tab === 'analytics' && <AdminAnalytics />}
           {tab === 'page-analytics' && <AdminPageAnalytics />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'discount-config' && <AdminDiscountConfig />}
