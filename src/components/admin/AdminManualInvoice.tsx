@@ -15,6 +15,9 @@ const LAST_EMAIL_KEY = 'admin_manual_invoice_last_email';
 interface Room { id: string; name_vi: string; price_vnd: number }
 interface MenuItem { id: string; name_vi: string; price_vnd: number; category: string }
 interface MealPlan { id: string; name: string; price: number; guest_count: number; items?: string[]; note?: string }
+interface ComboPkg { id: string; name: string; price_per_person: number; menu_count: number; dishes_per_menu: number }
+interface ComboMenu { id: string; combo_package_id: string; menu_number: number; name_vi: string }
+interface ComboDish { id: string; combo_menu_id: string; name_vi: string }
 interface InvoiceItem {
   id: string; // local
   item_type: 'food' | 'combo' | 'custom' | 'service';
@@ -53,7 +56,11 @@ const AdminManualInvoice = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
-  const [menuSource, setMenuSource] = useState<'meals' | 'menu'>('meals');
+  const [comboPkgs, setComboPkgs] = useState<ComboPkg[]>([]);
+  const [comboMenus, setComboMenus] = useState<ComboMenu[]>([]);
+  const [comboDishes, setComboDishes] = useState<ComboDish[]>([]);
+  const [comboGuestCount, setComboGuestCount] = useState<number>(6);
+  const [menuSource, setMenuSource] = useState<'meals' | 'menu' | 'combo'>('meals');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -108,16 +115,22 @@ const AdminManualInvoice = () => {
   }, [totalAmount, depositPercent]);
 
   const loadData = async () => {
-    const [{ data: r }, { data: m }, { data: inv }, { data: mp }] = await Promise.all([
+    const [{ data: r }, { data: m }, { data: inv }, { data: mp }, { data: cp }, { data: cm }, { data: cd }] = await Promise.all([
       supabase.from('rooms').select('id, name_vi, price_vnd').eq('is_active', true).order('price_vnd'),
       supabase.from('menu_items').select('id, name_vi, price_vnd, category').eq('is_active', true).order('sort_order'),
       supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(100),
       (supabase as any).from('personal_meal_plans').select('id, name, price, guest_count, items, note').eq('is_active', true).order('guest_count').order('sort_order'),
+      (supabase as any).from('combo_packages').select('id, name, price_per_person, menu_count, dishes_per_menu').eq('is_active', true).order('sort_order'),
+      (supabase as any).from('combo_menus').select('id, combo_package_id, menu_number, name_vi').eq('is_active', true).order('menu_number'),
+      (supabase as any).from('combo_menu_dishes').select('id, combo_menu_id, name_vi').order('sort_order'),
     ]);
     setRooms(r as any || []);
     setMenuItems(m as any || []);
     setInvoices(inv || []);
     setMealPlans((mp as any) || []);
+    setComboPkgs((cp as any) || []);
+    setComboMenus((cm as any) || []);
+    setComboDishes((cd as any) || []);
   };
 
   useEffect(() => { loadData(); }, []);
@@ -419,6 +432,17 @@ const AdminManualInvoice = () => {
       name: `${mp.name} (${mp.guest_count} người)`,
       quantity: 1,
       unit_price: mp.price,
+    }]);
+  };
+
+  const addComboMenu = (pkg: ComboPkg, menu: ComboMenu, qty: number) => {
+    setItems(prev => [...prev, {
+      id: crypto.randomUUID(),
+      item_type: 'combo',
+      ref_id: menu.id,
+      name: `${pkg.name} - ${menu.name_vi} (${qty} suất)`,
+      quantity: qty,
+      unit_price: pkg.price_per_person,
     }]);
   };
 
@@ -774,8 +798,19 @@ const AdminManualInvoice = () => {
             <Button type="button" size="sm" variant={menuSource === 'menu' ? 'default' : 'outline'} onClick={() => setMenuSource('menu')}>
               📋 Menu cũ
             </Button>
+            <Button type="button" size="sm" variant={menuSource === 'combo' ? 'default' : 'outline'} onClick={() => setMenuSource('combo')}>
+              🎉 Combo ≥6 khách
+            </Button>
           </div>
-          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder={menuSource === 'meals' ? 'Gõ tên suất... (để trống xem tất cả)' : 'Gõ tên món... (để trống để xem 30 món đầu)'} />
+          {menuSource === 'combo' ? (
+            <div className="flex items-center gap-2">
+              <Label className="m-0 text-xs">Số suất:</Label>
+              <Input type="number" min={6} value={comboGuestCount} onChange={e => setComboGuestCount(Math.max(1, parseInt(e.target.value) || 6))} className="w-24" />
+              <span className="text-xs text-muted-foreground">Áp dụng khi chọn thực đơn bên dưới</span>
+            </div>
+          ) : (
+            <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder={menuSource === 'meals' ? 'Gõ tên suất... (để trống xem tất cả)' : 'Gõ tên món... (để trống để xem 30 món đầu)'} />
+          )}
           <div className="mt-2 max-h-72 overflow-y-auto border border-border rounded-lg">
             {menuSource === 'meals' ? (
               mealPlans.length === 0 ? (
@@ -823,6 +858,50 @@ const AdminManualInvoice = () => {
                     })}
                   </div>
                 ))
+              )
+            ) : menuSource === 'combo' ? (
+              comboPkgs.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-3">
+                  Chưa có combo nào. Vào Admin → Combo ăn uống (≥6 khách) để thêm.
+                </p>
+              ) : (
+                comboPkgs.map(pkg => {
+                  const menus = comboMenus.filter(m => m.combo_package_id === pkg.id);
+                  return (
+                    <div key={pkg.id} className="border-b border-border/50 last:border-0">
+                      <div className="px-3 py-2 bg-muted/40 flex justify-between items-center">
+                        <div>
+                          <div className="text-sm font-semibold">{pkg.name}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {fmt(pkg.price_per_person)}/suất · {menus.length} thực đơn · {pkg.dishes_per_menu} món/thực đơn
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-primary font-medium whitespace-nowrap">
+                          × {comboGuestCount} suất = {fmt(pkg.price_per_person * comboGuestCount)}
+                        </span>
+                      </div>
+                      {menus.map(menu => {
+                        const dishes = comboDishes.filter(d => d.combo_menu_id === menu.id);
+                        const preview = dishes.slice(0, 6).map(d => d.name_vi).join(' • ');
+                        const more = dishes.length > 6 ? ` … +${dishes.length - 6} món` : '';
+                        return (
+                          <button
+                            key={menu.id}
+                            type="button"
+                            onClick={() => addComboMenu(pkg, menu, comboGuestCount)}
+                            className="w-full text-left px-3 py-2 hover:bg-secondary border-t border-border/30"
+                          >
+                            <div className="text-sm font-medium">Thực đơn {menu.menu_number}: {menu.name_vi}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{dishes.length} món</div>
+                            {preview && (
+                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{preview}{more}</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })
               )
             ) : filteredMenu.length === 0 ? (
               <p className="text-xs text-muted-foreground p-3">
