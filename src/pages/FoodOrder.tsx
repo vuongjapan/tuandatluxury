@@ -422,6 +422,11 @@ const FoodOrder = () => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate text-foreground">{getName(item)}</p>
+                        {item.variant_label_vi && (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {isVi ? item.variant_label_vi : (item.variant_label_en || item.variant_label_vi)}
+                          </p>
+                        )}
                         <PriceDisplay price={(item as any).price_vnd} priceType={(item as any).price_type} showPrice={(item as any).show_price} className="text-sm text-primary font-bold inline-block" />
                         <div className="flex items-center gap-1 mt-1.5">
                           <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-6 h-6 rounded-full bg-card hover:bg-background flex items-center justify-center border border-border">
