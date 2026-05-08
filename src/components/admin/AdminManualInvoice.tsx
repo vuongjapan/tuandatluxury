@@ -435,7 +435,16 @@ const AdminManualInvoice = () => {
     }]);
   };
 
-  const filteredInvoices = useMemo(() => {
+  const addComboMenu = (pkg: ComboPkg, menu: ComboMenu, qty: number) => {
+    setItems(prev => [...prev, {
+      id: crypto.randomUUID(),
+      item_type: 'combo',
+      ref_id: menu.id,
+      name: `${pkg.name} - ${menu.name_vi} (${qty} suất)`,
+      quantity: qty,
+      unit_price: pkg.price_per_person,
+    }]);
+  };
     const q = search.trim().toLowerCase();
     if (!q) return invoices;
     return invoices.filter(i =>
