@@ -50,12 +50,34 @@ const FoodOrder = () => {
   const { ctx, setCtx } = useBookingContext();
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
 
   const isVi = language === 'vi';
   const getName = (item: { name_vi: string; name_en: string }) => isVi ? item.name_vi : item.name_en;
   const hasFilters = !!search || !!category || !!priceRange;
 
   const handleAddToCart = (item: typeof items[0]) => {
+    const variants = item.price_variants || [];
+    if (variants.length > 0) {
+      const variantId = selectedVariants[item.id] || variants[0].id;
+      const variant = variants.find(v => v.id === variantId) || variants[0];
+      const lineId = `${item.id}__${variant.id}`;
+      addItem({
+        id: lineId,
+        name_vi: item.name_vi,
+        name_en: item.name_en,
+        price_vnd: variant.price_vnd,
+        image_url: item.image_url,
+        variant_id: variant.id,
+        variant_label_vi: variant.label_vi,
+        variant_label_en: variant.label_en,
+      });
+      toast({
+        title: pick('Đã thêm vào giỏ', 'Added to cart'),
+        description: `${getName(item)} · ${isVi ? variant.label_vi : variant.label_en}`,
+      });
+      return;
+    }
     addItem({
       id: item.id,
       name_vi: item.name_vi,
@@ -69,7 +91,12 @@ const FoodOrder = () => {
     });
   };
 
-  const getCartQty = (id: string) => cartItems.find(i => i.id === id)?.quantity || 0;
+  const getCartQty = (id: string) => {
+    // For items with variants, sum all variant lines
+    return cartItems
+      .filter(i => i.id === id || i.id.startsWith(`${id}__`))
+      .reduce((sum, i) => sum + i.quantity, 0);
+  };
 
   if (showCheckout) {
     return <FoodCheckout onBack={() => setShowCheckout(false)} />;
