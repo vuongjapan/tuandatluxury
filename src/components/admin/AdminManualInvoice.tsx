@@ -112,7 +112,7 @@ const AdminManualInvoice = () => {
       supabase.from('rooms').select('id, name_vi, price_vnd').eq('is_active', true).order('price_vnd'),
       supabase.from('menu_items').select('id, name_vi, price_vnd, category').eq('is_active', true).order('sort_order'),
       supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(100),
-      (supabase as any).from('personal_meal_plans').select('id, name, price, guest_count').eq('is_active', true).order('guest_count').order('sort_order'),
+      (supabase as any).from('personal_meal_plans').select('id, name, price, guest_count, items, note').eq('is_active', true).order('guest_count').order('sort_order'),
     ]);
     setRooms(r as any || []);
     setMenuItems(m as any || []);
