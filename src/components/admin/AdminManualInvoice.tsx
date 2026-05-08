@@ -859,6 +859,50 @@ const AdminManualInvoice = () => {
                   </div>
                 ))
               )
+            ) : menuSource === 'combo' ? (
+              comboPkgs.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-3">
+                  Chưa có combo nào. Vào Admin → Combo ăn uống (≥6 khách) để thêm.
+                </p>
+              ) : (
+                comboPkgs.map(pkg => {
+                  const menus = comboMenus.filter(m => m.combo_package_id === pkg.id);
+                  return (
+                    <div key={pkg.id} className="border-b border-border/50 last:border-0">
+                      <div className="px-3 py-2 bg-muted/40 flex justify-between items-center">
+                        <div>
+                          <div className="text-sm font-semibold">{pkg.name}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {fmt(pkg.price_per_person)}/suất · {menus.length} thực đơn · {pkg.dishes_per_menu} món/thực đơn
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-primary font-medium whitespace-nowrap">
+                          × {comboGuestCount} suất = {fmt(pkg.price_per_person * comboGuestCount)}
+                        </span>
+                      </div>
+                      {menus.map(menu => {
+                        const dishes = comboDishes.filter(d => d.combo_menu_id === menu.id);
+                        const preview = dishes.slice(0, 6).map(d => d.name_vi).join(' • ');
+                        const more = dishes.length > 6 ? ` … +${dishes.length - 6} món` : '';
+                        return (
+                          <button
+                            key={menu.id}
+                            type="button"
+                            onClick={() => addComboMenu(pkg, menu, comboGuestCount)}
+                            className="w-full text-left px-3 py-2 hover:bg-secondary border-t border-border/30"
+                          >
+                            <div className="text-sm font-medium">Thực đơn {menu.menu_number}: {menu.name_vi}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{dishes.length} món</div>
+                            {preview && (
+                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{preview}{more}</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })
+              )
             ) : filteredMenu.length === 0 ? (
               <p className="text-xs text-muted-foreground p-3">
                 {menuItems.length === 0 ? 'Chưa có món nào trong Menu cũ.' : 'Không tìm thấy món phù hợp'}
