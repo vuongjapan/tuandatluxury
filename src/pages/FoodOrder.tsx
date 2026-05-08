@@ -265,29 +265,76 @@ const FoodOrder = () => {
                         <h4 className="font-display text-sm text-foreground leading-tight line-clamp-2 min-h-[2.5rem]">
                           {getName(item)}
                         </h4>
-                        <PriceDisplay
-                          price={item.price_vnd}
-                          priceType={(item as any).price_type}
-                          showPrice={(item as any).show_price}
-                          variants={item.price_variants as any}
-                          className="text-sm font-bold text-primary inline-block"
-                        />
 
-                        {qty === 0 ? (
-                          <Button size="sm" variant="outline" className="w-full text-xs gap-1 border-foreground/20 hover:bg-foreground hover:text-background hover:border-foreground transition-colors" onClick={() => handleAddToCart(item)}>
-                            <Plus className="h-3.5 w-3.5" />
-                            {pick('Thêm vào giỏ', 'Add')}
-                          </Button>
-                        ) : (
-                          <div className="flex items-center justify-between bg-secondary rounded-full p-1">
-                            <button onClick={() => updateQuantity(item.id, qty - 1)} className="w-7 h-7 rounded-full bg-card hover:bg-background flex items-center justify-center transition-colors">
-                              {qty === 1 ? <Trash2 className="h-3.5 w-3.5 text-destructive" /> : <Minus className="h-3.5 w-3.5" />}
-                            </button>
-                            <span className="text-sm font-semibold min-w-[1.5rem] text-center">{qty}</span>
-                            <button onClick={() => updateQuantity(item.id, qty + 1)} className="w-7 h-7 rounded-full bg-card hover:bg-background flex items-center justify-center transition-colors">
+                        {item.price_variants && item.price_variants.length > 0 ? (
+                          <>
+                            <div className="space-y-1">
+                              {item.price_variants.map(v => {
+                                const sel = (selectedVariants[item.id] || item.price_variants![0].id) === v.id;
+                                return (
+                                  <button
+                                    key={v.id}
+                                    type="button"
+                                    onClick={() => setSelectedVariants(prev => ({ ...prev, [item.id]: v.id }))}
+                                    className={`w-full text-left text-[11px] px-2 py-1 rounded border transition-all flex items-center justify-between gap-1 ${
+                                      sel ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:border-primary/40'
+                                    }`}
+                                  >
+                                    <span className="flex items-center gap-1.5 min-w-0">
+                                      <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${sel ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                                      <span className="truncate">{isVi ? v.label_vi : v.label_en}</span>
+                                    </span>
+                                    <span className="font-semibold text-primary shrink-0">{formatPrice(v.price_vnd)}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs gap-1 border-foreground/20 hover:bg-foreground hover:text-background hover:border-foreground transition-colors"
+                              onClick={() => handleAddToCart(item)}
+                            >
                               <Plus className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
+                              {pick('Thêm', 'Add')}
+                              {(() => {
+                                const vid = selectedVariants[item.id] || item.price_variants![0].id;
+                                const v = item.price_variants!.find(x => x.id === vid) || item.price_variants![0];
+                                return ` ${formatPrice(v.price_vnd)}`;
+                              })()}
+                            </Button>
+                            {qty > 0 && (
+                              <p className="text-[10px] text-center text-muted-foreground">
+                                {pick(`Đang có ${qty} trong giỏ`, `${qty} in cart`)}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <PriceDisplay
+                              price={item.price_vnd}
+                              priceType={(item as any).price_type}
+                              showPrice={(item as any).show_price}
+                              variants={item.price_variants as any}
+                              className="text-sm font-bold text-primary inline-block"
+                            />
+                            {qty === 0 ? (
+                              <Button size="sm" variant="outline" className="w-full text-xs gap-1 border-foreground/20 hover:bg-foreground hover:text-background hover:border-foreground transition-colors" onClick={() => handleAddToCart(item)}>
+                                <Plus className="h-3.5 w-3.5" />
+                                {pick('Thêm vào giỏ', 'Add')}
+                              </Button>
+                            ) : (
+                              <div className="flex items-center justify-between bg-secondary rounded-full p-1">
+                                <button onClick={() => updateQuantity(item.id, qty - 1)} className="w-7 h-7 rounded-full bg-card hover:bg-background flex items-center justify-center transition-colors">
+                                  {qty === 1 ? <Trash2 className="h-3.5 w-3.5 text-destructive" /> : <Minus className="h-3.5 w-3.5" />}
+                                </button>
+                                <span className="text-sm font-semibold min-w-[1.5rem] text-center">{qty}</span>
+                                <button onClick={() => updateQuantity(item.id, qty + 1)} className="w-7 h-7 rounded-full bg-card hover:bg-background flex items-center justify-center transition-colors">
+                                  <Plus className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </motion.div>
