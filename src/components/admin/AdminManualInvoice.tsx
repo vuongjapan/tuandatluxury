@@ -115,16 +115,22 @@ const AdminManualInvoice = () => {
   }, [totalAmount, depositPercent]);
 
   const loadData = async () => {
-    const [{ data: r }, { data: m }, { data: inv }, { data: mp }] = await Promise.all([
+    const [{ data: r }, { data: m }, { data: inv }, { data: mp }, { data: cp }, { data: cm }, { data: cd }] = await Promise.all([
       supabase.from('rooms').select('id, name_vi, price_vnd').eq('is_active', true).order('price_vnd'),
       supabase.from('menu_items').select('id, name_vi, price_vnd, category').eq('is_active', true).order('sort_order'),
       supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(100),
       (supabase as any).from('personal_meal_plans').select('id, name, price, guest_count, items, note').eq('is_active', true).order('guest_count').order('sort_order'),
+      (supabase as any).from('combo_packages').select('id, name, price_per_person, menu_count, dishes_per_menu').eq('is_active', true).order('sort_order'),
+      (supabase as any).from('combo_menus').select('id, combo_package_id, menu_number, name_vi').eq('is_active', true).order('menu_number'),
+      (supabase as any).from('combo_menu_dishes').select('id, combo_menu_id, name_vi').order('sort_order'),
     ]);
     setRooms(r as any || []);
     setMenuItems(m as any || []);
     setInvoices(inv || []);
     setMealPlans((mp as any) || []);
+    setComboPkgs((cp as any) || []);
+    setComboMenus((cm as any) || []);
+    setComboDishes((cd as any) || []);
   };
 
   useEffect(() => { loadData(); }, []);
