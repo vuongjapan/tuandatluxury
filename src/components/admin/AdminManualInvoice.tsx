@@ -798,8 +798,19 @@ const AdminManualInvoice = () => {
             <Button type="button" size="sm" variant={menuSource === 'menu' ? 'default' : 'outline'} onClick={() => setMenuSource('menu')}>
               📋 Menu cũ
             </Button>
+            <Button type="button" size="sm" variant={menuSource === 'combo' ? 'default' : 'outline'} onClick={() => setMenuSource('combo')}>
+              🎉 Combo ≥6 khách
+            </Button>
           </div>
-          <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder={menuSource === 'meals' ? 'Gõ tên suất... (để trống xem tất cả)' : 'Gõ tên món... (để trống để xem 30 món đầu)'} />
+          {menuSource === 'combo' ? (
+            <div className="flex items-center gap-2">
+              <Label className="m-0 text-xs">Số suất:</Label>
+              <Input type="number" min={6} value={comboGuestCount} onChange={e => setComboGuestCount(Math.max(1, parseInt(e.target.value) || 6))} className="w-24" />
+              <span className="text-xs text-muted-foreground">Áp dụng khi chọn thực đơn bên dưới</span>
+            </div>
+          ) : (
+            <Input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder={menuSource === 'meals' ? 'Gõ tên suất... (để trống xem tất cả)' : 'Gõ tên món... (để trống để xem 30 món đầu)'} />
+          )}
           <div className="mt-2 max-h-72 overflow-y-auto border border-border rounded-lg">
             {menuSource === 'meals' ? (
               mealPlans.length === 0 ? (
