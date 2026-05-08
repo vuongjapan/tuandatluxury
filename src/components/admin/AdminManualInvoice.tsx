@@ -56,7 +56,11 @@ const AdminManualInvoice = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
-  const [menuSource, setMenuSource] = useState<'meals' | 'menu'>('meals');
+  const [comboPkgs, setComboPkgs] = useState<ComboPkg[]>([]);
+  const [comboMenus, setComboMenus] = useState<ComboMenu[]>([]);
+  const [comboDishes, setComboDishes] = useState<ComboDish[]>([]);
+  const [comboGuestCount, setComboGuestCount] = useState<number>(6);
+  const [menuSource, setMenuSource] = useState<'meals' | 'menu' | 'combo'>('meals');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
   const [detailId, setDetailId] = useState<string | null>(null);
