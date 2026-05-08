@@ -15,6 +15,9 @@ const LAST_EMAIL_KEY = 'admin_manual_invoice_last_email';
 interface Room { id: string; name_vi: string; price_vnd: number }
 interface MenuItem { id: string; name_vi: string; price_vnd: number; category: string }
 interface MealPlan { id: string; name: string; price: number; guest_count: number; items?: string[]; note?: string }
+interface ComboPkg { id: string; name: string; price_per_person: number; menu_count: number; dishes_per_menu: number }
+interface ComboMenu { id: string; combo_package_id: string; menu_number: number; name_vi: string }
+interface ComboDish { id: string; combo_menu_id: string; name_vi: string }
 interface InvoiceItem {
   id: string; // local
   item_type: 'food' | 'combo' | 'custom' | 'service';
