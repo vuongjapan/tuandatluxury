@@ -7,6 +7,9 @@ export interface CartItem {
   price_vnd: number;
   image_url: string | null;
   quantity: number;
+  variant_id?: string;
+  variant_label_vi?: string;
+  variant_label_en?: string;
 }
 
 interface CartContextType {
