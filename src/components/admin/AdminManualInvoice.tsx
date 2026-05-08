@@ -445,6 +445,8 @@ const AdminManualInvoice = () => {
       unit_price: pkg.price_per_person,
     }]);
   };
+
+  const filteredInvoices = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return invoices;
     return invoices.filter(i =>
