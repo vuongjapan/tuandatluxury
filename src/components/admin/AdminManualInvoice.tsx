@@ -790,17 +790,37 @@ const AdminManualInvoice = () => {
                     <div className="px-3 py-1 bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {Number(gc) >= 6 ? `${gc} người (≥6 khách)` : `${gc} người`}
                     </div>
-                    {list.map(mp => (
-                      <button
-                        key={mp.id}
-                        type="button"
-                        onClick={() => { addMealPlan(mp); setMenuSearch(''); }}
-                        className="w-full text-left px-3 py-2 hover:bg-secondary text-sm flex justify-between border-b border-border/50 last:border-0"
-                      >
-                        <span>{mp.name}</span>
-                        <span className="text-muted-foreground">{fmt(mp.price)}</span>
-                      </button>
-                    ))}
+                    {list.map(mp => {
+                      const dishes: string[] = Array.isArray(mp.items) ? mp.items as any : [];
+                      const preview = dishes.slice(0, 6).join(' • ');
+                      const more = dishes.length > 6 ? ` … +${dishes.length - 6} món` : '';
+                      return (
+                        <button
+                          key={mp.id}
+                          type="button"
+                          onClick={() => { addMealPlan(mp); setMenuSearch(''); }}
+                          className="w-full text-left px-3 py-2 hover:bg-secondary border-b border-border/50 last:border-0"
+                        >
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium">{mp.name}</div>
+                              <div className="text-[11px] text-muted-foreground mt-0.5">
+                                {mp.guest_count} người · {dishes.length} món
+                              </div>
+                              {preview && (
+                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                  {preview}{more}
+                                </div>
+                              )}
+                              {mp.note && (
+                                <div className="text-[11px] text-primary/80 italic mt-0.5">{mp.note}</div>
+                              )}
+                            </div>
+                            <span className="text-sm font-semibold text-primary whitespace-nowrap">{fmt(mp.price)}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 ))
               )
