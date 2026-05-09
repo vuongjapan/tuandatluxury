@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useServices } from '@/hooks/useServices';
 import { useLanguage } from '@/contexts/LanguageContext';
+import HorizontalScroller from '@/components/HorizontalScroller';
 
 const Services = () => {
   const { services, isLoading } = useServices();
@@ -43,7 +44,7 @@ const Services = () => {
             <div className="text-center text-muted-foreground">Đang tải...</div>
           ) : (
             <>
-              <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+              <HorizontalScroller>
                 <div className="flex gap-6 pb-4 w-max">
                   {active.map((s) => (
                     <div
