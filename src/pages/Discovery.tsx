@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAttractions } from '@/hooks/useAttractions';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import HorizontalScroller from '@/components/HorizontalScroller';
 
 const Discovery = () => {
   const { t } = useLanguage();
@@ -73,7 +74,7 @@ const Discovery = () => {
             </h2>
           </FadeIn>
 
-          <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+          <HorizontalScroller>
             <div className="flex gap-5 pb-4 w-max">
               {list.map((place, i) => (
                 <FadeIn key={place.id} delay={i * 60} className="snap-start shrink-0 w-[260px] sm:w-[300px]">
@@ -116,7 +117,7 @@ const Discovery = () => {
                 </FadeIn>
               ))}
             </div>
-          </div>
+          </HorizontalScroller>
           <p className="text-xs text-center text-muted-foreground mt-2">{isVi ? '← Vuốt ngang để xem thêm →' : '← Swipe to explore →'}</p>
         </div>
       </section>
