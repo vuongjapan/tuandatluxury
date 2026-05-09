@@ -89,7 +89,7 @@ const Services = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </HorizontalScroller>
               <p className="text-xs text-center text-muted-foreground mt-2">{isVi ? '← Vuốt ngang để xem thêm →' : '← Swipe to explore →'}</p>
             </>
           )}
