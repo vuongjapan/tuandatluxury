@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-type TabKey = "airport" | "beach" | "square";
+export type TabKey = "airport" | "beach" | "square";
 
 const TABS: { key: TabKey; label: string; icon: any; price: string; subtitle: string }[] = [
   { key: "airport", label: "Sân bay", icon: Plane, price: "Theo yêu cầu — báo giá", subtitle: "Sân bay Thọ Xuân ↔ Khách sạn (~45km, ~50 phút)" },
@@ -72,7 +72,7 @@ export default function Transport() {
   );
 }
 
-function TransportForm({ tab, onSuccess }: { tab: TabKey; onSuccess: (id: string) => void }) {
+export function TransportForm({ tab, onSuccess }: { tab: TabKey; onSuccess: (id: string) => void }) {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<string | null>(null);
