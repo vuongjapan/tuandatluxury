@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -5,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useServices } from '@/hooks/useServices';
 import { useLanguage } from '@/contexts/LanguageContext';
 import HorizontalScroller from '@/components/HorizontalScroller';
+import CarBookingModal from '@/components/CarBookingModal';
+import type { TabKey } from '@/pages/Transport';
 
 const Services = () => {
   const { services, isLoading } = useServices();
@@ -12,8 +15,24 @@ const Services = () => {
   const { t } = useLanguage();
   const isVi = t('nav.rooms') === 'Hạng phòng';
   const active = services.filter((s) => s.is_active);
+  const [carTab, setCarTab] = useState<TabKey | null>(null);
 
-  const handleClick = (link: string | null) => {
+  const detectCarTab = (link: string | null, name: string): TabKey | null => {
+    if (link) {
+      if (link.includes('car-airport') || link.includes('tab=airport')) return 'airport';
+      if (link.includes('car-beach') || link.includes('tab=beach')) return 'beach';
+      if (link.includes('car-square') || link.includes('tab=square')) return 'square';
+    }
+    const n = (name || '').toLowerCase();
+    if (n.includes('sân bay') || n.includes('airport')) return 'airport';
+    if (n.includes('bãi tắm') || n.includes('bãi biển') || n.includes('beach')) return 'beach';
+    if (n.includes('quảng trường') || n.includes('square')) return 'square';
+    return null;
+  };
+
+  const handleClick = (link: string | null, name: string) => {
+    const carTabKey = detectCarTab(link, name);
+    if (carTabKey) { setCarTab(carTabKey); return; }
     if (!link) return;
     if (link.startsWith('http') || link.startsWith('tel:') || link.startsWith('mailto:')) {
       window.open(link, link.startsWith('http') ? '_blank' : '_self');
