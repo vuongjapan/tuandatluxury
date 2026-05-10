@@ -72,7 +72,7 @@ export default function Transport() {
   );
 }
 
-function TransportForm({ tab, onSuccess }: { tab: TabKey; onSuccess: (id: string) => void }) {
+export function TransportForm({ tab, onSuccess }: { tab: TabKey; onSuccess: (id: string) => void }) {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<string | null>(null);
