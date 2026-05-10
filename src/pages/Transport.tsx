@@ -114,7 +114,18 @@ export function TransportForm({ tab, onSuccess }: { tab: TabKey; onSuccess: (id:
         pickup = "Khách sạn Tuấn Đạt Luxury"; dropoff = "Bãi tắm Sầm Sơn";
       }
 
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, "0");
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const { count } = await (supabase as any)
+        .from("transport_bookings")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", startOfDay);
+      const booking_id = `XE${dd}${mm}${String((count || 0) + 1).padStart(3, "0")}`;
+
       const payload = {
+        booking_id,
         guest_name: form.guest_name,
         guest_phone: form.guest_phone,
         guest_email: form.guest_email,
