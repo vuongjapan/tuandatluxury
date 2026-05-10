@@ -2505,6 +2505,138 @@ export type Database = {
         }
         Relationships: []
       }
+      pool_menu_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pool_orders: {
+        Row: {
+          created_at: string
+          guest_name: string | null
+          guest_phone: string | null
+          id: string
+          items: Json
+          notes: string | null
+          order_code: string
+          room_number: string | null
+          seat_location: string | null
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          guest_name?: string | null
+          guest_phone?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_code: string
+          room_number?: string | null
+          seat_location?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          guest_name?: string | null
+          guest_phone?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_code?: string
+          room_number?: string | null
+          seat_location?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pool_special_requests: {
+        Row: {
+          created_at: string
+          event_date: string | null
+          event_time: string | null
+          guest_name: string
+          guest_phone: string
+          id: string
+          num_people: number | null
+          request_code: string
+          requirements: string | null
+          room_number: string | null
+          service_types: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string | null
+          event_time?: string | null
+          guest_name: string
+          guest_phone: string
+          id?: string
+          num_people?: number | null
+          request_code: string
+          requirements?: string | null
+          room_number?: string | null
+          service_types?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string | null
+          event_time?: string | null
+          guest_name?: string
+          guest_phone?: string
+          id?: string
+          num_people?: number | null
+          request_code?: string
+          requirements?: string | null
+          room_number?: string | null
+          service_types?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: string | null
@@ -2681,6 +2813,57 @@ export type Database = {
           sort_order?: number
           start_date?: string | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurant_reservations: {
+        Row: {
+          created_at: string
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string
+          id: string
+          notes: string | null
+          num_people: number
+          reservation_code: string
+          reservation_date: string
+          reservation_time: string
+          room_number: string | null
+          special_requests: string[] | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          guest_email?: string | null
+          guest_name: string
+          guest_phone: string
+          id?: string
+          notes?: string | null
+          num_people?: number
+          reservation_code: string
+          reservation_date: string
+          reservation_time: string
+          room_number?: string | null
+          special_requests?: string[] | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string
+          id?: string
+          notes?: string | null
+          num_people?: number
+          reservation_code?: string
+          reservation_date?: string
+          reservation_time?: string
+          room_number?: string | null
+          special_requests?: string[] | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -3545,6 +3728,42 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      venue_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          media_type: string
+          sort_order: number
+          thumbnail_url: string | null
+          url: string
+          venue_type: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_type?: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          url: string
+          venue_type: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_type?: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          url?: string
+          venue_type?: string
         }
         Relationships: []
       }
