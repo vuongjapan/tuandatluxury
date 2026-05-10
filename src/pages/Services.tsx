@@ -115,6 +115,7 @@ const Services = () => {
         </div>
       </section>
       <Footer />
+      <CarBookingModal open={!!carTab} tab={carTab} onClose={() => setCarTab(null)} />
     </div>
   );
 };
