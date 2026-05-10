@@ -98,7 +98,7 @@ const Services = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleClick(s.button_link)}
+                            onClick={() => handleClick(s.button_link, s.name)}
                             className="mt-4 self-start border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
                           >
                             {s.button_text}
