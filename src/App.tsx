@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -39,6 +39,8 @@ const Live = lazy(() => import("./pages/Live"));
 const Account = lazy(() => import("./pages/Account"));
 const Lookup = lazy(() => import("./pages/Lookup"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const PoolPage = lazy(() => import("./pages/PoolPage"));
+const RestaurantPage = lazy(() => import("./pages/RestaurantPage"));
 
 // Auto-apply voucher code redirect
 const ApplyVoucher = lazy(() => import("./pages/ApplyVoucher"));
@@ -142,6 +144,9 @@ const App = () => {
                     <Route path="/lookup" element={<Lookup />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/ho-boi" element={<PoolPage />} />
+                    <Route path="/nha-hang" element={<RestaurantPage />} />
+                    <Route path="/am-thuc" element={<Navigate to="/nha-hang" replace />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
