@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
+import LazyImage from '@/components/LazyImage';
 
 interface SlideImage {
   url: string;
@@ -19,6 +20,15 @@ const FALLBACK_SLIDES: SlideImage[] = [
   { url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=80', title: 'Món đặc sản' },
 ];
 
+const ICON_MAP: Record<string, any> = { Fish, Utensils, Users, Wine };
+
+const DEFAULT_FEATURES = [
+  { icon: 'Fish', vi: 'Hải sản tươi sống — đánh bắt hàng ngày', en: 'Fresh seafood — caught daily' },
+  { icon: 'Utensils', vi: '120+ món từ 89.000đ/người', en: '120+ dishes from 89,000đ/person' },
+  { icon: 'Users', vi: 'Thực đơn theo nhóm 1–20+ người', en: 'Group menus for 1–20+ people' },
+  { icon: 'Wine', vi: 'Rooftop Bar tầng 6 — view biển', en: 'Rooftop Bar 6F — sea view' },
+];
+
 const RestaurantSection = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -30,10 +40,48 @@ const RestaurantSection = () => {
   const [videoOpen, setVideoOpen] = useState(false);
   const [visible, setVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const [adminDescVi, setAdminDescVi] = useState<string | null>(null);
+  const [adminDescEn, setAdminDescEn] = useState<string | null>(null);
+  const [adminVideoUrl, setAdminVideoUrl] = useState<string | null>(null);
+  const [adminFeatures, setAdminFeatures] = useState<Array<{ icon: string; vi: string; en: string }> | null>(null);
+  const [adminGallery, setAdminGallery] = useState<SlideImage[] | null>(null);
 
-  // Fetch restaurant images
+  // Fetch admin overrides + restaurant images
   useEffect(() => {
-    const fetchImages = async () => {
+    const fetchAll = async () => {
+      // Admin section overrides
+      try {
+        const { data: section } = await supabase
+          .from('page_sections')
+          .select('description_vi, description_en, slideshow, gallery, video_url, features')
+          .eq('section_key', 'home_food')
+          .maybeSingle();
+        if (section) {
+          if (section.description_vi) setAdminDescVi(section.description_vi);
+          if (section.description_en) setAdminDescEn(section.description_en);
+          if (section.video_url) setAdminVideoUrl(section.video_url);
+          const slideshow = (section.slideshow as any[]) || [];
+          if (Array.isArray(slideshow) && slideshow.length > 0) {
+            setSlides(
+              slideshow.map((s: any) => ({
+                url: typeof s === 'string' ? s : s.url,
+                title: typeof s === 'string' ? '' : s.caption || s.title,
+              })),
+            );
+          }
+          const gallery = (section.gallery as any[]) || [];
+          if (Array.isArray(gallery) && gallery.length > 0) {
+            setAdminGallery(gallery.map((g: any) => ({ url: g.url, title: g.caption || g.title || '' })));
+          }
+          const feats = (section.features as any[]) || [];
+          if (Array.isArray(feats) && feats.length > 0) {
+            setAdminFeatures(feats.map((f: any) => ({ icon: f.icon || 'Fish', vi: f.vi || f.text || '', en: f.en || f.text || '' })));
+          }
+          return;
+        }
+      } catch (e) {
+        // ignore, fall through to gallery_images
+      }
       try {
         const { data } = await supabase
           .from('gallery_images')
@@ -47,14 +95,14 @@ const RestaurantSection = () => {
             data.map((d: any) => ({
               url: d.image_url,
               title: isVi ? d.title_vi || d.title_en : d.title_en || d.title_vi,
-            }))
+            })),
           );
         }
       } catch (e) {
         // keep fallback
       }
     };
-    void fetchImages();
+    void fetchAll();
   }, [isVi]);
 
   // Auto-play slideshow
@@ -82,14 +130,16 @@ const RestaurantSection = () => {
     return () => obs.disconnect();
   }, []);
 
-  const features = [
-    { icon: Fish, vi: 'Hải sản tươi sống — đánh bắt hàng ngày', en: 'Fresh seafood — caught daily' },
-    { icon: Utensils, vi: '120+ món từ 89.000đ/người', en: '120+ dishes from 89,000đ/person' },
-    { icon: Users, vi: 'Thực đơn theo nhóm 1–20+ người', en: 'Group menus for 1–20+ people' },
-    { icon: Wine, vi: 'Rooftop Bar tầng 6 — view biển', en: 'Rooftop Bar 6F — sea view' },
-  ];
+  const features = (adminFeatures || DEFAULT_FEATURES).map(f => ({
+    Icon: ICON_MAP[f.icon] || Fish,
+    text: isVi ? f.vi : (f.en || f.vi),
+  }));
 
-  const videoUrl = settings.feature_video_url || '';
+  const videoUrl = adminVideoUrl || settings.feature_video_url || '';
+  const description = isVi
+    ? adminDescVi || 'Nhà hàng Tuấn Đạt phục vụ hải sản tươi đánh bắt mỗi ngày tại Sầm Sơn. 120+ món từ hải sản, thịt, rau, lẩu — phù hợp từ 1 đến 20+ người.'
+    : adminDescEn || 'Tuấn Đạt Restaurant serves fresh seafood caught daily in Sầm Sơn. 120+ dishes from seafood, meat, vegetables, hotpot — suitable for 1 to 20+ guests.';
+  const thumbs = adminGallery && adminGallery.length > 0 ? adminGallery.slice(0, 4) : slides.slice(0, 4);
   const thumbCaptions = isVi
     ? ['Hải sản tươi', 'Không gian nhà hàng', 'Bữa tiệc nhóm', 'Rooftop Bar']
     : ['Fresh seafood', 'Restaurant space', 'Group dining', 'Rooftop Bar'];
@@ -170,20 +220,18 @@ const RestaurantSection = () => {
             </h2>
             <div className="mb-5" style={{ width: 50, height: 2, background: '#C9A84C' }} />
             <p className="mb-6 text-foreground/75" style={{ fontSize: 15, lineHeight: 1.8 }}>
-              {isVi
-                ? 'Nhà hàng Tuấn Đạt phục vụ hải sản tươi đánh bắt mỗi ngày tại Sầm Sơn. 120+ món từ hải sản, thịt, rau, lẩu — phù hợp từ 1 đến 20+ người.'
-                : 'Tuấn Đạt Restaurant serves fresh seafood caught daily in Sầm Sơn. 120+ dishes from seafood, meat, vegetables, hotpot — suitable for 1 to 20+ guests.'}
+              {description}
             </p>
 
             <div className="space-y-3 mb-7">
               {features.map((f, i) => {
-                const Icon = f.icon;
+                const Icon = f.Icon;
                 return (
                   <div key={i} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(201,168,76,0.12)' }}>
                       <Icon className="h-4 w-4" style={{ color: '#C9A84C' }} />
                     </div>
-                    <p className="text-sm text-foreground/85 pt-1.5">{isVi ? f.vi : f.en}</p>
+                    <p className="text-sm text-foreground/85 pt-1.5">{f.text}</p>
                   </div>
                 );
               })}
@@ -204,7 +252,7 @@ const RestaurantSection = () => {
         {/* Equal-width thumbnails grid */}
         <div className="mt-10 max-w-6xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {slides.slice(0, 4).map((s, i) => {
+            {thumbs.map((s, i) => {
               const isActive = i === current;
               return (
                 <button
@@ -221,12 +269,11 @@ const RestaurantSection = () => {
                       transform: isActive ? 'scale(1.02)' : 'scale(1)',
                     }}
                   >
-                    <img
+                    <LazyImage
                       src={s.url}
                       alt={s.title || thumbCaptions[i]}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-105"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                      className="transition-transform duration-300 group-hover/thumb:scale-105"
+                      wrapperClassName="w-full h-full"
                     />
                   </div>
                   <p

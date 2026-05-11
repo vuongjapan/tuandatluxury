@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Anti-flash background — paints immediately, before any React mount */
+html, body, #root {
+  background-color: #FAFAF7;
+  min-height: 100vh;
+}
+
 @layer base {
   :root {
     --background: 36 25% 98%;

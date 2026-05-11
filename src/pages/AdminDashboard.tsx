@@ -53,8 +53,9 @@ import AdminCustomers from '@/components/admin/AdminCustomers';
 import AdminChatbot from '@/components/admin/AdminChatbot';
 import AdminPool from '@/components/admin/AdminPool';
 import AdminRestaurant from '@/components/admin/AdminRestaurant';
+import AdminFoodSection from '@/components/admin/AdminFoodSection';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -197,6 +198,7 @@ const AdminDashboard = () => {
     {
       title: 'Ẩm thực',
       items: [
+        { id: 'food-section', icon: UtensilsCrossed, label: '🍽 Section Ẩm Thực (Trang chủ)' },
         { id: 'cuisine-media', icon: Film, label: 'Trang Ẩm thực' },
         { id: 'food-menu', icon: ShoppingCart, label: 'Menu đồ ăn' },
         { id: 'combos', icon: Gift, label: 'Combo ăn uống (≥6 khách)' },
@@ -431,6 +433,7 @@ const AdminDashboard = () => {
           {tab === 'chatbot' && <AdminChatbot />}
           {tab === 'pool' && <AdminPool />}
           {tab === 'restaurant' && <AdminRestaurant />}
+          {tab === 'food-section' && <AdminFoodSection />}
         </div>
       </main>
     </div>
