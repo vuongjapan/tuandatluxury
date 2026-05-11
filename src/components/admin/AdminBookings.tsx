@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
-import { SendInvoiceEmailButton } from '@/components/admin/SendInvoiceEmailButton';
+import { SendInvoiceEmailButton, emailLooksSuspicious } from '@/components/admin/SendInvoiceEmailButton';
 import { ConfirmDepositDialog } from '@/components/admin/ConfirmDepositDialog';
 
 const statusColors: Record<string, string> = {
@@ -183,7 +183,13 @@ const AdminBookings = ({ bookings, setBookings, onMoveToTrash, onRefresh }: Prop
                     <p className="font-medium text-xs">{b.guest_name}</p>
                     <p className="text-[11px] text-muted-foreground">{b.guest_phone}</p>
                     {b.guest_email ? (
-                      <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{b.guest_email}</p>
+                      emailLooksSuspicious(b.guest_email) ? (
+                        <p className="text-[10px] text-destructive flex items-center gap-1 truncate max-w-[200px]" title="Email có thể gõ sai">
+                          <MailWarning className="h-3 w-3 shrink-0" /> {b.guest_email}
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{b.guest_email}</p>
+                      )
                     ) : (
                       <p className="text-[10px] text-destructive flex items-center gap-1">
                         <MailWarning className="h-3 w-3" /> Chưa có email
