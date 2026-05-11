@@ -220,20 +220,18 @@ const RestaurantSection = () => {
             </h2>
             <div className="mb-5" style={{ width: 50, height: 2, background: '#C9A84C' }} />
             <p className="mb-6 text-foreground/75" style={{ fontSize: 15, lineHeight: 1.8 }}>
-              {isVi
-                ? 'Nhà hàng Tuấn Đạt phục vụ hải sản tươi đánh bắt mỗi ngày tại Sầm Sơn. 120+ món từ hải sản, thịt, rau, lẩu — phù hợp từ 1 đến 20+ người.'
-                : 'Tuấn Đạt Restaurant serves fresh seafood caught daily in Sầm Sơn. 120+ dishes from seafood, meat, vegetables, hotpot — suitable for 1 to 20+ guests.'}
+              {description}
             </p>
 
             <div className="space-y-3 mb-7">
               {features.map((f, i) => {
-                const Icon = f.icon;
+                const Icon = f.Icon;
                 return (
                   <div key={i} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(201,168,76,0.12)' }}>
                       <Icon className="h-4 w-4" style={{ color: '#C9A84C' }} />
                     </div>
-                    <p className="text-sm text-foreground/85 pt-1.5">{isVi ? f.vi : f.en}</p>
+                    <p className="text-sm text-foreground/85 pt-1.5">{f.text}</p>
                   </div>
                 );
               })}
