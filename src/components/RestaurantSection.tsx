@@ -252,7 +252,7 @@ const RestaurantSection = () => {
         {/* Equal-width thumbnails grid */}
         <div className="mt-10 max-w-6xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {slides.slice(0, 4).map((s, i) => {
+            {thumbs.map((s, i) => {
               const isActive = i === current;
               return (
                 <button
@@ -269,12 +269,11 @@ const RestaurantSection = () => {
                       transform: isActive ? 'scale(1.02)' : 'scale(1)',
                     }}
                   >
-                    <img
+                    <LazyImage
                       src={s.url}
                       alt={s.title || thumbCaptions[i]}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-105"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                      className="transition-transform duration-300 group-hover/thumb:scale-105"
+                      wrapperClassName="w-full h-full"
                     />
                   </div>
                   <p
