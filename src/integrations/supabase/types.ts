@@ -2406,6 +2406,45 @@ export type Database = {
         }
         Relationships: []
       }
+      page_sections: {
+        Row: {
+          created_at: string
+          description_en: string | null
+          description_vi: string | null
+          features: Json | null
+          gallery: Json | null
+          id: string
+          section_key: string
+          slideshow: Json | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          features?: Json | null
+          gallery?: Json | null
+          id?: string
+          section_key: string
+          slideshow?: Json | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description_en?: string | null
+          description_vi?: string | null
+          features?: Json | null
+          gallery?: Json | null
+          id?: string
+          section_key?: string
+          slideshow?: Json | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           date: string
