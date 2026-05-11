@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { DownloadPDFButtons } from '@/components/DownloadPDFButtons';
-import { SendInvoiceEmailButton } from '@/components/admin/SendInvoiceEmailButton';
+import { SendInvoiceEmailButton, emailLooksSuspicious } from '@/components/admin/SendInvoiceEmailButton';
 import { ConfirmDepositDialog } from '@/components/admin/ConfirmDepositDialog';
 
 const statusColors: Record<string, string> = {
