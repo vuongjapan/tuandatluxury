@@ -136,7 +136,7 @@
       @keyframes initial-spin { to { transform:rotate(360deg); } }
     </style>
     <script>
-      // Hide loader once React has mounted
+      // Hide loader once page is fully loaded + React has had time to mount
       (function() {
         var hideLoader = function() {
           var loader = document.getElementById('initial-loader');
@@ -144,8 +144,11 @@
           loader.style.opacity = '0';
           setTimeout(function() { loader.remove(); }, 350);
         };
-        if (document.readyState === 'complete') { hideLoader(); }
-        else { window.addEventListener('load', hideLoader); }
+        var scheduleHide = function() {
+          setTimeout(hideLoader, 200);
+        };
+        if (document.readyState === 'complete') { scheduleHide(); }
+        else { window.addEventListener('load', scheduleHide); }
       })();
     </script>
 
