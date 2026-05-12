@@ -12,7 +12,7 @@
     <style>
       /* Anti-flash: paint hotel cream background before React mounts */
       html, body, #root { background-color: #FAFAF7; }
-      html, body { min-height: 100vh; margin: 0; }
+      html, body { min-height: 100vh; margin: 0; padding: 0; }
       #root { min-height: 100vh; }
     </style>
     <meta name="format-detection" content="telephone=yes" />
@@ -36,6 +36,8 @@
     <link rel="canonical" href="https://tuandatluxury.lovable.app" />
 
     <!-- Speed: preconnect to media/storage origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://hkrueiyvxkdjgvcpfgmq.supabase.co" crossorigin />
     <link rel="preconnect" href="https://storage.googleapis.com" crossorigin />
     <link rel="dns-prefetch" href="https://storage.googleapis.com" />
@@ -104,6 +106,52 @@
 </head>
 
   <body>
+    <!-- Initial loader — shown while JS bundles parse & React mounts -->
+    <div id="initial-loader" style="
+      position:fixed;
+      inset:0;
+      background:#FAFAF7;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      transition: opacity 0.35s ease;
+    ">
+      <div style="text-align:center;">
+        <div style="
+          width:56px;
+          height:56px;
+          border:3px solid #E8E0D4;
+          border-top-color:#B8893E;
+          border-radius:50%;
+          animation:initial-spin 0.85s linear infinite;
+          margin:0 auto 16px;
+        "></div>
+        <div style="font-family:Georgia,serif;font-size:15px;color:#8A7A66;letter-spacing:0.15em;text-transform:uppercase;">
+          Tuấn Đạt Luxury
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes initial-spin { to { transform:rotate(360deg); } }
+    </style>
+    <script>
+      // Hide loader once page is fully loaded + React has had time to mount
+      (function() {
+        var hideLoader = function() {
+          var loader = document.getElementById('initial-loader');
+          if (!loader) return;
+          loader.style.opacity = '0';
+          setTimeout(function() { loader.remove(); }, 350);
+        };
+        var scheduleHide = function() {
+          setTimeout(hideLoader, 200);
+        };
+        if (document.readyState === 'complete') { scheduleHide(); }
+        else { window.addEventListener('load', scheduleHide); }
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
