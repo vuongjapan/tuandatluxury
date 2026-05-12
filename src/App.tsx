@@ -10,6 +10,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import PageTracker from "./components/PageTracker";
 import MobileBottomNav from "./components/MobileBottomNav";
+import TranslatingIndicator from "./components/TranslatingIndicator";
 
 // Lazy load all non-homepage routes
 const MemberAuth = lazy(() => import("./pages/MemberAuth"));
@@ -151,6 +152,7 @@ const App = () => {
                   </Routes>
                 </Suspense>
                 <MobileBottomNav />
+                <TranslatingIndicator />
               </BrowserRouter>
             </TooltipProvider>
           </CartProvider>
