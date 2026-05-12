@@ -152,6 +152,7 @@ const App = () => {
                   </Routes>
                 </Suspense>
                 <MobileBottomNav />
+                <TranslatingIndicator />
               </BrowserRouter>
             </TooltipProvider>
           </CartProvider>
