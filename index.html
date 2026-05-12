@@ -106,6 +106,49 @@
 </head>
 
   <body>
+    <!-- Initial loader — shown while JS bundles parse & React mounts -->
+    <div id="initial-loader" style="
+      position:fixed;
+      inset:0;
+      background:#FAFAF7;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      transition: opacity 0.35s ease;
+    ">
+      <div style="text-align:center;">
+        <div style="
+          width:56px;
+          height:56px;
+          border:3px solid #E8E0D4;
+          border-top-color:#B8893E;
+          border-radius:50%;
+          animation:initial-spin 0.85s linear infinite;
+          margin:0 auto 16px;
+        "></div>
+        <div style="font-family:Georgia,serif;font-size:15px;color:#8A7A66;letter-spacing:0.15em;text-transform:uppercase;">
+          Tuấn Đạt Luxury
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes initial-spin { to { transform:rotate(360deg); } }
+    </style>
+    <script>
+      // Hide loader once React has mounted
+      (function() {
+        var hideLoader = function() {
+          var loader = document.getElementById('initial-loader');
+          if (!loader) return;
+          loader.style.opacity = '0';
+          setTimeout(function() { loader.remove(); }, 350);
+        };
+        if (document.readyState === 'complete') { hideLoader(); }
+        else { window.addEventListener('load', hideLoader); }
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
