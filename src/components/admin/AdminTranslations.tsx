@@ -112,7 +112,7 @@ async function collectAll(): Promise<Item[]> {
   });
 
   // UI strings (static)
-  Object.entries(UI_STRINGS).forEach(([k, v]) => push(`ui_${k}`, v, 'ui'));
+  Object.entries(UI_STRINGS).forEach(([k, v]) => push(`ui_${k}`, v as string, 'ui'));
 
   return items;
 }
