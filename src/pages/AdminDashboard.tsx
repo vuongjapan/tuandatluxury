@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BedDouble, CalendarRange, Users, BarChart3,
   LogOut, Menu, X, TrendingUp, Clock, CheckCircle, Eye,
   RefreshCw, ImageIcon, UtensilsCrossed, Gift, Sparkles,
-  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle, Coins, Radio, FileText, MessageSquare, Search
+  MapPin, BookOpen, Flame, Settings, Archive, ShoppingCart, Film, Zap, Database, AlertTriangle, Coins, Radio, FileText, MessageSquare, Search, Globe
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -54,8 +54,9 @@ import AdminChatbot from '@/components/admin/AdminChatbot';
 import AdminPool from '@/components/admin/AdminPool';
 import AdminRestaurant from '@/components/admin/AdminRestaurant';
 import AdminFoodSection from '@/components/admin/AdminFoodSection';
+import AdminTranslations from '@/components/admin/AdminTranslations';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant' | 'translations';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -240,6 +241,7 @@ const AdminDashboard = () => {
     {
       title: 'Hệ thống',
       items: [
+        { id: 'translations', icon: Globe, label: '🌐 Quản lý ngôn ngữ' },
         { id: 'settings', icon: Settings, label: 'Cài đặt website' },
         { id: 'exchange-rates', icon: Coins, label: 'Tỷ giá ngoại tệ' },
         { id: 'trash', icon: Archive, label: 'Thùng rác', badge: trashItems.length || undefined },
@@ -434,6 +436,7 @@ const AdminDashboard = () => {
           {tab === 'pool' && <AdminPool />}
           {tab === 'restaurant' && <AdminRestaurant />}
           {tab === 'food-section' && <AdminFoodSection />}
+          {tab === 'translations' && <AdminTranslations />}
         </div>
       </main>
     </div>
