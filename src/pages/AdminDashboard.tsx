@@ -258,7 +258,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary flex relative">
+    <div data-admin className="min-h-screen bg-secondary flex relative">
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
