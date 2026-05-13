@@ -436,6 +436,7 @@ const AdminDashboard = () => {
           {tab === 'pool' && <AdminPool />}
           {tab === 'restaurant' && <AdminRestaurant />}
           {tab === 'food-section' && <AdminFoodSection />}
+          {tab === 'translations' && <AdminTranslations />}
         </div>
       </main>
     </div>
