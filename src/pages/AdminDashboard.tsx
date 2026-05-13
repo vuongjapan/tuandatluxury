@@ -241,6 +241,7 @@ const AdminDashboard = () => {
     {
       title: 'Hệ thống',
       items: [
+        { id: 'translations', icon: Globe, label: '🌐 Quản lý ngôn ngữ' },
         { id: 'settings', icon: Settings, label: 'Cài đặt website' },
         { id: 'exchange-rates', icon: Coins, label: 'Tỷ giá ngoại tệ' },
         { id: 'trash', icon: Archive, label: 'Thùng rác', badge: trashItems.length || undefined },
