@@ -3653,6 +3653,48 @@ export type Database = {
           },
         ]
       }
+      translations: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          en_text: string | null
+          id: string
+          ja_text: string | null
+          ko_text: string | null
+          last_translated: string | null
+          translation_key: string
+          updated_at: string
+          vi_text: string
+          zh_text: string | null
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          en_text?: string | null
+          id?: string
+          ja_text?: string | null
+          ko_text?: string | null
+          last_translated?: string | null
+          translation_key: string
+          updated_at?: string
+          vi_text: string
+          zh_text?: string | null
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          en_text?: string | null
+          id?: string
+          ja_text?: string | null
+          ko_text?: string | null
+          last_translated?: string | null
+          translation_key?: string
+          updated_at?: string
+          vi_text?: string
+          zh_text?: string | null
+        }
+        Relationships: []
+      }
       transport_bookings: {
         Row: {
           admin_notes: string | null
