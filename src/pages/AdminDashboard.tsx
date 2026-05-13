@@ -56,7 +56,7 @@ import AdminRestaurant from '@/components/admin/AdminRestaurant';
 import AdminFoodSection from '@/components/admin/AdminFoodSection';
 import AdminTranslations from '@/components/admin/AdminTranslations';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant' | 'translations';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
