@@ -197,12 +197,15 @@ const Booking = () => {
     if (!checkIn || !checkOut || nightCount <= 0) return [];
     return selectedRooms.map(item => {
       let total = 0;
+      const nights: { date: string; price: number }[] = [];
       const d = new Date(checkIn);
       for (let i = 0; i < nightCount; i++) {
-        total += getRoomPrice(item.room!, d);
+        const price = getRoomPrice(item.room!, d);
+        nights.push({ date: format(d, 'yyyy-MM-dd'), price });
+        total += price;
         d.setDate(d.getDate() + 1);
       }
-      return { roomId: item.roomId, room: item.room!, quantity: item.quantity, totalPerRoom: total, subtotal: total * item.quantity };
+      return { roomId: item.roomId, room: item.room!, quantity: item.quantity, totalPerRoom: total, subtotal: total * item.quantity, nights };
     });
   }, [checkIn, checkOut, nightCount, selectedRooms, getRoomPrice]);
 
