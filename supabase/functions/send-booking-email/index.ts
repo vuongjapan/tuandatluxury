@@ -330,17 +330,31 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   comboHtml = mealBadgeHtml + comboHtml;
 
   // === BUILD COST SUMMARY ===
+  const dayLabelsVi = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  const fmtNightDate = (s: string) => {
+    const d = new Date(s + 'T00:00:00');
+    if (isNaN(d.getTime())) return s;
+    return `${dayLabelsVi[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  };
+
   const roomBreakdownHtml = roomBreakdown.map((room, index) => {
     const quantity = room.quantity || 1;
     const subtotal = room.subtotal || 0;
     const nightlyRate = room.average_nightly_rate || 0;
+    const perNights = Array.isArray(room.nights) ? room.nights : [];
+    const hasVariedNights = perNights.length > 0 && perNights.some(n => n.price !== perNights[0].price);
+
+    const detailRows = hasVariedNights
+      ? perNights.map(n => `<tr><td style="color:#888;">${fmtNightDate(n.date)}</td><td style="text-align:right;font-weight:500;">${fmt(n.price)}/đêm</td></tr>`).join('')
+        + `<tr><td style="color:#888;border-top:1px solid #e5e0d4;padding-top:4px;">Tổng ${perNights.length} đêm × ${quantity} phòng:</td><td style="text-align:right;font-weight:600;border-top:1px solid #e5e0d4;padding-top:4px;">${fmt(subtotal)}</td></tr>`
+      : `<tr><td style="color:#888;">Giá phòng / đêm:</td><td style="text-align:right;font-weight:500;">${fmt(nightlyRate)}</td></tr>
+         <tr><td style="color:#888;">Tính:</td><td style="text-align:right;font-weight:500;">${fmt(nightlyRate)} × ${nights} đêm × ${quantity} phòng</td></tr>`;
 
     return `
     <div style="background:#f8f6f0;border-radius:8px;padding:10px 12px;margin-top:${index === 0 ? '8px' : '6px'};">
       <table style="width:100%;font-size:12px;">
         <tr><td style="font-weight:600;color:#333;">${room.room_name || room.room_id || roomName}</td><td style="text-align:right;font-weight:700;">${fmt(subtotal)}</td></tr>
-        <tr><td style="color:#888;">Giá phòng / đêm:</td><td style="text-align:right;font-weight:500;">${fmt(nightlyRate)}</td></tr>
-        <tr><td style="color:#888;">Tính:</td><td style="text-align:right;font-weight:500;">${fmt(nightlyRate)} × ${nights} đêm × ${quantity} phòng</td></tr>
+        ${detailRows}
       </table>
     </div>`;
   }).join('');
