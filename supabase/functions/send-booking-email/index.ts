@@ -93,6 +93,11 @@ function getRoomBreakdown(
       const quantity = Number(item.quantity) || 1;
       const subtotal = Number(item.subtotal) || 0;
       const stored = Number(item.average_nightly_rate) || 0;
+      const nightsArr = Array.isArray(item.nights)
+        ? item.nights
+            .filter((n: any) => n && typeof n === 'object')
+            .map((n: any) => ({ date: String(n.date || ''), price: Number(n.price) || 0 }))
+        : undefined;
 
       return {
         room_id: item.room_id,
@@ -100,6 +105,7 @@ function getRoomBreakdown(
         quantity,
         subtotal,
         average_nightly_rate: computeNightly(subtotal, quantity, stored),
+        nights: nightsArr,
       };
     });
   }
