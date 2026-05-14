@@ -62,6 +62,7 @@ interface RoomBreakdownItem {
   quantity?: number;
   subtotal?: number;
   average_nightly_rate?: number;
+  nights?: { date: string; price: number }[];
 }
 
 function getArray<T>(value: unknown): T[] {
