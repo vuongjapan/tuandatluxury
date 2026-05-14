@@ -575,10 +575,18 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     ? booking.room_breakdown
     : [{ room_name: roomName, quantity: roomQty, subtotal: booking.room_subtotal || 0 }];
   let roomsTotal = 0;
+  const dayLabelsVi = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  const fmtNightDate = (s: string) => {
+    const d = new Date(s + 'T00:00:00');
+    if (isNaN(d.getTime())) return s;
+    return `${dayLabelsVi[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  };
   for (const r of roomBreakdown) {
     const qty = r.quantity || 1;
     const subtotal = r.subtotal || 0;
     const nightly = qty > 0 && nights > 0 ? Math.round(subtotal / (qty * nights)) : 0;
+    const perNights: { date: string; price: number }[] = Array.isArray(r.nights) ? r.nights : [];
+    const hasVariedNights = perNights.length > 0 && perNights.some(n => n.price !== perNights[0].price);
     roomsTotal += subtotal;
     ctx = ensureSpace(ctx, 30);
     drawText(ctx, `• ${r.room_name || roomName}`, { size: 10, bold: true });
@@ -588,10 +596,25 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
       x: ctx.width - ctx.margin - w, y: ctx.y, size: 10, font: fontBold, color: rgb(0.55, 0.41, 0.08),
     });
     ctx.y -= 13;
-    drawText(ctx, `   ${fmt(nightly)} × ${nights} đêm × ${qty} phòng`, {
-      size: 9, color: [0.5, 0.5, 0.5],
-    });
-    ctx.y -= 16;
+    if (hasVariedNights) {
+      for (const n of perNights) {
+        ctx = ensureSpace(ctx, 14);
+        drawText(ctx, `   ${fmtNightDate(n.date)}: ${fmt(n.price)}/đêm`, {
+          size: 9, color: [0.5, 0.5, 0.5],
+        });
+        ctx.y -= 12;
+      }
+      ctx = ensureSpace(ctx, 14);
+      drawText(ctx, `   Tổng ${perNights.length} đêm × ${qty} phòng = ${fmt(subtotal)}`, {
+        size: 9, color: [0.4, 0.4, 0.4],
+      });
+      ctx.y -= 16;
+    } else {
+      drawText(ctx, `   ${fmt(nightly)} × ${nights} đêm × ${qty} phòng`, {
+        size: 9, color: [0.5, 0.5, 0.5],
+      });
+      ctx.y -= 16;
+    }
   }
 
   // Meal label

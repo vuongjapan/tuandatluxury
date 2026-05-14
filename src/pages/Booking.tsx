@@ -197,12 +197,15 @@ const Booking = () => {
     if (!checkIn || !checkOut || nightCount <= 0) return [];
     return selectedRooms.map(item => {
       let total = 0;
+      const nights: { date: string; price: number }[] = [];
       const d = new Date(checkIn);
       for (let i = 0; i < nightCount; i++) {
-        total += getRoomPrice(item.room!, d);
+        const price = getRoomPrice(item.room!, d);
+        nights.push({ date: format(d, 'yyyy-MM-dd'), price });
+        total += price;
         d.setDate(d.getDate() + 1);
       }
-      return { roomId: item.roomId, room: item.room!, quantity: item.quantity, totalPerRoom: total, subtotal: total * item.quantity };
+      return { roomId: item.roomId, room: item.room!, quantity: item.quantity, totalPerRoom: total, subtotal: total * item.quantity, nights };
     });
   }, [checkIn, checkOut, nightCount, selectedRooms, getRoomPrice]);
 
@@ -443,6 +446,8 @@ const Booking = () => {
         quantity: rt.quantity, subtotal: rt.subtotal,
         // Giá trung bình / đêm / phòng (KHÔNG phải tổng cả kỳ)
         average_nightly_rate: nightCount > 0 ? Math.round(rt.totalPerRoom / nightCount) : rt.totalPerRoom,
+        // Giá từng đêm chi tiết (mới) — để invoice/email hiện T5=650k, T6=900k riêng
+        nights: rt.nights,
       }));
 
       const resp = await fetch(BOOKING_URL, {
