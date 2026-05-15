@@ -99,7 +99,8 @@ function getRoomBreakdown(
         quantity,
         subtotal,
         average_nightly_rate: computeNightly(subtotal, quantity, stored),
-      };
+        nightly_prices: Array.isArray(item.nightly_prices) ? item.nightly_prices : [],
+      } as RoomBreakdownItem;
     });
   }
 
