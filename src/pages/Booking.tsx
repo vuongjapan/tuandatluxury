@@ -446,6 +446,7 @@ const Booking = () => {
         quantity: rt.quantity, subtotal: rt.subtotal,
         // Giá trung bình / đêm / phòng (KHÔNG phải tổng cả kỳ)
         average_nightly_rate: nightCount > 0 ? Math.round(rt.totalPerRoom / nightCount) : rt.totalPerRoom,
+        nightly_prices: rt.nightlyPrices,
       }));
 
       const resp = await fetch(BOOKING_URL, {
