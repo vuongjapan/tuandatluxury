@@ -588,10 +588,36 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
       x: ctx.width - ctx.margin - w, y: ctx.y, size: 10, font: fontBold, color: rgb(0.55, 0.41, 0.08),
     });
     ctx.y -= 13;
-    drawText(ctx, `   ${fmt(nightly)} × ${nights} đêm × ${qty} phòng`, {
-      size: 9, color: [0.5, 0.5, 0.5],
-    });
-    ctx.y -= 16;
+
+    const nightlyPrices: any[] = Array.isArray(r.nightly_prices) ? r.nightly_prices : [];
+    const allSamePrice = nightlyPrices.length === 0 ||
+      nightlyPrices.every((n: any) => Number(n.price) === Number(nightlyPrices[0].price));
+
+    if (nightlyPrices.length > 0 && !allSamePrice) {
+      // Giá khác nhau → hiện từng đêm riêng
+      for (const night of nightlyPrices) {
+        ctx = ensureSpace(ctx, 14);
+        drawText(ctx, `   • Đêm ${formatDate(night.date)}`, {
+          size: 9, color: [0.5, 0.5, 0.5],
+        });
+        const priceTxt = `${fmt(Number(night.price))}/đêm`;
+        const pw = font.widthOfTextAtSize(priceTxt, 9);
+        page.drawText(priceTxt, {
+          x: ctx.width - ctx.margin - pw, y: ctx.y, size: 9, font, color: rgb(0.5, 0.5, 0.5),
+        });
+        ctx.y -= 13;
+      }
+      ctx = ensureSpace(ctx, 14);
+      drawText(ctx, `   Tổng ${nightlyPrices.length} đêm × ${qty} phòng`, {
+        size: 9, color: [0.5, 0.5, 0.5],
+      });
+      ctx.y -= 16;
+    } else {
+      drawText(ctx, `   ${fmt(nightly)} × ${nights} đêm × ${qty} phòng`, {
+        size: 9, color: [0.5, 0.5, 0.5],
+      });
+      ctx.y -= 16;
+    }
   }
 
   // Meal label
