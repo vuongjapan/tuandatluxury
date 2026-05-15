@@ -62,6 +62,7 @@ interface RoomBreakdownItem {
   quantity?: number;
   subtotal?: number;
   average_nightly_rate?: number;
+  nightly_prices?: Array<{ date: string; price: number }>;
 }
 
 function getArray<T>(value: unknown): T[] {
@@ -99,7 +100,8 @@ function getRoomBreakdown(
         quantity,
         subtotal,
         average_nightly_rate: computeNightly(subtotal, quantity, stored),
-      };
+        nightly_prices: Array.isArray(item.nightly_prices) ? item.nightly_prices : [],
+      } as RoomBreakdownItem;
     });
   }
 
