@@ -367,39 +367,18 @@ const InvoicePage = () => {
                 {roomBreakdown.map((room: any, index: number) => {
                   const quantity = room.quantity || 1;
                   const subtotal = room.subtotal || 0;
+                  // Tự tính lại giá / đêm từ subtotal để đảm bảo đúng kể cả khi
+                  // bản ghi cũ lưu sai (ví dụ: lưu tổng cả kỳ vào average_nightly_rate)
                   const computedNightly = nights > 0 && quantity > 0 ? Math.round(subtotal / (nights * quantity)) : 0;
                   const storedNightly = Number(room.average_nightly_rate) || 0;
+                  // Nếu giá trị lưu × đêm × phòng KHÔNG khớp subtotal → dùng giá trị tự tính
                   const isStoredValid = storedNightly > 0 && Math.abs(storedNightly * nights * quantity - subtotal) <= Math.max(2, subtotal * 0.01);
                   const nightlyRate = isStoredValid ? storedNightly : computedNightly;
-                  const perNights: { date: string; price: number }[] = Array.isArray(room.nights) ? room.nights : [];
-                  const hasVariedNights = perNights.length > 0 && perNights.some(n => n.price !== perNights[0].price);
-                  const dayLabels = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-                  const fmtNightDate = (s: string) => {
-                    const d = new Date(s + 'T00:00:00');
-                    return `${dayLabels[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-                  };
                   return (
                     <div key={`${room.room_id || room.room_name}-${index}`} className="space-y-1">
                       <div className="flex justify-between text-xs font-semibold"><span className="text-foreground">{room.room_name || room.room_id}</span><span>{fmt(subtotal)}</span></div>
-                      {hasVariedNights ? (
-                        <>
-                          {perNights.map((n, i) => (
-                            <div key={i} className="flex justify-between text-xs">
-                              <span className="text-muted-foreground">{fmtNightDate(n.date)}</span>
-                              <span className="font-medium">{fmt(n.price)}/đêm</span>
-                            </div>
-                          ))}
-                          <div className="flex justify-between text-xs border-t border-border/40 pt-1">
-                            <span className="text-muted-foreground">Tổng {perNights.length} đêm × {quantity} phòng:</span>
-                            <span className="font-medium">{fmt(subtotal)}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex justify-between text-xs"><span className="text-muted-foreground">Giá / đêm:</span><span className="font-medium">{fmt(nightlyRate)}</span></div>
-                          <div className="flex justify-between text-xs"><span className="text-muted-foreground">Tính:</span><span className="font-medium">{fmt(nightlyRate)} × {nights} đêm × {quantity} phòng</span></div>
-                        </>
-                      )}
+                      <div className="flex justify-between text-xs"><span className="text-muted-foreground">Giá / đêm:</span><span className="font-medium">{fmt(nightlyRate)}</span></div>
+                      <div className="flex justify-between text-xs"><span className="text-muted-foreground">Tính:</span><span className="font-medium">{fmt(nightlyRate)} × {nights} đêm × {quantity} phòng</span></div>
                     </div>
                   );
                 })}
