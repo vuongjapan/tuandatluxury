@@ -1,63 +1,50 @@
 ## Mục tiêu
-Xây lại hệ thống dịch từ đầu: lưu bản dịch vào DB, admin bấm 1 nút để dịch toàn bộ; khách chuyển ngôn ngữ thì đọc thẳng từ DB (không gọi AI realtime).
+Cập nhật bước 2 "Dịch vụ" trong `src/pages/Booking.tsx` để hiển thị rõ từng đêm bắt buộc / không bắt buộc combo, dựa trên `mandatory_combo_dates` admin đã cấu hình, và chặn nút "Tiếp tục" khi ngày bắt buộc chưa được đáp ứng.
 
-## Các bước
+## Phạm vi giữ nguyên (không đụng)
+- Bước 1, 3, 4 của flow đặt phòng
+- Schema DB, admin panel, edge functions (`create-booking`, PDF, email)
+- Logic tính giá phòng, voucher, VIP, cọc 50%
+- Các component combo hiện có (`ComboSelector`, `ComboSlotSelector`, `PersonalMealPlanSelector`, `IndividualFoodSelector`, `MealTimeSelector`)
 
-### 1. Database
-Tạo bảng `translations`:
-- `translation_key` (unique), `vi_text`, `en_text`, `ja_text`, `zh_text`, `ko_text`
-- `content_type`, `last_translated`, `created_at`, `updated_at`
-- RLS: ai cũng đọc được; chỉ admin insert/update/delete
+## Thay đổi
 
-### 2. Edge function `translate-batch`
-- Input: `{ items: [{key, text}], targetLang: 'en'|'ja'|'zh'|'ko' }`
-- Gọi Lovable AI Gateway (gemini-2.5-flash) với JSON response
-- Trả `{ translations: { key: translated } }`
-- Tái dùng pattern từ `auto-translate` hiện có (rút gọn)
+### 1. Hook mới: `useNightlyMandatoryInfo`
+File mới `src/hooks/useNightlyMandatoryInfo.ts`. Nhận `checkIn`, `checkOut`, dùng `useMandatoryComboDates().getMatchingRange` đã có để build mảng:
+```ts
+{ date, dayLabel, formattedDate, mandatory, rule }[]
+```
+(Re-dùng logic match có sẵn — không tạo bảng mới, không sửa schema.)
 
-### 3. Edge function `collect-and-translate-all`
-- Server-side collect content từ: `rooms`, `menu_items`, `services`, `combo_packages`, `offers`, `attractions`, `page_sections` + UI strings tĩnh
-- Loop targets `[en, ja, zh, ko]`, batch 40 items, gọi AI, upsert vào `translations`
-- Trả về tiến độ từng bước (hoặc đơn giản: chạy tuần tự, trả tổng kết)
-- Vì có thể chạy lâu, sẽ dùng pattern: client gọi nhiều lần với `step` (collect → translate per lang per batch) HOẶC một lần với streaming. Chọn phương án đơn giản: client tự collect + chunk + gọi `translate-batch` nhiều lần để hiển thị progress thực sự.
+### 2. Component mới: `NightlyMealOverview`
+File mới `src/components/NightlyMealOverview.tsx`. Hiển thị 2 nhóm:
+- **Ngày KHÔNG bắt buộc** — list các chip `✅ T4, 02/06` + đoạn giải thích tùy chọn (re-dùng văn bản từ `MealRuleBanner`).
+- **Ngày BẮT BUỘC** — list chip `⚠️ T6, 05/06`, kèm banner từ `rule.banner_title` + `rule.banner_message` (lấy nguyên từ admin).
 
-→ Quyết định: **client điều phối** (collect + chunk + progress), **edge function chỉ dịch 1 batch**. Đỡ timeout, dễ progress.
+Component thuần presentational (UI-only).
 
-### 4. UI Admin: `AdminTranslations.tsx`
-- Hiển thị trạng thái dịch theo từng ngôn ngữ (count + last_translated mới nhất)
-- Nút chính: "Dịch toàn bộ website ngay"
-- Modal progress overlay (status text + progress %)
-- Nút riêng theo nhóm (rooms/menu/services/UI)
-- Tích hợp vào `AdminDashboard` sidebar
+### 3. Tích hợp vào Booking.tsx (bước 2)
+- Thay `<MealRuleBanner rule={mandatoryComboRange} />` bằng `<NightlyMealOverview nights={nights} />`.
+- Nếu chuỗi đêm KHÔNG có đêm nào bắt buộc → fallback về banner cũ (giữ behavior hiện tại).
+- Phần chọn combo/suất ăn bên dưới: **giữ nguyên không đổi** (vẫn dùng `mealTime`, `ComboSlotSelector`, v.v. — không tách per-night) để không phá logic combo / PDF / email.
 
-### 5. Hook `useDbTranslation`
-- Khi `language` đổi và ≠ 'vi': fetch toàn bộ `translations` → build map `{ key: lang_text }` → lưu vào context
-- Helper `t(viText, key)` → trả `map[key] || viText`
-- Cache trong sessionStorage để chuyển ngôn ngữ lần sau tức thì
+### 4. Validate nút "Tiếp tục"
+Trong handler đi tiếp từ bước 2 → bước 3, nếu có **ít nhất 1 đêm bắt buộc** thì áp dụng kiểm tra hiện tại (`isComboMandatory` đã có) — không nới lỏng, không thêm chặn mới. Bổ sung **thông báo lỗi rõ hơn** liệt kê các đêm bắt buộc đang thiếu combo:
+> "⚠️ Các đêm bắt buộc: T6 05/06, T7 06/06, CN 07/06 — vui lòng chọn combo/suất ăn trước khi tiếp tục."
 
-### 6. Tích hợp với hệ thống cũ
-- Giữ `AutoTranslateRoot` làm fallback cho text không có key (nó sẽ đọc cache 24h và bỏ qua nếu DB đã cover phần lớn)
-- HOẶC tắt `AutoTranslateRoot` và chỉ dùng DB → an toàn hơn cho cost. **Chọn: tắt AutoTranslateRoot**, dùng DB-only. Component có thể dùng `t()` ở những nơi quan trọng (Header, RoomCard...). Text chưa được wrap sẽ giữ tiếng Việt.
+Scroll lên `#combo-section` khi lỗi (đã có sẵn anchor).
 
-→ Để giảm thiểu thay đổi component, sẽ dùng cách tiếp cận **DOM-walker đọc từ DB map**: AutoTranslateRoot version mới sẽ tra từ DB map (theo `vi_text` → translated) thay vì gọi AI. Text khớp `vi_text` trong bảng → thay; không khớp → giữ nguyên.
+## Kiến trúc / lý do
 
-### 7. Cleanup
-- Xóa/disable `auto-translate` edge function khỏi flow (giữ file để tham khảo, không gọi nữa)
-- Xóa hook `useAutoTranslate` calls (không bắt buộc, có thể giữ)
+Không refactor sang "per-night meal time + per-night combo" như mockup gợi ý, vì:
+- Sẽ phá vỡ data shape `comboSlots`, `personalMealSelections`, `mealTime` mà PDF/email/edge function đang đọc.
+- Vi phạm "Không thay đổi logic combo hiện tại / PDF / email".
 
-## File thay đổi
-**Mới:**
-- migration: bảng `translations` + RLS
-- `supabase/functions/translate-batch/index.ts`
-- `src/components/admin/AdminTranslations.tsx`
-- `src/hooks/useDbTranslations.ts`
+Thay vào đó, đợt này chỉ **làm rõ ngữ cảnh từng đêm** ở UI (banner thông minh + thông báo lỗi liệt kê đêm) — đúng tinh thần "ngày bắt buộc → giải thích, chặn; ngày không bắt buộc → cho phép bỏ qua".
 
-**Sửa:**
-- `src/pages/AdminDashboard.tsx` (thêm tab)
-- `src/components/AutoTranslateRoot.tsx` (đổi sang DB lookup, không gọi AI)
-- `src/contexts/LanguageContext.tsx` (load translation map khi đổi ngôn ngữ)
+Nếu sau này muốn **chọn bữa/combo riêng từng đêm thật sự**, đó là một thay đổi riêng động vào schema `bookings.room_breakdown` + PDF + email, sẽ làm trong message khác.
 
-## Không thay đổi
-- Admin form nhập tiếng Việt
-- Cấu trúc các bảng khác
-- Giao diện chính & flow đặt phòng
+## Files
+- new: `src/hooks/useNightlyMandatoryInfo.ts`
+- new: `src/components/NightlyMealOverview.tsx`
+- edit: `src/pages/Booking.tsx` (step 2 banner + validate message)

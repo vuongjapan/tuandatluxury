@@ -10,7 +10,9 @@ import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSel
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
 import MealRuleBanner from '@/components/MealRuleBanner';
+import NightlyMealOverview from '@/components/NightlyMealOverview';
 import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
+import { useNightlyMandatoryInfo } from '@/hooks/useNightlyMandatoryInfo';
 
 import { Button } from '@/components/ui/button';
 import { trackPageView } from '@/hooks/usePageTracking';
@@ -154,7 +156,8 @@ const Booking = () => {
 
   // Holiday/admin-mandated combo requirement based on check-in date
   const mandatoryComboRange = useMemo(() => getMatchingRange(checkIn), [checkIn, getMatchingRange]);
-  const isComboMandatory = !!mandatoryComboRange;
+  const { nights: stayNights, mandatoryNights, optionalNights, hasAnyMandatory } = useNightlyMandatoryInfo(checkIn, checkOut, language as any);
+  const isComboMandatory = !!mandatoryComboRange || hasAnyMandatory;
 
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return true;
@@ -521,10 +524,14 @@ const Booking = () => {
       // Block ONLY when on a mandatory holiday and no valid food selected.
       // Normal days: always allow proceeding (food is optional).
       if (comboValidationError) {
-        toast({
-          title: pick('⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.', '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.'),
-          variant: 'destructive',
-        });
+        const nightsList = mandatoryNights.map(n => `${n.dayLabel} ${n.formattedDate}`).join(', ');
+        const viMsg = nightsList
+          ? `⚠️ Các đêm bắt buộc: ${nightsList} — vui lòng chọn Suất ăn / Combo (hoặc đặt món riêng đủ mức tối thiểu) trước khi tiếp tục.`
+          : '⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.';
+        const enMsg = nightsList
+          ? `⚠️ Mandatory nights: ${nightsList} — please pick a meal plan / combo (or enough individual dishes) to continue.`
+          : '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.';
+        toast({ title: pick(viMsg, enMsg), variant: 'destructive' });
         const el = document.getElementById('combo-section') || document.getElementById('food-section');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setComboShake(true);
@@ -770,8 +777,16 @@ const Booking = () => {
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {pick('Thêm dịch vụ', 'Add Services')}</h2>
 
-                    {/* Banner explaining whether food is mandatory or optional */}
-                    <MealRuleBanner rule={mandatoryComboRange} />
+                    {/* Per-night overview: which nights are mandatory vs optional */}
+                    {stayNights.length > 0 ? (
+                      <NightlyMealOverview
+                        nights={stayNights}
+                        mandatoryNights={mandatoryNights}
+                        optionalNights={optionalNights}
+                      />
+                    ) : (
+                      <MealRuleBanner rule={mandatoryComboRange} />
+                    )}
 
                     {/* Meal time selector — applies × multiplier to all food totals */}
                     <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
