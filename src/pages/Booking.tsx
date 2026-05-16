@@ -156,7 +156,8 @@ const Booking = () => {
 
   // Holiday/admin-mandated combo requirement based on check-in date
   const mandatoryComboRange = useMemo(() => getMatchingRange(checkIn), [checkIn, getMatchingRange]);
-  const isComboMandatory = !!mandatoryComboRange;
+  const { nights: stayNights, mandatoryNights, optionalNights, hasAnyMandatory } = useNightlyMandatoryInfo(checkIn, checkOut, language as any);
+  const isComboMandatory = !!mandatoryComboRange || hasAnyMandatory;
 
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return true;
