@@ -10,7 +10,9 @@ import IndividualFoodSelector, { FoodItem } from '@/components/IndividualFoodSel
 import DiscountCodeInput from '@/components/DiscountCodeInput';
 import BookingRoomCard from '@/components/BookingRoomCard';
 import MealRuleBanner from '@/components/MealRuleBanner';
+import NightlyMealOverview from '@/components/NightlyMealOverview';
 import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
+import { useNightlyMandatoryInfo } from '@/hooks/useNightlyMandatoryInfo';
 
 import { Button } from '@/components/ui/button';
 import { trackPageView } from '@/hooks/usePageTracking';
