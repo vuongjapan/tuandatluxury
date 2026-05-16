@@ -773,8 +773,16 @@ const Booking = () => {
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {pick('Thêm dịch vụ', 'Add Services')}</h2>
 
-                    {/* Banner explaining whether food is mandatory or optional */}
-                    <MealRuleBanner rule={mandatoryComboRange} />
+                    {/* Per-night overview: which nights are mandatory vs optional */}
+                    {stayNights.length > 0 ? (
+                      <NightlyMealOverview
+                        nights={stayNights}
+                        mandatoryNights={mandatoryNights}
+                        optionalNights={optionalNights}
+                      />
+                    ) : (
+                      <MealRuleBanner rule={mandatoryComboRange} />
+                    )}
 
                     {/* Meal time selector — applies × multiplier to all food totals */}
                     <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
