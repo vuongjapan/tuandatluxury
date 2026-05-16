@@ -524,10 +524,14 @@ const Booking = () => {
       // Block ONLY when on a mandatory holiday and no valid food selected.
       // Normal days: always allow proceeding (food is optional).
       if (comboValidationError) {
-        toast({
-          title: pick('⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.', '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.'),
-          variant: 'destructive',
-        });
+        const nightsList = mandatoryNights.map(n => `${n.dayLabel} ${n.formattedDate}`).join(', ');
+        const viMsg = nightsList
+          ? `⚠️ Các đêm bắt buộc: ${nightsList} — vui lòng chọn Suất ăn / Combo (hoặc đặt món riêng đủ mức tối thiểu) trước khi tiếp tục.`
+          : '⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.';
+        const enMsg = nightsList
+          ? `⚠️ Mandatory nights: ${nightsList} — please pick a meal plan / combo (or enough individual dishes) to continue.`
+          : '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.';
+        toast({ title: pick(viMsg, enMsg), variant: 'destructive' });
         const el = document.getElementById('combo-section') || document.getElementById('food-section');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setComboShake(true);
