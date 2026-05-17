@@ -1020,7 +1020,29 @@ const Booking = () => {
                       </div>
                     </div>
 
-                    {/* Combo summary */}
+                    {/* Per-day meals summary */}
+                    {foodByDayLines.length > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5 space-y-2">
+                        <h3 className="font-semibold flex items-center gap-2">🍽️ {pick('Bữa ăn theo ngày', 'Meals by day')}</h3>
+                        {foodByDayLines.map((l, i) => (
+                          <div key={i} className="flex justify-between text-sm">
+                            <span className="min-w-0 truncate pr-2">
+                              {l.dayLabel} {l.formattedDate} · {l.pkg.name}
+                              {l.menu ? ` – ${language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)}` : ''}
+                              {' · '}{l.meal === 'lunch' ? pick('Bữa trưa', 'Lunch') : pick('Bữa tối', 'Dinner')}
+                              {' × '}{l.quantity}
+                            </span>
+                            <span className="font-medium whitespace-nowrap">{formatPrice(l.subtotal)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between text-sm font-bold border-t border-border pt-2 mt-1">
+                          <span>{pick('Tổng tiền ăn', 'Total meals')}</span>
+                          <span className="text-primary">{formatPrice(comboTotal)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Combo summary (legacy — kept for back-compat) */}
                     {comboSelections.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
                         <h3 className="font-semibold flex items-center gap-2">🍽️ Combo</h3>
