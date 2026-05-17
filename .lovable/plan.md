@@ -1,50 +1,68 @@
+# Chọn ăn theo từng ngày — Bước 2 đặt phòng
+
 ## Mục tiêu
-Cập nhật bước 2 "Dịch vụ" trong `src/pages/Booking.tsx` để hiển thị rõ từng đêm bắt buộc / không bắt buộc combo, dựa trên `mandatory_combo_dates` admin đã cấu hình, và chặn nút "Tiếp tục" khi ngày bắt buộc chưa được đáp ứng.
+Thay layout "Chọn bữa ăn (1 lần)" + "Combo ăn uống cho đoàn (1 lần)" trong `Booking.tsx` bằng **một card riêng cho mỗi đêm lưu trú**. Mỗi card cho phép chọn buổi (trưa/tối/cả 2), combo, thực đơn, số suất — và tự tính tạm tính theo ngày + tổng cộng.
 
-## Phạm vi giữ nguyên (không đụng)
-- Bước 1, 3, 4 của flow đặt phòng
-- Schema DB, admin panel, edge functions (`create-booking`, PDF, email)
-- Logic tính giá phòng, voucher, VIP, cọc 50%
-- Các component combo hiện có (`ComboSelector`, `ComboSlotSelector`, `PersonalMealPlanSelector`, `IndividualFoodSelector`, `MealTimeSelector`)
+## Phạm vi giữ nguyên (KHÔNG đụng)
+- Logic giá phòng, bước 1/3/4, PDF, email, admin panel.
+- Các component combo hiện có (`ComboSlotSelector`, `PersonalMealPlanSelector`, `IndividualFoodSelector`, `MealTimeSelector`) — vẫn còn trong code nhưng không dùng ở step 2 cho luồng "đoàn + combo".
+- Edge function `create-booking` & schema `bookings.room_breakdown`: vẫn nhận `combo_breakdown` cũ — ta sẽ "flatten" dữ liệu per-day về cùng format `combo_breakdown` (mỗi ngày × mỗi buổi → 1 dòng) để PDF/email render không cần đổi.
 
-## Thay đổi
+## Cấu trúc mới
 
-### 1. Hook mới: `useNightlyMandatoryInfo`
-File mới `src/hooks/useNightlyMandatoryInfo.ts`. Nhận `checkIn`, `checkOut`, dùng `useMandatoryComboDates().getMatchingRange` đã có để build mảng:
-```ts
-{ date, dayLabel, formattedDate, mandatory, rule }[]
+### 1. Component mới: `src/components/DayMealCard.tsx`
+- Props: `night: NightInfo`, `guests: number`, `combos`, `value`, `onChange`.
+- State nội bộ chỉ là `expanded`; mọi dữ liệu chọn lên parent qua `onChange`.
+- UI theo mock của user: 
+  - Header có `📅 dayLabel, formattedDate` + chip `⚠️ Bắt buộc` (nếu mandatory).
+  - Optional + chưa mở → hiện text "Không bắt buộc" + nút `+ Thêm bữa ăn`.
+  - Khi mở → hiển thị 3 pills (Trưa / Tối / Cả 2), grid combo, dropdown thực đơn (lấy từ `usePersonalMealPlans` hoặc theo combo), số suất ± , tạm tính ngày.
+- Style: dùng tailwind tokens (`border-primary/40 bg-primary/5` cho mandatory, `border-border` cho optional). Không dùng màu hex tuỳ tiện ngoài các pattern hiện có.
+
+### 2. Component mới: `src/components/MealByDaySection.tsx`
+- Render header `🍽 Bữa ăn theo từng ngày`.
+- Map `nights` → `<DayMealCard>`.
+- Footer `MealTotal` cộng dồn tất cả ngày, format VND.
+
+### 3. Tích hợp vào `src/pages/Booking.tsx`
+- Thêm state `foodByDay: Record<string, DayMealSelection>`.
+- Khi `stayNights` đổi → khởi tạo entry rỗng cho mỗi đêm; mandatory đêm mặc định `expanded=true`.
+- **Ẩn** block `<MealTimeSelector>` + `<ComboSlotSelector>`/`<PersonalMealPlanSelector>` cũ khi `combos.length > 0 && stayNights.length > 0` (đi đường mới). Giữ `<IndividualFoodSelector>` (gọi lẻ) nguyên vị trí.
+- Validation `handleNext` từ step 2 → step 3:
+  - Mọi đêm mandatory phải có `meals.length > 0 && comboId`.
+  - Toast liệt kê đêm còn thiếu, scroll tới card đầu tiên bị thiếu.
+- `pricing`/`comboTotal` tính từ `foodByDay`:
+  `Σ combo.price × quantity × meals.length` cho mọi ngày có comboId.
+
+### 4. Flatten về format cũ cho backend
+Trong `submitBooking` (hoặc nơi build payload `create-booking`), build `combo_breakdown` từ `foodByDay`:
 ```
-(Re-dùng logic match có sẵn — không tạo bảng mới, không sửa schema.)
+foodByDay → forEach(date) → forEach(meal in meals):
+  push({
+    combo_id, combo_name, menu_number,
+    meal_time: meal,       // 'lunch' | 'dinner'
+    date,                  // YYYY-MM-DD (thêm field)
+    quantity,
+    price_per_person,
+    subtotal
+  })
+```
+Edge function hiện đã đọc `combo_breakdown` theo `combo_name + meal_time + menu_number + quantity`, thêm field `date` chỉ là optional → PDF/email không vỡ.
 
-### 2. Component mới: `NightlyMealOverview`
-File mới `src/components/NightlyMealOverview.tsx`. Hiển thị 2 nhóm:
-- **Ngày KHÔNG bắt buộc** — list các chip `✅ T4, 02/06` + đoạn giải thích tùy chọn (re-dùng văn bản từ `MealRuleBanner`).
-- **Ngày BẮT BUỘC** — list chip `⚠️ T6, 05/06`, kèm banner từ `rule.banner_title` + `rule.banner_message` (lấy nguyên từ admin).
-
-Component thuần presentational (UI-only).
-
-### 3. Tích hợp vào Booking.tsx (bước 2)
-- Thay `<MealRuleBanner rule={mandatoryComboRange} />` bằng `<NightlyMealOverview nights={nights} />`.
-- Nếu chuỗi đêm KHÔNG có đêm nào bắt buộc → fallback về banner cũ (giữ behavior hiện tại).
-- Phần chọn combo/suất ăn bên dưới: **giữ nguyên không đổi** (vẫn dùng `mealTime`, `ComboSlotSelector`, v.v. — không tách per-night) để không phá logic combo / PDF / email.
-
-### 4. Validate nút "Tiếp tục"
-Trong handler đi tiếp từ bước 2 → bước 3, nếu có **ít nhất 1 đêm bắt buộc** thì áp dụng kiểm tra hiện tại (`isComboMandatory` đã có) — không nới lỏng, không thêm chặn mới. Bổ sung **thông báo lỗi rõ hơn** liệt kê các đêm bắt buộc đang thiếu combo:
-> "⚠️ Các đêm bắt buộc: T6 05/06, T7 06/06, CN 07/06 — vui lòng chọn combo/suất ăn trước khi tiếp tục."
-
-Scroll lên `#combo-section` khi lỗi (đã có sẵn anchor).
-
-## Kiến trúc / lý do
-
-Không refactor sang "per-night meal time + per-night combo" như mockup gợi ý, vì:
-- Sẽ phá vỡ data shape `comboSlots`, `personalMealSelections`, `mealTime` mà PDF/email/edge function đang đọc.
-- Vi phạm "Không thay đổi logic combo hiện tại / PDF / email".
-
-Thay vào đó, đợt này chỉ **làm rõ ngữ cảnh từng đêm** ở UI (banner thông minh + thông báo lỗi liệt kê đêm) — đúng tinh thần "ngày bắt buộc → giải thích, chặn; ngày không bắt buộc → cho phép bỏ qua".
-
-Nếu sau này muốn **chọn bữa/combo riêng từng đêm thật sự**, đó là một thay đổi riêng động vào schema `bookings.room_breakdown` + PDF + email, sẽ làm trong message khác.
+### 5. Sidebar "Tóm tắt đặt phòng"
+- Phần liệt kê combo bên phải lấy từ `combo_breakdown` flatten → tự cập nhật, không cần sửa thêm.
 
 ## Files
-- new: `src/hooks/useNightlyMandatoryInfo.ts`
-- new: `src/components/NightlyMealOverview.tsx`
-- edit: `src/pages/Booking.tsx` (step 2 banner + validate message)
+- **New**: `src/components/DayMealCard.tsx`, `src/components/MealByDaySection.tsx`
+- **Edit**: `src/pages/Booking.tsx` (state + render + validate + submit flatten)
+- **Không đụng**: edge functions, PDF, email, admin, schema, các component combo cũ.
+
+## Rủi ro & ghi chú
+- "Cả 2 bữa" = 2 dòng (lunch + dinner) cùng combo/menu/quantity → tổng = price × qty × 2, khớp tính toán hiện tại của edge function.
+- Nếu cùng 1 đêm dùng nhiều combo khác nhau: **không hỗ trợ ở v1** (mỗi đêm 1 combo). Có thể mở rộng sau.
+- Field `date` mới trong `combo_breakdown` chỉ phục vụ về sau (PDF/email hiển thị "T6 05/06 - bữa tối"); v1 không bật trong template.
+
+## Out of scope
+- Hiển thị `date` trong PDF/email (sẽ làm ở message riêng nếu cần).
+- Đổi schema DB.
+- Tách giá theo mùa hay menu khác cho từng combo cùng combo_id.

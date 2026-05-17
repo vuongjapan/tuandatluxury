@@ -13,6 +13,9 @@ import MealRuleBanner from '@/components/MealRuleBanner';
 import NightlyMealOverview from '@/components/NightlyMealOverview';
 import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
 import { useNightlyMandatoryInfo } from '@/hooks/useNightlyMandatoryInfo';
+import MealByDaySection from '@/components/MealByDaySection';
+import type { DayMealSelection } from '@/components/DayMealCard';
+import { useComboPackages } from '@/hooks/useComboPackages';
 
 import { Button } from '@/components/ui/button';
 import { trackPageView } from '@/hooks/usePageTracking';
@@ -102,6 +105,8 @@ const Booking = () => {
   const [individualFoods, setIndividualFoods] = useState<FoodItem[]>([]);
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
   const [mealTime, setMealTime] = useState<MealTime>('dinner');
+  // Per-day food selection (one entry per stay-night)
+  const [foodByDay, setFoodByDay] = useState<Record<string, DayMealSelection>>({});
   const [appliedDiscountCodes, setAppliedDiscountCodes] = useState<DiscountCode[]>([]);
   const [companyName, setCompanyName] = useState('');
   const [groupSize, setGroupSize] = useState('');
@@ -159,6 +164,24 @@ const Booking = () => {
   const { nights: stayNights, mandatoryNights, optionalNights, hasAnyMandatory } = useNightlyMandatoryInfo(checkIn, checkOut, language as any);
   const isComboMandatory = !!mandatoryComboRange || hasAnyMandatory;
 
+  // Combo packages — used to compute per-day totals & build payload
+  const { packages: comboPkgs, getMenusByPackage: getComboMenus } = useComboPackages();
+  const activeComboPkgs = useMemo(() => comboPkgs.filter(p => p.is_active), [comboPkgs]);
+
+  // Keep `foodByDay` in sync with current stay nights: add defaults for new dates,
+  // drop entries for dates no longer in range.
+  useEffect(() => {
+    setFoodByDay(prev => {
+      const next: Record<string, DayMealSelection> = {};
+      for (const n of stayNights) {
+        next[n.date] = prev[n.date] || { meals: [], comboPackageId: '', comboMenuId: '', quantity: guestCount };
+        // When guest count changes, bump default quantity for untouched days
+        if (!prev[n.date]) next[n.date].quantity = Math.max(1, guestCount);
+      }
+      return next;
+    });
+  }, [stayNights, guestCount]);
+
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return true;
     for (const item of selectedRooms) {
@@ -180,20 +203,50 @@ const Booking = () => {
       : (pick('Cả 2 bữa', 'Both meals'));
   const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
 
-  const personalMealTotal = useMemo(
-    () => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0) * mealMultiplier,
-    [personalMealSelections, mealMultiplier]
-  );
-  // 5+ guests: combo slot total = pricePerPerson × peopleInSlot (NO min-6 multiplier)
+  // Per-day food lines flattened for totals + payload (1 line per day × meal)
+  const foodByDayLines = useMemo(() => {
+    const out: {
+      date: string;
+      dayLabel: string;
+      formattedDate: string;
+      meal: 'lunch' | 'dinner';
+      pkg: typeof activeComboPkgs[number];
+      menu: ReturnType<typeof getComboMenus>[number] | undefined;
+      quantity: number;
+      subtotal: number;
+    }[] = [];
+    for (const n of stayNights) {
+      const sel = foodByDay[n.date];
+      if (!sel || !sel.comboPackageId || sel.meals.length === 0 || sel.quantity <= 0) continue;
+      const pkg = activeComboPkgs.find(p => p.id === sel.comboPackageId);
+      if (!pkg) continue;
+      const menu = getComboMenus(pkg.id).find(m => m.id === sel.comboMenuId);
+      for (const meal of sel.meals) {
+        out.push({
+          date: n.date,
+          dayLabel: n.dayLabel,
+          formattedDate: n.formattedDate,
+          meal,
+          pkg,
+          menu,
+          quantity: sel.quantity,
+          subtotal: pkg.price_per_person * sel.quantity,
+        });
+      }
+    }
+    return out;
+  }, [stayNights, foodByDay, activeComboPkgs, getComboMenus]);
+
+  const personalMealTotal = 0; // legacy — no longer used
   const comboSlotsTotal = useMemo(
-    () => comboSlots.filter(s => s.packageId).reduce((sum, s) => sum + s.pricePerPerson * s.people, 0) * mealMultiplier,
-    [comboSlots, mealMultiplier]
+    () => foodByDayLines.reduce((s, l) => s + l.subtotal, 0),
+    [foodByDayLines],
   );
-  const comboTotal = useMemo(() => comboSlotsTotal + personalMealTotal, [comboSlotsTotal, personalMealTotal]);
+  const comboTotal = comboSlotsTotal;
   // Individual food: only fixed-price items contribute; negotiable items are paid at the restaurant.
   const individualFoodTotal = useMemo(
-    () => individualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0) * mealMultiplier,
-    [individualFoods, mealMultiplier]
+    () => individualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0),
+    [individualFoods],
   );
 
   const roomTotals = useMemo(() => {
@@ -329,31 +382,42 @@ const Booking = () => {
     return list;
   }, [webDiscountAmount, webDiscountPercent, flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
-  // 1–4 guests use personal meal plans (set ăn). 5+ guests use combo slots.
-  const useSetMeals = guestCount <= 4;
-  const useComboSlots = guestCount >= 5;
+  // Legacy flags — kept for backward compat in summary blocks (always false now)
+  const useSetMeals = false;
+  const useComboSlots = false;
 
-  const filledComboSlots = comboSlots.filter(s => s.packageId);
-  const hasSelectedCombo = filledComboSlots.length > 0;
-  const hasSelectedPersonalMeal = personalMealSelections.length > 0;
+  const filledComboSlots: typeof comboSlots = [];
+  // "Has combo" = any day in foodByDay has a complete selection
+  const hasSelectedCombo = foodByDayLines.length > 0;
+  const hasSelectedPersonalMeal = false;
 
-  // 5+ guests: combo people across all slots must equal guestCount
-  const totalAssignedPeople = filledComboSlots.reduce((s, c) => s + c.people, 0);
-  const comboServingsError = useComboSlots && hasSelectedCombo && totalAssignedPeople !== guestCount;
-  const totalComboServings = totalAssignedPeople; // legacy alias for the toast text
+  const comboServingsError = false;
+  const totalComboServings = 0;
+  const totalAssignedPeople = 0;
 
   // Minimum individual food spend per person (for mandatory days fallback)
   const minIndividualPerPerson = discountConfig.min_individual_per_person || 300000;
   const minRequiredIndividual = guestCount * minIndividualPerPerson;
   const individualMeetsMinimum = individualFoodTotal >= minRequiredIndividual;
 
-  // Valid food = personal meal OR combo OR individual >= 300k × guests
-  const hasValidFoodSelection = hasSelectedPersonalMeal || hasSelectedCombo || individualMeetsMinimum;
+  // Per-day validation: each mandatory night must have meals + combo + quantity
+  const incompleteMandatoryNights = useMemo(
+    () => mandatoryNights.filter(n => {
+      const s = foodByDay[n.date];
+      return !s || s.meals.length === 0 || !s.comboPackageId || s.quantity <= 0;
+    }),
+    [mandatoryNights, foodByDay],
+  );
+  // Legacy overall flag (true when ANY mandatory night unfilled).
+  // Individual food fallback still works only when there are NO mandatory nights
+  // (preserves "min spend" path on non-mandatory holiday days).
+  const hasValidFoodSelection = mandatoryNights.length > 0
+    ? incompleteMandatoryNights.length === 0
+    : (hasSelectedCombo || individualMeetsMinimum);
 
-  // On mandatory holiday dates, food selection is REQUIRED.
-  // On normal days, can always proceed (food is optional).
-  const comboValidationError = isComboMandatory && !hasValidFoodSelection;
+  const comboValidationError = isComboMandatory && incompleteMandatoryNights.length > 0;
   const multiComboNeedsNotes = false; // disabled: combo notes not required
+
 
   // Shake animation trigger when user tries to advance without combo on mandatory days
   const [comboShake, setComboShake] = useState(false);
@@ -422,26 +486,30 @@ const Booking = () => {
     }
     setSubmitting(true);
     try {
-      const combosPayload = filledComboSlots.map(c => ({
-        combo_package_id: c.packageId, combo_menu_id: c.menuId,
-        combo_package_name: c.packageName, combo_menu_name: c.menuName,
-          combo_name: `${c.packageName} – ${c.menuName}`,
-          price_vnd: c.pricePerPerson, quantity: c.people,
-          meal_time: mealTime, meal_multiplier: mealMultiplier,
-        }));
-        const foodItemsPayload = individualFoods.map(f => ({
-          menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
-          name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-          price_vnd: f.price, quantity: f.quantity,
-          meal_time: mealTime, meal_multiplier: mealMultiplier,
-        }));
-      const personalMealNote = personalMealSelections.length > 0
-        ? '🍽️ SUẤT ĂN THEO SỐ NGƯỜI:\n' + personalMealSelections.map(m =>
-            `• ${m.name} (${m.guest_count} người) ×${m.quantity} = ${(m.price * m.quantity).toLocaleString('vi-VN')}đ`
-            + (m.items.length ? `\n  └ ${m.items.join(', ')}` : '')
-          ).join('\n')
-        : '';
-      const mergedComboNotes = [comboNotes, personalMealNote].filter(Boolean).join('\n\n');
+      // Flatten per-day selections: 1 line per day × meal (lunch/dinner)
+      const combosPayload = foodByDayLines.map(l => ({
+        combo_package_id: l.pkg.id,
+        combo_menu_id: l.menu?.id,
+        combo_package_name: l.pkg.name,
+        combo_menu_name: l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : '',
+        combo_name: l.menu
+          ? `${l.pkg.name} – ${language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)}`
+          : l.pkg.name,
+        price_vnd: l.pkg.price_per_person,
+        quantity: l.quantity,
+        meal_time: l.meal,
+        meal_multiplier: 1,
+        date: l.date,
+        day_label: l.dayLabel,
+        formatted_date: l.formattedDate,
+      }));
+      const foodItemsPayload = individualFoods.map(f => ({
+        menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+        name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+        price_vnd: f.price, quantity: f.quantity,
+        meal_time: 'dinner', meal_multiplier: 1,
+      }));
+      const mergedComboNotes = comboNotes || '';
       const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
       const roomBreakdown = roomTotals.map(rt => ({
@@ -524,15 +592,14 @@ const Booking = () => {
       // Block ONLY when on a mandatory holiday and no valid food selected.
       // Normal days: always allow proceeding (food is optional).
       if (comboValidationError) {
-        const nightsList = mandatoryNights.map(n => `${n.dayLabel} ${n.formattedDate}`).join(', ');
-        const viMsg = nightsList
-          ? `⚠️ Các đêm bắt buộc: ${nightsList} — vui lòng chọn Suất ăn / Combo (hoặc đặt món riêng đủ mức tối thiểu) trước khi tiếp tục.`
-          : '⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.';
-        const enMsg = nightsList
-          ? `⚠️ Mandatory nights: ${nightsList} — please pick a meal plan / combo (or enough individual dishes) to continue.`
-          : '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.';
+        const nightsList = incompleteMandatoryNights.map(n => `${n.dayLabel} ${n.formattedDate}`).join(', ');
+        const viMsg = `⚠️ Các đêm bắt buộc chưa chọn ăn: ${nightsList || '—'}. Vui lòng chọn buổi ăn + combo cho mỗi ngày trước khi tiếp tục.`;
+        const enMsg = `⚠️ Mandatory nights missing meal selection: ${nightsList || '—'}. Please pick meal time + combo for each day before continuing.`;
         toast({ title: pick(viMsg, enMsg), variant: 'destructive' });
-        const el = document.getElementById('combo-section') || document.getElementById('food-section');
+        const first = incompleteMandatoryNights[0];
+        const el = (first && document.getElementById(`day-meal-${first.date}`))
+          || document.getElementById('combo-section')
+          || document.getElementById('food-section');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setComboShake(true);
         setTimeout(() => setComboShake(false), 2000);
@@ -788,49 +855,14 @@ const Booking = () => {
                       <MealRuleBanner rule={mandatoryComboRange} />
                     )}
 
-                    {/* Meal time selector — applies × multiplier to all food totals */}
-                    <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
-                      <MealTimeSelector value={mealTime} onChange={setMealTime} />
-                      {mealTime === 'both' && (
-                        <p className="text-[11px] text-muted-foreground mt-2">
-                          {pick('Giá đồ ăn sẽ được tính × 2 (phục vụ cả bữa trưa và tối)', 'Food price will be × 2 (both lunch and dinner served)')}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* === 1–4 GUESTS: SET MEAL ONLY === */}
-                    {useSetMeals && (
-                      <PersonalMealPlanSelector
-                        guestCount={guestCount}
-                        selections={personalMealSelections}
-                        onChange={setPersonalMealSelections}
-                        fixedMode
+                    {/* Per-day meal selection (one card per night) */}
+                    {stayNights.length > 0 && (
+                      <MealByDaySection
+                        nights={stayNights}
+                        defaultGuests={guestCount}
+                        foodByDay={foodByDay}
+                        onChange={(date, next) => setFoodByDay(prev => ({ ...prev, [date]: next }))}
                       />
-                    )}
-
-                    {/* === 5+ GUESTS: COMBO SLOTS ONLY === */}
-                    {useComboSlots && (
-                      <>
-                        {/* Linked: when set ALSO chosen (rare cross-state), show optional hint */}
-                        {hasSelectedPersonalMeal && (
-                          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                            <Check className="h-3.5 w-3.5" />
-                            {pick('Đã chọn set — combo là tùy chọn thêm', 'Set selected — combo is optional')}
-                          </div>
-                        )}
-                        <ComboSlotSelector
-                          sectionId="combo-section"
-                          guestCount={guestCount}
-                          slots={comboSlots}
-                          onChange={setComboSlots}
-                          shake={comboShake}
-                        />
-                        {comboServingsError && (
-                          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                            ⚠️ {pick(`Tổng số người trong combo (${totalAssignedPeople}) phải bằng số khách (${guestCount})`, `Combo people (${totalAssignedPeople}) must equal guest count (${guestCount})`)}
-                          </div>
-                        )}
-                      </>
                     )}
 
                     <IndividualFoodSelector
@@ -988,7 +1020,29 @@ const Booking = () => {
                       </div>
                     </div>
 
-                    {/* Combo summary */}
+                    {/* Per-day meals summary */}
+                    {foodByDayLines.length > 0 && (
+                      <div className="bg-card rounded-xl border border-border p-5 space-y-2">
+                        <h3 className="font-semibold flex items-center gap-2">🍽️ {pick('Bữa ăn theo ngày', 'Meals by day')}</h3>
+                        {foodByDayLines.map((l, i) => (
+                          <div key={i} className="flex justify-between text-sm">
+                            <span className="min-w-0 truncate pr-2">
+                              {l.dayLabel} {l.formattedDate} · {l.pkg.name}
+                              {l.menu ? ` – ${language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)}` : ''}
+                              {' · '}{l.meal === 'lunch' ? pick('Bữa trưa', 'Lunch') : pick('Bữa tối', 'Dinner')}
+                              {' × '}{l.quantity}
+                            </span>
+                            <span className="font-medium whitespace-nowrap">{formatPrice(l.subtotal)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between text-sm font-bold border-t border-border pt-2 mt-1">
+                          <span>{pick('Tổng tiền ăn', 'Total meals')}</span>
+                          <span className="text-primary">{formatPrice(comboTotal)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Combo summary (legacy — kept for back-compat) */}
                     {comboSelections.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
                         <h3 className="font-semibold flex items-center gap-2">🍽️ Combo</h3>
@@ -1210,10 +1264,22 @@ const Booking = () => {
                     ))}
                   </div>
                 )}
+                {foodByDayLines.length > 0 && (
+                  <div className="border-t border-border pt-2 space-y-1">
+                    {foodByDayLines.map((l, i) => (
+                      <div key={i} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground truncate pr-2">
+                          🍱 {l.dayLabel} {l.formattedDate} · {l.pkg.name} × {l.quantity} · {l.meal === 'lunch' ? pick('Trưa', 'Lunch') : pick('Tối', 'Dinner')}
+                        </span>
+                        <span className="font-medium tabular-nums">{formatPrice(l.subtotal)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {individualFoodTotal > 0 && (
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">
-                      🍤 {pick('Món riêng', 'Dishes')} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
+                      🍤 {pick('Món riêng', 'Dishes')}
                     </span>
                     <span className="font-medium">{formatPrice(individualFoodTotal)}</span>
                   </div>
