@@ -486,26 +486,30 @@ const Booking = () => {
     }
     setSubmitting(true);
     try {
-      const combosPayload = filledComboSlots.map(c => ({
-        combo_package_id: c.packageId, combo_menu_id: c.menuId,
-        combo_package_name: c.packageName, combo_menu_name: c.menuName,
-          combo_name: `${c.packageName} – ${c.menuName}`,
-          price_vnd: c.pricePerPerson, quantity: c.people,
-          meal_time: mealTime, meal_multiplier: mealMultiplier,
-        }));
-        const foodItemsPayload = individualFoods.map(f => ({
-          menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
-          name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-          price_vnd: f.price, quantity: f.quantity,
-          meal_time: mealTime, meal_multiplier: mealMultiplier,
-        }));
-      const personalMealNote = personalMealSelections.length > 0
-        ? '🍽️ SUẤT ĂN THEO SỐ NGƯỜI:\n' + personalMealSelections.map(m =>
-            `• ${m.name} (${m.guest_count} người) ×${m.quantity} = ${(m.price * m.quantity).toLocaleString('vi-VN')}đ`
-            + (m.items.length ? `\n  └ ${m.items.join(', ')}` : '')
-          ).join('\n')
-        : '';
-      const mergedComboNotes = [comboNotes, personalMealNote].filter(Boolean).join('\n\n');
+      // Flatten per-day selections: 1 line per day × meal (lunch/dinner)
+      const combosPayload = foodByDayLines.map(l => ({
+        combo_package_id: l.pkg.id,
+        combo_menu_id: l.menu?.id,
+        combo_package_name: l.pkg.name,
+        combo_menu_name: l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : '',
+        combo_name: l.menu
+          ? `${l.pkg.name} – ${language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)}`
+          : l.pkg.name,
+        price_vnd: l.pkg.price_per_person,
+        quantity: l.quantity,
+        meal_time: l.meal,
+        meal_multiplier: 1,
+        date: l.date,
+        day_label: l.dayLabel,
+        formatted_date: l.formattedDate,
+      }));
+      const foodItemsPayload = individualFoods.map(f => ({
+        menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+        name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+        price_vnd: f.price, quantity: f.quantity,
+        meal_time: 'dinner', meal_multiplier: 1,
+      }));
+      const mergedComboNotes = comboNotes || '';
       const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
       const roomBreakdown = roomTotals.map(rt => ({
