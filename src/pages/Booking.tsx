@@ -1242,10 +1242,22 @@ const Booking = () => {
                     ))}
                   </div>
                 )}
+                {foodByDayLines.length > 0 && (
+                  <div className="border-t border-border pt-2 space-y-1">
+                    {foodByDayLines.map((l, i) => (
+                      <div key={i} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground truncate pr-2">
+                          🍱 {l.dayLabel} {l.formattedDate} · {l.pkg.name} × {l.quantity} · {l.meal === 'lunch' ? pick('Trưa', 'Lunch') : pick('Tối', 'Dinner')}
+                        </span>
+                        <span className="font-medium tabular-nums">{formatPrice(l.subtotal)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {individualFoodTotal > 0 && (
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">
-                      🍤 {pick('Món riêng', 'Dishes')} · {mealTimeLabelText}{mealMultiplier > 1 ? ` (× ${mealMultiplier})` : ''}
+                      🍤 {pick('Món riêng', 'Dishes')}
                     </span>
                     <span className="font-medium">{formatPrice(individualFoodTotal)}</span>
                   </div>
