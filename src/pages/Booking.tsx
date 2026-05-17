@@ -203,20 +203,50 @@ const Booking = () => {
       : (pick('Cả 2 bữa', 'Both meals'));
   const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
 
-  const personalMealTotal = useMemo(
-    () => personalMealSelections.reduce((sum, s) => sum + s.price * s.quantity, 0) * mealMultiplier,
-    [personalMealSelections, mealMultiplier]
-  );
-  // 5+ guests: combo slot total = pricePerPerson × peopleInSlot (NO min-6 multiplier)
+  // Per-day food lines flattened for totals + payload (1 line per day × meal)
+  const foodByDayLines = useMemo(() => {
+    const out: {
+      date: string;
+      dayLabel: string;
+      formattedDate: string;
+      meal: 'lunch' | 'dinner';
+      pkg: typeof activeComboPkgs[number];
+      menu: ReturnType<typeof getComboMenus>[number] | undefined;
+      quantity: number;
+      subtotal: number;
+    }[] = [];
+    for (const n of stayNights) {
+      const sel = foodByDay[n.date];
+      if (!sel || !sel.comboPackageId || sel.meals.length === 0 || sel.quantity <= 0) continue;
+      const pkg = activeComboPkgs.find(p => p.id === sel.comboPackageId);
+      if (!pkg) continue;
+      const menu = getComboMenus(pkg.id).find(m => m.id === sel.comboMenuId);
+      for (const meal of sel.meals) {
+        out.push({
+          date: n.date,
+          dayLabel: n.dayLabel,
+          formattedDate: n.formattedDate,
+          meal,
+          pkg,
+          menu,
+          quantity: sel.quantity,
+          subtotal: pkg.price_per_person * sel.quantity,
+        });
+      }
+    }
+    return out;
+  }, [stayNights, foodByDay, activeComboPkgs, getComboMenus]);
+
+  const personalMealTotal = 0; // legacy — no longer used
   const comboSlotsTotal = useMemo(
-    () => comboSlots.filter(s => s.packageId).reduce((sum, s) => sum + s.pricePerPerson * s.people, 0) * mealMultiplier,
-    [comboSlots, mealMultiplier]
+    () => foodByDayLines.reduce((s, l) => s + l.subtotal, 0),
+    [foodByDayLines],
   );
-  const comboTotal = useMemo(() => comboSlotsTotal + personalMealTotal, [comboSlotsTotal, personalMealTotal]);
+  const comboTotal = comboSlotsTotal;
   // Individual food: only fixed-price items contribute; negotiable items are paid at the restaurant.
   const individualFoodTotal = useMemo(
-    () => individualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0) * mealMultiplier,
-    [individualFoods, mealMultiplier]
+    () => individualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0),
+    [individualFoods],
   );
 
   const roomTotals = useMemo(() => {
