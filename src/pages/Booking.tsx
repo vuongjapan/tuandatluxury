@@ -588,15 +588,14 @@ const Booking = () => {
       // Block ONLY when on a mandatory holiday and no valid food selected.
       // Normal days: always allow proceeding (food is optional).
       if (comboValidationError) {
-        const nightsList = mandatoryNights.map(n => `${n.dayLabel} ${n.formattedDate}`).join(', ');
-        const viMsg = nightsList
-          ? `⚠️ Các đêm bắt buộc: ${nightsList} — vui lòng chọn Suất ăn / Combo (hoặc đặt món riêng đủ mức tối thiểu) trước khi tiếp tục.`
-          : '⚠️ Dịp này bắt buộc đặt ăn trước. Vui lòng chọn Suất ăn / Combo, hoặc đặt món riêng đủ mức tối thiểu.';
-        const enMsg = nightsList
-          ? `⚠️ Mandatory nights: ${nightsList} — please pick a meal plan / combo (or enough individual dishes) to continue.`
-          : '⚠️ Meal selection is required for this holiday. Please pick a meal plan, combo, or order enough individual dishes.';
+        const nightsList = incompleteMandatoryNights.map(n => `${n.dayLabel} ${n.formattedDate}`).join(', ');
+        const viMsg = `⚠️ Các đêm bắt buộc chưa chọn ăn: ${nightsList || '—'}. Vui lòng chọn buổi ăn + combo cho mỗi ngày trước khi tiếp tục.`;
+        const enMsg = `⚠️ Mandatory nights missing meal selection: ${nightsList || '—'}. Please pick meal time + combo for each day before continuing.`;
         toast({ title: pick(viMsg, enMsg), variant: 'destructive' });
-        const el = document.getElementById('combo-section') || document.getElementById('food-section');
+        const first = incompleteMandatoryNights[0];
+        const el = (first && document.getElementById(`day-meal-${first.date}`))
+          || document.getElementById('combo-section')
+          || document.getElementById('food-section');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setComboShake(true);
         setTimeout(() => setComboShake(false), 2000);
