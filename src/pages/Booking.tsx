@@ -851,49 +851,14 @@ const Booking = () => {
                       <MealRuleBanner rule={mandatoryComboRange} />
                     )}
 
-                    {/* Meal time selector — applies × multiplier to all food totals */}
-                    <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
-                      <MealTimeSelector value={mealTime} onChange={setMealTime} />
-                      {mealTime === 'both' && (
-                        <p className="text-[11px] text-muted-foreground mt-2">
-                          {pick('Giá đồ ăn sẽ được tính × 2 (phục vụ cả bữa trưa và tối)', 'Food price will be × 2 (both lunch and dinner served)')}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* === 1–4 GUESTS: SET MEAL ONLY === */}
-                    {useSetMeals && (
-                      <PersonalMealPlanSelector
-                        guestCount={guestCount}
-                        selections={personalMealSelections}
-                        onChange={setPersonalMealSelections}
-                        fixedMode
+                    {/* Per-day meal selection (one card per night) */}
+                    {stayNights.length > 0 && (
+                      <MealByDaySection
+                        nights={stayNights}
+                        defaultGuests={guestCount}
+                        foodByDay={foodByDay}
+                        onChange={(date, next) => setFoodByDay(prev => ({ ...prev, [date]: next }))}
                       />
-                    )}
-
-                    {/* === 5+ GUESTS: COMBO SLOTS ONLY === */}
-                    {useComboSlots && (
-                      <>
-                        {/* Linked: when set ALSO chosen (rare cross-state), show optional hint */}
-                        {hasSelectedPersonalMeal && (
-                          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                            <Check className="h-3.5 w-3.5" />
-                            {pick('Đã chọn set — combo là tùy chọn thêm', 'Set selected — combo is optional')}
-                          </div>
-                        )}
-                        <ComboSlotSelector
-                          sectionId="combo-section"
-                          guestCount={guestCount}
-                          slots={comboSlots}
-                          onChange={setComboSlots}
-                          shake={comboShake}
-                        />
-                        {comboServingsError && (
-                          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                            ⚠️ {pick(`Tổng số người trong combo (${totalAssignedPeople}) phải bằng số khách (${guestCount})`, `Combo people (${totalAssignedPeople}) must equal guest count (${guestCount})`)}
-                          </div>
-                        )}
-                      </>
                     )}
 
                     <IndividualFoodSelector
