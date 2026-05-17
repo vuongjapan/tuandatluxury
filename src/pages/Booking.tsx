@@ -13,6 +13,9 @@ import MealRuleBanner from '@/components/MealRuleBanner';
 import NightlyMealOverview from '@/components/NightlyMealOverview';
 import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
 import { useNightlyMandatoryInfo } from '@/hooks/useNightlyMandatoryInfo';
+import MealByDaySection from '@/components/MealByDaySection';
+import type { DayMealSelection } from '@/components/DayMealCard';
+import { useComboPackages } from '@/hooks/useComboPackages';
 
 import { Button } from '@/components/ui/button';
 import { trackPageView } from '@/hooks/usePageTracking';
