@@ -382,31 +382,42 @@ const Booking = () => {
     return list;
   }, [webDiscountAmount, webDiscountPercent, flashSaleDiscount, globalDiscountAmount, smartPricingAmount, activeFlashSaleItem, activeGlobalDiscount, activeSmartRule]);
 
-  // 1–4 guests use personal meal plans (set ăn). 5+ guests use combo slots.
-  const useSetMeals = guestCount <= 4;
-  const useComboSlots = guestCount >= 5;
+  // Legacy flags — kept for backward compat in summary blocks (always false now)
+  const useSetMeals = false;
+  const useComboSlots = false;
 
-  const filledComboSlots = comboSlots.filter(s => s.packageId);
-  const hasSelectedCombo = filledComboSlots.length > 0;
-  const hasSelectedPersonalMeal = personalMealSelections.length > 0;
+  const filledComboSlots: typeof comboSlots = [];
+  // "Has combo" = any day in foodByDay has a complete selection
+  const hasSelectedCombo = foodByDayLines.length > 0;
+  const hasSelectedPersonalMeal = false;
 
-  // 5+ guests: combo people across all slots must equal guestCount
-  const totalAssignedPeople = filledComboSlots.reduce((s, c) => s + c.people, 0);
-  const comboServingsError = useComboSlots && hasSelectedCombo && totalAssignedPeople !== guestCount;
-  const totalComboServings = totalAssignedPeople; // legacy alias for the toast text
+  const comboServingsError = false;
+  const totalComboServings = 0;
+  const totalAssignedPeople = 0;
 
   // Minimum individual food spend per person (for mandatory days fallback)
   const minIndividualPerPerson = discountConfig.min_individual_per_person || 300000;
   const minRequiredIndividual = guestCount * minIndividualPerPerson;
   const individualMeetsMinimum = individualFoodTotal >= minRequiredIndividual;
 
-  // Valid food = personal meal OR combo OR individual >= 300k × guests
-  const hasValidFoodSelection = hasSelectedPersonalMeal || hasSelectedCombo || individualMeetsMinimum;
+  // Per-day validation: each mandatory night must have meals + combo + quantity
+  const incompleteMandatoryNights = useMemo(
+    () => mandatoryNights.filter(n => {
+      const s = foodByDay[n.date];
+      return !s || s.meals.length === 0 || !s.comboPackageId || s.quantity <= 0;
+    }),
+    [mandatoryNights, foodByDay],
+  );
+  // Legacy overall flag (true when ANY mandatory night unfilled).
+  // Individual food fallback still works only when there are NO mandatory nights
+  // (preserves "min spend" path on non-mandatory holiday days).
+  const hasValidFoodSelection = mandatoryNights.length > 0
+    ? incompleteMandatoryNights.length === 0
+    : (hasSelectedCombo || individualMeetsMinimum);
 
-  // On mandatory holiday dates, food selection is REQUIRED.
-  // On normal days, can always proceed (food is optional).
-  const comboValidationError = isComboMandatory && !hasValidFoodSelection;
+  const comboValidationError = isComboMandatory && incompleteMandatoryNights.length > 0;
   const multiComboNeedsNotes = false; // disabled: combo notes not required
+
 
   // Shake animation trigger when user tries to advance without combo on mandatory days
   const [comboShake, setComboShake] = useState(false);
