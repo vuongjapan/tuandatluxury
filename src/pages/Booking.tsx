@@ -164,6 +164,24 @@ const Booking = () => {
   const { nights: stayNights, mandatoryNights, optionalNights, hasAnyMandatory } = useNightlyMandatoryInfo(checkIn, checkOut, language as any);
   const isComboMandatory = !!mandatoryComboRange || hasAnyMandatory;
 
+  // Combo packages — used to compute per-day totals & build payload
+  const { packages: comboPkgs, getMenusByPackage: getComboMenus } = useComboPackages();
+  const activeComboPkgs = useMemo(() => comboPkgs.filter(p => p.is_active), [comboPkgs]);
+
+  // Keep `foodByDay` in sync with current stay nights: add defaults for new dates,
+  // drop entries for dates no longer in range.
+  useEffect(() => {
+    setFoodByDay(prev => {
+      const next: Record<string, DayMealSelection> = {};
+      for (const n of stayNights) {
+        next[n.date] = prev[n.date] || { meals: [], comboPackageId: '', comboMenuId: '', quantity: guestCount };
+        // When guest count changes, bump default quantity for untouched days
+        if (!prev[n.date]) next[n.date].quantity = Math.max(1, guestCount);
+      }
+      return next;
+    });
+  }, [stayNights, guestCount]);
+
   const allNightsAvailable = useMemo(() => {
     if (!checkIn || !checkOut || nightCount <= 0) return true;
     for (const item of selectedRooms) {
