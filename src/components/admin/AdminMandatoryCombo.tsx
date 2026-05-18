@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Save, Pencil, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Save, Pencil, AlertTriangle, KeyRound, CalendarRange } from 'lucide-react';
+import AdminMealBypassCodes from './AdminMealBypassCodes';
 
 type EditState = Partial<MandatoryComboDate> & { _new?: boolean };
 
@@ -26,6 +27,7 @@ const AdminMandatoryCombo = () => {
   const { toast } = useToast();
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<'rules' | 'bypass'>('rules');
 
   const startNew = () => {
     setEditing({
@@ -132,6 +134,30 @@ const AdminMandatoryCombo = () => {
 
   return (
     <div className="space-y-6">
+      {/* Tabs */}
+      <div className="inline-flex rounded-lg border border-border overflow-hidden">
+        {([
+          { v: 'rules' as const, label: 'Quy tắc bắt buộc', icon: CalendarRange },
+          { v: 'bypass' as const, label: 'Mã bypass', icon: KeyRound },
+        ]).map(t => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.v}
+              type="button"
+              onClick={() => setTab(t.v)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+                tab === t.v ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'
+              }`}
+            >
+              <Icon className="h-4 w-4" /> {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === 'bypass' ? <AdminMealBypassCodes /> : (
+      <div className="space-y-6">
       <div className="bg-destructive/10 border-l-4 border-destructive rounded-lg p-4 flex items-start gap-3">
         <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
         <div className="text-sm">
@@ -334,6 +360,8 @@ const AdminMandatoryCombo = () => {
           </table>
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 };

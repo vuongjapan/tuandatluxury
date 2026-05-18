@@ -2143,6 +2143,45 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_bypass_codes: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          updated_at: string
+          used_count: number
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          updated_at?: string
+          used_count?: number
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          updated_at?: string
+          used_count?: number
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
       member_messages: {
         Row: {
           content: string
@@ -3944,6 +3983,10 @@ export type Database = {
       sync_user_bookings: {
         Args: { _email: string; _phone: string; _user_id: string }
         Returns: number
+      }
+      use_meal_bypass_code: {
+        Args: { p_code: string; p_date: string }
+        Returns: Json
       }
     }
     Enums: {

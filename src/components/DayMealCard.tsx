@@ -1,17 +1,22 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Sun, Moon, Clock, AlertTriangle, Plus, Minus, ChevronDown, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { Sun, Moon, Clock, AlertTriangle, Plus, Minus, ChevronDown, CalendarDays, CheckCircle2, KeyRound, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { NightInfo } from '@/hooks/useNightlyMandatoryInfo';
 import type { ComboPackage, ComboMenu, ComboMenuDish } from '@/hooks/useComboPackages';
+import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export type DayMeal = 'lunch' | 'dinner';
 
 export interface DayMealSelection {
-  meals: DayMeal[];          // [] | ['lunch'] | ['dinner'] | ['lunch','dinner']
-  comboPackageId: string;    // '' if none
-  comboMenuId: string;       // '' if none
+  meals: DayMeal[];
+  comboPackageId: string;
+  comboMenuId: string;
   quantity: number;
+  bypassed?: boolean;
+  bypassCode?: string;
 }
 
 interface Props {
@@ -22,24 +27,28 @@ interface Props {
   getDishesByMenu: (menuId: string) => ComboMenuDish[];
   value: DayMealSelection;
   onChange: (next: DayMealSelection) => void;
+  /** Variant: 'mandatory' shows full form; 'optional' renders inline compact toggle */
+  variant?: 'mandatory' | 'optional';
 }
 
 const emptySel = (qty: number): DayMealSelection => ({
-  meals: [],
-  comboPackageId: '',
-  comboMenuId: '',
-  quantity: qty,
+  meals: [], comboPackageId: '', comboMenuId: '', quantity: qty,
 });
 
-const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDishesByMenu, value, onChange }: Props) => {
+const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDishesByMenu, value, onChange, variant }: Props) => {
   const { language } = useLanguage();
   const isVi = language === 'vi';
-  const [expanded, setExpanded] = useState<boolean>(night.mandatory || value.meals.length > 0);
+  const mode: 'mandatory' | 'optional' = variant || (night.mandatory ? 'mandatory' : 'optional');
+  const [expanded, setExpanded] = useState<boolean>(mode === 'mandatory' || value.meals.length > 0);
 
-  // When mandatory flips on, force open.
+  // Bypass code input
+  const [bypassInput, setBypassInput] = useState('');
+  const [bypassChecking, setBypassChecking] = useState(false);
+  const [bypassError, setBypassError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (night.mandatory) setExpanded(true);
-  }, [night.mandatory]);
+    if (mode === 'mandatory') setExpanded(true);
+  }, [mode]);
 
   const set = (patch: Partial<DayMealSelection>) => onChange({ ...value, ...patch });
 
@@ -48,7 +57,7 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
     set({ meals: both ? ['dinner'] : ['lunch', 'dinner'] });
   };
   const pick = (m: DayMeal) => {
-    if (value.meals.length === 1 && value.meals[0] === m) return; // keep one selected
+    if (value.meals.length === 1 && value.meals[0] === m) return;
     set({ meals: [m] });
   };
 
@@ -65,28 +74,82 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
   const subtotal = selectedPkg ? selectedPkg.price_per_person * Math.max(0, value.quantity) * value.meals.length : 0;
 
   const isComplete = value.meals.length > 0 && !!value.comboPackageId && value.quantity > 0;
-  const incomplete = night.mandatory && !isComplete;
+  const incomplete = mode === 'mandatory' && !isComplete && !value.bypassed;
+
+  const handleApplyBypass = async () => {
+    const code = bypassInput.trim();
+    if (!code) return;
+    setBypassChecking(true);
+    setBypassError(null);
+    try {
+      const { data, error } = await (supabase as any).rpc('use_meal_bypass_code', {
+        p_code: code,
+        p_date: night.date,
+      });
+      if (error) throw error;
+      if (data && (data as any).valid) {
+        onChange({ ...value, bypassed: true, bypassCode: code.toUpperCase() });
+        setBypassInput('');
+      } else {
+        setBypassError((data as any)?.msg || (isVi ? 'Mã không hợp lệ!' : 'Invalid code!'));
+      }
+    } catch (e: any) {
+      setBypassError(e.message || (isVi ? 'Lỗi kiểm tra mã' : 'Error'));
+    } finally {
+      setBypassChecking(false);
+    }
+  };
+
+  const clearBypass = () => {
+    onChange({ ...value, bypassed: false, bypassCode: undefined });
+  };
+
+  // ===== Optional compact variant: just a header + "Add meal" toggle =====
+  if (mode === 'optional' && !expanded) {
+    return (
+      <div className="rounded-lg border border-border bg-card px-3 py-2.5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="text-sm font-medium truncate">{night.dayLabel}, {night.formattedDate}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="text-xs font-medium text-primary hover:underline shrink-0"
+        >
+          + {isVi ? 'Thêm bữa ăn tuỳ chọn' : 'Add meal (optional)'}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
       id={`day-meal-${night.date}`}
       className={cn(
         'rounded-xl border p-4 sm:p-5 transition-all',
-        night.mandatory
-          ? incomplete
-            ? 'border-orange-300 bg-orange-50/60 dark:bg-orange-950/20'
-            : 'border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/10'
+        mode === 'mandatory'
+          ? value.bypassed
+            ? 'border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/20'
+            : incomplete
+              ? 'border-orange-300 bg-orange-50/60 dark:bg-orange-950/20'
+              : 'border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/10'
           : 'border-border bg-card',
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <CalendarDays className={cn('h-4 w-4 shrink-0', night.mandatory ? 'text-orange-600' : 'text-muted-foreground')} />
+          <CalendarDays className={cn('h-4 w-4 shrink-0', mode === 'mandatory' ? 'text-orange-600' : 'text-muted-foreground')} />
           <span className="font-semibold text-sm sm:text-base truncate">
             {night.dayLabel}, {night.formattedDate}
           </span>
-          {night.mandatory ? (
+          {value.bypassed ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 shrink-0">
+              <CheckCircle2 className="h-3 w-3" />
+              {isVi ? `Miễn trừ (${value.bypassCode})` : `Bypassed (${value.bypassCode})`}
+            </span>
+          ) : mode === 'mandatory' ? (
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 shrink-0">
               <AlertTriangle className="h-3 w-3" />
               {isVi ? 'Bắt buộc chọn ăn' : 'Meal required'}
@@ -98,37 +161,27 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
             </span>
           ) : null}
         </div>
-        {!night.mandatory && (
+        {mode === 'optional' && (
           <button
             type="button"
             onClick={() => {
-              if (expanded) {
-                // collapse → clear
-                onChange(emptySel(defaultGuests));
-              }
-              setExpanded(e => !e);
+              onChange(emptySel(defaultGuests));
+              setExpanded(false);
             }}
-            className="text-xs font-medium text-primary hover:underline shrink-0"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground shrink-0"
           >
-            {expanded ? (isVi ? 'Thu gọn' : 'Collapse') : `+ ${isVi ? 'Thêm bữa ăn (tuỳ chọn)' : 'Add meal (optional)'}`}
+            {isVi ? 'Thu gọn' : 'Collapse'}
           </button>
         )}
       </div>
 
-      {!night.mandatory && !expanded && (
-        <p className="text-xs text-muted-foreground mt-2">
-          ✅ {isVi
-            ? 'Không bắt buộc — có thể gọi món trực tiếp tại nhà hàng sau check-in.'
-            : 'Optional — you can order at the restaurant after check-in.'}
-        </p>
-      )}
-
-      {(night.mandatory || expanded) && (
+      {/* Form (hidden when bypassed) */}
+      {!value.bypassed && (
         <div className="mt-4 space-y-4">
           {/* Meal time pills */}
           <div>
             <label className="text-xs font-semibold text-muted-foreground uppercase block mb-2">
-              {isVi ? 'Chọn buổi ăn' : 'Choose meal time'} {night.mandatory && <span className="text-orange-600">*</span>}
+              {isVi ? 'Chọn buổi ăn' : 'Choose meal time'} {mode === 'mandatory' && <span className="text-orange-600">*</span>}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {([
@@ -183,7 +236,7 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
           {value.meals.length > 0 && (
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase block mb-2">
-                {isVi ? 'Chọn combo' : 'Choose combo'} {night.mandatory && <span className="text-orange-600">*</span>}
+                {isVi ? 'Chọn combo' : 'Choose combo'} {mode === 'mandatory' && <span className="text-orange-600">*</span>}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {packages.map(pkg => {
@@ -283,6 +336,61 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
               {isVi ? 'Vui lòng chọn buổi ăn và combo cho ngày bắt buộc này.' : 'Please pick a meal time and combo for this mandatory day.'}
             </p>
           )}
+
+          {/* Bypass code input — only on mandatory cards */}
+          {mode === 'mandatory' && (
+            <div className="border-t border-border/60 pt-3 mt-1 space-y-2">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold flex items-center gap-1.5">
+                <span className="opacity-60">───</span>
+                {isVi ? 'HOẶC' : 'OR'}
+                <span className="opacity-60">───</span>
+              </div>
+              <label className="text-xs font-semibold flex items-center gap-1.5">
+                <KeyRound className="h-3.5 w-3.5 text-primary" />
+                {isVi ? 'Có mã miễn trừ? Nhập vào đây:' : 'Have a bypass code?'}
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={bypassInput}
+                  onChange={e => { setBypassInput(e.target.value.toUpperCase()); setBypassError(null); }}
+                  placeholder={isVi ? 'Nhập mã...' : 'Enter code...'}
+                  className="h-9 text-sm uppercase"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyBypass(); } }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleApplyBypass}
+                  disabled={bypassChecking || !bypassInput.trim()}
+                  className="shrink-0"
+                >
+                  {bypassChecking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (isVi ? 'Xác nhận' : 'Apply')}
+                </Button>
+              </div>
+              {bypassError && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> {bypassError}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bypass success state */}
+      {value.bypassed && (
+        <div className="mt-3 space-y-2">
+          <div className="rounded-lg bg-emerald-100/70 dark:bg-emerald-950/30 border border-emerald-300 px-3 py-2.5 text-sm text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>{isVi ? 'Mã hợp lệ — ngày này được bỏ qua.' : 'Code valid — this day is bypassed.'}</span>
+          </div>
+          <button
+            type="button"
+            onClick={clearBypass}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            {isVi ? 'Huỷ mã miễn trừ' : 'Remove bypass'}
+          </button>
         </div>
       )}
     </div>
