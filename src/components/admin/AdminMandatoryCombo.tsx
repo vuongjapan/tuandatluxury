@@ -360,6 +360,8 @@ const AdminMandatoryCombo = () => {
           </table>
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 };
