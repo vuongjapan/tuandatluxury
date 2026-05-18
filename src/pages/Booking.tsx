@@ -850,7 +850,7 @@ const Booking = () => {
                       <NightlyMealOverview
                         nights={stayNights}
                         mandatoryNights={mandatoryNights}
-                        optionalNights={optionalNights}
+                        optionalNights={[]}
                       />
                     ) : (
                       <MealRuleBanner rule={mandatoryComboRange} />
