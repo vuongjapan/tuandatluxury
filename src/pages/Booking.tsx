@@ -404,6 +404,7 @@ const Booking = () => {
   const incompleteMandatoryNights = useMemo(
     () => mandatoryNights.filter(n => {
       const s = foodByDay[n.date];
+      if (s?.bypassed) return false; // bypass code accepted → skip validation
       return !s || s.meals.length === 0 || !s.comboPackageId || s.quantity <= 0;
     }),
     [mandatoryNights, foodByDay],
