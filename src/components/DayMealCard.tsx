@@ -44,7 +44,7 @@ const emptySel = (qty: number): DayMealSelection => ({
   meals: [], comboPackageId: '', comboMenuId: '', quantity: qty,
 });
 
-const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDishesByMenu, value, onChange, variant }: Props) => {
+const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDishesByMenu, value, onChange, variant, individualOption }: Props) => {
   const { language } = useLanguage();
   const isVi = language === 'vi';
   const mode: 'mandatory' | 'optional' = variant || (night.mandatory ? 'mandatory' : 'optional');
