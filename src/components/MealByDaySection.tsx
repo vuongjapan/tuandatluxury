@@ -11,6 +11,12 @@ interface Props {
   defaultGuests: number;
   foodByDay: Record<string, DayMealSelection>;
   onChange: (date: string, next: DayMealSelection) => void;
+  individualOption?: {
+    total: number;
+    required: number;
+    met: boolean;
+    onOpenMenu: () => void;
+  };
 }
 
 const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange }: Props) => {
