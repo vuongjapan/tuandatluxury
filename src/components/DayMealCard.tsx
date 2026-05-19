@@ -19,6 +19,13 @@ export interface DayMealSelection {
   bypassCode?: string;
 }
 
+interface IndividualOption {
+  total: number;
+  required: number;
+  met: boolean;
+  onOpenMenu: () => void;
+}
+
 interface Props {
   night: NightInfo;
   defaultGuests: number;
@@ -29,6 +36,8 @@ interface Props {
   onChange: (next: DayMealSelection) => void;
   /** Variant: 'mandatory' shows full form; 'optional' renders inline compact toggle */
   variant?: 'mandatory' | 'optional';
+  /** When provided on mandatory variant, shows "OR Individual order" block */
+  individualOption?: IndividualOption;
 }
 
 const emptySel = (qty: number): DayMealSelection => ({
