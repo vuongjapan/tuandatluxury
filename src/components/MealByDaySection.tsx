@@ -19,7 +19,7 @@ interface Props {
   };
 }
 
-const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange }: Props) => {
+const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individualOption }: Props) => {
   const { language } = useLanguage();
   const isVi = language === 'vi';
   const { packages, getMenusByPackage, getDishesByMenu, loading } = useComboPackages();
