@@ -363,6 +363,64 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
             </p>
           )}
 
+          {/* Individual Order option — only on mandatory cards when provided */}
+          {mode === 'mandatory' && individualOption && (
+            <div className="border-t border-border/60 pt-3 mt-1 space-y-2">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold flex items-center gap-1.5">
+                <span className="opacity-60">───</span>
+                {isVi ? 'HOẶC' : 'OR'}
+                <span className="opacity-60">───</span>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold flex items-center gap-1.5">
+                      🍤 {isVi ? 'Đặt món riêng' : 'Order individual dishes'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {isVi
+                        ? `Tối thiểu ${individualOption.required.toLocaleString('vi-VN')}đ để bỏ qua combo`
+                        : `Min ${individualOption.required.toLocaleString('vi-VN')}đ to skip combo`}
+                    </p>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={individualOption.onOpenMenu} className="shrink-0">
+                    {isVi ? 'Mở menu' : 'Open menu'}
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'absolute inset-y-0 left-0 transition-all duration-300 rounded-full',
+                        individualOption.met ? 'bg-emerald-500' : 'bg-primary',
+                      )}
+                      style={{ width: `${Math.min(100, (individualOption.total / Math.max(1, individualOption.required)) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] tabular-nums">
+                    <span className={cn('font-semibold', individualOption.met ? 'text-emerald-600' : 'text-foreground')}>
+                      {individualOption.total.toLocaleString('vi-VN')}đ
+                    </span>
+                    <span className="text-muted-foreground">
+                      / {individualOption.required.toLocaleString('vi-VN')}đ
+                    </span>
+                  </div>
+                  {individualOption.met ? (
+                    <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> {isVi ? 'Đủ điều kiện — không cần chọn combo!' : 'Minimum met — combo not required!'}
+                    </p>
+                  ) : individualOption.total > 0 ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      {isVi
+                        ? `Cần thêm ${(individualOption.required - individualOption.total).toLocaleString('vi-VN')}đ để bỏ qua combo`
+                        : `Need ${(individualOption.required - individualOption.total).toLocaleString('vi-VN')}đ more to skip combo`}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Bypass code input — only on mandatory cards */}
           {mode === 'mandatory' && (
             <div className="border-t border-border/60 pt-3 mt-1 space-y-2">
