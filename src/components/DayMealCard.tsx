@@ -314,14 +314,23 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
           {value.comboPackageId && value.meals.length > 0 && (
             <>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">
-                  {isVi ? 'Số suất' : 'Servings'}
-                </label>
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase block">
+                    {isVi ? 'Số suất' : 'Servings'}
+                  </label>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {isVi ? `Tối thiểu ${defaultGuests} suất theo số người lớn` : `Min ${defaultGuests} (adults)`}
+                  </p>
+                </div>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => set({ quantity: Math.max(1, value.quantity - 1) })}
-                    className="w-8 h-8 rounded-full border border-border hover:border-primary flex items-center justify-center"
+                    onClick={() => set({ quantity: Math.max(defaultGuests, value.quantity - 1) })}
+                    disabled={value.quantity <= defaultGuests}
+                    className={cn(
+                      'w-8 h-8 rounded-full border border-border flex items-center justify-center transition',
+                      value.quantity <= defaultGuests ? 'opacity-30 cursor-not-allowed' : 'hover:border-primary',
+                    )}
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
