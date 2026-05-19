@@ -401,13 +401,15 @@ const Booking = () => {
   const individualMeetsMinimum = individualFoodTotal >= minRequiredIndividual;
 
   // Per-day validation: each mandatory night must have meals + combo + quantity
+  // OR be bypassed by code OR the GLOBAL individual food order meets minimum.
   const incompleteMandatoryNights = useMemo(
     () => mandatoryNights.filter(n => {
       const s = foodByDay[n.date];
       if (s?.bypassed) return false; // bypass code accepted → skip validation
+      if (individualFoodTotal >= minRequiredIndividual) return false; // individual route satisfies all mandatory days
       return !s || s.meals.length === 0 || !s.comboPackageId || s.quantity <= 0;
     }),
-    [mandatoryNights, foodByDay],
+    [mandatoryNights, foodByDay, individualFoodTotal, minRequiredIndividual],
   );
   // Legacy overall flag (true when ANY mandatory night unfilled).
   // Individual food fallback still works only when there are NO mandatory nights
