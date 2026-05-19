@@ -19,6 +19,13 @@ export interface DayMealSelection {
   bypassCode?: string;
 }
 
+interface IndividualOption {
+  total: number;
+  required: number;
+  met: boolean;
+  onOpenMenu: () => void;
+}
+
 interface Props {
   night: NightInfo;
   defaultGuests: number;
@@ -29,13 +36,15 @@ interface Props {
   onChange: (next: DayMealSelection) => void;
   /** Variant: 'mandatory' shows full form; 'optional' renders inline compact toggle */
   variant?: 'mandatory' | 'optional';
+  /** When provided on mandatory variant, shows "OR Individual order" block */
+  individualOption?: IndividualOption;
 }
 
 const emptySel = (qty: number): DayMealSelection => ({
   meals: [], comboPackageId: '', comboMenuId: '', quantity: qty,
 });
 
-const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDishesByMenu, value, onChange, variant }: Props) => {
+const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDishesByMenu, value, onChange, variant, individualOption }: Props) => {
   const { language } = useLanguage();
   const isVi = language === 'vi';
   const mode: 'mandatory' | 'optional' = variant || (night.mandatory ? 'mandatory' : 'optional');
@@ -49,6 +58,14 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
   useEffect(() => {
     if (mode === 'mandatory') setExpanded(true);
   }, [mode]);
+
+  // Keep quantity >= adults (defaultGuests). Auto-raise when defaultGuests grows.
+  useEffect(() => {
+    if (value.quantity < defaultGuests) {
+      onChange({ ...value, quantity: defaultGuests });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultGuests]);
 
   const set = (patch: Partial<DayMealSelection>) => onChange({ ...value, ...patch });
 
@@ -297,14 +314,23 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
           {value.comboPackageId && value.meals.length > 0 && (
             <>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">
-                  {isVi ? 'Số suất' : 'Servings'}
-                </label>
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase block">
+                    {isVi ? 'Số suất' : 'Servings'}
+                  </label>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {isVi ? `Tối thiểu ${defaultGuests} suất theo số người lớn` : `Min ${defaultGuests} (adults)`}
+                  </p>
+                </div>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => set({ quantity: Math.max(1, value.quantity - 1) })}
-                    className="w-8 h-8 rounded-full border border-border hover:border-primary flex items-center justify-center"
+                    onClick={() => set({ quantity: Math.max(defaultGuests, value.quantity - 1) })}
+                    disabled={value.quantity <= defaultGuests}
+                    className={cn(
+                      'w-8 h-8 rounded-full border border-border flex items-center justify-center transition',
+                      value.quantity <= defaultGuests ? 'opacity-30 cursor-not-allowed' : 'hover:border-primary',
+                    )}
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
@@ -335,6 +361,64 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
               <AlertTriangle className="h-3.5 w-3.5" />
               {isVi ? 'Vui lòng chọn buổi ăn và combo cho ngày bắt buộc này.' : 'Please pick a meal time and combo for this mandatory day.'}
             </p>
+          )}
+
+          {/* Individual Order option — only on mandatory cards when provided */}
+          {mode === 'mandatory' && individualOption && (
+            <div className="border-t border-border/60 pt-3 mt-1 space-y-2">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold flex items-center gap-1.5">
+                <span className="opacity-60">───</span>
+                {isVi ? 'HOẶC' : 'OR'}
+                <span className="opacity-60">───</span>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold flex items-center gap-1.5">
+                      🍤 {isVi ? 'Đặt món riêng' : 'Order individual dishes'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {isVi
+                        ? `Tối thiểu ${individualOption.required.toLocaleString('vi-VN')}đ để bỏ qua combo`
+                        : `Min ${individualOption.required.toLocaleString('vi-VN')}đ to skip combo`}
+                    </p>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={individualOption.onOpenMenu} className="shrink-0">
+                    {isVi ? 'Mở menu' : 'Open menu'}
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'absolute inset-y-0 left-0 transition-all duration-300 rounded-full',
+                        individualOption.met ? 'bg-emerald-500' : 'bg-primary',
+                      )}
+                      style={{ width: `${Math.min(100, (individualOption.total / Math.max(1, individualOption.required)) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] tabular-nums">
+                    <span className={cn('font-semibold', individualOption.met ? 'text-emerald-600' : 'text-foreground')}>
+                      {individualOption.total.toLocaleString('vi-VN')}đ
+                    </span>
+                    <span className="text-muted-foreground">
+                      / {individualOption.required.toLocaleString('vi-VN')}đ
+                    </span>
+                  </div>
+                  {individualOption.met ? (
+                    <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> {isVi ? 'Đủ điều kiện — không cần chọn combo!' : 'Minimum met — combo not required!'}
+                    </p>
+                  ) : individualOption.total > 0 ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      {isVi
+                        ? `Cần thêm ${(individualOption.required - individualOption.total).toLocaleString('vi-VN')}đ để bỏ qua combo`
+                        : `Need ${(individualOption.required - individualOption.total).toLocaleString('vi-VN')}đ more to skip combo`}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Bypass code input — only on mandatory cards */}

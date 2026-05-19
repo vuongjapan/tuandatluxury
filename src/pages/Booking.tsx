@@ -113,6 +113,7 @@ const Booking = () => {
   const [specialServices, setSpecialServices] = useState<string[]>([]);
   const [decorationNotes, setDecorationNotes] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
+  const [showExtraServices, setShowExtraServices] = useState(false);
   const [country, setCountry] = useState('');
   const [address, setAddress] = useState('');
   
@@ -401,13 +402,15 @@ const Booking = () => {
   const individualMeetsMinimum = individualFoodTotal >= minRequiredIndividual;
 
   // Per-day validation: each mandatory night must have meals + combo + quantity
+  // OR be bypassed by code OR the GLOBAL individual food order meets minimum.
   const incompleteMandatoryNights = useMemo(
     () => mandatoryNights.filter(n => {
       const s = foodByDay[n.date];
       if (s?.bypassed) return false; // bypass code accepted → skip validation
+      if (individualFoodTotal >= minRequiredIndividual) return false; // individual route satisfies all mandatory days
       return !s || s.meals.length === 0 || !s.comboPackageId || s.quantity <= 0;
     }),
-    [mandatoryNights, foodByDay],
+    [mandatoryNights, foodByDay, individualFoodTotal, minRequiredIndividual],
   );
   // Legacy overall flag (true when ANY mandatory night unfilled).
   // Individual food fallback still works only when there are NO mandatory nights
@@ -863,6 +866,12 @@ const Booking = () => {
                         defaultGuests={guestCount}
                         foodByDay={foodByDay}
                         onChange={(date, next) => setFoodByDay(prev => ({ ...prev, [date]: next }))}
+                        individualOption={mandatoryNights.length > 0 ? {
+                          total: individualFoodTotal,
+                          required: minRequiredIndividual,
+                          met: individualMeetsMinimum,
+                          onOpenMenu: () => setFoodSelectorOpen(true),
+                        } : undefined}
                       />
                     )}
 
@@ -877,72 +886,38 @@ const Booking = () => {
                       hasOtherValidSelection={hasSelectedPersonalMeal || hasSelectedCombo}
                     />
 
-                    {/* Service checkboxes */}
-                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                      <h3 className="font-display text-lg font-semibold flex items-center gap-2">🛎️ {pick('Dịch vụ bổ sung', 'Additional Services')}</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {availableServices.map(service => (
-                          <label key={service.id} className={cn(
-                            "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
-                            specialServices.includes(service.id) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                          )}>
-                            <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
-                            {pick(service.label, service.labelEn)}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Individual food trigger + progress on mandatory days */}
-                    <div id="food-section" className="bg-card rounded-xl border border-border p-5 space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="font-semibold flex items-center gap-2 text-base">
-                            🍤 {pick('Đặt món ăn riêng', 'Order Individual Dishes')}
-                          </h3>
-                          <p className="text-xs mt-0.5" style={{ color: '#888' }}>
-                            {pick('Đặt thêm món ngoài combo · Có thể thay thế suất/combo nếu đủ mức tối thiểu', 'Order extras outside combos · Can substitute meal/combo if minimum is met')}
-                          </p>
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => setFoodSelectorOpen(true)} className="shrink-0">
-                          <ShoppingBag className="h-4 w-4 mr-1" /> {pick('Mở menu', 'Open menu')}
-                        </Button>
-                      </div>
-
-                      {/* Progress bar — only show on mandatory dates */}
-                      {isComboMandatory && !hasSelectedPersonalMeal && !hasSelectedCombo && (
-                        <div className="space-y-1.5">
-                          <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className={cn(
-                                'absolute inset-y-0 left-0 transition-all duration-300 rounded-full',
-                                individualMeetsMinimum ? 'bg-green-500' : 'bg-primary'
-                              )}
-                              style={{ width: `${Math.min(100, (individualFoodTotal / minRequiredIndividual) * 100)}%` }}
-                            />
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className={cn('font-bold', individualMeetsMinimum ? 'text-green-600' : 'text-foreground')}>
-                              {formatPrice(individualFoodTotal)}
+                    {/* Additional services — collapsed accordion */}
+                    <div className="bg-card rounded-xl border border-border overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setShowExtraServices(v => !v)}
+                        className="w-full flex items-center justify-between gap-3 p-4 hover:bg-muted/40 transition-colors text-left"
+                      >
+                        <span className="font-display text-base sm:text-lg font-semibold flex items-center gap-2">
+                          🛎️ {pick('Dịch vụ bổ sung', 'Additional Services')}
+                          {specialServices.length > 0 && (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                              {specialServices.length}
                             </span>
-                            <span className="text-muted-foreground">
-                              {formatPrice(minRequiredIndividual)} {pick(`cần đạt (${guestCount} người × ${(minIndividualPerPerson / 1000).toFixed(0)}k)`, `required (${guestCount} × ${(minIndividualPerPerson / 1000).toFixed(0)}k)`)}
-                            </span>
+                          )}
+                        </span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {showExtraServices ? pick('▲ Thu gọn', '▲ Collapse') : pick('▼ Xem thêm', '▼ Show more')}
+                        </span>
+                      </button>
+                      {showExtraServices && (
+                        <div className="p-4 sm:p-5 border-t border-border space-y-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {availableServices.map(service => (
+                              <label key={service.id} className={cn(
+                                "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
+                                specialServices.includes(service.id) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                              )}>
+                                <Checkbox checked={specialServices.includes(service.id)} onCheckedChange={() => toggleService(service.id)} />
+                                {pick(service.label, service.labelEn)}
+                              </label>
+                            ))}
                           </div>
-                          {individualMeetsMinimum ? (
-                            <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-                              <Check className="h-3.5 w-3.5" /> {pick('Đã đạt mức tối thiểu — có thể tiếp tục', 'Minimum met — you can continue')}
-                            </p>
-                          ) : (
-                            <p className="text-xs" style={{ color: '#888' }}>
-                              {pick('Hoặc chọn Suất ăn / Combo ở trên để không cần đạt mức tối thiểu này', 'Or pick a Meal Plan / Combo above to skip this minimum')}
-                            </p>
-                          )}
-                          {!individualMeetsMinimum && individualFoodTotal > 0 && (
-                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md p-2 text-xs text-amber-800 dark:text-amber-300">
-                              ⚠️ {pick(`Cần thêm ${formatPrice(minRequiredIndividual - individualFoodTotal)} nữa (hoặc chọn Suất ăn / Combo ở trên)`, `Need ${formatPrice(minRequiredIndividual - individualFoodTotal)} more (or pick Meal Plan / Combo above)`)}
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
