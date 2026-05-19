@@ -113,6 +113,7 @@ const Booking = () => {
   const [specialServices, setSpecialServices] = useState<string[]>([]);
   const [decorationNotes, setDecorationNotes] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
+  const [showExtraServices, setShowExtraServices] = useState(false);
   const [country, setCountry] = useState('');
   const [address, setAddress] = useState('');
   
