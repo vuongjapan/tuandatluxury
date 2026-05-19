@@ -136,6 +136,7 @@ const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individu
               value={foodByDay[n.date] || { meals: [], comboPackageId: '', comboMenuId: '', quantity: defaultGuests }}
               onChange={next => onChange(n.date, next)}
               variant="mandatory"
+              individualOption={individualOption}
             />
           ))}
         </div>
