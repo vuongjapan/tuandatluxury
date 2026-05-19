@@ -59,6 +59,14 @@ const DayMealCard = ({ night, defaultGuests, packages, getMenusByPackage, getDis
     if (mode === 'mandatory') setExpanded(true);
   }, [mode]);
 
+  // Keep quantity >= adults (defaultGuests). Auto-raise when defaultGuests grows.
+  useEffect(() => {
+    if (value.quantity < defaultGuests) {
+      onChange({ ...value, quantity: defaultGuests });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultGuests]);
+
   const set = (patch: Partial<DayMealSelection>) => onChange({ ...value, ...patch });
 
   const toggleBoth = () => {
