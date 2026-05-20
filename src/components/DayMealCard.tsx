@@ -577,7 +577,7 @@ const DayMealCard = ({
                 </div>
 
                 {/* Cart list (with × per item) */}
-                {individualOption.items.length > 0 && (
+                {individualOption.items && individualOption.items.length > 0 && (
                   <div className="space-y-1 border-t border-border/50 pt-2">
                     {individualOption.items.map(f => {
                       const isNeg = f.priceType === 'negotiable' || f.price === 0;
@@ -594,14 +594,16 @@ const DayMealCard = ({
                             <span className="tabular-nums text-muted-foreground">
                               {isNeg ? (isVi ? 'Thoả thuận' : 'On request') : `${(f.price * f.quantity).toLocaleString('vi-VN')}đ`}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => individualOption.onRemoveItem(f.id)}
-                              className="text-destructive/60 hover:text-destructive p-0.5"
-                              aria-label="remove"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
+                            {individualOption.onRemoveItem && (
+                              <button
+                                type="button"
+                                onClick={() => individualOption.onRemoveItem?.(f.id)}
+                                className="text-destructive/60 hover:text-destructive p-0.5"
+                                aria-label="remove"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
