@@ -52,12 +52,13 @@ export const buildDefaultGroups = (adults: number): DayMealGroup[] => {
 };
 
 interface IndividualPerDay {
-  items: FoodItem[];
   total: number;
   required: number;
   met: boolean;
   onOpenMenu: () => void;
-  onRemoveItem: (cartKey: string) => void;
+  /** Optional: items list to render inline with × remove buttons */
+  items?: FoodItem[];
+  onRemoveItem?: (cartKey: string) => void;
 }
 
 interface Props {
