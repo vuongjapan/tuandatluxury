@@ -23,8 +23,8 @@ export interface DayMealGroup {
 
 export interface DayMealSelection {
   meals: DayMeal[];
-  /** New: per-day groups (table groups, 6 pax each) */
-  groups: DayMealGroup[];
+  /** New: per-day groups (table groups, 6 pax each). Optional for back-compat; auto-migrated. */
+  groups?: DayMealGroup[];
   // Legacy fields kept for backward-compat reads — UI no longer writes them.
   comboPackageId?: string;
   comboMenuId?: string;
