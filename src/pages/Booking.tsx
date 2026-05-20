@@ -15,6 +15,9 @@ import MealTimeSelector, { type MealTime } from '@/components/MealTimeSelector';
 import { useNightlyMandatoryInfo } from '@/hooks/useNightlyMandatoryInfo';
 import MealByDaySection from '@/components/MealByDaySection';
 import type { DayMealSelection } from '@/components/DayMealCard';
+import { buildDefaultGroups } from '@/components/DayMealCard';
+import MealSummaryCard from '@/components/MealSummaryCard';
+import MealHelpPopup from '@/components/MealHelpPopup';
 import { useComboPackages } from '@/hooks/useComboPackages';
 
 import { Button } from '@/components/ui/button';
