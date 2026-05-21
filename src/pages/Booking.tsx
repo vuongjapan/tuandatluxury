@@ -206,7 +206,7 @@ const Booking = () => {
       : (pick('Cả 2 bữa', 'Both meals'));
   const mealTimeLabel = mealTime === 'lunch' ? 'Bữa trưa' : mealTime === 'dinner' ? 'Bữa tối' : 'Cả 2 bữa';
 
-  // Per-day food lines flattened for totals + payload (1 line per day × meal)
+  // Per-day food lines flattened for totals + payload (merge groups sharing pkg+menu, 1 line per (day × meal × pkg+menu))
   const foodByDayLines = useMemo(() => {
     const out: {
       date: string;
@@ -220,21 +220,33 @@ const Booking = () => {
     }[] = [];
     for (const n of stayNights) {
       const sel = foodByDay[n.date];
-      if (!sel || !sel.comboPackageId || sel.meals.length === 0 || sel.quantity <= 0) continue;
-      const pkg = activeComboPkgs.find(p => p.id === sel.comboPackageId);
-      if (!pkg) continue;
-      const menu = getComboMenus(pkg.id).find(m => m.id === sel.comboMenuId);
-      for (const meal of sel.meals) {
-        out.push({
-          date: n.date,
-          dayLabel: n.dayLabel,
-          formattedDate: n.formattedDate,
-          meal,
-          pkg,
-          menu,
-          quantity: sel.quantity,
-          subtotal: pkg.price_per_person * sel.quantity,
-        });
+      if (!sel || sel.bypassed || sel.meals.length === 0) continue;
+      const groups = sel.groups || [];
+      // merge groups with same pkg+menu
+      const merged = new Map<string, { pkg: typeof activeComboPkgs[number]; menu: any; quantity: number }>();
+      for (const g of groups) {
+        if (!g.comboPackageId || g.quantity <= 0) continue;
+        const pkg = activeComboPkgs.find(p => p.id === g.comboPackageId);
+        if (!pkg) continue;
+        const menu = getComboMenus(pkg.id).find(m => m.id === g.comboMenuId);
+        const key = `${pkg.id}|${menu?.id || ''}`;
+        const ex = merged.get(key);
+        if (ex) ex.quantity += g.quantity;
+        else merged.set(key, { pkg, menu, quantity: g.quantity });
+      }
+      for (const entry of merged.values()) {
+        for (const meal of sel.meals) {
+          out.push({
+            date: n.date,
+            dayLabel: n.dayLabel,
+            formattedDate: n.formattedDate,
+            meal,
+            pkg: entry.pkg,
+            menu: entry.menu,
+            quantity: entry.quantity,
+            subtotal: entry.pkg.price_per_person * entry.quantity,
+          });
+        }
       }
     }
     return out;
@@ -246,10 +258,15 @@ const Booking = () => {
     [foodByDayLines],
   );
   const comboTotal = comboSlotsTotal;
+  // Flattened individual food list (across all days) for legacy summaries.
+  const allIndividualFoods = useMemo(
+    () => Object.values(individualFoodsByDay).flat(),
+    [individualFoodsByDay],
+  );
   // Individual food: only fixed-price items contribute; negotiable items are paid at the restaurant.
   const individualFoodTotal = useMemo(
-    () => individualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0),
-    [individualFoods],
+    () => allIndividualFoods.reduce((sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity), 0),
+    [allIndividualFoods],
   );
 
   const roomTotals = useMemo(() => {
