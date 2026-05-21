@@ -892,30 +892,48 @@ const Booking = () => {
 
                     {/* Per-day meal selection (one card per night) */}
                     {stayNights.length > 0 && (
-                      <MealByDaySection
-                        nights={stayNights}
-                        defaultGuests={guestCount}
-                        foodByDay={foodByDay}
-                        onChange={(date, next) => setFoodByDay(prev => ({ ...prev, [date]: next }))}
-                        individualOption={mandatoryNights.length > 0 ? {
-                          total: individualFoodTotal,
-                          required: minRequiredIndividual,
-                          met: individualMeetsMinimum,
-                          onOpenMenu: () => setFoodSelectorOpen(true),
-                        } : undefined}
-                      />
+                      <>
+                        <div className="flex items-center justify-end -mt-2">
+                          <MealHelpPopup />
+                        </div>
+                        <MealByDaySection
+                          nights={stayNights}
+                          defaultGuests={guestCount}
+                          adults={parseInt(adults) || guestCount}
+                          minPerPerson={minIndividualPerPerson}
+                          foodByDay={foodByDay}
+                          individualFoodsByDay={individualFoodsByDay}
+                          onChange={(date, next) => setFoodByDay(prev => ({ ...prev, [date]: next }))}
+                          onOpenIndividual={(date) => { setFoodSelectorDate(date); setFoodSelectorOpen(true); }}
+                          onRemoveIndividualItem={(date, id) => setIndividualFoodsByDay(prev => ({
+                            ...prev,
+                            [date]: (prev[date] || []).filter(f => f.id !== id),
+                          }))}
+                        />
+                        <MealSummaryCard
+                          nights={stayNights}
+                          foodByDay={foodByDay}
+                          individualFoodsByDay={individualFoodsByDay}
+                          packages={activeComboPkgs}
+                          getMenusByPackage={getComboMenus}
+                        />
+                      </>
                     )}
 
                     <IndividualFoodSelector
                       open={foodSelectorOpen}
-                      onClose={() => setFoodSelectorOpen(false)}
-                      items={individualFoods}
-                      onItemsChange={setIndividualFoods}
+                      onClose={() => { setFoodSelectorOpen(false); setFoodSelectorDate(null); }}
+                      items={foodSelectorDate ? (individualFoodsByDay[foodSelectorDate] || []) : []}
+                      onItemsChange={(items) => {
+                        if (!foodSelectorDate) return;
+                        setIndividualFoodsByDay(prev => ({ ...prev, [foodSelectorDate]: items }));
+                      }}
                       isMandatory={isComboMandatory}
-                      guestCount={guestCount}
+                      guestCount={parseInt(adults) || guestCount}
                       minPerPerson={minIndividualPerPerson}
-                      hasOtherValidSelection={hasSelectedPersonalMeal || hasSelectedCombo}
+                      hasOtherValidSelection={false}
                     />
+
 
                     {/* Additional services — collapsed accordion */}
                     <div className="bg-card rounded-xl border border-border overflow-hidden">
