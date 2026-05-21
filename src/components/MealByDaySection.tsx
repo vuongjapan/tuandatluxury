@@ -1,25 +1,41 @@
 import { useMemo, useState } from 'react';
 import { Utensils, ChevronDown, CheckCircle2 } from 'lucide-react';
-import DayMealCard, { type DayMealSelection } from './DayMealCard';
+import DayMealCard, { type DayMealSelection, buildDefaultGroups } from './DayMealCard';
 import type { NightInfo } from '@/hooks/useNightlyMandatoryInfo';
 import { useComboPackages } from '@/hooks/useComboPackages';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import type { FoodItem } from './IndividualFoodSelector';
 
 interface Props {
   nights: NightInfo[];
   defaultGuests: number;
+  adults: number;
+  minPerPerson: number;
   foodByDay: Record<string, DayMealSelection>;
+  individualFoodsByDay: Record<string, FoodItem[]>;
   onChange: (date: string, next: DayMealSelection) => void;
-  individualOption?: {
-    total: number;
-    required: number;
-    met: boolean;
-    onOpenMenu: () => void;
-  };
+  onOpenIndividual: (date: string) => void;
+  onRemoveIndividualItem: (date: string, cartKey: string) => void;
 }
 
-const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individualOption }: Props) => {
+const sumIndividual = (items: FoodItem[]) =>
+  items.reduce(
+    (s, f) => s + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity),
+    0,
+  );
+
+const MealByDaySection = ({
+  nights,
+  defaultGuests,
+  adults,
+  minPerPerson,
+  foodByDay,
+  individualFoodsByDay,
+  onChange,
+  onOpenIndividual,
+  onRemoveIndividualItem,
+}: Props) => {
   const { language } = useLanguage();
   const isVi = language === 'vi';
   const { packages, getMenusByPackage, getDishesByMenu, loading } = useComboPackages();
@@ -32,33 +48,33 @@ const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individu
   const mandatoryNights = useMemo(() => nights.filter(n => n.mandatory), [nights]);
   const optionalNights = useMemo(() => nights.filter(n => !n.mandatory), [nights]);
 
-  // Auto-open accordion if any optional night already has selections
   const initialOpen = optionalNights.some(n => {
     const s = foodByDay[n.date];
     return s && (s.meals.length > 0 || s.bypassed);
   });
   const [showOptional, setShowOptional] = useState(initialOpen);
 
-  const lines = useMemo(() => {
-    return nights
-      .map(n => {
-        const sel = foodByDay[n.date];
-        if (!sel || sel.bypassed || !sel.comboPackageId || sel.meals.length === 0) return null;
-        const pkg = activePackages.find(p => p.id === sel.comboPackageId);
-        if (!pkg) return null;
-        const amount = pkg.price_per_person * sel.quantity * sel.meals.length;
-        return {
-          date: n.date,
-          label: `${n.dayLabel} ${n.formattedDate} — ${pkg.name} × ${sel.quantity}${sel.meals.length === 2 ? (isVi ? ' (cả 2 bữa)' : ' (both meals)') : ''}`,
-          amount,
-        };
-      })
-      .filter(Boolean) as { date: string; label: string; amount: number }[];
-  }, [nights, foodByDay, activePackages, isVi]);
-
-  const total = lines.reduce((s, l) => s + l.amount, 0);
-
   if (nights.length === 0) return null;
+
+  const buildIndividualOption = (date: string, mandatory: boolean) => {
+    const items = individualFoodsByDay[date] || [];
+    const total = sumIndividual(items);
+    const required = mandatory ? Math.max(1, adults) * minPerPerson : 0;
+    const met = mandatory ? total >= required : false;
+    return {
+      total,
+      required,
+      met,
+      items,
+      onOpenMenu: () => onOpenIndividual(date),
+      onRemoveItem: (cartKey: string) => onRemoveIndividualItem(date, cartKey),
+    };
+  };
+
+  const defaultSel = (): DayMealSelection => ({
+    meals: [],
+    groups: buildDefaultGroups(defaultGuests),
+  });
 
   return (
     <section id="combo-section" className="space-y-4">
@@ -75,7 +91,6 @@ const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individu
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Optional nights — collapsed accordion */}
           {optionalNights.length > 0 && (
             <div className="border border-emerald-200 dark:border-emerald-900/50 rounded-xl overflow-hidden">
               <button
@@ -114,9 +129,10 @@ const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individu
                       packages={activePackages}
                       getMenusByPackage={getMenusByPackage}
                       getDishesByMenu={getDishesByMenu}
-                      value={foodByDay[n.date] || { meals: [], comboPackageId: '', comboMenuId: '', quantity: defaultGuests }}
+                      value={foodByDay[n.date] || defaultSel()}
                       onChange={next => onChange(n.date, next)}
                       variant="optional"
+                      individualOption={buildIndividualOption(n.date, false)}
                     />
                   ))}
                 </div>
@@ -124,7 +140,6 @@ const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individu
             </div>
           )}
 
-          {/* Mandatory nights — always shown */}
           {mandatoryNights.map(n => (
             <DayMealCard
               key={n.date}
@@ -133,27 +148,12 @@ const MealByDaySection = ({ nights, defaultGuests, foodByDay, onChange, individu
               packages={activePackages}
               getMenusByPackage={getMenusByPackage}
               getDishesByMenu={getDishesByMenu}
-              value={foodByDay[n.date] || { meals: [], comboPackageId: '', comboMenuId: '', quantity: defaultGuests }}
+              value={foodByDay[n.date] || defaultSel()}
               onChange={next => onChange(n.date, next)}
               variant="mandatory"
-              individualOption={individualOption}
+              individualOption={buildIndividualOption(n.date, true)}
             />
           ))}
-        </div>
-      )}
-
-      {lines.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-4 sm:p-5 space-y-1.5">
-          {lines.map(l => (
-            <div key={l.date} className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{l.label}</span>
-              <span className="tabular-nums">{l.amount.toLocaleString('vi-VN')}đ</span>
-            </div>
-          ))}
-          <div className="flex justify-between font-bold border-t border-border pt-2 mt-2 text-base">
-            <span>{isVi ? 'Tổng tiền ăn' : 'Total meals'}</span>
-            <span className="text-primary tabular-nums">{total.toLocaleString('vi-VN')}đ</span>
-          </div>
         </div>
       )}
     </section>
