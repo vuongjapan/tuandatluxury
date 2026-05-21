@@ -1102,10 +1102,10 @@ const Booking = () => {
                     )}
 
                     {/* Individual food */}
-                    {individualFoods.length > 0 && (
+                    {allIndividualFoods.length > 0 && (
                       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
                         <h3 className="font-semibold flex items-center gap-2">🍤 {pick('Món ăn riêng', 'Individual Dishes')}</h3>
-                        {individualFoods.map(f => {
+                        {allIndividualFoods.map(f => {
                           const isNeg = f.priceType === 'negotiable' || f.price === 0;
                           return (
                             <div key={f.id} className="flex justify-between text-sm gap-2">
@@ -1120,7 +1120,7 @@ const Booking = () => {
                             </div>
                           );
                         })}
-                        {individualFoods.some(f => f.priceType === 'negotiable' || f.price === 0) && (
+                        {allIndividualFoods.some(f => f.priceType === 'negotiable' || f.price === 0) && (
                           <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
                             {pick('💬 Các món "Thỏa thuận" sẽ được tính riêng tại nhà hàng theo cân/thời giá.', '💬 Negotiable items are billed separately at the restaurant.')}
                           </p>
