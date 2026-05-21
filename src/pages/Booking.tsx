@@ -535,12 +535,15 @@ const Booking = () => {
         day_label: l.dayLabel,
         formatted_date: l.formattedDate,
       }));
-      const foodItemsPayload = individualFoods.map(f => ({
-        menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
-        name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-        price_vnd: f.price, quantity: f.quantity,
-        meal_time: 'dinner', meal_multiplier: 1,
-      }));
+      const foodItemsPayload = Object.entries(individualFoodsByDay).flatMap(([date, items]) =>
+        items.map(f => ({
+          menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+          name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+          price_vnd: f.price, quantity: f.quantity,
+          meal_time: 'dinner', meal_multiplier: 1,
+          date,
+        }))
+      );
       const mergedComboNotes = comboNotes || '';
       const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
