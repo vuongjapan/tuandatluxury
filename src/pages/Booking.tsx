@@ -179,9 +179,7 @@ const Booking = () => {
     setFoodByDay(prev => {
       const next: Record<string, DayMealSelection> = {};
       for (const n of stayNights) {
-        next[n.date] = prev[n.date] || { meals: [], comboPackageId: '', comboMenuId: '', quantity: guestCount };
-        // When guest count changes, bump default quantity for untouched days
-        if (!prev[n.date]) next[n.date].quantity = Math.max(1, guestCount);
+        next[n.date] = prev[n.date] || { meals: [], groups: buildDefaultGroups(guestCount) };
       }
       return next;
     });
