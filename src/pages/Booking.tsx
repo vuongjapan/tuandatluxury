@@ -420,16 +420,25 @@ const Booking = () => {
   const minRequiredIndividual = guestCount * minIndividualPerPerson;
   const individualMeetsMinimum = individualFoodTotal >= minRequiredIndividual;
 
-  // Per-day validation: each mandatory night must have meals + combo + quantity
-  // OR be bypassed by code OR the GLOBAL individual food order meets minimum.
+  // Per-day validation: a mandatory night passes if
+  // - bypassed by code, OR
+  // - has meals + ≥1 valid group, OR
+  // - that day's individual food total ≥ adults × min per person.
   const incompleteMandatoryNights = useMemo(
     () => mandatoryNights.filter(n => {
       const s = foodByDay[n.date];
-      if (s?.bypassed) return false; // bypass code accepted → skip validation
-      if (individualFoodTotal >= minRequiredIndividual) return false; // individual route satisfies all mandatory days
-      return !s || s.meals.length === 0 || !s.comboPackageId || s.quantity <= 0;
+      if (s?.bypassed) return false;
+      const dayItems = individualFoodsByDay[n.date] || [];
+      const dayTotal = dayItems.reduce(
+        (sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity),
+        0,
+      );
+      if (dayTotal >= minRequiredIndividual) return false;
+      const groups = s?.groups || [];
+      const hasValidGroup = groups.some(g => g.comboPackageId && g.quantity > 0);
+      return !s || s.meals.length === 0 || !hasValidGroup;
     }),
-    [mandatoryNights, foodByDay, individualFoodTotal, minRequiredIndividual],
+    [mandatoryNights, foodByDay, individualFoodsByDay, minRequiredIndividual],
   );
   // Legacy overall flag (true when ANY mandatory night unfilled).
   // Individual food fallback still works only when there are NO mandatory nights
