@@ -772,29 +772,49 @@ const Booking = () => {
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Người lớn', 'Adults')}</label>
-                          <Select value={adults} onValueChange={setAdults}>
-                            <SelectTrigger>
-                              <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} {pick('người lớn', 'adults')}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="relative">
+                            <Users className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                            <Input
+                              type="number"
+                              min={1}
+                              max={70}
+                              inputMode="numeric"
+                              value={adults}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === '') { setAdults(''); return; }
+                                const n = Math.max(1, Math.min(70, parseInt(raw) || 1));
+                                setAdults(String(n));
+                              }}
+                              onBlur={() => { if (!adults || parseInt(adults) < 1) setAdults('1'); }}
+                              className="pl-9 h-10"
+                              aria-label={pick('Số người lớn', 'Number of adults')}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">{pick('Tối đa 70 người', 'Up to 70')}</p>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">{pick('Trẻ em', 'Children')}</label>
-                          <Select value={children} onValueChange={setChildren}>
-                            <SelectTrigger>
-                              <div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue /></div>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 6 }, (_, i) => i).map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} {pick('trẻ em', 'children')}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="relative">
+                            <Users className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                            <Input
+                              type="number"
+                              min={0}
+                              max={30}
+                              inputMode="numeric"
+                              value={children}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === '') { setChildren(''); return; }
+                                const n = Math.max(0, Math.min(30, parseInt(raw) || 0));
+                                setChildren(String(n));
+                              }}
+                              onBlur={() => { if (!children || parseInt(children) < 0) setChildren('0'); }}
+                              className="pl-9 h-10"
+                              aria-label={pick('Số trẻ em', 'Number of children')}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">{pick('Tối đa 30 trẻ em', 'Up to 30')}</p>
                         </div>
                       </div>
                     </div>
