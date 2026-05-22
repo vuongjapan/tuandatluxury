@@ -720,50 +720,56 @@ const DayMealCard = ({
             </div>
           )}
 
-          {/* Bypass code */}
+          {/* Bypass code (collapsible) */}
           {mode === 'mandatory' && (
-            <div className="border-t border-border/60 pt-3 mt-1 space-y-2">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold flex items-center gap-1.5">
-                <span className="opacity-60">───</span>
-                {isVi ? 'HOẶC' : 'OR'}
-                <span className="opacity-60">───</span>
-              </div>
-              <label className="text-xs font-semibold flex items-center gap-1.5">
-                <KeyRound className="h-3.5 w-3.5 text-primary" />
-                {isVi ? 'Có mã miễn trừ? Nhập vào đây:' : 'Have a bypass code?'}
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  value={bypassInput}
-                  onChange={e => {
-                    setBypassInput(e.target.value.toUpperCase());
-                    setBypassError(null);
-                  }}
-                  placeholder={isVi ? 'Nhập mã...' : 'Enter code...'}
-                  className="h-9 text-sm uppercase"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleApplyBypass();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleApplyBypass}
-                  disabled={bypassChecking || !bypassInput.trim()}
-                  className="shrink-0"
-                >
-                  {bypassChecking ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : isVi ? 'Xác nhận' : 'Apply'}
-                </Button>
-              </div>
-              {bypassError && (
-                <p className="text-xs text-destructive flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" /> {bypassError}
-                </p>
+            <div className="border border-border/70 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowBypass(v => !v)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition text-left"
+              >
+                <span className="text-sm font-semibold flex items-center gap-1.5">
+                  <KeyRound className="h-3.5 w-3.5 text-primary" />
+                  {isVi ? 'Có mã miễn trừ?' : 'Have a bypass code?'}
+                </span>
+                <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform shrink-0', showBypass && 'rotate-180')} />
+              </button>
+              {showBypass && (
+                <div className="p-3 space-y-2 border-t border-border/60 bg-card">
+                  <div className="flex gap-2">
+                    <Input
+                      value={bypassInput}
+                      onChange={e => {
+                        setBypassInput(e.target.value.toUpperCase());
+                        setBypassError(null);
+                      }}
+                      placeholder={isVi ? 'Nhập mã...' : 'Enter code...'}
+                      className="h-9 text-sm uppercase"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleApplyBypass();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleApplyBypass}
+                      disabled={bypassChecking || !bypassInput.trim()}
+                      className="shrink-0"
+                    >
+                      {bypassChecking ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : isVi ? 'Xác nhận' : 'Apply'}
+                    </Button>
+                  </div>
+                  {bypassError && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {bypassError}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}
