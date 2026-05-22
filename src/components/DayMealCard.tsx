@@ -368,9 +368,10 @@ const DayMealCard = ({
                 {isVi ? 'Combo theo nhóm bàn' : 'Combo per group'}{' '}
                 {mode === 'mandatory' && <span className="text-orange-600">*</span>}
                 <span className="text-[10px] font-normal text-muted-foreground/80 normal-case">
-                  ({isVi ? 'mỗi nhóm tối đa 6 người' : 'max 6 pax / group'})
+                  ({isVi ? `mỗi nhóm tối thiểu ${MIN_PER_GROUP} suất` : `min ${MIN_PER_GROUP} servings / group`})
                 </span>
               </label>
+
 
               <div className="space-y-2.5">
                 {groups.map((g, gi) => {
