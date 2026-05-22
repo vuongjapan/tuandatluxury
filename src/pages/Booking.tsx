@@ -424,6 +424,7 @@ const Booking = () => {
   // - bypassed by code, OR
   // - has meals + ≥1 valid group, OR
   // - that day's individual food total ≥ adults × min per person.
+  const MIN_PER_GROUP = 4;
   const incompleteMandatoryNights = useMemo(
     () => mandatoryNights.filter(n => {
       const s = foodByDay[n.date];
@@ -434,12 +435,20 @@ const Booking = () => {
         0,
       );
       if (dayTotal >= minRequiredIndividual) return false;
-      const groups = s?.groups || [];
-      const hasValidGroup = groups.some(g => g.comboPackageId && g.quantity > 0);
-      return !s || s.meals.length === 0 || !hasValidGroup;
+      if (!s || s.meals.length === 0) return true;
+      const groups = s.groups || [];
+      const validGroups = groups.filter(g => g.comboPackageId && g.quantity > 0);
+      if (validGroups.length === 0) return true;
+      // Each group must meet minimum servings rule
+      if (validGroups.some(g => g.quantity < MIN_PER_GROUP)) return true;
+      // Total servings across groups must cover all guests
+      const totalQty = validGroups.reduce((sum, g) => sum + g.quantity, 0);
+      if (totalQty < guestCount) return true;
+      return false;
     }),
-    [mandatoryNights, foodByDay, individualFoodsByDay, minRequiredIndividual],
+    [mandatoryNights, foodByDay, individualFoodsByDay, minRequiredIndividual, guestCount],
   );
+
   // Legacy overall flag (true when ANY mandatory night unfilled).
   // Individual food fallback still works only when there are NO mandatory nights
   // (preserves "min spend" path on non-mandatory holiday days).
