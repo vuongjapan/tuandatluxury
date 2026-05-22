@@ -154,7 +154,7 @@ const DayMealCard = ({
           id: `g-${Date.now()}-add`,
           comboPackageId: '',
           comboMenuId: '',
-          quantity: 6,
+          quantity: MIN_PER_GROUP,
         },
       ],
     });
@@ -169,9 +169,15 @@ const DayMealCard = ({
   const totalGroupSubtotal = groups.reduce((s, g) => s + groupSubtotal(g), 0);
 
   const hasAnyValidGroup = groups.some(g => g.comboPackageId && g.quantity > 0);
-  const isComplete = value.meals.length > 0 && hasAnyValidGroup;
+  const validGroups = groups.filter(g => g.comboPackageId && g.quantity > 0);
+  const totalGroupQty = validGroups.reduce((s, g) => s + g.quantity, 0);
+  const anyGroupTooSmall = validGroups.some(g => g.quantity < MIN_PER_GROUP);
+  const groupsCoverGuests = totalGroupQty >= defaultGuests;
+  const groupsValid = hasAnyValidGroup && !anyGroupTooSmall && groupsCoverGuests;
+  const isComplete = value.meals.length > 0 && groupsValid;
   const individualMet = !!individualOption?.met;
   const incomplete = mode === 'mandatory' && !isComplete && !value.bypassed && !individualMet;
+
 
   const handleApplyBypass = async () => {
     const code = bypassInput.trim();
