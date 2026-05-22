@@ -33,22 +33,18 @@ export interface DayMealSelection {
   bypassCode?: string;
 }
 
+export const MIN_PER_GROUP = 4;
+
 export const buildDefaultGroups = (adults: number): DayMealGroup[] => {
   const a = Math.max(1, adults);
-  const count = Math.max(1, Math.ceil(a / 6));
-  const groups: DayMealGroup[] = [];
-  let remaining = a;
-  for (let i = 0; i < count; i++) {
-    const size = Math.min(6, remaining);
-    groups.push({
-      id: `g-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
-      comboPackageId: '',
-      comboMenuId: '',
-      quantity: size,
-    });
-    remaining -= size;
-  }
-  return groups;
+  // Always start with a SINGLE group containing all guests.
+  // Customers can press "+ Add group" to split manually.
+  return [{
+    id: `g-${Date.now()}-0-${Math.random().toString(36).slice(2, 6)}`,
+    comboPackageId: '',
+    comboMenuId: '',
+    quantity: a,
+  }];
 };
 
 interface IndividualPerDay {
