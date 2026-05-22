@@ -33,22 +33,18 @@ export interface DayMealSelection {
   bypassCode?: string;
 }
 
+export const MIN_PER_GROUP = 4;
+
 export const buildDefaultGroups = (adults: number): DayMealGroup[] => {
   const a = Math.max(1, adults);
-  const count = Math.max(1, Math.ceil(a / 6));
-  const groups: DayMealGroup[] = [];
-  let remaining = a;
-  for (let i = 0; i < count; i++) {
-    const size = Math.min(6, remaining);
-    groups.push({
-      id: `g-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
-      comboPackageId: '',
-      comboMenuId: '',
-      quantity: size,
-    });
-    remaining -= size;
-  }
-  return groups;
+  // Always start with a SINGLE group containing all guests.
+  // Customers can press "+ Add group" to split manually.
+  return [{
+    id: `g-${Date.now()}-0-${Math.random().toString(36).slice(2, 6)}`,
+    comboPackageId: '',
+    comboMenuId: '',
+    quantity: a,
+  }];
 };
 
 interface IndividualPerDay {
@@ -158,7 +154,7 @@ const DayMealCard = ({
           id: `g-${Date.now()}-add`,
           comboPackageId: '',
           comboMenuId: '',
-          quantity: 6,
+          quantity: MIN_PER_GROUP,
         },
       ],
     });
@@ -173,9 +169,15 @@ const DayMealCard = ({
   const totalGroupSubtotal = groups.reduce((s, g) => s + groupSubtotal(g), 0);
 
   const hasAnyValidGroup = groups.some(g => g.comboPackageId && g.quantity > 0);
-  const isComplete = value.meals.length > 0 && hasAnyValidGroup;
+  const validGroups = groups.filter(g => g.comboPackageId && g.quantity > 0);
+  const totalGroupQty = validGroups.reduce((s, g) => s + g.quantity, 0);
+  const anyGroupTooSmall = validGroups.some(g => g.quantity < MIN_PER_GROUP);
+  const groupsCoverGuests = totalGroupQty >= defaultGuests;
+  const groupsValid = hasAnyValidGroup && !anyGroupTooSmall && groupsCoverGuests;
+  const isComplete = value.meals.length > 0 && groupsValid;
   const individualMet = !!individualOption?.met;
   const incomplete = mode === 'mandatory' && !isComplete && !value.bypassed && !individualMet;
+
 
   const handleApplyBypass = async () => {
     const code = bypassInput.trim();
@@ -366,9 +368,10 @@ const DayMealCard = ({
                 {isVi ? 'Combo theo nhóm bàn' : 'Combo per group'}{' '}
                 {mode === 'mandatory' && <span className="text-orange-600">*</span>}
                 <span className="text-[10px] font-normal text-muted-foreground/80 normal-case">
-                  ({isVi ? 'mỗi nhóm tối đa 6 người' : 'max 6 pax / group'})
+                  ({isVi ? `mỗi nhóm tối thiểu ${MIN_PER_GROUP} suất` : `min ${MIN_PER_GROUP} servings / group`})
                 </span>
               </label>
+
 
               <div className="space-y-2.5">
                 {groups.map((g, gi) => {
@@ -506,9 +509,19 @@ const DayMealCard = ({
                           </span>
                         )}
                       </div>
+
+                      {g.comboPackageId && g.quantity < MIN_PER_GROUP && (
+                        <p className="text-[11px] font-medium text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {isVi
+                            ? `Mỗi nhóm bàn cần tối thiểu ${MIN_PER_GROUP} suất để đặt món`
+                            : `Each group must have at least ${MIN_PER_GROUP} servings`}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
+
 
                 <button
                   type="button"
@@ -518,6 +531,15 @@ const DayMealCard = ({
                   + {isVi ? 'Thêm nhóm bàn' : 'Add a group'}
                 </button>
               </div>
+
+              {hasAnyValidGroup && !groupsCoverGuests && (
+                <p className="mt-2 text-[11px] font-medium text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  {isVi
+                    ? `Tổng số suất (${totalGroupQty}) chưa đủ cho ${defaultGuests} khách. Cần thêm ${defaultGuests - totalGroupQty} suất.`
+                    : `Total servings (${totalGroupQty}) is less than ${defaultGuests} guests. Need ${defaultGuests - totalGroupQty} more.`}
+                </p>
+              )}
 
               {totalGroupSubtotal > 0 && (
                 <div className="bg-primary/5 rounded-lg p-2.5 flex items-center justify-between text-sm mt-2.5">
@@ -532,6 +554,7 @@ const DayMealCard = ({
               )}
             </div>
           )}
+
 
           {incomplete && !individualOption?.met && (
             <p className="text-xs font-medium text-orange-700 dark:text-orange-300 flex items-center gap-1">
