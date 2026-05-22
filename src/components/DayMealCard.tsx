@@ -136,7 +136,14 @@ const DayMealCard = ({
   };
 
   const removeGroup = (idx: number) => {
+    // Allow full removal when the individual-food fallback is already met.
+    const individualMet = !!individualOption?.met;
     if (groups.length <= 1) {
+      if (individualMet) {
+        // Customer can fully drop combos and rely on individual-only food.
+        set({ groups: [] });
+        return;
+      }
       // Reset the only group instead of removing it
       const reset: DayMealGroup = {
         id: `g-${Date.now()}-r`,
