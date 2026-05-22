@@ -451,7 +451,7 @@ const DayMealCard = ({
                               </button>
                               <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); setInfoPkgId(p.id); }}
+                                onClick={(e) => { e.stopPropagation(); setInfoPkgId(p.id); setInfoGroupIdx(gi); }}
                                 className="absolute top-1 right-1 p-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
                                 aria-label="combo info"
                                 title={isVi ? 'Xem chi tiết combo' : 'View combo details'}
