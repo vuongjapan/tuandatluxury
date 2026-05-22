@@ -532,6 +532,15 @@ const DayMealCard = ({
                 </button>
               </div>
 
+              {hasAnyValidGroup && !groupsCoverGuests && (
+                <p className="mt-2 text-[11px] font-medium text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  {isVi
+                    ? `Tổng số suất (${totalGroupQty}) chưa đủ cho ${defaultGuests} khách. Cần thêm ${defaultGuests - totalGroupQty} suất.`
+                    : `Total servings (${totalGroupQty}) is less than ${defaultGuests} guests. Need ${defaultGuests - totalGroupQty} more.`}
+                </p>
+              )}
+
               {totalGroupSubtotal > 0 && (
                 <div className="bg-primary/5 rounded-lg p-2.5 flex items-center justify-between text-sm mt-2.5">
                   <span className="text-muted-foreground">
@@ -545,6 +554,7 @@ const DayMealCard = ({
               )}
             </div>
           )}
+
 
           {incomplete && !individualOption?.met && (
             <p className="text-xs font-medium text-orange-700 dark:text-orange-300 flex items-center gap-1">
