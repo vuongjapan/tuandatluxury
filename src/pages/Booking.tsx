@@ -179,7 +179,26 @@ const Booking = () => {
     setFoodByDay(prev => {
       const next: Record<string, DayMealSelection> = {};
       for (const n of stayNights) {
-        next[n.date] = prev[n.date] || { meals: [], groups: buildDefaultGroups(guestCount) };
+        const existing = prev[n.date];
+        if (!existing) {
+          next[n.date] = { meals: [], groups: buildDefaultGroups(guestCount) };
+          continue;
+        }
+        // Auto-sync Group 1 quantity to guestCount while still in "default" state
+        // (single group, no combo picked yet). Per-day independent.
+        const groups = existing.groups || [];
+        if (
+          groups.length === 1 &&
+          !groups[0].comboPackageId &&
+          groups[0].quantity !== guestCount
+        ) {
+          next[n.date] = {
+            ...existing,
+            groups: [{ ...groups[0], quantity: guestCount }],
+          };
+        } else {
+          next[n.date] = existing;
+        }
       }
       return next;
     });
