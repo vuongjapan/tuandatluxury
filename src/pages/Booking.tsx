@@ -894,7 +894,7 @@ const Booking = () => {
                     {stayNights.length > 0 && (
                       <>
                         <div className="flex items-center justify-end -mt-2">
-                          <MealHelpPopup />
+                          <MealHelpPopup minPerPerson={minIndividualPerPerson} />
                         </div>
                         <MealByDaySection
                           nights={stayNights}
