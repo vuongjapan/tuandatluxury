@@ -101,6 +101,9 @@ const DayMealCard = ({
   const [bypassInput, setBypassInput] = useState('');
   const [bypassChecking, setBypassChecking] = useState(false);
   const [bypassError, setBypassError] = useState<string | null>(null);
+  const [infoPkgId, setInfoPkgId] = useState<string | null>(null);
+  const [showIndividual, setShowIndividual] = useState(false);
+  const [showBypass, setShowBypass] = useState(false);
 
   useEffect(() => {
     if (mode === 'mandatory') setExpanded(true);
