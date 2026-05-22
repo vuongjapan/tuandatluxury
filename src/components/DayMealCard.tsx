@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   Sun, Moon, Clock, AlertTriangle, Plus, Minus, ChevronDown, CalendarDays,
-  CheckCircle2, KeyRound, Loader2, X, Users, ShoppingBag,
+  CheckCircle2, KeyRound, Loader2, X, Users, ShoppingBag, Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,6 +10,7 @@ import type { ComboPackage, ComboMenu, ComboMenuDish } from '@/hooks/useComboPac
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import ComboDetailPopup from './ComboDetailPopup';
 import type { FoodItem } from './IndividualFoodSelector';
 
 export type DayMeal = 'lunch' | 'dinner';
