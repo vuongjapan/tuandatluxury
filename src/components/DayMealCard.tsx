@@ -509,9 +509,19 @@ const DayMealCard = ({
                           </span>
                         )}
                       </div>
+
+                      {g.comboPackageId && g.quantity < MIN_PER_GROUP && (
+                        <p className="text-[11px] font-medium text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {isVi
+                            ? `Mỗi nhóm bàn cần tối thiểu ${MIN_PER_GROUP} suất để đặt món`
+                            : `Each group must have at least ${MIN_PER_GROUP} servings`}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
+
 
                 <button
                   type="button"
