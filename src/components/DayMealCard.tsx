@@ -795,6 +795,21 @@ const DayMealCard = ({
           </button>
         </div>
       )}
+
+      <ComboDetailPopup
+        open={!!infoPkgId}
+        onClose={() => { setInfoPkgId(null); setInfoGroupIdx(null); }}
+        pkg={infoPkgId ? packages.find(p => p.id === infoPkgId) || null : null}
+        menus={infoPkgId ? getMenusByPackage(infoPkgId) : []}
+        getDishesByMenu={getDishesByMenu}
+        onSelect={(pkgId) => {
+          const targetIdx = infoGroupIdx ?? 0;
+          const firstMenu = getMenusByPackage(pkgId)[0];
+          if (groups[targetIdx]) {
+            updateGroup(targetIdx, { comboPackageId: pkgId, comboMenuId: firstMenu?.id || '' });
+          }
+        }}
+      />
     </div>
   );
 };
