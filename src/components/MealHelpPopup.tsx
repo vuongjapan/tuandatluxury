@@ -113,8 +113,8 @@ const MealHelpPopup = ({ minPerPerson = 300000, className }: Props) => {
                 </div>
                 <p className="text-muted-foreground leading-relaxed pl-6">
                   {isVi
-                    ? 'Đoàn từ 7 người tự động chia nhóm (mỗi nhóm tối đa 6 người). Mỗi nhóm có thể chọn combo + thực đơn riêng.'
-                    : 'Groups of 7+ are auto-split into tables of up to 6. Each group can pick its own combo & menu.'}
+                    ? `Bạn có thể chia đoàn thành nhiều nhóm bàn (mỗi nhóm tối thiểu 4 suất). Mỗi nhóm có thể chọn combo + thực đơn riêng. Tổng số suất các nhóm cần phủ đủ số khách.`
+                    : `You can split into multiple table groups (min 4 servings each). Each group picks its own combo & menu. Total servings must cover all guests.`}
                 </p>
               </section>
 
