@@ -416,35 +416,48 @@ const DayMealCard = ({
                         {packages.map(p => {
                           const active = g.comboPackageId === p.id;
                           return (
-                            <button
+                            <div
                               key={p.id}
-                              type="button"
-                              onClick={() => {
-                                const firstMenu = getMenusByPackage(p.id)[0];
-                                updateGroup(gi, {
-                                  comboPackageId: p.id,
-                                  comboMenuId: firstMenu?.id || '',
-                                });
-                              }}
                               className={cn(
-                                'rounded-md border p-1.5 text-left transition-all',
+                                'relative rounded-md border transition-all',
                                 active
                                   ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
                                   : 'border-border hover:border-primary/50 bg-card',
                               )}
                             >
-                              <div
-                                className={cn(
-                                  'text-[11px] font-semibold leading-tight',
-                                  active ? 'text-primary' : 'text-foreground',
-                                )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const firstMenu = getMenusByPackage(p.id)[0];
+                                  updateGroup(gi, {
+                                    comboPackageId: p.id,
+                                    comboMenuId: firstMenu?.id || '',
+                                  });
+                                }}
+                                className="w-full p-1.5 pr-6 text-left"
                               >
-                                {p.name}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground tabular-nums">
-                                {p.price_per_person.toLocaleString('vi-VN')}đ
-                              </div>
-                            </button>
+                                <div
+                                  className={cn(
+                                    'text-[11px] font-semibold leading-tight',
+                                    active ? 'text-primary' : 'text-foreground',
+                                  )}
+                                >
+                                  {p.name}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground tabular-nums">
+                                  {p.price_per_person.toLocaleString('vi-VN')}đ
+                                </div>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setInfoPkgId(p.id); }}
+                                className="absolute top-1 right-1 p-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
+                                aria-label="combo info"
+                                title={isVi ? 'Xem chi tiết combo' : 'View combo details'}
+                              >
+                                <Info className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           );
                         })}
                       </div>
@@ -469,13 +482,17 @@ const DayMealCard = ({
                             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                           </div>
                           {dishes.length > 0 && (
-                            <p className="mt-1 text-[10px] text-muted-foreground/80 leading-relaxed line-clamp-2">
-                              {dishes
-                                .slice(0, 5)
-                                .map(d => (isVi ? d.name_vi : d.name_en || d.name_vi))
-                                .join(' · ')}
-                              {dishes.length > 5 ? '…' : ''}
-                            </p>
+                            <ul className="mt-1.5 space-y-0.5">
+                              {dishes.map(d => (
+                                <li
+                                  key={d.id}
+                                  className="text-[11px] text-muted-foreground/90 leading-snug flex items-start gap-1.5"
+                                >
+                                  <span className="text-primary/70 mt-0.5">•</span>
+                                  <span>{isVi ? d.name_vi : d.name_en || d.name_vi}</span>
+                                </li>
+                              ))}
+                            </ul>
                           )}
                         </div>
                       )}
