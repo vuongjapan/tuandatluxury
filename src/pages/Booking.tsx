@@ -722,7 +722,7 @@ const Booking = () => {
           combos: combosPayload.length > 0 ? combosPayload : undefined,
           combo_total: effectiveComboTotal > 0 ? effectiveComboTotal : undefined,
           combo_notes: mergedComboNotes || undefined,
-          food_items: foodItemsPayload.length > 0 ? foodItemsPayload : undefined,
+          food_items: allFoodItemsPayload.length > 0 ? allFoodItemsPayload : undefined,
           individual_food_total: effectiveIndividualFoodTotal > 0 ? effectiveIndividualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
