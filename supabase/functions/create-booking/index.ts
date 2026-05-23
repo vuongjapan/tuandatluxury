@@ -142,6 +142,7 @@ serve(async (req) => {
         combo_notes: combo_notes || null,
         meal_time: meal_time || null,
         meal_time_label: mtLabel,
+        admin_overrides: admin_overrides || null,
       })
       .select()
       .single();
