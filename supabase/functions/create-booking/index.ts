@@ -86,7 +86,9 @@ serve(async (req) => {
 
     const bookingCode = `${prefix}${String(nextNumber).padStart(5, '0')}`;
     const totalPrice = total_price_vnd || 0;
-    const depositAmount = Math.round(totalPrice * 0.5);
+    const depositAmount = (typeof deposit_amount_vnd === 'number' && deposit_amount_vnd >= 0)
+      ? deposit_amount_vnd
+      : Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
     const sepayQrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(bookingCode)}`;
 
