@@ -409,9 +409,90 @@ const Booking = () => {
   const discountAmount = memberDiscountAmount + discountCodeAmount + allAutoDiscounts;
   const computedTotal = Math.max(0, originalPrice - discountAmount);
 
-  // Admin manual price override (only when admin is logged in)
-  const [adminOverridePrice, setAdminOverridePrice] = useState<number | null>(null);
-  const totalPrice = isAdmin && adminOverridePrice !== null && adminOverridePrice >= 0 ? adminOverridePrice : computedTotal;
+  // === ADMIN OVERRIDES (single source of truth) ===
+  const [adminOverrides, setAdminOverrides] = useState<AdminOverrides>({});
+
+  // Recompute room totals applying admin per-room nightly override
+  const roomTotalsWithOverride = useMemo(() => {
+    if (!isAdmin || !adminOverrides.room_prices) return roomTotals;
+    return roomTotals.map(rt => {
+      const ov = adminOverrides.room_prices?.[rt.roomId];
+      if (ov == null) return rt;
+      const totalPerRoom = ov * nightCount;
+      return {
+        ...rt,
+        totalPerRoom,
+        subtotal: totalPerRoom * rt.quantity,
+        nightlyPrices: rt.nightlyPrices.map(np => ({ ...np, price: ov })),
+      };
+    });
+  }, [roomTotals, adminOverrides.room_prices, nightCount, isAdmin]);
+  const roomTotalAdmin = useMemo(
+    () => roomTotalsWithOverride.reduce((s, r) => s + r.subtotal, 0),
+    [roomTotalsWithOverride],
+  );
+
+  // Combo subtotal with admin price override per package
+  const comboTotalAdmin = useMemo(() => {
+    if (!isAdmin || (!adminOverrides.combo_prices && !adminOverrides.menu_dishes && !adminOverrides.menu_names && !adminOverrides.combo_names)) return comboTotal;
+    return foodByDayLines.reduce((s, l) => {
+      const ov = adminOverrides.combo_prices?.[l.pkg.id];
+      const unit = ov ?? l.pkg.price_per_person;
+      return s + unit * l.quantity;
+    }, 0);
+  }, [comboTotal, foodByDayLines, adminOverrides, isAdmin]);
+
+  // Individual food subtotal with admin per-item override
+  const individualFoodTotalAdmin = useMemo(() => {
+    if (!isAdmin || !adminOverrides.food_item_prices) return individualFoodTotal;
+    return allIndividualFoods.reduce((sum, f) => {
+      if (f.priceType === 'negotiable') return sum;
+      const baseId = f.id.includes('__') ? f.id.split('__')[0] : f.id;
+      const ov = adminOverrides.food_item_prices?.[baseId];
+      const unit = ov ?? f.price;
+      return sum + unit * f.quantity;
+    }, 0);
+  }, [individualFoodTotal, allIndividualFoods, adminOverrides.food_item_prices, isAdmin]);
+
+  // Admin-added custom food lines
+  const adminFoodLinesTotal = useMemo(() => {
+    if (!isAdmin) return 0;
+    return (adminOverrides.food_lines || []).reduce((s, l) => s + (l.price || 0) * (l.qty || 0), 0);
+  }, [adminOverrides.food_lines, isAdmin]);
+
+  // Effective values (admin override aware)
+  const effectiveRoomTotal = isAdmin ? roomTotalAdmin : roomTotal;
+  const effectiveComboTotal = isAdmin ? comboTotalAdmin : comboTotal;
+  const effectiveIndividualFoodTotal = isAdmin ? individualFoodTotalAdmin : individualFoodTotal;
+  const effectiveOriginalPrice = effectiveRoomTotal + extraPersonSurcharge + effectiveComboTotal + effectiveIndividualFoodTotal + adminFoodLinesTotal;
+
+  // Admin discount (replaces auto when active)
+  const adminDiscountAmount = useMemo(() => {
+    if (!isAdmin || !adminOverrides.discount || !adminOverrides.discount.value) return 0;
+    const base = effectiveOriginalPrice;
+    if (adminOverrides.discount.type === 'percent') {
+      return Math.min(base, Math.round(base * adminOverrides.discount.value / 100));
+    }
+    return Math.min(base, adminOverrides.discount.value);
+  }, [isAdmin, adminOverrides.discount, effectiveOriginalPrice]);
+
+  const useAdminDiscount = isAdmin && adminDiscountAmount > 0;
+  const effectiveDiscountAmount = useAdminDiscount ? adminDiscountAmount : discountAmount;
+  const computedEffectiveTotal = Math.max(0, effectiveOriginalPrice - effectiveDiscountAmount);
+
+  // Apply total override last
+  const totalPrice = isAdmin && adminOverrides.total_override != null && adminOverrides.total_override >= 0
+    ? adminOverrides.total_override
+    : computedEffectiveTotal;
+
+  // Deposit (default 50%, admin override)
+  const depositAmount = useMemo(() => {
+    if (isAdmin && adminOverrides.deposit && adminOverrides.deposit.value != null) {
+      if (adminOverrides.deposit.type === 'fixed') return Math.max(0, adminOverrides.deposit.value);
+      return Math.round(totalPrice * (adminOverrides.deposit.value / 100));
+    }
+    return Math.round(totalPrice * 0.5);
+  }, [isAdmin, adminOverrides.deposit, totalPrice]);
 
   const appliedPromotions = useMemo(() => {
     const list: { name: string; amount: number; badge?: string }[] = [];
