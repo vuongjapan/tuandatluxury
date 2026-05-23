@@ -1155,6 +1155,7 @@ const Booking = () => {
                 {/* ===== STEP 3: Guest Info (was Step 4) ===== */}
                 {currentStep === 3 && (
                   <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(3)}
                     <h2 className="font-display text-2xl font-bold text-center">👤 {pick('Thông tin khách hàng', 'Guest Information')}</h2>
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
