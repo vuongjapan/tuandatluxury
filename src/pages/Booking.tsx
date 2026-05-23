@@ -1055,6 +1055,7 @@ const Booking = () => {
                 {/* ===== STEP 2: Services ===== */}
                 {currentStep === 2 && (
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(2)}
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {pick('Thêm dịch vụ', 'Add Services')}</h2>
 
                     {/* Per-night overview: which nights are mandatory vs optional */}
