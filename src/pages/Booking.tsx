@@ -665,21 +665,42 @@ const Booking = () => {
         nightly_prices: rt.nightlyPrices,
       }));
 
+      // Apply admin guest overrides to outgoing fields
+      const ov = adminOverrides;
+      const ovGuest = ov.guest || {};
+      const finalName = ovGuest.name || name;
+      const finalPhone = ovGuest.phone || phone;
+      const finalEmail = ovGuest.email || email;
+      const finalCheckIn = ovGuest.check_in || format(checkIn!, 'yyyy-MM-dd');
+      const finalCheckOut = ovGuest.check_out || format(checkOut!, 'yyyy-MM-dd');
+      const finalAdults = ovGuest.adults != null ? ovGuest.adults : (parseInt(adults) || 0);
+      const finalChildren = ovGuest.children != null ? ovGuest.children : (parseInt(children) || 0);
+      const finalGuests = finalAdults + finalChildren > 0 ? finalAdults + finalChildren : guestCount;
+      const hasOverrides = !!(isAdmin && (
+        ov.total_override != null || ov.discount?.value || ov.deposit?.value != null ||
+        Object.keys(ov.room_prices || {}).length || Object.keys(ov.combo_prices || {}).length ||
+        Object.keys(ov.combo_names || {}).length || Object.keys(ov.menu_names || {}).length ||
+        Object.keys(ov.menu_dishes || {}).length || Object.keys(ov.food_item_prices || {}).length ||
+        (ov.food_lines || []).length || (ov.guest && Object.keys(ov.guest).length)
+      ));
+      const adminOverridesPayload = hasOverrides ? { ...ov, edited_by_staff: true } : null;
+
       const resp = await fetch(BOOKING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({
-          room_id: primaryRoomId, guest_name: name, guest_email: email, guest_phone: phone,
+          room_id: primaryRoomId, guest_name: finalName, guest_email: finalEmail, guest_phone: finalPhone,
           guest_notes: [notes, specialRequests].filter(Boolean).join('\n---\n'),
-          check_in: format(checkIn!, 'yyyy-MM-dd'), check_out: format(checkOut!, 'yyyy-MM-dd'),
-          guests_count: guestCount, adults_count: parseInt(adults) || 0, children_count: parseInt(children) || 0,
-          total_price_vnd: totalPrice, original_price_vnd: originalPrice,
-          room_subtotal: roomTotal, room_quantity: totalRoomQuantity, language,
+          check_in: finalCheckIn, check_out: finalCheckOut,
+          guests_count: finalGuests, adults_count: finalAdults, children_count: finalChildren,
+          total_price_vnd: totalPrice, original_price_vnd: effectiveOriginalPrice,
+          deposit_amount_vnd: depositAmount,
+          room_subtotal: effectiveRoomTotal, room_quantity: totalRoomQuantity, language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
-          combo_total: comboTotal > 0 ? comboTotal : undefined,
+          combo_total: effectiveComboTotal > 0 ? effectiveComboTotal : undefined,
           combo_notes: mergedComboNotes || undefined,
           food_items: foodItemsPayload.length > 0 ? foodItemsPayload : undefined,
-          individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
+          individual_food_total: effectiveIndividualFoodTotal > 0 ? effectiveIndividualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
           promotion_name: appliedPromotions.map(p => p.name).join(' | ') || undefined,
@@ -698,6 +719,7 @@ const Booking = () => {
           room_details: roomDetails, room_breakdown: roomBreakdown,
           meal_time: mealTime,
           meal_multiplier: mealMultiplier,
+          admin_overrides: adminOverridesPayload,
         }),
       });
       const data = await resp.json();
