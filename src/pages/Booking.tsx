@@ -629,31 +629,54 @@ const Booking = () => {
     setSubmitting(true);
     try {
       // Flatten per-day selections: 1 line per day × meal (lunch/dinner)
-      const combosPayload = foodByDayLines.map(l => ({
-        combo_package_id: l.pkg.id,
-        combo_menu_id: l.menu?.id,
-        combo_package_name: l.pkg.name,
-        combo_menu_name: l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : '',
-        combo_name: l.menu
-          ? `${l.pkg.name} – ${language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)}`
-          : l.pkg.name,
-        price_vnd: l.pkg.price_per_person,
-        quantity: l.quantity,
-        meal_time: l.meal,
-        meal_multiplier: 1,
-        date: l.date,
-        day_label: l.dayLabel,
-        formatted_date: l.formattedDate,
-      }));
+      const combosPayload = foodByDayLines.map(l => {
+        const ovPrice = adminOverrides.combo_prices?.[l.pkg.id];
+        const ovPkgName = adminOverrides.combo_names?.[l.pkg.id];
+        const ovMenuName = l.menu ? adminOverrides.menu_names?.[l.menu.id] : undefined;
+        const ovDishes = l.menu ? adminOverrides.menu_dishes?.[l.menu.id] : undefined;
+        const pkgName = ovPkgName || l.pkg.name;
+        const menuName = ovMenuName || (l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : '');
+        return {
+          combo_package_id: l.pkg.id,
+          combo_menu_id: l.menu?.id,
+          combo_package_name: pkgName,
+          combo_menu_name: menuName,
+          combo_name: menuName ? `${pkgName} – ${menuName}` : pkgName,
+          price_vnd: ovPrice ?? l.pkg.price_per_person,
+          quantity: l.quantity,
+          meal_time: l.meal,
+          meal_multiplier: 1,
+          date: l.date,
+          day_label: l.dayLabel,
+          formatted_date: l.formattedDate,
+          dishes_override: ovDishes,
+        };
+      });
       const foodItemsPayload = Object.entries(individualFoodsByDay).flatMap(([date, items]) =>
-        items.map(f => ({
-          menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
-          name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-          price_vnd: f.price, quantity: f.quantity,
-          meal_time: 'dinner', meal_multiplier: 1,
-          date,
-        }))
+        items.map(f => {
+          const baseId = f.id.includes('__') ? f.id.split('__')[0] : f.id;
+          const ovPrice = adminOverrides.food_item_prices?.[baseId];
+          return {
+            menu_item_id: baseId,
+            name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+            price_vnd: ovPrice ?? f.price, quantity: f.quantity,
+            meal_time: 'dinner', meal_multiplier: 1,
+            date,
+          };
+        })
       );
+      // Admin extra custom food lines
+      const adminFoodLinesPayload = isAdmin ? (adminOverrides.food_lines || [])
+        .filter(l => l.name && l.qty > 0)
+        .map(l => ({
+          menu_item_id: null,
+          name: l.name,
+          price_vnd: l.price,
+          quantity: l.qty,
+          meal_time: l.meal,
+          meal_multiplier: 1,
+        })) : [];
+      const allFoodItemsPayload = [...foodItemsPayload, ...adminFoodLinesPayload];
       const mergedComboNotes = comboNotes || '';
       const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
