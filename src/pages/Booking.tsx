@@ -1311,26 +1311,21 @@ const Booking = () => {
                           <span className="font-bold">{pick('Tổng thanh toán', 'Total')}</span>
                           <span className="font-bold text-primary">{formatPrice(totalPrice)}</span>
                         </div>
-                        {isAdmin && (
-                          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 rounded-lg p-3 space-y-2">
-                            <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                              🛡️ Admin: Ghi đè giá tổng (giá web: {formatPrice(computedTotal)})
-                            </div>
-                            <div className="flex gap-2">
-                              <Input type="number" min={0} placeholder="Nhập giá tuỳ chỉnh (VNĐ)"
-                                value={adminOverridePrice ?? ''}
-                                onChange={(e) => setAdminOverridePrice(e.target.value === '' ? null : Math.max(0, parseInt(e.target.value) || 0))}
-                                className="h-8 text-sm" />
-                              {adminOverridePrice !== null && (
-                                <Button size="sm" variant="outline" className="h-8" onClick={() => setAdminOverridePrice(null)}>Bỏ</Button>
-                              )}
-                            </div>
+                        {isAdmin && adminOverrides.discount && adminOverrides.discount.value > 0 && (
+                          <div className="flex justify-between text-amber-700 dark:text-amber-400">
+                            <span>🛡️ Giảm giá Admin{adminOverrides.discount.reason ? ` (${adminOverrides.discount.reason})` : ''}</span>
+                            <span>-{formatPrice(adminDiscountAmount)}</span>
+                          </div>
+                        )}
+                        {isAdmin && adminOverrides.total_override != null && (
+                          <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-100/60 dark:bg-amber-950/40 rounded-lg px-2 py-1">
+                            ⚠ Giá do Admin chỉnh: {formatPrice(adminOverrides.total_override)} (tự động: {formatPrice(computedEffectiveTotal)})
                           </div>
                         )}
                         {totalPrice > 0 && (
                           <div className="flex justify-between text-sm bg-primary/5 rounded-lg px-3 py-2">
-                            <span>💳 {pick('Đặt cọc 50%', 'Deposit 50%')}</span>
-                            <span className="font-bold text-primary">{formatPrice(Math.round(totalPrice * 0.5))}</span>
+                            <span>💳 {pick('Đặt cọc', 'Deposit')} {adminOverrides.deposit?.type === 'fixed' ? '(cố định)' : `${adminOverrides.deposit?.value ?? 50}%`}</span>
+                            <span className="font-bold text-primary">{formatPrice(depositAmount)}</span>
                           </div>
                         )}
                       </div>
