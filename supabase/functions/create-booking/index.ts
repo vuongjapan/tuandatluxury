@@ -36,7 +36,7 @@ serve(async (req) => {
     const { 
       room_id, guest_name, guest_email, guest_phone, guest_notes, 
       check_in, check_out, guests_count, adults_count, children_count,
-      total_price_vnd, room_quantity, 
+      total_price_vnd, room_quantity, deposit_amount_vnd,
       language, combos, combo_total, combo_notes,
       food_items, individual_food_total,
       extra_person_count, extra_person_surcharge,
@@ -46,6 +46,7 @@ serve(async (req) => {
       original_price_vnd, discount_code, discount_code_amount, discount_code_type, discount_code_value,
       room_details, room_breakdown, room_subtotal,
       meal_time, meal_multiplier,
+      admin_overrides,
     } = body;
 
     // Compose guest_notes with adults/children breakdown so it surfaces in admin + email.
