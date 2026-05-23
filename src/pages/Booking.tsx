@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { vi, enUS, ja, zhCN } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
+import AdminOverridePanel, { type AdminOverrides } from '@/components/admin/AdminOverridePanel';
 
 const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
 
