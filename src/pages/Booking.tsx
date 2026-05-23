@@ -886,6 +886,7 @@ const Booking = () => {
                 {/* ===== STEP 1: Date + Guests + Rooms ===== */}
                 {currentStep === 1 && (
                   <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(1)}
                     {/* Search bar */}
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <h2 className="font-display text-xl font-semibold flex items-center gap-2">📅 {pick('Chọn ngày & số khách', 'Select Dates & Guests')}</h2>
