@@ -1191,6 +1191,7 @@ const Booking = () => {
                 {/* ===== STEP 4: Confirm & Pay (was Step 5) ===== */}
                 {currentStep === 4 && (
                   <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(4)}
                     <h2 className="font-display text-2xl font-bold text-center">✅ {pick('Xác nhận đặt phòng', 'Confirm Booking')}</h2>
 
                     {/* Room summary */}
