@@ -36,7 +36,7 @@ serve(async (req) => {
     const { 
       room_id, guest_name, guest_email, guest_phone, guest_notes, 
       check_in, check_out, guests_count, adults_count, children_count,
-      total_price_vnd, room_quantity, 
+      total_price_vnd, room_quantity, deposit_amount_vnd,
       language, combos, combo_total, combo_notes,
       food_items, individual_food_total,
       extra_person_count, extra_person_surcharge,
@@ -46,6 +46,7 @@ serve(async (req) => {
       original_price_vnd, discount_code, discount_code_amount, discount_code_type, discount_code_value,
       room_details, room_breakdown, room_subtotal,
       meal_time, meal_multiplier,
+      admin_overrides,
     } = body;
 
     // Compose guest_notes with adults/children breakdown so it surfaces in admin + email.
@@ -85,7 +86,9 @@ serve(async (req) => {
 
     const bookingCode = `${prefix}${String(nextNumber).padStart(5, '0')}`;
     const totalPrice = total_price_vnd || 0;
-    const depositAmount = Math.round(totalPrice * 0.5);
+    const depositAmount = (typeof deposit_amount_vnd === 'number' && deposit_amount_vnd >= 0)
+      ? deposit_amount_vnd
+      : Math.round(totalPrice * 0.5);
     const remainingAmount = totalPrice - depositAmount;
     const sepayQrUrl = `https://qr.sepay.vn/img?acc=${VA_ACCOUNT}&bank=${VA_BANK}&amount=${depositAmount}&des=${encodeURIComponent(bookingCode)}`;
 
@@ -139,6 +142,7 @@ serve(async (req) => {
         combo_notes: combo_notes || null,
         meal_time: meal_time || null,
         meal_time_label: mtLabel,
+        admin_overrides: admin_overrides || null,
       })
       .select()
       .single();

@@ -385,6 +385,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          admin_overrides: Json | null
           booking_code: string
           check_in: string
           check_out: string
@@ -444,6 +445,7 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          admin_overrides?: Json | null
           booking_code: string
           check_in: string
           check_out: string
@@ -503,6 +505,7 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          admin_overrides?: Json | null
           booking_code?: string
           check_in?: string
           check_out?: string

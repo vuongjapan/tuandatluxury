@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { vi, enUS, ja, zhCN } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
+import AdminOverridePanel, { type AdminOverrides } from '@/components/admin/AdminOverridePanel';
 
 const BOOKING_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
 
@@ -408,9 +409,90 @@ const Booking = () => {
   const discountAmount = memberDiscountAmount + discountCodeAmount + allAutoDiscounts;
   const computedTotal = Math.max(0, originalPrice - discountAmount);
 
-  // Admin manual price override (only when admin is logged in)
-  const [adminOverridePrice, setAdminOverridePrice] = useState<number | null>(null);
-  const totalPrice = isAdmin && adminOverridePrice !== null && adminOverridePrice >= 0 ? adminOverridePrice : computedTotal;
+  // === ADMIN OVERRIDES (single source of truth) ===
+  const [adminOverrides, setAdminOverrides] = useState<AdminOverrides>({});
+
+  // Recompute room totals applying admin per-room nightly override
+  const roomTotalsWithOverride = useMemo(() => {
+    if (!isAdmin || !adminOverrides.room_prices) return roomTotals;
+    return roomTotals.map(rt => {
+      const ov = adminOverrides.room_prices?.[rt.roomId];
+      if (ov == null) return rt;
+      const totalPerRoom = ov * nightCount;
+      return {
+        ...rt,
+        totalPerRoom,
+        subtotal: totalPerRoom * rt.quantity,
+        nightlyPrices: rt.nightlyPrices.map(np => ({ ...np, price: ov })),
+      };
+    });
+  }, [roomTotals, adminOverrides.room_prices, nightCount, isAdmin]);
+  const roomTotalAdmin = useMemo(
+    () => roomTotalsWithOverride.reduce((s, r) => s + r.subtotal, 0),
+    [roomTotalsWithOverride],
+  );
+
+  // Combo subtotal with admin price override per package
+  const comboTotalAdmin = useMemo(() => {
+    if (!isAdmin || (!adminOverrides.combo_prices && !adminOverrides.menu_dishes && !adminOverrides.menu_names && !adminOverrides.combo_names)) return comboTotal;
+    return foodByDayLines.reduce((s, l) => {
+      const ov = adminOverrides.combo_prices?.[l.pkg.id];
+      const unit = ov ?? l.pkg.price_per_person;
+      return s + unit * l.quantity;
+    }, 0);
+  }, [comboTotal, foodByDayLines, adminOverrides, isAdmin]);
+
+  // Individual food subtotal with admin per-item override
+  const individualFoodTotalAdmin = useMemo(() => {
+    if (!isAdmin || !adminOverrides.food_item_prices) return individualFoodTotal;
+    return allIndividualFoods.reduce((sum, f) => {
+      if (f.priceType === 'negotiable') return sum;
+      const baseId = f.id.includes('__') ? f.id.split('__')[0] : f.id;
+      const ov = adminOverrides.food_item_prices?.[baseId];
+      const unit = ov ?? f.price;
+      return sum + unit * f.quantity;
+    }, 0);
+  }, [individualFoodTotal, allIndividualFoods, adminOverrides.food_item_prices, isAdmin]);
+
+  // Admin-added custom food lines
+  const adminFoodLinesTotal = useMemo(() => {
+    if (!isAdmin) return 0;
+    return (adminOverrides.food_lines || []).reduce((s, l) => s + (l.price || 0) * (l.qty || 0), 0);
+  }, [adminOverrides.food_lines, isAdmin]);
+
+  // Effective values (admin override aware)
+  const effectiveRoomTotal = isAdmin ? roomTotalAdmin : roomTotal;
+  const effectiveComboTotal = isAdmin ? comboTotalAdmin : comboTotal;
+  const effectiveIndividualFoodTotal = isAdmin ? individualFoodTotalAdmin : individualFoodTotal;
+  const effectiveOriginalPrice = effectiveRoomTotal + extraPersonSurcharge + effectiveComboTotal + effectiveIndividualFoodTotal + adminFoodLinesTotal;
+
+  // Admin discount (replaces auto when active)
+  const adminDiscountAmount = useMemo(() => {
+    if (!isAdmin || !adminOverrides.discount || !adminOverrides.discount.value) return 0;
+    const base = effectiveOriginalPrice;
+    if (adminOverrides.discount.type === 'percent') {
+      return Math.min(base, Math.round(base * adminOverrides.discount.value / 100));
+    }
+    return Math.min(base, adminOverrides.discount.value);
+  }, [isAdmin, adminOverrides.discount, effectiveOriginalPrice]);
+
+  const useAdminDiscount = isAdmin && adminDiscountAmount > 0;
+  const effectiveDiscountAmount = useAdminDiscount ? adminDiscountAmount : discountAmount;
+  const computedEffectiveTotal = Math.max(0, effectiveOriginalPrice - effectiveDiscountAmount);
+
+  // Apply total override last
+  const totalPrice = isAdmin && adminOverrides.total_override != null && adminOverrides.total_override >= 0
+    ? adminOverrides.total_override
+    : computedEffectiveTotal;
+
+  // Deposit (default 50%, admin override)
+  const depositAmount = useMemo(() => {
+    if (isAdmin && adminOverrides.deposit && adminOverrides.deposit.value != null) {
+      if (adminOverrides.deposit.type === 'fixed') return Math.max(0, adminOverrides.deposit.value);
+      return Math.round(totalPrice * (adminOverrides.deposit.value / 100));
+    }
+    return Math.round(totalPrice * 0.5);
+  }, [isAdmin, adminOverrides.deposit, totalPrice]);
 
   const appliedPromotions = useMemo(() => {
     const list: { name: string; amount: number; badge?: string }[] = [];
@@ -547,31 +629,54 @@ const Booking = () => {
     setSubmitting(true);
     try {
       // Flatten per-day selections: 1 line per day × meal (lunch/dinner)
-      const combosPayload = foodByDayLines.map(l => ({
-        combo_package_id: l.pkg.id,
-        combo_menu_id: l.menu?.id,
-        combo_package_name: l.pkg.name,
-        combo_menu_name: l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : '',
-        combo_name: l.menu
-          ? `${l.pkg.name} – ${language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)}`
-          : l.pkg.name,
-        price_vnd: l.pkg.price_per_person,
-        quantity: l.quantity,
-        meal_time: l.meal,
-        meal_multiplier: 1,
-        date: l.date,
-        day_label: l.dayLabel,
-        formatted_date: l.formattedDate,
-      }));
+      const combosPayload = foodByDayLines.map(l => {
+        const ovPrice = adminOverrides.combo_prices?.[l.pkg.id];
+        const ovPkgName = adminOverrides.combo_names?.[l.pkg.id];
+        const ovMenuName = l.menu ? adminOverrides.menu_names?.[l.menu.id] : undefined;
+        const ovDishes = l.menu ? adminOverrides.menu_dishes?.[l.menu.id] : undefined;
+        const pkgName = ovPkgName || l.pkg.name;
+        const menuName = ovMenuName || (l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : '');
+        return {
+          combo_package_id: l.pkg.id,
+          combo_menu_id: l.menu?.id,
+          combo_package_name: pkgName,
+          combo_menu_name: menuName,
+          combo_name: menuName ? `${pkgName} – ${menuName}` : pkgName,
+          price_vnd: ovPrice ?? l.pkg.price_per_person,
+          quantity: l.quantity,
+          meal_time: l.meal,
+          meal_multiplier: 1,
+          date: l.date,
+          day_label: l.dayLabel,
+          formatted_date: l.formattedDate,
+          dishes_override: ovDishes,
+        };
+      });
       const foodItemsPayload = Object.entries(individualFoodsByDay).flatMap(([date, items]) =>
-        items.map(f => ({
-          menu_item_id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
-          name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
-          price_vnd: f.price, quantity: f.quantity,
-          meal_time: 'dinner', meal_multiplier: 1,
-          date,
-        }))
+        items.map(f => {
+          const baseId = f.id.includes('__') ? f.id.split('__')[0] : f.id;
+          const ovPrice = adminOverrides.food_item_prices?.[baseId];
+          return {
+            menu_item_id: baseId,
+            name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+            price_vnd: ovPrice ?? f.price, quantity: f.quantity,
+            meal_time: 'dinner', meal_multiplier: 1,
+            date,
+          };
+        })
       );
+      // Admin extra custom food lines
+      const adminFoodLinesPayload = isAdmin ? (adminOverrides.food_lines || [])
+        .filter(l => l.name && l.qty > 0)
+        .map(l => ({
+          menu_item_id: null,
+          name: l.name,
+          price_vnd: l.price,
+          quantity: l.qty,
+          meal_time: l.meal,
+          meal_multiplier: 1,
+        })) : [];
+      const allFoodItemsPayload = [...foodItemsPayload, ...adminFoodLinesPayload];
       const mergedComboNotes = comboNotes || '';
       const serviceLabels = specialServices.map(id => availableServices.find(s => s.id === id)?.label || id).join(', ');
       const roomDetails = selectedRooms.map(sr => ({ room_id: sr.roomId, room_name: sr.room!.name[language], quantity: sr.quantity }));
@@ -583,21 +688,42 @@ const Booking = () => {
         nightly_prices: rt.nightlyPrices,
       }));
 
+      // Apply admin guest overrides to outgoing fields
+      const ov = adminOverrides;
+      const ovGuest = ov.guest || {};
+      const finalName = ovGuest.name || name;
+      const finalPhone = ovGuest.phone || phone;
+      const finalEmail = ovGuest.email || email;
+      const finalCheckIn = ovGuest.check_in || format(checkIn!, 'yyyy-MM-dd');
+      const finalCheckOut = ovGuest.check_out || format(checkOut!, 'yyyy-MM-dd');
+      const finalAdults = ovGuest.adults != null ? ovGuest.adults : (parseInt(adults) || 0);
+      const finalChildren = ovGuest.children != null ? ovGuest.children : (parseInt(children) || 0);
+      const finalGuests = finalAdults + finalChildren > 0 ? finalAdults + finalChildren : guestCount;
+      const hasOverrides = !!(isAdmin && (
+        ov.total_override != null || ov.discount?.value || ov.deposit?.value != null ||
+        Object.keys(ov.room_prices || {}).length || Object.keys(ov.combo_prices || {}).length ||
+        Object.keys(ov.combo_names || {}).length || Object.keys(ov.menu_names || {}).length ||
+        Object.keys(ov.menu_dishes || {}).length || Object.keys(ov.food_item_prices || {}).length ||
+        (ov.food_lines || []).length || (ov.guest && Object.keys(ov.guest).length)
+      ));
+      const adminOverridesPayload = hasOverrides ? { ...ov, edited_by_staff: true } : null;
+
       const resp = await fetch(BOOKING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({
-          room_id: primaryRoomId, guest_name: name, guest_email: email, guest_phone: phone,
+          room_id: primaryRoomId, guest_name: finalName, guest_email: finalEmail, guest_phone: finalPhone,
           guest_notes: [notes, specialRequests].filter(Boolean).join('\n---\n'),
-          check_in: format(checkIn!, 'yyyy-MM-dd'), check_out: format(checkOut!, 'yyyy-MM-dd'),
-          guests_count: guestCount, adults_count: parseInt(adults) || 0, children_count: parseInt(children) || 0,
-          total_price_vnd: totalPrice, original_price_vnd: originalPrice,
-          room_subtotal: roomTotal, room_quantity: totalRoomQuantity, language,
+          check_in: finalCheckIn, check_out: finalCheckOut,
+          guests_count: finalGuests, adults_count: finalAdults, children_count: finalChildren,
+          total_price_vnd: totalPrice, original_price_vnd: effectiveOriginalPrice,
+          deposit_amount_vnd: depositAmount,
+          room_subtotal: effectiveRoomTotal, room_quantity: totalRoomQuantity, language,
           combos: combosPayload.length > 0 ? combosPayload : undefined,
-          combo_total: comboTotal > 0 ? comboTotal : undefined,
+          combo_total: effectiveComboTotal > 0 ? effectiveComboTotal : undefined,
           combo_notes: mergedComboNotes || undefined,
-          food_items: foodItemsPayload.length > 0 ? foodItemsPayload : undefined,
-          individual_food_total: individualFoodTotal > 0 ? individualFoodTotal : undefined,
+          food_items: allFoodItemsPayload.length > 0 ? allFoodItemsPayload : undefined,
+          individual_food_total: effectiveIndividualFoodTotal > 0 ? effectiveIndividualFoodTotal : undefined,
           extra_person_count: extraPersonCount > 0 ? extraPersonCount : undefined,
           extra_person_surcharge: extraPersonSurcharge > 0 ? extraPersonSurcharge : undefined,
           promotion_name: appliedPromotions.map(p => p.name).join(' | ') || undefined,
@@ -616,6 +742,7 @@ const Booking = () => {
           room_details: roomDetails, room_breakdown: roomBreakdown,
           meal_time: mealTime,
           meal_multiplier: mealMultiplier,
+          admin_overrides: adminOverridesPayload,
         }),
       });
       const data = await resp.json();
@@ -681,6 +808,53 @@ const Booking = () => {
   if (!rooms.length) return null;
 
   const maxGuestsTotal = standardCapacity + 6;
+
+  // Data for Admin Override Panel
+  const adminPanelRooms = selectedRooms.map(sr => ({
+    roomId: sr.roomId,
+    name: sr.room!.name[language],
+    quantity: sr.quantity,
+    nightlyDefault: nightCount > 0
+      ? Math.round((roomTotals.find(rt => rt.roomId === sr.roomId)?.totalPerRoom || 0) / Math.max(nightCount, 1))
+      : (sr.room!.priceVND || 0),
+  }));
+  const adminPanelComboLines = foodByDayLines.map(l => ({
+    pkgId: l.pkg.id,
+    pkgName: l.pkg.name,
+    menuId: l.menu?.id,
+    menuName: l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : undefined,
+    menuDishes: undefined,
+    quantity: l.quantity,
+    defaultPrice: l.pkg.price_per_person,
+    meal: l.meal,
+    date: l.date,
+  }));
+  const adminPanelIndividualItems = Object.entries(individualFoodsByDay).flatMap(([date, items]) =>
+    items.filter(f => f.priceType !== 'negotiable').map(f => ({
+      id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+      name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+      quantity: f.quantity,
+      defaultPrice: f.price,
+      date,
+    }))
+  );
+  const renderAdminPanel = (step: 1 | 2 | 3 | 4) => (
+    <AdminOverridePanel
+      step={step}
+      isAdmin={!!isAdmin}
+      overrides={adminOverrides}
+      onChange={setAdminOverrides}
+      rooms={adminPanelRooms}
+      nightCount={nightCount}
+      comboLines={adminPanelComboLines}
+      individualItems={adminPanelIndividualItems}
+      guest={{ name, phone, email, adults: parseInt(adults) || 0, children: parseInt(children) || 0,
+        checkIn: checkIn ? format(checkIn, 'yyyy-MM-dd') : undefined,
+        checkOut: checkOut ? format(checkOut, 'yyyy-MM-dd') : undefined }}
+      defaultTotal={computedEffectiveTotal}
+      formatPrice={formatPrice}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -757,6 +931,7 @@ const Booking = () => {
                 {/* ===== STEP 1: Date + Guests + Rooms ===== */}
                 {currentStep === 1 && (
                   <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(1)}
                     {/* Search bar */}
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <h2 className="font-display text-xl font-semibold flex items-center gap-2">📅 {pick('Chọn ngày & số khách', 'Select Dates & Guests')}</h2>
@@ -925,6 +1100,7 @@ const Booking = () => {
                 {/* ===== STEP 2: Services ===== */}
                 {currentStep === 2 && (
                   <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(2)}
                     <h2 className="font-display text-2xl font-bold text-center">🍽️ {pick('Thêm dịch vụ', 'Add Services')}</h2>
 
                     {/* Per-night overview: which nights are mandatory vs optional */}
@@ -1024,6 +1200,7 @@ const Booking = () => {
                 {/* ===== STEP 3: Guest Info (was Step 4) ===== */}
                 {currentStep === 3 && (
                   <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(3)}
                     <h2 className="font-display text-2xl font-bold text-center">👤 {pick('Thông tin khách hàng', 'Guest Information')}</h2>
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1059,6 +1236,7 @@ const Booking = () => {
                 {/* ===== STEP 4: Confirm & Pay (was Step 5) ===== */}
                 {currentStep === 4 && (
                   <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                    {renderAdminPanel(4)}
                     <h2 className="font-display text-2xl font-bold text-center">✅ {pick('Xác nhận đặt phòng', 'Confirm Booking')}</h2>
 
                     {/* Room summary */}
@@ -1229,26 +1407,21 @@ const Booking = () => {
                           <span className="font-bold">{pick('Tổng thanh toán', 'Total')}</span>
                           <span className="font-bold text-primary">{formatPrice(totalPrice)}</span>
                         </div>
-                        {isAdmin && (
-                          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 rounded-lg p-3 space-y-2">
-                            <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                              🛡️ Admin: Ghi đè giá tổng (giá web: {formatPrice(computedTotal)})
-                            </div>
-                            <div className="flex gap-2">
-                              <Input type="number" min={0} placeholder="Nhập giá tuỳ chỉnh (VNĐ)"
-                                value={adminOverridePrice ?? ''}
-                                onChange={(e) => setAdminOverridePrice(e.target.value === '' ? null : Math.max(0, parseInt(e.target.value) || 0))}
-                                className="h-8 text-sm" />
-                              {adminOverridePrice !== null && (
-                                <Button size="sm" variant="outline" className="h-8" onClick={() => setAdminOverridePrice(null)}>Bỏ</Button>
-                              )}
-                            </div>
+                        {isAdmin && adminOverrides.discount && adminOverrides.discount.value > 0 && (
+                          <div className="flex justify-between text-amber-700 dark:text-amber-400">
+                            <span>🛡️ Giảm giá Admin{adminOverrides.discount.reason ? ` (${adminOverrides.discount.reason})` : ''}</span>
+                            <span>-{formatPrice(adminDiscountAmount)}</span>
+                          </div>
+                        )}
+                        {isAdmin && adminOverrides.total_override != null && (
+                          <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-100/60 dark:bg-amber-950/40 rounded-lg px-2 py-1">
+                            ⚠ Giá do Admin chỉnh: {formatPrice(adminOverrides.total_override)} (tự động: {formatPrice(computedEffectiveTotal)})
                           </div>
                         )}
                         {totalPrice > 0 && (
                           <div className="flex justify-between text-sm bg-primary/5 rounded-lg px-3 py-2">
-                            <span>💳 {pick('Đặt cọc 50%', 'Deposit 50%')}</span>
-                            <span className="font-bold text-primary">{formatPrice(Math.round(totalPrice * 0.5))}</span>
+                            <span>💳 {pick('Đặt cọc', 'Deposit')} {adminOverrides.deposit?.type === 'fixed' ? '(cố định)' : `${adminOverrides.deposit?.value ?? 50}%`}</span>
+                            <span className="font-bold text-primary">{formatPrice(depositAmount)}</span>
                           </div>
                         )}
                       </div>
@@ -1372,8 +1545,8 @@ const Booking = () => {
                   </div>
                   {totalPrice > 0 && (
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>Đặt cọc 50%</span>
-                      <span className="font-semibold">{formatPrice(Math.round(totalPrice * 0.5))}</span>
+                      <span>Đặt cọc {adminOverrides.deposit?.type === 'fixed' ? '(cố định)' : `${adminOverrides.deposit?.value ?? 50}%`}</span>
+                      <span className="font-semibold">{formatPrice(depositAmount)}</span>
                     </div>
                   )}
                 </div>
