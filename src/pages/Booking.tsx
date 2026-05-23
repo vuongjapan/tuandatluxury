@@ -1500,8 +1500,8 @@ const Booking = () => {
                   </div>
                   {totalPrice > 0 && (
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>Đặt cọc 50%</span>
-                      <span className="font-semibold">{formatPrice(Math.round(totalPrice * 0.5))}</span>
+                      <span>Đặt cọc {adminOverrides.deposit?.type === 'fixed' ? '(cố định)' : `${adminOverrides.deposit?.value ?? 50}%`}</span>
+                      <span className="font-semibold">{formatPrice(depositAmount)}</span>
                     </div>
                   )}
                 </div>
