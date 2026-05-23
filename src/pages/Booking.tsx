@@ -764,6 +764,53 @@ const Booking = () => {
 
   const maxGuestsTotal = standardCapacity + 6;
 
+  // Data for Admin Override Panel
+  const adminPanelRooms = selectedRooms.map(sr => ({
+    roomId: sr.roomId,
+    name: sr.room!.name[language],
+    quantity: sr.quantity,
+    nightlyDefault: nightCount > 0
+      ? Math.round((roomTotals.find(rt => rt.roomId === sr.roomId)?.totalPerRoom || 0) / Math.max(nightCount, 1))
+      : (sr.room!.priceVND || 0),
+  }));
+  const adminPanelComboLines = foodByDayLines.map(l => ({
+    pkgId: l.pkg.id,
+    pkgName: l.pkg.name,
+    menuId: l.menu?.id,
+    menuName: l.menu ? (language === 'vi' ? l.menu.name_vi : (l.menu.name_en || l.menu.name_vi)) : undefined,
+    menuDishes: undefined,
+    quantity: l.quantity,
+    defaultPrice: l.pkg.price_per_person,
+    meal: l.meal,
+    date: l.date,
+  }));
+  const adminPanelIndividualItems = Object.entries(individualFoodsByDay).flatMap(([date, items]) =>
+    items.filter(f => f.priceType !== 'negotiable').map(f => ({
+      id: f.id.includes('__') ? f.id.split('__')[0] : f.id,
+      name: f.priceLabel ? `${f.name} (${f.priceLabel})` : f.name,
+      quantity: f.quantity,
+      defaultPrice: f.price,
+      date,
+    }))
+  );
+  const renderAdminPanel = (step: 1 | 2 | 3 | 4) => (
+    <AdminOverridePanel
+      step={step}
+      isAdmin={!!isAdmin}
+      overrides={adminOverrides}
+      onChange={setAdminOverrides}
+      rooms={adminPanelRooms}
+      nightCount={nightCount}
+      comboLines={adminPanelComboLines}
+      individualItems={adminPanelIndividualItems}
+      guest={{ name, phone, email, adults: parseInt(adults) || 0, children: parseInt(children) || 0,
+        checkIn: checkIn ? format(checkIn, 'yyyy-MM-dd') : undefined,
+        checkOut: checkOut ? format(checkOut, 'yyyy-MM-dd') : undefined }}
+      defaultTotal={computedEffectiveTotal}
+      formatPrice={formatPrice}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <Header />
