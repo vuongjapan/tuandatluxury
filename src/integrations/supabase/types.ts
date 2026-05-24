@@ -2058,12 +2058,15 @@ export type Database = {
           check_in: string | null
           check_out: string | null
           children_count: number
+          confirmed_email_sent_at: string | null
           created_at: string
           created_by: string | null
           custom_subtotal: number
           deposit_amount: number
+          deposit_paid_at: string | null
           discount_amount: number
           discount_note: string | null
+          email_log: Json
           email_sent_at: string | null
           food_subtotal: number
           guest_email: string | null
@@ -2075,8 +2078,10 @@ export type Database = {
           nights: number
           notes: string | null
           payment_status: string
+          pending_email_sent_at: string | null
           remaining_amount: number
           room_id: string | null
+          room_lines: Json | null
           room_name: string | null
           room_price_per_night: number
           room_quantity: number
@@ -2088,12 +2093,15 @@ export type Database = {
           check_in?: string | null
           check_out?: string | null
           children_count?: number
+          confirmed_email_sent_at?: string | null
           created_at?: string
           created_by?: string | null
           custom_subtotal?: number
           deposit_amount?: number
+          deposit_paid_at?: string | null
           discount_amount?: number
           discount_note?: string | null
+          email_log?: Json
           email_sent_at?: string | null
           food_subtotal?: number
           guest_email?: string | null
@@ -2105,8 +2113,10 @@ export type Database = {
           nights?: number
           notes?: string | null
           payment_status?: string
+          pending_email_sent_at?: string | null
           remaining_amount?: number
           room_id?: string | null
+          room_lines?: Json | null
           room_name?: string | null
           room_price_per_night?: number
           room_quantity?: number
@@ -2118,12 +2128,15 @@ export type Database = {
           check_in?: string | null
           check_out?: string | null
           children_count?: number
+          confirmed_email_sent_at?: string | null
           created_at?: string
           created_by?: string | null
           custom_subtotal?: number
           deposit_amount?: number
+          deposit_paid_at?: string | null
           discount_amount?: number
           discount_note?: string | null
+          email_log?: Json
           email_sent_at?: string | null
           food_subtotal?: number
           guest_email?: string | null
@@ -2135,8 +2148,10 @@ export type Database = {
           nights?: number
           notes?: string | null
           payment_status?: string
+          pending_email_sent_at?: string | null
           remaining_amount?: number
           room_id?: string | null
+          room_lines?: Json | null
           room_name?: string | null
           room_price_per_night?: number
           room_quantity?: number

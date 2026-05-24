@@ -349,17 +349,17 @@ const AdminManualInvoice = () => {
     setView('detail');
   };
 
-  const sendEmail = async (invoiceId: string, recipientOverride?: string) => {
+  const sendEmail = async (invoiceId: string, recipientOverride?: string, emailType?: 'pending' | 'confirmed') => {
     setSendingEmail(invoiceId);
     try {
-      const body: any = { invoice_id: invoiceId };
+      const body: any = { invoice_id: invoiceId, sent_by: 'admin:manual' };
       if (recipientOverride) body.recipient_email = recipientOverride;
+      if (emailType) body.email_type = emailType;
       const { data, error } = await supabase.functions.invoke('send-manual-invoice-email', { body });
       if (error) throw error;
       const sentTo = (data as any)?.sent_to || recipientOverride;
       if (sentTo) localStorage.setItem(LAST_EMAIL_KEY, sentTo);
-      await supabase.from('manual_invoices').update({ email_sent_at: new Date().toISOString() }).eq('id', invoiceId);
-      toast({ title: '✅ Đã gửi email + PDF', description: sentTo ? `Tới: ${sentTo}` : undefined });
+      toast({ title: `✅ Đã gửi email ${emailType === 'confirmed' ? 'xác nhận' : 'chờ cọc'}`, description: sentTo ? `Tới: ${sentTo}` : undefined });
       loadData();
       if (detailData?.id === invoiceId) openDetail(invoiceId);
     } catch (e: any) {
@@ -506,9 +506,25 @@ const AdminManualInvoice = () => {
               {downloadingPdf === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
               Tải PDF
             </Button>
-            <Button onClick={() => openSendDialog(detailData.id, detailData.guest_email)} disabled={sendingEmail === detailData.id}>
+            <Button
+              variant="outline"
+              onClick={() => sendEmail(detailData.id, detailData.guest_email, 'pending')}
+              disabled={sendingEmail === detailData.id || !detailData.guest_email}
+              title={!detailData.guest_email ? 'Khách chưa có email' : ''}
+            >
+              {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
+              📧 Gửi email chờ cọc
+            </Button>
+            <Button
+              onClick={async () => {
+                const isPaid = detailData.payment_status === 'DEPOSIT_PAID' || detailData.payment_status === 'PAID';
+                if (!isPaid && !confirm('Booking chưa xác nhận thanh toán. Vẫn muốn gửi email xác nhận?')) return;
+                sendEmail(detailData.id, detailData.guest_email, 'confirmed');
+              }}
+              disabled={sendingEmail === detailData.id || !detailData.guest_email}
+            >
               {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-              Gửi email + PDF
+              ✅ Gửi email xác nhận
             </Button>
           </div>
         </div>

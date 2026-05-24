@@ -1,84 +1,102 @@
-## Admin Override Panel cho /booking
-
-Thêm panel "⚙️ Chỉnh sửa Admin" hiển thị xuyên suốt 4 bước đặt phòng, chỉ admin (đã đăng nhập) mới thấy. Khách thường không thấy gì khác.
+## Mục tiêu
+Nâng cấp toàn diện flow hóa đơn thủ công (`AdminManualInvoice`) để hỗ trợ nhiều dòng phòng, tách biệt rõ 2 trạng thái (chờ cọc / đã cọc) với 2 PDF + 2 email khác nhau, tự động gửi khi Sepay xác nhận, và log lịch sử email.
 
 ---
 
-### 1. Database
+## 1. Database migration
 
-Thêm cột `admin_overrides JSONB` vào bảng `bookings` (nullable). Cấu trúc:
+Thêm cột vào `bookings`:
+- `room_lines JSONB` — mảng `[{ room_name, room_count, nights, price_per_night, line_total }]`. Nếu null → fallback về logic cũ (single room).
+- `email_log JSONB DEFAULT '[]'` — mảng `[{ type: 'pending'|'confirmed', sent_at, sent_by: 'admin:<name>'|'auto:sepay', success: bool, error?: string }]`.
+- `pending_email_sent_at TIMESTAMPTZ` — chốt 1 lần auto-send email pending.
+- `confirmed_email_sent_at TIMESTAMPTZ` — chốt 1 lần auto-send email confirmed (khi Sepay xác nhận).
 
-```json
-{
-  "room_prices": { "<roomId>": 1200000 },
-  "combo_prices": { "<comboPackageId>": 280000 },
-  "combo_names":  { "<comboPackageId>": "Combo VIP" },
-  "menu_names":   { "<comboMenuId>": "Thực đơn riêng" },
-  "menu_dishes":  { "<comboMenuId>": ["Món 1","Món 2"] },
-  "food_item_prices": { "<menuItemId>": 150000 },
-  "food_lines": [{ "name": "...", "qty": 2, "price": 200000, "meal": "dinner" }],
-  "guest": { "name": "...", "phone": "...", "email": "...", "adults": 8, "children": 2, "check_in": "2026-06-01", "check_out": "2026-06-03" },
-  "discount": { "type": "percent|fixed", "value": 5, "reason": "..." },
-  "deposit":  { "type": "percent|fixed", "value": 50 },
-  "total_override": 25000000,
-  "edited_by_staff": true
-}
-```
+Email tự động chỉ chạy 1 lần (nếu các cột này null). Admin nhấn nút thủ công luôn append vào `email_log` không bị chặn.
 
-### 2. Phát hiện admin
+---
 
-Dùng `useAuth()` + `has_role(user.id,'admin')` qua RPC (đã có function `has_role`). Bọc thành hook `useIsAdmin()`. Lưu kết quả vào state.
+## 2. AdminManualInvoice.tsx — UI multi-room
 
-### 3. Component mới
+- Thay state `selectedRoomId/customPrice/rooms/nights` bằng `roomLines: RoomLine[]`.
+- UI: bảng với cột "Tên phòng (combobox / tự nhập) · Số phòng · Số đêm · Giá/đêm · Thành tiền · 🗑". Nút `+ Thêm loại phòng`.
+- Tổng phòng = sum line_total realtime.
+- Khi submit `create-booking`: gửi kèm `room_lines` + `room_subtotal`.
 
-**`src/components/admin/AdminOverridePanel.tsx`** — collapsible card vàng nhạt với border dashed, hiển thị "⚙️ Chỉnh sửa Admin (chỉ nhân viên thấy)". Nhận `step`, `overrides`, `onChange`, và các dữ liệu cần thiết (rooms, foods, guest). Render section phù hợp với step:
+---
 
-- **Step 1**: list phòng đã chọn → input "Giá/đêm (ghi đè)"
-- **Step 2**: list combo + món riêng đã chọn → input giá combo, tên thực đơn, textarea món, giá món riêng
-- **Step 3**: (bỏ qua – chỉ thông tin khách, đã có form sẵn; vẫn cho hiện link nhanh)
-- **Step 4**: tất cả mục A–F (phòng/ăn/khách/giảm/cọc/tổng)
+## 3. AdminManualInvoice — chi tiết hóa đơn (sau khi tạo)
 
-### 4. Tích hợp `Booking.tsx`
+- Render danh sách `room_lines` thay vì 1 dòng cố định.
+- Hiển thị badge theo status: `pending_payment` → cam "⏳ CHỜ THANH TOÁN CỌC"; `deposit_paid` → xanh "✅ ĐÃ XÁC NHẬN".
+- Thay nút "Gửi email + PDF" bằng **2 nút**:
+  - `[📧 Gửi email chờ cọc]` → gọi `send-manual-invoice-email` với `email_type='pending'`.
+  - `[✅ Gửi email xác nhận]` → `email_type='confirmed'`. Nếu booking chưa đủ cọc → confirm dialog "Booking chưa xác nhận thanh toán. Vẫn muốn gửi?".
+- Hiển thị **lịch sử email** từ `email_log` (icon + thời gian + người gửi).
+- Realtime subscribe `bookings` để update status khi webhook chạy + toast `"✅ Đã nhận cọc {code} — X.000đ"`.
 
-- Thêm state `adminOverrides` (object) khởi tạo `{}`.
-- Mount `<AdminOverridePanel>` ngay đầu mỗi Step khi `isAdmin === true`.
-- Khi tính tổng tiền trong sidebar và Step 4:
-  - `getRoomNightlyPrice(roomId, fallback)` → ưu tiên `overrides.room_prices[roomId]`
-  - `getComboPrice(pkgId, fallback)` → tương tự
-  - `getFoodItemPrice(itemId, fallback)` → tương tự
-  - Áp `overrides.discount` thay cho discount tự động nếu có
-  - Áp `overrides.deposit` thay cho 50% mặc định
-  - Nếu `overrides.total_override` → ghi đè tổng cuối, show badge cảnh báo
-- Step 4: render bảng A–F lấy/ghi vào `adminOverrides`.
+---
 
-### 5. Gửi backend
+## 4. generate-manual-invoice-pdf — 2 variants
 
-Sửa `supabase/functions/create-booking/index.ts`:
-- Nhận thêm `admin_overrides` trong body.
-- Khi `admin_overrides.edited_by_staff === true`: lưu vào cột `admin_overrides`.
-- Tính `total_amount`/`deposit_amount` theo override (nếu có total_override → dùng luôn).
+Thêm query param `?variant=pending|confirmed`:
 
-### 6. PDF + Email
+**PDF pending:**
+- Badge cam "⏳ CHỜ THANH TOÁN CỌC".
+- Render đầy đủ block QR + BIDV + STK + nội dung CK + số tiền = deposit.
+- Dòng nhắc: "Đặt phòng xác nhận sau khi nhận cọc".
+- Không có block "Đã nhận".
 
-Sửa `generate-booking-pdf/index.ts` và `send-booking-email/index.ts`:
-- Nếu `booking.admin_overrides` tồn tại:
-  - Render giá phòng/combo/món theo override (fallback dữ liệu gốc).
-  - Render dòng food_lines bổ sung.
-  - Render dòng "Giảm giá Admin: -X (lý do)" nếu có.
-  - Cuối hóa đơn in chú thích: `* Đơn hàng được điều chỉnh bởi nhân viên`.
-- Trang `InvoicePage.tsx` đọc `admin_overrides` từ bookings và áp cùng logic.
+**PDF confirmed:**
+- Badge xanh "✅ ĐÃ XÁC NHẬN".
+- Block xanh: "✅ Đã nhận đủ tiền cọc — X.000đ — HH:MM DD/MM/YYYY" (lấy từ `deposit_paid_at`).
+- Bỏ hoàn toàn block QR/CK.
+- Dòng: "Còn lại thanh toán tại quầy: X.000đ".
 
-### 7. Phạm vi giữ nguyên
+Render `room_lines` chi tiết.
 
-- Không sửa luồng SePay, webhook, RLS deposit.
-- Khách thường: panel ẩn hoàn toàn, behavior y hệt hiện tại.
-- Không thay đổi dữ liệu gốc combo_packages/menu_items.
+---
 
-### Thứ tự triển khai
+## 5. send-manual-invoice-email — 2 variants
 
-1. Migration thêm cột `admin_overrides`.
-2. Hook `useIsAdmin`.
-3. Component `AdminOverridePanel` (đủ cho 4 step).
-4. Tích hợp vào `Booking.tsx` (state + sidebar realtime + Step 4).
-5. Update edge function `create-booking` lưu overrides + tính tổng.
-6. Update PDF + email + InvoicePage để hiển thị theo overrides + chú thích cuối.
+Tham số mới `email_type: 'pending' | 'confirmed'`:
+
+**Email pending:**
+- Subject: `[Tuấn Đạt Luxury] Xác nhận đặt phòng {code} – Vui lòng thanh toán cọc`
+- Body: xác nhận đã nhận đơn + tóm tắt + khối cam hướng dẫn CK + nhắc "Đặt phòng xác nhận sau khi nhận cọc".
+- Attach PDF variant `pending`.
+
+**Email confirmed:**
+- Subject: `[Tuấn Đạt Luxury] ✅ Xác nhận {code} – Đã nhận cọc`
+- Body: khối xanh "Đã nhận cọc + thời gian" + tóm tắt + còn lại tại quầy + tiện ích kèm theo, **không QR**.
+- Attach PDF variant `confirmed`.
+
+Sau khi gửi: append vào `email_log` qua service-role; set `pending_email_sent_at` / `confirmed_email_sent_at` nếu chưa có.
+
+---
+
+## 6. sepay-webhook — auto email confirmed
+
+Khi webhook khớp `bookingCode` và set status sang `deposit_paid`:
+- Nếu `confirmed_email_sent_at IS NULL` → gọi nội bộ `send-manual-invoice-email` với `email_type='confirmed'`, `sent_by='auto:sepay'`.
+- Nếu fail → log lỗi vào `email_log` với `success: false` để admin thấy cảnh báo đỏ và gửi lại.
+
+(Không động vào logic phát hiện mã hay tính cọc — chỉ thêm trigger gửi mail.)
+
+---
+
+## 7. Phạm vi không thay đổi
+
+- Không sửa logic booking/payment/invoice cốt lõi của flow khách tự đặt (`/booking`).
+- Không đổi SePay matching / công thức cọc.
+- Auto-send pending email khi tạo: vẫn giữ cơ chế hiện tại (nếu admin tick "Tạo + Gửi email") — nhưng dùng variant `pending`.
+
+---
+
+## Technical notes
+
+- `RoomLine` interface dùng chung giữa frontend, PDF function, email function (định nghĩa lại ở mỗi nơi vì edge functions độc lập).
+- Toast realtime: dùng `supabase.channel('manual-invoice-<id>').on('postgres_changes',...)` trong trang chi tiết.
+- Email log render: chỉ hiển thị, không cho xoá.
+- PDF: tái dùng style/QR code hiện tại, chỉ thêm conditional rendering theo variant.
+
+Sau khi user duyệt plan, sẽ chạy migration trước (cần approval), rồi triển khai code theo thứ tự: edge functions → AdminManualInvoice UI.

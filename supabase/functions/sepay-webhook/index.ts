@@ -283,6 +283,7 @@ serve(async (req) => {
           payment_status: isFullPayment ? "PAID" : "DEPOSIT_PAID",
           deposit_amount: Math.max(inv.deposit_amount, amount),
           remaining_amount: Math.max(0, inv.total_amount - Math.max(inv.deposit_amount, amount)),
+          deposit_paid_at: new Date().toISOString(),
         })
         .eq("id", inv.id);
 
@@ -290,20 +291,17 @@ serve(async (req) => {
         .update({ processed: true, matched_booking_code: matchedCode })
         .eq("transaction_id", String(transactionId));
 
-      // Gửi email xác nhận đã cọc cho khách
+      // Gửi email xác nhận "Đã nhận cọc" — chỉ tự động 1 lần
       try {
-        if (inv.guest_email) {
+        if (inv.guest_email && !inv.confirmed_email_sent_at) {
           await fetch(`${supabaseUrl}/functions/v1/send-manual-invoice-email`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${supabaseKey}`,
-            },
-            body: JSON.stringify({ invoice_id: inv.id }),
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ invoice_id: inv.id, email_type: 'confirmed', sent_by: 'auto:sepay' }),
           });
         }
       } catch (e) {
-        console.error("Manual invoice email error:", e);
+        console.error("Manual invoice confirmed email error:", e);
       }
 
       console.log("Manual invoice deposit confirmed:", matchedCode);
