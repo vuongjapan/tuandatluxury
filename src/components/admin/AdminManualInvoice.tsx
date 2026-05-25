@@ -696,8 +696,26 @@ const AdminManualInvoice = () => {
             <div className="bg-muted p-3 rounded text-sm"><strong>Ghi chú:</strong> {detailData.notes}</div>
           )}
 
-          {detailData.email_sent_at && (
-            <p className="text-xs text-muted-foreground">📧 Đã gửi email lúc {new Date(detailData.email_sent_at).toLocaleString('vi-VN')}</p>
+          {/* Email history log */}
+          {Array.isArray(detailData.email_log) && detailData.email_log.length > 0 && (
+            <div className="border-t border-border pt-3 space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">📜 Lịch sử email</p>
+              {[...detailData.email_log].reverse().map((log: any, i: number) => {
+                const t = log.sent_at ? new Date(log.sent_at).toLocaleString('vi-VN') : '—';
+                const who = log.sent_by || 'unknown';
+                const ok = log.success !== false;
+                const icon = log.type === 'confirmed' ? '✅' : '📧';
+                const label = log.type === 'confirmed' ? 'Email xác nhận' : 'Email chờ cọc';
+                return (
+                  <div key={i} className={`text-xs px-2 py-1 rounded ${ok ? 'bg-secondary' : 'bg-destructive/10 border border-destructive/40'}`}>
+                    <span className="font-medium">{icon} {label}</span>
+                    <span className="text-muted-foreground"> · {t} · </span>
+                    <span className="text-muted-foreground">{who.startsWith('auto:') ? '🤖 Tự động' : `👤 ${who.replace(/^admin:/, '')}`}</span>
+                    {!ok && log.error && <div className="text-destructive mt-0.5">⚠ {log.error}</div>}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
