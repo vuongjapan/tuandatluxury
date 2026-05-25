@@ -556,10 +556,9 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     drawText(ctx, `Số tiền: ${fmt(deposit)}`, { size: 10, bold: true });
     ctx.y -= 16;
   }
-
-  // Compact map block — always fits on the same A4 page
-  drawCompactMap(ctx);
-  drawFooter(ctx);
+  // Flow-based map + footer (replaces old fixed-position blocks)
+  ctx = drawCompactMap(ctx);
+  ctx = drawFooter(ctx);
 
   return await pdf.save();
 }
