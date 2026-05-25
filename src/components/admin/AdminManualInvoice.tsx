@@ -26,6 +26,21 @@ interface InvoiceItem {
   quantity: number;
   unit_price: number;
 }
+interface RoomLine {
+  id: string;
+  room_id?: string | null;
+  room_name: string;
+  room_count: number;
+  nights: number;
+  price_per_night: number;
+}
+const newRoomLine = (): RoomLine => ({
+  id: crypto.randomUUID(),
+  room_name: '',
+  room_count: 1,
+  nights: 1,
+  price_per_night: 0,
+});
 
 const fmt = (v: number) => (v || 0).toLocaleString('vi-VN') + '₫';
 
@@ -79,6 +94,7 @@ const AdminManualInvoice = () => {
   const [roomName, setRoomName] = useState('');
   const [roomQty, setRoomQty] = useState(1);
   const [roomPricePerNight, setRoomPricePerNight] = useState(0);
+  const [roomLines, setRoomLines] = useState<RoomLine[]>([newRoomLine()]);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountNote, setDiscountNote] = useState('');
   const [depositPercent, setDepositPercent] = useState<number>(50); // 30 | 50 | 70 | 100 | -1 (custom)
@@ -96,13 +112,21 @@ const AdminManualInvoice = () => {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
 
-  const nights = useMemo(() => {
+  const autoNights = useMemo(() => {
     if (!checkIn || !checkOut) return 1;
     const n = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000));
     return n;
   }, [checkIn, checkOut]);
 
-  const roomSubtotal = useMemo(() => roomPricePerNight * nights * roomQty, [roomPricePerNight, nights, roomQty]);
+  // Auto-update nights for ALL roomLines when stay dates change (admin can still override per row)
+  useEffect(() => {
+    setRoomLines(prev => prev.map(rl => ({ ...rl, nights: autoNights })));
+  }, [autoNights]);
+
+  const roomSubtotal = useMemo(
+    () => roomLines.reduce((s, rl) => s + (rl.price_per_night || 0) * (rl.nights || 0) * (rl.room_count || 0), 0),
+    [roomLines]
+  );
   const foodSubtotal = useMemo(() => items.filter(i => i.item_type !== 'custom').reduce((s, i) => s + i.unit_price * i.quantity, 0), [items]);
   const customSubtotal = useMemo(() => items.filter(i => i.item_type === 'custom').reduce((s, i) => s + i.unit_price * i.quantity, 0), [items]);
   const totalAmount = Math.max(0, roomSubtotal + foodSubtotal + customSubtotal - discountAmount);
@@ -135,6 +159,27 @@ const AdminManualInvoice = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  // Realtime: subscribe to changes on currently opened invoice
+  useEffect(() => {
+    if (!detailId) return;
+    const ch = supabase
+      .channel(`manual-invoice-${detailId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'manual_invoices', filter: `id=eq.${detailId}` }, (payload: any) => {
+        const next = payload.new;
+        setDetailData((prev: any) => prev ? { ...prev, ...next } : prev);
+        // Toast on deposit transition
+        if (next.payment_status === 'DEPOSIT_PAID' || next.payment_status === 'PAID') {
+          if (next.deposit_paid_at) {
+            const tm = new Date(next.deposit_paid_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            toast({ title: `✅ Đã nhận cọc ${next.invoice_code}`, description: `${fmt(next.deposit_amount)} lúc ${tm}` });
+          }
+        }
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [detailId]);
+
   // Prefill from chatbot session if any
   useEffect(() => {
     const raw = sessionStorage.getItem('chat_to_invoice');
@@ -163,8 +208,14 @@ const AdminManualInvoice = () => {
     if (p.check_out) setCheckOut(p.check_out);
     if (p.guests_count) setGuestsCount(p.guests_count);
     if (p.children_count != null) setChildrenCount(p.children_count);
-    if (p.room_quantity) setRoomQty(p.room_quantity);
-    if (p.room_price_per_night) setRoomPricePerNight(p.room_price_per_night);
+    if (p.room_quantity) {
+      setRoomQty(p.room_quantity);
+      setRoomLines(prev => prev.length ? [{ ...prev[0], room_count: p.room_quantity }, ...prev.slice(1)] : prev);
+    }
+    if (p.room_price_per_night) {
+      setRoomPricePerNight(p.room_price_per_night);
+      setRoomLines(prev => prev.length ? [{ ...prev[0], price_per_night: p.room_price_per_night }, ...prev.slice(1)] : prev);
+    }
     if (p.discount_amount != null) setDiscountAmount(p.discount_amount);
     if (p.discount_note) setDiscountNote(p.discount_note);
     if (p.deposit_percent != null && [30, 50, 70, 100].includes(p.deposit_percent)) setDepositPercent(p.deposit_percent);
@@ -172,6 +223,8 @@ const AdminManualInvoice = () => {
     // Match room by name if possible
     if (p.room_name) {
       const match = rooms.find(r => r.name_vi.toLowerCase().includes(String(p.room_name).toLowerCase()) || String(p.room_name).toLowerCase().includes(r.name_vi.toLowerCase()));
+      const finalName = match?.name_vi || p.room_name;
+      const finalPrice = p.room_price_per_night || match?.price_vnd || 0;
       if (match) {
         setRoomId(match.id);
         setRoomName(match.name_vi);
@@ -179,6 +232,9 @@ const AdminManualInvoice = () => {
       } else {
         setRoomName(p.room_name);
       }
+      setRoomLines(prev => prev.length
+        ? [{ ...prev[0], room_id: match?.id || null, room_name: finalName, price_per_night: finalPrice || prev[0].price_per_night }, ...prev.slice(1)]
+        : prev);
     }
   };
 
@@ -237,17 +293,24 @@ const AdminManualInvoice = () => {
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
     setRoomId(''); setRoomName(''); setRoomQty(1); setRoomPricePerNight(0);
+    setRoomLines([newRoomLine()]);
     setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setDepositPercent(50); setNotes('');
     setItems([]);
   };
 
-  const onPickRoom = (id: string) => {
-    setRoomId(id);
-    const r = rooms.find(x => x.id === id);
-    if (r) {
-      setRoomName(r.name_vi);
-      setRoomPricePerNight(r.price_vnd);
-    }
+  const updateRoomLine = (id: string, patch: Partial<RoomLine>) => {
+    setRoomLines(prev => prev.map(rl => rl.id === id ? { ...rl, ...patch } : rl));
+  };
+  const removeRoomLine = (id: string) => {
+    setRoomLines(prev => prev.length <= 1 ? prev : prev.filter(rl => rl.id !== id));
+  };
+  const addRoomLine = () => {
+    setRoomLines(prev => [...prev, { ...newRoomLine(), nights: autoNights }]);
+  };
+  const pickRoomForLine = (lineId: string, roomDbId: string) => {
+    const r = rooms.find(x => x.id === roomDbId);
+    if (!r) return;
+    updateRoomLine(lineId, { room_id: r.id, room_name: r.name_vi, price_per_night: r.price_vnd });
   };
 
   const addMenuItem = (mi: MenuItem) => {
@@ -294,12 +357,20 @@ const AdminManualInvoice = () => {
       check_out: checkOut || null,
       guests_count: guestsCount,
       children_count: childrenCount,
-      room_id: roomId || null,
-      room_name: roomName || null,
-      room_quantity: roomQty,
-      nights,
-      room_price_per_night: roomPricePerNight,
+      room_id: roomLines[0]?.room_id || roomId || null,
+      room_name: roomLines.map(r => r.room_name).filter(Boolean).join(' + ') || roomName || null,
+      room_quantity: roomLines.reduce((s, r) => s + (r.room_count || 0), 0) || roomQty,
+      nights: roomLines[0]?.nights || autoNights,
+      room_price_per_night: roomLines[0]?.price_per_night || roomPricePerNight,
       room_subtotal: roomSubtotal,
+      room_lines: roomLines.map(rl => ({
+        room_id: rl.room_id || null,
+        room_name: rl.room_name,
+        room_count: rl.room_count,
+        nights: rl.nights,
+        price_per_night: rl.price_per_night,
+        line_total: (rl.price_per_night || 0) * (rl.nights || 0) * (rl.room_count || 0),
+      })),
       food_subtotal: foodSubtotal,
       custom_subtotal: customSubtotal,
       discount_amount: discountAmount,
@@ -591,12 +662,28 @@ const AdminManualInvoice = () => {
             <div><span className="text-muted-foreground">Trả phòng:</span> {detailData.check_out || '—'}</div>
           </div>
 
-          {detailData.room_name && (
-            <div className="bg-secondary p-3 rounded-lg text-sm">
-              <p className="font-semibold">{detailData.room_name} × {detailData.room_quantity} phòng × {detailData.nights} đêm</p>
-              <p className="text-muted-foreground">{fmt(detailData.room_price_per_night)} / đêm = <strong>{fmt(detailData.room_subtotal)}</strong></p>
-            </div>
-          )}
+          {(() => {
+            const lines = Array.isArray(detailData.room_lines) ? detailData.room_lines : [];
+            if (lines.length > 0) {
+              return (
+                <div className="bg-secondary p-3 rounded-lg text-sm space-y-1">
+                  <p className="font-semibold">🛏️ Phòng đặt:</p>
+                  {lines.map((rl: any, i: number) => (
+                    <div key={i} className="flex justify-between border-b border-border/40 last:border-0 pb-1">
+                      <span>{rl.room_name} × {rl.room_count}p × {rl.nights}đ <span className="text-muted-foreground">({fmt(rl.price_per_night)}/đêm)</span></span>
+                      <strong>{fmt(rl.line_total || (rl.price_per_night * rl.nights * rl.room_count))}</strong>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return detailData.room_name ? (
+              <div className="bg-secondary p-3 rounded-lg text-sm">
+                <p className="font-semibold">{detailData.room_name} × {detailData.room_quantity} phòng × {detailData.nights} đêm</p>
+                <p className="text-muted-foreground">{fmt(detailData.room_price_per_night)} / đêm = <strong>{fmt(detailData.room_subtotal)}</strong></p>
+              </div>
+            ) : null;
+          })()}
 
           {detailData.items?.length > 0 && (
             <div className="space-y-1">
@@ -630,8 +717,26 @@ const AdminManualInvoice = () => {
             <div className="bg-muted p-3 rounded text-sm"><strong>Ghi chú:</strong> {detailData.notes}</div>
           )}
 
-          {detailData.email_sent_at && (
-            <p className="text-xs text-muted-foreground">📧 Đã gửi email lúc {new Date(detailData.email_sent_at).toLocaleString('vi-VN')}</p>
+          {/* Email history log */}
+          {Array.isArray(detailData.email_log) && detailData.email_log.length > 0 && (
+            <div className="border-t border-border pt-3 space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">📜 Lịch sử email</p>
+              {[...detailData.email_log].reverse().map((log: any, i: number) => {
+                const t = log.sent_at ? new Date(log.sent_at).toLocaleString('vi-VN') : '—';
+                const who = log.sent_by || 'unknown';
+                const ok = log.success !== false;
+                const icon = log.type === 'confirmed' ? '✅' : '📧';
+                const label = log.type === 'confirmed' ? 'Email xác nhận' : 'Email chờ cọc';
+                return (
+                  <div key={i} className={`text-xs px-2 py-1 rounded ${ok ? 'bg-secondary' : 'bg-destructive/10 border border-destructive/40'}`}>
+                    <span className="font-medium">{icon} {label}</span>
+                    <span className="text-muted-foreground"> · {t} · </span>
+                    <span className="text-muted-foreground">{who.startsWith('auto:') ? '🤖 Tự động' : `👤 ${who.replace(/^admin:/, '')}`}</span>
+                    {!ok && log.error && <div className="text-destructive mt-0.5">⚠ {log.error}</div>}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -763,36 +868,74 @@ const AdminManualInvoice = () => {
         </div>
       </div>
 
-      {/* Room */}
+      {/* Rooms — multi-line */}
       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-        <h3 className="font-semibold">🛏️ Phòng (admin có thể sửa giá)</h3>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div>
-            <Label>Chọn phòng</Label>
-            <Select value={roomId} onValueChange={onPickRoom}>
-              <SelectTrigger><SelectValue placeholder="-- Chọn phòng --" /></SelectTrigger>
-              <SelectContent>
-                {rooms.map(r => (
-                  <SelectItem key={r.id} value={r.id}>{r.name_vi} ({fmt(r.price_vnd)})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Tên phòng (có thể sửa)</Label>
-            <Input value={roomName} onChange={e => setRoomName(e.target.value)} />
-          </div>
-          <div>
-            <Label>Giá / đêm (VNĐ) — admin tự nhập</Label>
-            <Input type="number" value={roomPricePerNight} onChange={e => setRoomPricePerNight(parseInt(e.target.value) || 0)} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Số phòng</Label><Input type="number" min={1} value={roomQty} onChange={e => setRoomQty(parseInt(e.target.value) || 1)} /></div>
-            <div><Label>Số đêm</Label><Input type="number" value={nights} disabled /></div>
-          </div>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="font-semibold">🛏️ Phòng (nhiều loại / nhiều số phòng)</h3>
+          <Button size="sm" variant="outline" onClick={addRoomLine}>
+            <Plus className="h-3 w-3 mr-1" />Thêm loại phòng
+          </Button>
         </div>
-        <p className="text-sm bg-secondary p-2 rounded">
-          Tiền phòng: <strong className="text-primary">{fmt(roomSubtotal)}</strong> ({fmt(roomPricePerNight)} × {nights} đêm × {roomQty} phòng)
+
+        <div className="space-y-3">
+          {roomLines.map((rl, idx) => {
+            const lineTotal = (rl.price_per_night || 0) * (rl.nights || 0) * (rl.room_count || 0);
+            return (
+              <div key={rl.id} className="border border-border rounded-lg p-3 space-y-2 bg-secondary/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground">Dòng {idx + 1}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeRoomLine(rl.id)}
+                    disabled={roomLines.length <= 1}
+                    title="Xoá dòng"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Chọn nhanh từ danh sách</Label>
+                    <Select value={rl.room_id || ''} onValueChange={(v) => pickRoomForLine(rl.id, v)}>
+                      <SelectTrigger><SelectValue placeholder="-- Tuỳ chọn --" /></SelectTrigger>
+                      <SelectContent>
+                        {rooms.map(r => (
+                          <SelectItem key={r.id} value={r.id}>{r.name_vi} ({fmt(r.price_vnd)})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Tên phòng (sửa tự do)</Label>
+                    <Input value={rl.room_name} onChange={e => updateRoomLine(rl.id, { room_name: e.target.value })} placeholder="VD: Deluxe view biển" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <Label className="text-xs">Số phòng</Label>
+                    <Input type="number" min={1} value={rl.room_count} onChange={e => updateRoomLine(rl.id, { room_count: parseInt(e.target.value) || 1 })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Số đêm</Label>
+                    <Input type="number" min={1} value={rl.nights} onChange={e => updateRoomLine(rl.id, { nights: parseInt(e.target.value) || 1 })} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs">Giá / đêm (VNĐ)</Label>
+                    <Input type="number" value={rl.price_per_night} onChange={e => updateRoomLine(rl.id, { price_per_night: parseInt(e.target.value) || 0 })} />
+                  </div>
+                </div>
+                <p className="text-xs text-right">
+                  Thành tiền: <strong className="text-primary">{fmt(lineTotal)}</strong>
+                  <span className="text-muted-foreground"> ({fmt(rl.price_per_night)} × {rl.nights}đ × {rl.room_count}p)</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-sm bg-secondary p-2 rounded text-right">
+          Tổng tiền phòng: <strong className="text-primary">{fmt(roomSubtotal)}</strong>
         </p>
       </div>
 
