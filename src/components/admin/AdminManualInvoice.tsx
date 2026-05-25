@@ -813,36 +813,74 @@ const AdminManualInvoice = () => {
         </div>
       </div>
 
-      {/* Room */}
+      {/* Rooms — multi-line */}
       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-        <h3 className="font-semibold">🛏️ Phòng (admin có thể sửa giá)</h3>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div>
-            <Label>Chọn phòng</Label>
-            <Select value={roomId} onValueChange={onPickRoom}>
-              <SelectTrigger><SelectValue placeholder="-- Chọn phòng --" /></SelectTrigger>
-              <SelectContent>
-                {rooms.map(r => (
-                  <SelectItem key={r.id} value={r.id}>{r.name_vi} ({fmt(r.price_vnd)})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Tên phòng (có thể sửa)</Label>
-            <Input value={roomName} onChange={e => setRoomName(e.target.value)} />
-          </div>
-          <div>
-            <Label>Giá / đêm (VNĐ) — admin tự nhập</Label>
-            <Input type="number" value={roomPricePerNight} onChange={e => setRoomPricePerNight(parseInt(e.target.value) || 0)} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Số phòng</Label><Input type="number" min={1} value={roomQty} onChange={e => setRoomQty(parseInt(e.target.value) || 1)} /></div>
-            <div><Label>Số đêm</Label><Input type="number" value={nights} disabled /></div>
-          </div>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="font-semibold">🛏️ Phòng (nhiều loại / nhiều số phòng)</h3>
+          <Button size="sm" variant="outline" onClick={addRoomLine}>
+            <Plus className="h-3 w-3 mr-1" />Thêm loại phòng
+          </Button>
         </div>
-        <p className="text-sm bg-secondary p-2 rounded">
-          Tiền phòng: <strong className="text-primary">{fmt(roomSubtotal)}</strong> ({fmt(roomPricePerNight)} × {nights} đêm × {roomQty} phòng)
+
+        <div className="space-y-3">
+          {roomLines.map((rl, idx) => {
+            const lineTotal = (rl.price_per_night || 0) * (rl.nights || 0) * (rl.room_count || 0);
+            return (
+              <div key={rl.id} className="border border-border rounded-lg p-3 space-y-2 bg-secondary/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground">Dòng {idx + 1}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeRoomLine(rl.id)}
+                    disabled={roomLines.length <= 1}
+                    title="Xoá dòng"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Chọn nhanh từ danh sách</Label>
+                    <Select value={rl.room_id || ''} onValueChange={(v) => pickRoomForLine(rl.id, v)}>
+                      <SelectTrigger><SelectValue placeholder="-- Tuỳ chọn --" /></SelectTrigger>
+                      <SelectContent>
+                        {rooms.map(r => (
+                          <SelectItem key={r.id} value={r.id}>{r.name_vi} ({fmt(r.price_vnd)})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Tên phòng (sửa tự do)</Label>
+                    <Input value={rl.room_name} onChange={e => updateRoomLine(rl.id, { room_name: e.target.value })} placeholder="VD: Deluxe view biển" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <Label className="text-xs">Số phòng</Label>
+                    <Input type="number" min={1} value={rl.room_count} onChange={e => updateRoomLine(rl.id, { room_count: parseInt(e.target.value) || 1 })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Số đêm</Label>
+                    <Input type="number" min={1} value={rl.nights} onChange={e => updateRoomLine(rl.id, { nights: parseInt(e.target.value) || 1 })} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs">Giá / đêm (VNĐ)</Label>
+                    <Input type="number" value={rl.price_per_night} onChange={e => updateRoomLine(rl.id, { price_per_night: parseInt(e.target.value) || 0 })} />
+                  </div>
+                </div>
+                <p className="text-xs text-right">
+                  Thành tiền: <strong className="text-primary">{fmt(lineTotal)}</strong>
+                  <span className="text-muted-foreground"> ({fmt(rl.price_per_night)} × {rl.nights}đ × {rl.room_count}p)</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-sm bg-secondary p-2 rounded text-right">
+          Tổng tiền phòng: <strong className="text-primary">{fmt(roomSubtotal)}</strong>
         </p>
       </div>
 
