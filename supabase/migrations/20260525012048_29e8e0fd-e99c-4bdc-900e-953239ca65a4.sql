@@ -1,0 +1,1 @@
+UPDATE public.site_settings SET value = '' WHERE key = 'hero_image_url';

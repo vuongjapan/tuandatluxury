@@ -60,9 +60,32 @@ interface DrawCtx {
   margin: number;
 }
 
+let pageBookingCode = '';
+function drawMiniHeader(ctx: DrawCtx): DrawCtx {
+  // Smaller header re-printed on overflow pages
+  ctx.page.drawRectangle({
+    x: 0, y: ctx.height - 36, width: ctx.width, height: 36,
+    color: rgb(0.55, 0.41, 0.08),
+  });
+  ctx.page.drawText(HOTEL_NAME_VI, {
+    x: ctx.margin, y: ctx.height - 22, size: 11, font: ctx.fontBold, color: rgb(1, 1, 1),
+  });
+  if (pageBookingCode) {
+    const right = `Mã: ${pageBookingCode}`;
+    const w = ctx.fontBold.widthOfTextAtSize(right, 10);
+    ctx.page.drawText(right, {
+      x: ctx.width - ctx.margin - w, y: ctx.height - 22,
+      size: 10, font: ctx.fontBold, color: rgb(1, 0.95, 0.8),
+    });
+  }
+  ctx.y = ctx.height - 56;
+  return ctx;
+}
+
 function newPage(ctx: DrawCtx): DrawCtx {
   const page = ctx.pdf.addPage([595.28, 841.89]); // A4
-  return { ...ctx, page, y: 800 };
+  const next: DrawCtx = { ...ctx, page, y: 800 };
+  return drawMiniHeader(next);
 }
 
 function ensureSpace(ctx: DrawCtx, needed: number): DrawCtx {
@@ -154,22 +177,29 @@ function drawHeader(ctx: DrawCtx, title: string, subtitle: string): DrawCtx {
   return ctx;
 }
 
-function drawFooter(ctx: DrawCtx) {
-  const y = 35;
+function drawFooter(ctx: DrawCtx): DrawCtx {
+  // Flow-based footer — anchored just below current ctx.y, never overlapping content.
+  // Ensure enough vertical space (44px); if not, push to a new page first.
+  ctx = ensureSpace(ctx, 50);
+  // Keep a small gap above the footer
+  ctx.y -= 6;
+  const y = ctx.y;
   ctx.page.drawLine({
-    start: { x: ctx.margin, y: y + 30 },
-    end: { x: ctx.width - ctx.margin, y: y + 30 },
+    start: { x: ctx.margin, y: y + 24 },
+    end: { x: ctx.width - ctx.margin, y: y + 24 },
     thickness: 0.5, color: rgb(0.85, 0.74, 0.5),
   });
   ctx.page.drawText(`${HOTEL_NAME_VI}  •  ${HOTEL_PHONES}`, {
-    x: ctx.margin, y: y + 15, size: 8, font: ctx.fontBold, color: rgb(0.55, 0.41, 0.08),
+    x: ctx.margin, y: y + 10, size: 8, font: ctx.fontBold, color: rgb(0.55, 0.41, 0.08),
   });
   ctx.page.drawText(`${HOTEL_ADDRESS}  •  ${HOTEL_EMAIL}`, {
-    x: ctx.margin, y: y + 3, size: 7.5, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
+    x: ctx.margin, y: y - 2, size: 7.5, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
   });
   ctx.page.drawText("Cảm ơn Quý khách đã lựa chọn chúng tôi!", {
-    x: ctx.margin, y: y - 8, size: 7.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
+    x: ctx.margin, y: y - 13, size: 7.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
   });
+  ctx.y = y - 24;
+  return ctx;
 }
 
 function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number], url: string) {
@@ -267,23 +297,27 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
   return ctx;
 }
 
-// Compact one-line map button — fits in remaining A4 space on summary
-function drawCompactMap(ctx: DrawCtx) {
-  const y = 95;
+// Compact one-line map button — flows right after content, never overlaps.
+function drawCompactMap(ctx: DrawCtx): DrawCtx {
+  const boxH = 44;
+  ctx = ensureSpace(ctx, boxH + 10);
+  // Position the box so its top sits at current ctx.y
+  const top = ctx.y;
+  const boxBottom = top - boxH + 12;
   ctx.page.drawRectangle({
-    x: ctx.margin - 4, y: y - 8,
-    width: ctx.width - 2 * ctx.margin + 8, height: 44,
+    x: ctx.margin - 4, y: boxBottom,
+    width: ctx.width - 2 * ctx.margin + 8, height: boxH,
     color: rgb(0.96, 0.91, 0.78),
     borderColor: rgb(0.78, 0.63, 0.25), borderWidth: 1,
   });
   ctx.page.drawText("📍 " + HOTEL_NAME_VI, {
-    x: ctx.margin, y: y + 22, size: 9.5, font: ctx.fontBold, color: rgb(0.48, 0.37, 0.16),
+    x: ctx.margin, y: top, size: 9.5, font: ctx.fontBold, color: rgb(0.48, 0.37, 0.16),
   });
   ctx.page.drawText(HOTEL_ADDRESS, {
-    x: ctx.margin, y: y + 10, size: 8, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
+    x: ctx.margin, y: top - 12, size: 8, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
   });
   const btnX = ctx.width - ctx.margin - 140;
-  const btnY = y + 6;
+  const btnY = top - 16;
   const btnW = 136;
   const btnH = 22;
   ctx.page.drawRectangle({
@@ -295,6 +329,8 @@ function drawCompactMap(ctx: DrawCtx) {
     x: btnX + (btnW - tw) / 2, y: btnY + 7, size: 9.5, font: ctx.fontBold, color: rgb(1, 1, 1),
   });
   addLinkAnnotation(ctx, [btnX, btnY, btnX + btnW, btnY + btnH], GOOGLE_MAPS_URL);
+  ctx.y = top - boxH - 4;
+  return ctx;
 }
 
 // Parse children count from guest_notes (e.g. "· 2 trẻ em đính kèm" or "2 trẻ em")
@@ -322,6 +358,7 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     pdf, page, font, fontBold,
     width: 595.28, height: 841.89, y: 800, margin: 40,
   };
+  pageBookingCode = booking.booking_code || '';
 
   const subtitle = isPaid ? "Đã thanh toán đặt cọc" : "Chờ thanh toán đặt cọc";
   ctx = drawHeader(ctx, "HÓA ĐƠN ĐẶT PHÒNG", subtitle);
@@ -520,10 +557,9 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     drawText(ctx, `Số tiền: ${fmt(deposit)}`, { size: 10, bold: true });
     ctx.y -= 16;
   }
-
-  // Compact map block — always fits on the same A4 page
-  drawCompactMap(ctx);
-  drawFooter(ctx);
+  // Flow-based map + footer (replaces old fixed-position blocks)
+  ctx = drawCompactMap(ctx);
+  ctx = drawFooter(ctx);
 
   return await pdf.save();
 }
@@ -545,6 +581,7 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     width: 595.28, height: 841.89, y: 800, margin: 40,
   };
 
+  pageBookingCode = booking.booking_code || '';
   ctx = drawHeader(ctx, "CHI TIẾT DỊCH VỤ", `${booking.booking_code} • ${booking.guest_name}`);
 
   // Mini summary
@@ -748,9 +785,9 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     bold: true, valueColor: [0.55, 0.41, 0.08], size: 13,
   });
 
-  // Map
+  // Map + footer flow with content
   ctx = drawMapSection(ctx);
-  drawFooter(ctx);
+  ctx = drawFooter(ctx);
 
   return await pdf.save();
 }
