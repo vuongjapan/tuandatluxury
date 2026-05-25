@@ -67,11 +67,8 @@ export const useBookingContext = () => {
       const code = codeFromUrl || saved.bookingCode;
 
       if (code) {
-        const { data } = await supabase
-          .from('bookings')
-          .select('booking_code, guest_name, check_in, check_out, guests_count, room_details')
-          .eq('booking_code', code.toUpperCase().trim())
-          .maybeSingle();
+        const { data: res } = await (supabase as any).rpc('lookup_booking_by_code', { p_code: code });
+        const data = res?.booking;
 
         if (data) {
           const roomDetails: any[] = Array.isArray(data.room_details) ? data.room_details : [];
