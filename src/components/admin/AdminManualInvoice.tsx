@@ -187,8 +187,14 @@ const AdminManualInvoice = () => {
     if (p.check_out) setCheckOut(p.check_out);
     if (p.guests_count) setGuestsCount(p.guests_count);
     if (p.children_count != null) setChildrenCount(p.children_count);
-    if (p.room_quantity) setRoomQty(p.room_quantity);
-    if (p.room_price_per_night) setRoomPricePerNight(p.room_price_per_night);
+    if (p.room_quantity) {
+      setRoomQty(p.room_quantity);
+      setRoomLines(prev => prev.length ? [{ ...prev[0], room_count: p.room_quantity }, ...prev.slice(1)] : prev);
+    }
+    if (p.room_price_per_night) {
+      setRoomPricePerNight(p.room_price_per_night);
+      setRoomLines(prev => prev.length ? [{ ...prev[0], price_per_night: p.room_price_per_night }, ...prev.slice(1)] : prev);
+    }
     if (p.discount_amount != null) setDiscountAmount(p.discount_amount);
     if (p.discount_note) setDiscountNote(p.discount_note);
     if (p.deposit_percent != null && [30, 50, 70, 100].includes(p.deposit_percent)) setDepositPercent(p.deposit_percent);
@@ -196,6 +202,8 @@ const AdminManualInvoice = () => {
     // Match room by name if possible
     if (p.room_name) {
       const match = rooms.find(r => r.name_vi.toLowerCase().includes(String(p.room_name).toLowerCase()) || String(p.room_name).toLowerCase().includes(r.name_vi.toLowerCase()));
+      const finalName = match?.name_vi || p.room_name;
+      const finalPrice = p.room_price_per_night || match?.price_vnd || 0;
       if (match) {
         setRoomId(match.id);
         setRoomName(match.name_vi);
@@ -203,6 +211,9 @@ const AdminManualInvoice = () => {
       } else {
         setRoomName(p.room_name);
       }
+      setRoomLines(prev => prev.length
+        ? [{ ...prev[0], room_id: match?.id || null, room_name: finalName, price_per_night: finalPrice || prev[0].price_per_night }, ...prev.slice(1)]
+        : prev);
     }
   };
 
