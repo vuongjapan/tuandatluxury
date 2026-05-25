@@ -581,6 +581,7 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     width: 595.28, height: 841.89, y: 800, margin: 40,
   };
 
+  pageBookingCode = booking.booking_code || '';
   ctx = drawHeader(ctx, "CHI TIẾT DỊCH VỤ", `${booking.booking_code} • ${booking.guest_name}`);
 
   // Mini summary
