@@ -297,23 +297,27 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
   return ctx;
 }
 
-// Compact one-line map button — fits in remaining A4 space on summary
-function drawCompactMap(ctx: DrawCtx) {
-  const y = 95;
+// Compact one-line map button — flows right after content, never overlaps.
+function drawCompactMap(ctx: DrawCtx): DrawCtx {
+  const boxH = 44;
+  ctx = ensureSpace(ctx, boxH + 10);
+  // Position the box so its top sits at current ctx.y
+  const top = ctx.y;
+  const boxBottom = top - boxH + 12;
   ctx.page.drawRectangle({
-    x: ctx.margin - 4, y: y - 8,
-    width: ctx.width - 2 * ctx.margin + 8, height: 44,
+    x: ctx.margin - 4, y: boxBottom,
+    width: ctx.width - 2 * ctx.margin + 8, height: boxH,
     color: rgb(0.96, 0.91, 0.78),
     borderColor: rgb(0.78, 0.63, 0.25), borderWidth: 1,
   });
   ctx.page.drawText("📍 " + HOTEL_NAME_VI, {
-    x: ctx.margin, y: y + 22, size: 9.5, font: ctx.fontBold, color: rgb(0.48, 0.37, 0.16),
+    x: ctx.margin, y: top, size: 9.5, font: ctx.fontBold, color: rgb(0.48, 0.37, 0.16),
   });
   ctx.page.drawText(HOTEL_ADDRESS, {
-    x: ctx.margin, y: y + 10, size: 8, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
+    x: ctx.margin, y: top - 12, size: 8, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
   });
   const btnX = ctx.width - ctx.margin - 140;
-  const btnY = y + 6;
+  const btnY = top - 16;
   const btnW = 136;
   const btnH = 22;
   ctx.page.drawRectangle({
@@ -325,6 +329,8 @@ function drawCompactMap(ctx: DrawCtx) {
     x: btnX + (btnW - tw) / 2, y: btnY + 7, size: 9.5, font: ctx.fontBold, color: rgb(1, 1, 1),
   });
   addLinkAnnotation(ctx, [btnX, btnY, btnX + btnW, btnY + btnH], GOOGLE_MAPS_URL);
+  ctx.y = top - boxH - 4;
+  return ctx;
 }
 
 // Parse children count from guest_notes (e.g. "· 2 trẻ em đính kèm" or "2 trẻ em")
