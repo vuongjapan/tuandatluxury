@@ -26,6 +26,21 @@ interface InvoiceItem {
   quantity: number;
   unit_price: number;
 }
+interface RoomLine {
+  id: string;
+  room_id?: string | null;
+  room_name: string;
+  room_count: number;
+  nights: number;
+  price_per_night: number;
+}
+const newRoomLine = (): RoomLine => ({
+  id: crypto.randomUUID(),
+  room_name: '',
+  room_count: 1,
+  nights: 1,
+  price_per_night: 0,
+});
 
 const fmt = (v: number) => (v || 0).toLocaleString('vi-VN') + '₫';
 
