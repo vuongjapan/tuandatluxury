@@ -94,6 +94,7 @@ const AdminManualInvoice = () => {
   const [roomName, setRoomName] = useState('');
   const [roomQty, setRoomQty] = useState(1);
   const [roomPricePerNight, setRoomPricePerNight] = useState(0);
+  const [roomLines, setRoomLines] = useState<RoomLine[]>([newRoomLine()]);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountNote, setDiscountNote] = useState('');
   const [depositPercent, setDepositPercent] = useState<number>(50); // 30 | 50 | 70 | 100 | -1 (custom)
@@ -111,13 +112,21 @@ const AdminManualInvoice = () => {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
 
-  const nights = useMemo(() => {
+  const autoNights = useMemo(() => {
     if (!checkIn || !checkOut) return 1;
     const n = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000));
     return n;
   }, [checkIn, checkOut]);
 
-  const roomSubtotal = useMemo(() => roomPricePerNight * nights * roomQty, [roomPricePerNight, nights, roomQty]);
+  // Auto-update nights for ALL roomLines when stay dates change (admin can still override per row)
+  useEffect(() => {
+    setRoomLines(prev => prev.map(rl => ({ ...rl, nights: autoNights })));
+  }, [autoNights]);
+
+  const roomSubtotal = useMemo(
+    () => roomLines.reduce((s, rl) => s + (rl.price_per_night || 0) * (rl.nights || 0) * (rl.room_count || 0), 0),
+    [roomLines]
+  );
   const foodSubtotal = useMemo(() => items.filter(i => i.item_type !== 'custom').reduce((s, i) => s + i.unit_price * i.quantity, 0), [items]);
   const customSubtotal = useMemo(() => items.filter(i => i.item_type === 'custom').reduce((s, i) => s + i.unit_price * i.quantity, 0), [items]);
   const totalAmount = Math.max(0, roomSubtotal + foodSubtotal + customSubtotal - discountAmount);
