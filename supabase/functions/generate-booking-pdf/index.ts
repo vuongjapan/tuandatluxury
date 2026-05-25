@@ -177,22 +177,29 @@ function drawHeader(ctx: DrawCtx, title: string, subtitle: string): DrawCtx {
   return ctx;
 }
 
-function drawFooter(ctx: DrawCtx) {
-  const y = 35;
+function drawFooter(ctx: DrawCtx): DrawCtx {
+  // Flow-based footer — anchored just below current ctx.y, never overlapping content.
+  // Ensure enough vertical space (44px); if not, push to a new page first.
+  ctx = ensureSpace(ctx, 50);
+  // Keep a small gap above the footer
+  ctx.y -= 6;
+  const y = ctx.y;
   ctx.page.drawLine({
-    start: { x: ctx.margin, y: y + 30 },
-    end: { x: ctx.width - ctx.margin, y: y + 30 },
+    start: { x: ctx.margin, y: y + 24 },
+    end: { x: ctx.width - ctx.margin, y: y + 24 },
     thickness: 0.5, color: rgb(0.85, 0.74, 0.5),
   });
   ctx.page.drawText(`${HOTEL_NAME_VI}  •  ${HOTEL_PHONES}`, {
-    x: ctx.margin, y: y + 15, size: 8, font: ctx.fontBold, color: rgb(0.55, 0.41, 0.08),
+    x: ctx.margin, y: y + 10, size: 8, font: ctx.fontBold, color: rgb(0.55, 0.41, 0.08),
   });
   ctx.page.drawText(`${HOTEL_ADDRESS}  •  ${HOTEL_EMAIL}`, {
-    x: ctx.margin, y: y + 3, size: 7.5, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
+    x: ctx.margin, y: y - 2, size: 7.5, font: ctx.font, color: rgb(0.4, 0.4, 0.4),
   });
   ctx.page.drawText("Cảm ơn Quý khách đã lựa chọn chúng tôi!", {
-    x: ctx.margin, y: y - 8, size: 7.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
+    x: ctx.margin, y: y - 13, size: 7.5, font: ctx.font, color: rgb(0.5, 0.5, 0.5),
   });
+  ctx.y = y - 24;
+  return ctx;
 }
 
 function addLinkAnnotation(ctx: DrawCtx, rect: [number, number, number, number], url: string) {
