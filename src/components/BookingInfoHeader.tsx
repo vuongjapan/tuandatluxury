@@ -127,11 +127,8 @@ const BookingInfoHeader = ({ value, onChange, compact = false }: Props) => {
       return;
     }
     setVerifying(true);
-    const { data } = await supabase
-      .from('bookings')
-      .select('booking_code, guest_name, check_in, check_out, guests_count, room_details')
-      .eq('booking_code', draft.bookingCode.toUpperCase().trim())
-      .maybeSingle();
+    const { data: res } = await (supabase as any).rpc('lookup_booking_by_code', { p_code: draft.bookingCode });
+    const data = res?.booking;
     setVerifying(false);
 
     if (data) {
