@@ -159,6 +159,27 @@ const AdminManualInvoice = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  // Realtime: subscribe to changes on currently opened invoice
+  useEffect(() => {
+    if (!detailId) return;
+    const ch = supabase
+      .channel(`manual-invoice-${detailId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'manual_invoices', filter: `id=eq.${detailId}` }, (payload: any) => {
+        const next = payload.new;
+        setDetailData((prev: any) => prev ? { ...prev, ...next } : prev);
+        // Toast on deposit transition
+        if (next.payment_status === 'DEPOSIT_PAID' || next.payment_status === 'PAID') {
+          if (next.deposit_paid_at) {
+            const tm = new Date(next.deposit_paid_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            toast({ title: `✅ Đã nhận cọc ${next.invoice_code}`, description: `${fmt(next.deposit_amount)} lúc ${tm}` });
+          }
+        }
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [detailId]);
+
   // Prefill from chatbot session if any
   useEffect(() => {
     const raw = sessionStorage.getItem('chat_to_invoice');
