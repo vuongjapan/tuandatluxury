@@ -783,9 +783,9 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     bold: true, valueColor: [0.55, 0.41, 0.08], size: 13,
   });
 
-  // Map
+  // Map + footer flow with content
   ctx = drawMapSection(ctx);
-  drawFooter(ctx);
+  ctx = drawFooter(ctx);
 
   return await pdf.save();
 }
