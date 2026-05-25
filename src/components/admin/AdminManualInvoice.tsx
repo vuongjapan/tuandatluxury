@@ -272,17 +272,24 @@ const AdminManualInvoice = () => {
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
     setRoomId(''); setRoomName(''); setRoomQty(1); setRoomPricePerNight(0);
+    setRoomLines([newRoomLine()]);
     setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setDepositPercent(50); setNotes('');
     setItems([]);
   };
 
-  const onPickRoom = (id: string) => {
-    setRoomId(id);
-    const r = rooms.find(x => x.id === id);
-    if (r) {
-      setRoomName(r.name_vi);
-      setRoomPricePerNight(r.price_vnd);
-    }
+  const updateRoomLine = (id: string, patch: Partial<RoomLine>) => {
+    setRoomLines(prev => prev.map(rl => rl.id === id ? { ...rl, ...patch } : rl));
+  };
+  const removeRoomLine = (id: string) => {
+    setRoomLines(prev => prev.length <= 1 ? prev : prev.filter(rl => rl.id !== id));
+  };
+  const addRoomLine = () => {
+    setRoomLines(prev => [...prev, { ...newRoomLine(), nights: autoNights }]);
+  };
+  const pickRoomForLine = (lineId: string, roomDbId: string) => {
+    const r = rooms.find(x => x.id === roomDbId);
+    if (!r) return;
+    updateRoomLine(lineId, { room_id: r.id, room_name: r.name_vi, price_per_night: r.price_vnd });
   };
 
   const addMenuItem = (mi: MenuItem) => {
