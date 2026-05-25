@@ -641,12 +641,28 @@ const AdminManualInvoice = () => {
             <div><span className="text-muted-foreground">Trả phòng:</span> {detailData.check_out || '—'}</div>
           </div>
 
-          {detailData.room_name && (
-            <div className="bg-secondary p-3 rounded-lg text-sm">
-              <p className="font-semibold">{detailData.room_name} × {detailData.room_quantity} phòng × {detailData.nights} đêm</p>
-              <p className="text-muted-foreground">{fmt(detailData.room_price_per_night)} / đêm = <strong>{fmt(detailData.room_subtotal)}</strong></p>
-            </div>
-          )}
+          {(() => {
+            const lines = Array.isArray(detailData.room_lines) ? detailData.room_lines : [];
+            if (lines.length > 0) {
+              return (
+                <div className="bg-secondary p-3 rounded-lg text-sm space-y-1">
+                  <p className="font-semibold">🛏️ Phòng đặt:</p>
+                  {lines.map((rl: any, i: number) => (
+                    <div key={i} className="flex justify-between border-b border-border/40 last:border-0 pb-1">
+                      <span>{rl.room_name} × {rl.room_count}p × {rl.nights}đ <span className="text-muted-foreground">({fmt(rl.price_per_night)}/đêm)</span></span>
+                      <strong>{fmt(rl.line_total || (rl.price_per_night * rl.nights * rl.room_count))}</strong>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return detailData.room_name ? (
+              <div className="bg-secondary p-3 rounded-lg text-sm">
+                <p className="font-semibold">{detailData.room_name} × {detailData.room_quantity} phòng × {detailData.nights} đêm</p>
+                <p className="text-muted-foreground">{fmt(detailData.room_price_per_night)} / đêm = <strong>{fmt(detailData.room_subtotal)}</strong></p>
+              </div>
+            ) : null;
+          })()}
 
           {detailData.items?.length > 0 && (
             <div className="space-y-1">
