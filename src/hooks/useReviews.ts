@@ -22,7 +22,7 @@ export function useReviews(approvedOnly = true) {
   const { data: reviews = [], isLoading: loading } = useQuery({
     queryKey: ['reviews', approvedOnly],
     queryFn: async () => {
-      let q = supabase.from('reviews' as any).select('*').order('is_featured', { ascending: false }).order('created_at', { ascending: false });
+      let q = supabase.from('reviews' as any).select('id,guest_name,rating,title,content,image_url,room_type,stay_date,is_approved,is_featured,sort_order,created_at').order('is_featured', { ascending: false }).order('created_at', { ascending: false });
       if (approvedOnly) q = q.eq('is_approved', true);
       const { data } = await q;
       return (data as unknown as Review[]) || [];
