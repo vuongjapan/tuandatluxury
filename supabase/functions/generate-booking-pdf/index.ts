@@ -60,9 +60,32 @@ interface DrawCtx {
   margin: number;
 }
 
+let pageBookingCode = '';
+function drawMiniHeader(ctx: DrawCtx): DrawCtx {
+  // Smaller header re-printed on overflow pages
+  ctx.page.drawRectangle({
+    x: 0, y: ctx.height - 36, width: ctx.width, height: 36,
+    color: rgb(0.55, 0.41, 0.08),
+  });
+  ctx.page.drawText(HOTEL_NAME_VI, {
+    x: ctx.margin, y: ctx.height - 22, size: 11, font: ctx.fontBold, color: rgb(1, 1, 1),
+  });
+  if (pageBookingCode) {
+    const right = `Mã: ${pageBookingCode}`;
+    const w = ctx.fontBold.widthOfTextAtSize(right, 10);
+    ctx.page.drawText(right, {
+      x: ctx.width - ctx.margin - w, y: ctx.height - 22,
+      size: 10, font: ctx.fontBold, color: rgb(1, 0.95, 0.8),
+    });
+  }
+  ctx.y = ctx.height - 56;
+  return ctx;
+}
+
 function newPage(ctx: DrawCtx): DrawCtx {
   const page = ctx.pdf.addPage([595.28, 841.89]); // A4
-  return { ...ctx, page, y: 800 };
+  const next: DrawCtx = { ...ctx, page, y: 800 };
+  return drawMiniHeader(next);
 }
 
 function ensureSpace(ctx: DrawCtx, needed: number): DrawCtx {
