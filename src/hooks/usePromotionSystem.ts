@@ -202,12 +202,8 @@ export const validateDiscountCode = async (
     return { valid: true, discount: d };
   }
 
-  // 2) Fallback: voucher_codes (batch-generated QR vouchers like TDLUX-XXXX)
-  const { data: vc } = await supabase
-    .from('voucher_codes' as any)
-    .select('*')
-    .eq('code', upper)
-    .maybeSingle();
+  // 2) Fallback: voucher_codes (batch-generated QR vouchers) — via SECURITY DEFINER RPC
+  const { data: vc } = await (supabase as any).rpc('validate_voucher_code', { p_code: upper });
 
   if (!vc) return { valid: false, message: 'Mã không tồn tại' };
   const v = vc as any;

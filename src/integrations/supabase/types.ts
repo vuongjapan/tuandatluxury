@@ -3991,6 +3991,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_food_orders_for_base: { Args: { p_base: string }; Returns: number }
+      get_my_member_vouchers: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3998,6 +4000,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      lookup_booking_by_code: { Args: { p_code: string }; Returns: Json }
+      lookup_food_order_by_code: { Args: { p_code: string }; Returns: Json }
+      lookup_manual_invoice_by_code: { Args: { p_code: string }; Returns: Json }
+      lookup_orders_by_contact: {
+        Args: { p_email: string; p_phone: string }
+        Returns: Json
+      }
+      next_transport_count_today: { Args: never; Returns: number }
       sync_user_bookings: {
         Args: { _email: string; _phone: string; _user_id: string }
         Returns: number
@@ -4006,6 +4016,7 @@ export type Database = {
         Args: { p_code: string; p_date: string }
         Returns: Json
       }
+      validate_voucher_code: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

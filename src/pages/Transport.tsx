@@ -117,12 +117,9 @@ export function TransportForm({ tab, onSuccess }: { tab: TabKey; onSuccess: (id:
       const now = new Date();
       const dd = String(now.getDate()).padStart(2, "0");
       const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const { count } = await (supabase as any)
-        .from("transport_bookings")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", startOfDay);
-      const booking_id = `XE${dd}${mm}${String((count || 0) + 1).padStart(3, "0")}`;
+      const { data: countData } = await (supabase as any).rpc('next_transport_count_today');
+      const count = Number(countData) || 0;
+      const booking_id = `XE${dd}${mm}${String(count + 1).padStart(3, "0")}`;
 
       const payload = {
         booking_id,

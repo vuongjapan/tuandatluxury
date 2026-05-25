@@ -62,47 +62,47 @@ const Lookup = () => {
     setManualInvoices([]);
 
     try {
-      let bQuery = supabase.from('bookings').select('*').eq('visibility', 'visible').order('created_at', { ascending: false }).limit(30);
-      let fQuery = supabase.from('food_orders').select('*').order('created_at', { ascending: false }).limit(30);
-      let mQuery = supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }).limit(30);
+      let bookingsArr: any[] = [];
+      let foodsArr: any[] = [];
+      let manualsArr: any[] = [];
 
       if (query.trim()) {
         const d = detect(query);
         if (d.kind === 'code') {
-          bQuery = bQuery.eq('booking_code', d.value);
-          fQuery = fQuery.eq('food_order_id', d.value);
-          mQuery = mQuery.eq('invoice_code', d.value);
-        } else if (d.kind === 'email') {
-          bQuery = bQuery.eq('guest_email', d.value);
-          fQuery = fQuery.eq('guest_email', d.value);
-          mQuery = mQuery.eq('guest_email', d.value);
-        } else if (d.kind === 'phone') {
-          bQuery = bQuery.eq('guest_phone', d.value);
-          fQuery = fQuery.eq('phone', d.value);
-          mQuery = mQuery.eq('guest_phone', d.value);
+          // Try as booking, food order, or manual invoice code
+          const [b, f, m] = await Promise.all([
+            (supabase as any).rpc('lookup_booking_by_code', { p_code: d.value }),
+            (supabase as any).rpc('lookup_food_order_by_code', { p_code: d.value }),
+            (supabase as any).rpc('lookup_manual_invoice_by_code', { p_code: d.value }),
+          ]);
+          if (b.data?.booking) bookingsArr = [b.data.booking];
+          if (f.data?.order) foodsArr = [f.data.order];
+          if (m.data?.invoice) manualsArr = [m.data.invoice];
         } else {
-          bQuery = bQuery.or(`booking_code.eq.${d.value.toUpperCase()},guest_phone.eq.${d.value},guest_email.eq.${d.value.toLowerCase()}`);
-          mQuery = mQuery.or(`invoice_code.eq.${d.value.toUpperCase()},guest_phone.eq.${d.value},guest_email.eq.${d.value.toLowerCase()}`);
+          const phone = d.kind === 'phone' ? d.value : '';
+          const email = d.kind === 'email' ? d.value : '';
+          const { data } = await (supabase as any).rpc('lookup_orders_by_contact', { p_phone: phone, p_email: email });
+          bookingsArr = data?.bookings || [];
+          foodsArr = data?.food_orders || [];
+          manualsArr = data?.manual_invoices || [];
         }
       } else {
-        const conds: string[] = [];
-        const mConds: string[] = [];
-        if (advPhone.trim()) { conds.push(`guest_phone.eq.${advPhone.trim()}`); mConds.push(`guest_phone.eq.${advPhone.trim()}`); }
-        if (advEmail.trim()) { conds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`); mConds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`); }
-        if (conds.length) bQuery = bQuery.or(conds.join(','));
-        if (mConds.length) mQuery = mQuery.or(mConds.join(','));
-        if (advDate) { bQuery = bQuery.eq('check_in', advDate); mQuery = mQuery.eq('check_in', advDate); }
-
-        const fConds: string[] = [];
-        if (advPhone.trim()) fConds.push(`phone.eq.${advPhone.trim()}`);
-        if (advEmail.trim()) fConds.push(`guest_email.eq.${advEmail.trim().toLowerCase()}`);
-        if (fConds.length) fQuery = fQuery.or(fConds.join(','));
+        const { data } = await (supabase as any).rpc('lookup_orders_by_contact', {
+          p_phone: advPhone.trim() || '',
+          p_email: advEmail.trim() || '',
+        });
+        bookingsArr = data?.bookings || [];
+        foodsArr = data?.food_orders || [];
+        manualsArr = data?.manual_invoices || [];
+        if (advDate) {
+          bookingsArr = bookingsArr.filter((b: any) => b.check_in === advDate);
+          manualsArr = manualsArr.filter((m: any) => m.check_in === advDate);
+        }
       }
 
-      const [b, f, m] = await Promise.all([bQuery, fQuery, mQuery]);
-      setBookings(b.data || []);
-      setFoodOrders(f.data || []);
-      setManualInvoices(m.data || []);
+      setBookings(bookingsArr);
+      setFoodOrders(foodsArr);
+      setManualInvoices(manualsArr);
     } finally {
       setLoading(false);
     }

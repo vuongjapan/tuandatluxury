@@ -74,14 +74,12 @@ const FoodCheckout = ({ onBack }: FoodCheckoutProps) => {
       // Determine base code for food order ID
       const baseCode = form.bookingCode || `${prefix}A${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}`;
 
-      // Count existing food orders for this base code
-      const { count } = await supabase
-        .from('food_orders')
-        .select('*', { count: 'exact', head: true })
-        .ilike('food_order_id', `${baseCode}FOOD%`);
+      // Count existing food orders for this base code (via SECURITY DEFINER RPC)
+      const { data: countData } = await (supabase as any).rpc('count_food_orders_for_base', { p_base: baseCode });
+      const count = Number(countData) || 0;
 
       // Format: TD202604A00025FOOD, TD202604A00025FOOD1, TD202604A00025FOOD2...
-      const foodOrderId = count && count > 0
+      const foodOrderId = count > 0
         ? `${baseCode}FOOD${count}`
         : `${baseCode}FOOD`;
 
