@@ -38,19 +38,10 @@ const FoodInvoice = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: orderData } = await supabase
-        .from('food_orders')
-        .select('*')
-        .eq('food_order_id', foodOrderId)
-        .maybeSingle();
-
-      if (orderData) {
-        setOrder(orderData);
-        const { data: items } = await supabase
-          .from('food_order_items')
-          .select('*, menu_items:menu_item_id(name_vi, name_en, category)')
-          .eq('food_order_id', orderData.id);
-        setOrderItems((items as OrderItem[]) || []);
+      const { data } = await (supabase as any).rpc('lookup_food_order_by_code', { p_code: foodOrderId });
+      if (data?.order) {
+        setOrder(data.order);
+        setOrderItems((data.items || []) as OrderItem[]);
       }
       setLoading(false);
     };
@@ -61,14 +52,8 @@ const FoodInvoice = () => {
   useEffect(() => {
     if (!order || order.payment_status === 'DEPOSIT_PAID' || order.payment_status === 'PAID') return;
     const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('food_orders')
-        .select('payment_status, paid_amount, status')
-        .eq('food_order_id', foodOrderId)
-        .maybeSingle();
-      if (data) {
-        setOrder((prev: any) => prev ? { ...prev, ...data } : prev);
-      }
+      const { data } = await (supabase as any).rpc('lookup_food_order_by_code', { p_code: foodOrderId });
+      if (data?.order) setOrder((prev: any) => prev ? { ...prev, ...data.order } : prev);
     }, 5000);
     return () => clearInterval(interval);
   }, [order?.payment_status, foodOrderId]);
