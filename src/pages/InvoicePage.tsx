@@ -44,21 +44,15 @@ const InvoicePage = () => {
   const [copied, setCopied] = useState(false);
 
   const fetchBooking = useCallback(async () => {
-    const { data: b } = await supabase
-      .from('bookings')
-      .select('*, rooms(name_vi, name_en)')
-      .eq('booking_code', bookingCode)
-      .maybeSingle();
+    const { data } = await (supabase as any).rpc('lookup_booking_by_code', { p_code: bookingCode });
+    const b = data?.booking;
 
     if (b) {
-      setBooking(b);
-      const [{ data: bc }, { data: fi }] = await Promise.all([
-        supabase.from('booking_combos').select('*').eq('booking_id', b.id),
-        supabase.from('booking_food_items').select('*').eq('booking_id', b.id),
-      ]);
-      const comboList = bc || [];
+      const enriched = { ...b, rooms: data.room_name_vi ? { name_vi: data.room_name_vi, name_en: data.room_name_en } : null };
+      setBooking(enriched);
+      const comboList = data.combos || [];
       setCombos(comboList);
-      setFoodItems(fi || []);
+      setFoodItems(data.food_items || []);
 
       if (comboList.length > 0) {
         const dishMap: Record<string, any[]> = {};
@@ -80,37 +74,23 @@ const InvoicePage = () => {
 
   useEffect(() => { fetchBooking(); }, [fetchBooking]);
 
-  // Realtime: instantly refresh when admin confirms deposit
-  useEffect(() => {
-    if (!booking?.id) return;
-    const channel = supabase
-      .channel(`invoice-${booking.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'bookings', filter: `id=eq.${booking.id}` },
-        (payload: any) => {
-          const next = payload.new;
-          const prevStatus = booking.payment_status;
-          setBooking((b: any) => ({ ...(b || {}), ...next }));
-          if (next.payment_status !== prevStatus &&
-              (next.payment_status === 'DEPOSIT_PAID' || next.payment_status === 'PAID')) {
-            toast({ title: '✅ Khách sạn đã xác nhận thanh toán cọc!' });
-          }
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [booking?.id, booking?.payment_status, toast]);
-
-  // Fallback polling for browsers without realtime
+  // Polling for payment-status updates (realtime publication for bookings was removed for privacy)
   useEffect(() => {
     if (!booking || booking.payment_status === 'DEPOSIT_PAID' || booking.payment_status === 'PAID') return;
     const interval = setInterval(async () => {
-      const { data: b } = await supabase.from('bookings').select('payment_status, status').eq('booking_code', bookingCode).maybeSingle();
-      if (b && (b.payment_status === 'DEPOSIT_PAID' || b.payment_status === 'PAID')) { fetchBooking(); clearInterval(interval); }
+      const { data } = await (supabase as any).rpc('lookup_booking_by_code', { p_code: bookingCode });
+      const b = data?.booking;
+      if (b && (b.payment_status === 'DEPOSIT_PAID' || b.payment_status === 'PAID')) {
+        const prevStatus = booking.payment_status;
+        fetchBooking();
+        if (b.payment_status !== prevStatus) {
+          toast({ title: '✅ Khách sạn đã xác nhận thanh toán cọc!' });
+        }
+        clearInterval(interval);
+      }
     }, 5000);
     return () => clearInterval(interval);
-  }, [booking?.payment_status, bookingCode, fetchBooking]);
+  }, [booking, bookingCode, fetchBooking, toast]);
 
   const handlePrint = () => window.print();
   const handleCopy = async (text: string) => {
