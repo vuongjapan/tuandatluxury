@@ -358,6 +358,7 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     pdf, page, font, fontBold,
     width: 595.28, height: 841.89, y: 800, margin: 40,
   };
+  pageBookingCode = booking.booking_code || '';
 
   const subtitle = isPaid ? "Đã thanh toán đặt cọc" : "Chờ thanh toán đặt cọc";
   ctx = drawHeader(ctx, "HÓA ĐƠN ĐẶT PHÒNG", subtitle);
