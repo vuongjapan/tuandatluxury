@@ -443,9 +443,19 @@ const AdminManualInvoice = () => {
     }
   };
 
-  const openSendDialog = (invoiceId: string, defaultEmail?: string) => {
+  const openSendDialog = (invoiceId: string, defaultEmail?: string, presetType?: 'pending' | 'confirmed') => {
     const last = localStorage.getItem(LAST_EMAIL_KEY) || '';
-    setEmailDialog({ open: true, invoiceId, email: defaultEmail || last });
+    const inv = invoices.find(i => i.id === invoiceId) || detailData;
+    const isPaid = inv && (inv.payment_status === 'DEPOSIT_PAID' || inv.payment_status === 'PAID');
+    const type = presetType || (isPaid ? 'confirmed' : 'pending');
+    setEmailDialog({
+      open: true,
+      invoiceId,
+      email: defaultEmail || last,
+      emailType: type,
+      attachPending: type === 'pending',
+      attachConfirmed: type === 'confirmed',
+    });
   };
 
   const downloadPdf = async (invoiceId: string, code: string) => {
