@@ -292,6 +292,7 @@ const AdminManualInvoice = () => {
   };
 
   const resetForm = async () => {
+    setEditingId(null);
     setCode(await generateInvoiceCode());
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
@@ -299,6 +300,57 @@ const AdminManualInvoice = () => {
     setRoomLines([newRoomLine()]);
     setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setDepositPercent(50); setNotes('');
     setItems([]);
+  };
+
+  const loadInvoiceForEdit = async (id: string) => {
+    const [{ data: inv }, { data: its }] = await Promise.all([
+      supabase.from('manual_invoices').select('*').eq('id', id).single(),
+      supabase.from('manual_invoice_items').select('*').eq('invoice_id', id).order('sort_order'),
+    ]);
+    if (!inv) return;
+    setEditingId(id);
+    setCode((inv as any).invoice_code);
+    setGuestName((inv as any).guest_name || '');
+    setGuestPhone((inv as any).guest_phone || '');
+    setGuestEmail((inv as any).guest_email || '');
+    setCheckIn((inv as any).check_in || '');
+    setCheckOut((inv as any).check_out || '');
+    setGuestsCount((inv as any).guests_count || 2);
+    setChildrenCount((inv as any).children_count || 0);
+    const rl = Array.isArray((inv as any).room_lines) ? (inv as any).room_lines : [];
+    if (rl.length > 0) {
+      setRoomLines(rl.map((r: any) => ({
+        id: crypto.randomUUID(),
+        room_id: r.room_id || null,
+        room_name: r.room_name || '',
+        room_count: r.room_count || 1,
+        nights: r.nights || 1,
+        price_per_night: r.price_per_night || 0,
+      })));
+    } else {
+      setRoomLines([{
+        id: crypto.randomUUID(),
+        room_id: (inv as any).room_id || null,
+        room_name: (inv as any).room_name || '',
+        room_count: (inv as any).room_quantity || 1,
+        nights: (inv as any).nights || 1,
+        price_per_night: (inv as any).room_price_per_night || 0,
+      }]);
+    }
+    setDiscountAmount((inv as any).discount_amount || 0);
+    setDiscountNote((inv as any).discount_note || '');
+    setDepositAmount((inv as any).deposit_amount || 0);
+    setDepositPercent(-1);
+    setNotes((inv as any).notes || '');
+    setItems((its || []).map((i: any) => ({
+      id: crypto.randomUUID(),
+      item_type: i.item_type,
+      ref_id: i.ref_id || undefined,
+      name: i.name,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+    })));
+    setView('create');
   };
 
   const updateRoomLine = (id: string, patch: Partial<RoomLine>) => {
