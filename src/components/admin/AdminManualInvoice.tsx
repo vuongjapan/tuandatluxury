@@ -977,9 +977,12 @@ const AdminManualInvoice = () => {
   // ====== CREATE VIEW ======
   return (
     <div className="space-y-4 max-w-5xl">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => setView('list')}>← Quay lại danh sách</Button>
-        <p className="text-sm text-muted-foreground">Mã: <strong className="font-mono text-foreground">{code}</strong></p>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <Button variant="ghost" onClick={() => { resetForm(); setView(editingId ? 'detail' : 'list'); }}>← {editingId ? 'Huỷ sửa' : 'Quay lại danh sách'}</Button>
+        <p className="text-sm text-muted-foreground">
+          {editingId && <span className="mr-2 px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-semibold">✏️ Đang chỉnh sửa</span>}
+          Mã: <strong className="font-mono text-foreground">{code}</strong>
+        </p>
       </div>
 
       {/* Voice input */}
