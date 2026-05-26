@@ -108,7 +108,8 @@ const AdminManualInvoice = () => {
   const [submitting, setSubmitting] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
-  const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string }>({ open: false, invoiceId: null, email: '' });
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string; emailType: 'pending' | 'confirmed'; attachPending: boolean; attachConfirmed: boolean }>({ open: false, invoiceId: null, email: '', emailType: 'pending', attachPending: true, attachConfirmed: false });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceParsing, setVoiceParsing] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
