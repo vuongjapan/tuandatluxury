@@ -540,43 +540,98 @@ const AdminManualInvoice = () => {
     );
   }, [search, invoices]);
 
+  const closeDialog = () => setEmailDialog(s => ({ ...s, open: false }));
+
   const emailDialogJsx = (
-    <Dialog open={emailDialog.open} onOpenChange={(o) => setEmailDialog(s => ({ ...s, open: o }))}>
+    <Dialog open={emailDialog.open} onOpenChange={(o) => !o && closeDialog()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Gửi hóa đơn qua email</DialogTitle>
+          <DialogTitle>📧 Gửi hóa đơn qua email</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label>Email người nhận</Label>
-          <Input
-            type="email"
-            value={emailDialog.email}
-            onChange={(e) => setEmailDialog(s => ({ ...s, email: e.target.value }))}
-            placeholder="khach@email.com"
-            autoFocus
-          />
-          <p className="text-xs text-muted-foreground">
-            📎 Email sẽ kèm file PDF hóa đơn. Địa chỉ này sẽ được nhớ cho lần gửi sau.
-          </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Email người nhận</Label>
+            <Input
+              type="email"
+              value={emailDialog.email}
+              onChange={(e) => setEmailDialog(s => ({ ...s, email: e.target.value }))}
+              placeholder="khach@email.com"
+              autoFocus
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Loại email</Label>
+            <RadioGroup
+              value={emailDialog.emailType}
+              onValueChange={(v: 'pending' | 'confirmed') =>
+                setEmailDialog(s => ({
+                  ...s,
+                  emailType: v,
+                  attachPending: v === 'pending' ? true : s.attachPending,
+                  attachConfirmed: v === 'confirmed' ? true : s.attachConfirmed,
+                }))
+              }
+              className="flex flex-col gap-1"
+            >
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <RadioGroupItem value="pending" id="et-pending" />
+                <span>⏳ Email chờ cọc (có QR + hướng dẫn CK)</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <RadioGroupItem value="confirmed" id="et-confirmed" />
+                <span>✅ Email xác nhận (đã nhận cọc)</span>
+              </label>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label>📎 File PDF đính kèm</Label>
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={emailDialog.attachPending}
+                  onCheckedChange={(c) => setEmailDialog(s => ({ ...s, attachPending: !!c }))}
+                />
+                <span>PDF Tóm tắt — Chờ cọc (có QR)</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={emailDialog.attachConfirmed}
+                  onCheckedChange={(c) => setEmailDialog(s => ({ ...s, attachConfirmed: !!c }))}
+                />
+                <span>PDF Tóm tắt — Đã thanh toán</span>
+              </label>
+              <p className="text-[11px] text-muted-foreground italic">
+                Mặc định đính kèm theo loại email. Có thể tick cả hai.
+              </p>
+            </div>
+          </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setEmailDialog(s => ({ ...s, open: false }))}>Hủy</Button>
+          <Button variant="outline" onClick={closeDialog}>Hủy</Button>
           <Button
             onClick={async () => {
               if (!emailDialog.email.trim() || !emailDialog.invoiceId) return;
               const id = emailDialog.invoiceId;
               const to = emailDialog.email.trim();
-              setEmailDialog({ open: false, invoiceId: null, email: '' });
-              await sendEmail(id, to);
+              const type = emailDialog.emailType;
+              const attachments = [
+                emailDialog.attachPending ? 'pending' : null,
+                emailDialog.attachConfirmed ? 'confirmed' : null,
+              ].filter(Boolean) as ('pending' | 'confirmed')[];
+              closeDialog();
+              await sendEmail(id, to, type, attachments);
             }}
-            disabled={!emailDialog.email.trim() || sendingEmail !== null}
+            disabled={!emailDialog.email.trim() || sendingEmail !== null || (!emailDialog.attachPending && !emailDialog.attachConfirmed)}
           >
-            <Send className="h-4 w-4 mr-2" /> Gửi
+            <Send className="h-4 w-4 mr-2" /> Gửi ngay
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+
 
   // ====== DETAIL VIEW ======
   if (view === 'detail' && detailData) {
