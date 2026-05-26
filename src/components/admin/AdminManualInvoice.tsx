@@ -403,7 +403,9 @@ const AdminManualInvoice = () => {
     setSubmitting(true);
     const finalCode = code || (await generateInvoiceCode());
     if (!code) setCode(finalCode);
-    const { data: inv, error } = await supabase.from('manual_invoices').insert({
+
+    const isEdit = !!editingId;
+    const payload: any = {
       invoice_code: finalCode,
       guest_name: guestName,
       guest_phone: guestPhone,
@@ -433,19 +435,37 @@ const AdminManualInvoice = () => {
       total_amount: totalAmount,
       deposit_amount: depositAmount,
       remaining_amount: remainingAmount,
-      payment_status: depositAmount >= totalAmount ? 'PAID' : (depositAmount > 0 ? 'PARTIAL' : 'PENDING'),
       notes: notes || null,
-    }).select().single();
+    };
+    // Khi tạo mới: set payment_status. Khi sửa: KHÔNG đụng payment_status (giữ nguyên trạng thái cọc do webhook quản lý)
+    if (!isEdit) {
+      payload.payment_status = depositAmount >= totalAmount ? 'PAID' : (depositAmount > 0 ? 'PARTIAL' : 'PENDING');
+    }
 
-    if (error || !inv) {
-      setSubmitting(false);
-      toast({ title: 'Lỗi lưu hóa đơn', description: error?.message, variant: 'destructive' });
-      return null;
+    let invId: string;
+    if (isEdit) {
+      const { error } = await supabase.from('manual_invoices').update(payload).eq('id', editingId!);
+      if (error) {
+        setSubmitting(false);
+        toast({ title: 'Lỗi cập nhật', description: error.message, variant: 'destructive' });
+        return null;
+      }
+      invId = editingId!;
+      // Xoá items cũ trước khi insert lại
+      await supabase.from('manual_invoice_items').delete().eq('invoice_id', invId);
+    } else {
+      const { data: inv, error } = await supabase.from('manual_invoices').insert(payload).select().single();
+      if (error || !inv) {
+        setSubmitting(false);
+        toast({ title: 'Lỗi lưu hóa đơn', description: error?.message, variant: 'destructive' });
+        return null;
+      }
+      invId = inv.id;
     }
 
     if (items.length > 0) {
       const itemsPayload = items.map((i, idx) => ({
-        invoice_id: inv.id,
+        invoice_id: invId,
         item_type: i.item_type,
         ref_id: i.ref_id || null,
         name: i.name || 'Mục',
@@ -458,11 +478,16 @@ const AdminManualInvoice = () => {
     }
 
     setSubmitting(false);
-    toast({ title: '✅ Đã tạo hóa đơn ' + finalCode });
+    toast({ title: isEdit ? '✅ Đã cập nhật và tạo lại PDF' : ('✅ Đã tạo hóa đơn ' + finalCode) });
+    const wasEdit = isEdit;
     resetForm();
     loadData();
-    setView('list');
-    return inv.id;
+    if (wasEdit) {
+      await openDetail(invId);
+    } else {
+      setView('list');
+    }
+    return invId;
   };
 
   const openDetail = async (id: string) => {
