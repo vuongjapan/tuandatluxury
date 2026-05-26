@@ -734,20 +734,21 @@ const AdminManualInvoice = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => sendEmail(detailData.id, detailData.guest_email, 'pending')}
-              disabled={sendingEmail === detailData.id || !detailData.guest_email}
-              title={!detailData.guest_email ? 'Khách chưa có email' : ''}
+              onClick={() => loadInvoiceForEdit(detailData.id)}
+            >
+              <Pencil className="h-4 w-4 mr-2" /> Chỉnh sửa
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => openSendDialog(detailData.id, detailData.guest_email, 'pending')}
+              disabled={sendingEmail === detailData.id}
             >
               {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
               📧 Gửi email chờ cọc
             </Button>
             <Button
-              onClick={async () => {
-                const isPaid = detailData.payment_status === 'DEPOSIT_PAID' || detailData.payment_status === 'PAID';
-                if (!isPaid && !confirm('Booking chưa xác nhận thanh toán. Vẫn muốn gửi email xác nhận?')) return;
-                sendEmail(detailData.id, detailData.guest_email, 'confirmed');
-              }}
-              disabled={sendingEmail === detailData.id || !detailData.guest_email}
+              onClick={() => openSendDialog(detailData.id, detailData.guest_email, 'confirmed')}
+              disabled={sendingEmail === detailData.id}
             >
               {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
               ✅ Gửi email xác nhận
