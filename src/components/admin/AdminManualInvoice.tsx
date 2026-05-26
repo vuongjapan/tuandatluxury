@@ -423,17 +423,27 @@ const AdminManualInvoice = () => {
     setView('detail');
   };
 
-  const sendEmail = async (invoiceId: string, recipientOverride?: string, emailType?: 'pending' | 'confirmed') => {
+  const sendEmail = async (
+    invoiceId: string,
+    recipientOverride?: string,
+    emailType?: 'pending' | 'confirmed',
+    attachments?: ('pending' | 'confirmed')[],
+  ) => {
     setSendingEmail(invoiceId);
     try {
       const body: any = { invoice_id: invoiceId, sent_by: 'admin:manual' };
       if (recipientOverride) body.recipient_email = recipientOverride;
       if (emailType) body.email_type = emailType;
+      if (attachments && attachments.length > 0) body.attachments = attachments;
       const { data, error } = await supabase.functions.invoke('send-manual-invoice-email', { body });
       if (error) throw error;
       const sentTo = (data as any)?.sent_to || recipientOverride;
       if (sentTo) localStorage.setItem(LAST_EMAIL_KEY, sentTo);
-      toast({ title: `✅ Đã gửi email ${emailType === 'confirmed' ? 'xác nhận' : 'chờ cọc'}`, description: sentTo ? `Tới: ${sentTo}` : undefined });
+      const count = (data as any)?.attached_count ?? (attachments?.length || 1);
+      toast({
+        title: `✅ Đã gửi email ${emailType === 'confirmed' ? 'xác nhận' : 'chờ cọc'}`,
+        description: `${count} PDF · ${sentTo || ''}`.trim(),
+      });
       loadData();
       if (detailData?.id === invoiceId) openDetail(invoiceId);
     } catch (e: any) {
