@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, FileText, Mail, Loader2, Search, Eye, Send, Download, Mic, MicOff } from 'lucide-react';
+import { Plus, Trash2, FileText, Mail, Loader2, Search, Eye, Send, Download, Mic, MicOff, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const LAST_EMAIL_KEY = 'admin_manual_invoice_last_email';
 
@@ -106,7 +108,8 @@ const AdminManualInvoice = () => {
   const [submitting, setSubmitting] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
-  const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string }>({ open: false, invoiceId: null, email: '' });
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; invoiceId: string | null; email: string; emailType: 'pending' | 'confirmed'; attachPending: boolean; attachConfirmed: boolean }>({ open: false, invoiceId: null, email: '', emailType: 'pending', attachPending: true, attachConfirmed: false });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceParsing, setVoiceParsing] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
@@ -289,6 +292,7 @@ const AdminManualInvoice = () => {
   };
 
   const resetForm = async () => {
+    setEditingId(null);
     setCode(await generateInvoiceCode());
     setGuestName(''); setGuestPhone(''); setGuestEmail('');
     setCheckIn(''); setCheckOut(''); setGuestsCount(2); setChildrenCount(0);
@@ -296,6 +300,57 @@ const AdminManualInvoice = () => {
     setRoomLines([newRoomLine()]);
     setDiscountAmount(0); setDiscountNote(''); setDepositAmount(0); setDepositPercent(50); setNotes('');
     setItems([]);
+  };
+
+  const loadInvoiceForEdit = async (id: string) => {
+    const [{ data: inv }, { data: its }] = await Promise.all([
+      supabase.from('manual_invoices').select('*').eq('id', id).single(),
+      supabase.from('manual_invoice_items').select('*').eq('invoice_id', id).order('sort_order'),
+    ]);
+    if (!inv) return;
+    setEditingId(id);
+    setCode((inv as any).invoice_code);
+    setGuestName((inv as any).guest_name || '');
+    setGuestPhone((inv as any).guest_phone || '');
+    setGuestEmail((inv as any).guest_email || '');
+    setCheckIn((inv as any).check_in || '');
+    setCheckOut((inv as any).check_out || '');
+    setGuestsCount((inv as any).guests_count || 2);
+    setChildrenCount((inv as any).children_count || 0);
+    const rl = Array.isArray((inv as any).room_lines) ? (inv as any).room_lines : [];
+    if (rl.length > 0) {
+      setRoomLines(rl.map((r: any) => ({
+        id: crypto.randomUUID(),
+        room_id: r.room_id || null,
+        room_name: r.room_name || '',
+        room_count: r.room_count || 1,
+        nights: r.nights || 1,
+        price_per_night: r.price_per_night || 0,
+      })));
+    } else {
+      setRoomLines([{
+        id: crypto.randomUUID(),
+        room_id: (inv as any).room_id || null,
+        room_name: (inv as any).room_name || '',
+        room_count: (inv as any).room_quantity || 1,
+        nights: (inv as any).nights || 1,
+        price_per_night: (inv as any).room_price_per_night || 0,
+      }]);
+    }
+    setDiscountAmount((inv as any).discount_amount || 0);
+    setDiscountNote((inv as any).discount_note || '');
+    setDepositAmount((inv as any).deposit_amount || 0);
+    setDepositPercent(-1);
+    setNotes((inv as any).notes || '');
+    setItems((its || []).map((i: any) => ({
+      id: crypto.randomUUID(),
+      item_type: i.item_type,
+      ref_id: i.ref_id || undefined,
+      name: i.name,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+    })));
+    setView('create');
   };
 
   const updateRoomLine = (id: string, patch: Partial<RoomLine>) => {
@@ -348,7 +403,9 @@ const AdminManualInvoice = () => {
     setSubmitting(true);
     const finalCode = code || (await generateInvoiceCode());
     if (!code) setCode(finalCode);
-    const { data: inv, error } = await supabase.from('manual_invoices').insert({
+
+    const isEdit = !!editingId;
+    const payload: any = {
       invoice_code: finalCode,
       guest_name: guestName,
       guest_phone: guestPhone,
@@ -378,19 +435,37 @@ const AdminManualInvoice = () => {
       total_amount: totalAmount,
       deposit_amount: depositAmount,
       remaining_amount: remainingAmount,
-      payment_status: depositAmount >= totalAmount ? 'PAID' : (depositAmount > 0 ? 'PARTIAL' : 'PENDING'),
       notes: notes || null,
-    }).select().single();
+    };
+    // Khi tạo mới: set payment_status. Khi sửa: KHÔNG đụng payment_status (giữ nguyên trạng thái cọc do webhook quản lý)
+    if (!isEdit) {
+      payload.payment_status = depositAmount >= totalAmount ? 'PAID' : (depositAmount > 0 ? 'PARTIAL' : 'PENDING');
+    }
 
-    if (error || !inv) {
-      setSubmitting(false);
-      toast({ title: 'Lỗi lưu hóa đơn', description: error?.message, variant: 'destructive' });
-      return null;
+    let invId: string;
+    if (isEdit) {
+      const { error } = await supabase.from('manual_invoices').update(payload).eq('id', editingId!);
+      if (error) {
+        setSubmitting(false);
+        toast({ title: 'Lỗi cập nhật', description: error.message, variant: 'destructive' });
+        return null;
+      }
+      invId = editingId!;
+      // Xoá items cũ trước khi insert lại
+      await supabase.from('manual_invoice_items').delete().eq('invoice_id', invId);
+    } else {
+      const { data: inv, error } = await supabase.from('manual_invoices').insert(payload).select().single();
+      if (error || !inv) {
+        setSubmitting(false);
+        toast({ title: 'Lỗi lưu hóa đơn', description: error?.message, variant: 'destructive' });
+        return null;
+      }
+      invId = inv.id;
     }
 
     if (items.length > 0) {
       const itemsPayload = items.map((i, idx) => ({
-        invoice_id: inv.id,
+        invoice_id: invId,
         item_type: i.item_type,
         ref_id: i.ref_id || null,
         name: i.name || 'Mục',
@@ -403,11 +478,16 @@ const AdminManualInvoice = () => {
     }
 
     setSubmitting(false);
-    toast({ title: '✅ Đã tạo hóa đơn ' + finalCode });
+    toast({ title: isEdit ? '✅ Đã cập nhật và tạo lại PDF' : ('✅ Đã tạo hóa đơn ' + finalCode) });
+    const wasEdit = isEdit;
     resetForm();
     loadData();
-    setView('list');
-    return inv.id;
+    if (wasEdit) {
+      await openDetail(invId);
+    } else {
+      setView('list');
+    }
+    return invId;
   };
 
   const openDetail = async (id: string) => {
@@ -420,17 +500,27 @@ const AdminManualInvoice = () => {
     setView('detail');
   };
 
-  const sendEmail = async (invoiceId: string, recipientOverride?: string, emailType?: 'pending' | 'confirmed') => {
+  const sendEmail = async (
+    invoiceId: string,
+    recipientOverride?: string,
+    emailType?: 'pending' | 'confirmed',
+    attachments?: ('pending' | 'confirmed')[],
+  ) => {
     setSendingEmail(invoiceId);
     try {
       const body: any = { invoice_id: invoiceId, sent_by: 'admin:manual' };
       if (recipientOverride) body.recipient_email = recipientOverride;
       if (emailType) body.email_type = emailType;
+      if (attachments && attachments.length > 0) body.attachments = attachments;
       const { data, error } = await supabase.functions.invoke('send-manual-invoice-email', { body });
       if (error) throw error;
       const sentTo = (data as any)?.sent_to || recipientOverride;
       if (sentTo) localStorage.setItem(LAST_EMAIL_KEY, sentTo);
-      toast({ title: `✅ Đã gửi email ${emailType === 'confirmed' ? 'xác nhận' : 'chờ cọc'}`, description: sentTo ? `Tới: ${sentTo}` : undefined });
+      const count = (data as any)?.attached_count ?? (attachments?.length || 1);
+      toast({
+        title: `✅ Đã gửi email ${emailType === 'confirmed' ? 'xác nhận' : 'chờ cọc'}`,
+        description: `${count} PDF · ${sentTo || ''}`.trim(),
+      });
       loadData();
       if (detailData?.id === invoiceId) openDetail(invoiceId);
     } catch (e: any) {
@@ -440,9 +530,19 @@ const AdminManualInvoice = () => {
     }
   };
 
-  const openSendDialog = (invoiceId: string, defaultEmail?: string) => {
+  const openSendDialog = (invoiceId: string, defaultEmail?: string, presetType?: 'pending' | 'confirmed') => {
     const last = localStorage.getItem(LAST_EMAIL_KEY) || '';
-    setEmailDialog({ open: true, invoiceId, email: defaultEmail || last });
+    const inv = invoices.find(i => i.id === invoiceId) || detailData;
+    const isPaid = inv && (inv.payment_status === 'DEPOSIT_PAID' || inv.payment_status === 'PAID');
+    const type = presetType || (isPaid ? 'confirmed' : 'pending');
+    setEmailDialog({
+      open: true,
+      invoiceId,
+      email: defaultEmail || last,
+      emailType: type,
+      attachPending: type === 'pending',
+      attachConfirmed: type === 'confirmed',
+    });
   };
 
   const downloadPdf = async (invoiceId: string, code: string) => {
@@ -527,43 +627,98 @@ const AdminManualInvoice = () => {
     );
   }, [search, invoices]);
 
+  const closeDialog = () => setEmailDialog(s => ({ ...s, open: false }));
+
   const emailDialogJsx = (
-    <Dialog open={emailDialog.open} onOpenChange={(o) => setEmailDialog(s => ({ ...s, open: o }))}>
+    <Dialog open={emailDialog.open} onOpenChange={(o) => !o && closeDialog()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Gửi hóa đơn qua email</DialogTitle>
+          <DialogTitle>📧 Gửi hóa đơn qua email</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label>Email người nhận</Label>
-          <Input
-            type="email"
-            value={emailDialog.email}
-            onChange={(e) => setEmailDialog(s => ({ ...s, email: e.target.value }))}
-            placeholder="khach@email.com"
-            autoFocus
-          />
-          <p className="text-xs text-muted-foreground">
-            📎 Email sẽ kèm file PDF hóa đơn. Địa chỉ này sẽ được nhớ cho lần gửi sau.
-          </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Email người nhận</Label>
+            <Input
+              type="email"
+              value={emailDialog.email}
+              onChange={(e) => setEmailDialog(s => ({ ...s, email: e.target.value }))}
+              placeholder="khach@email.com"
+              autoFocus
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Loại email</Label>
+            <RadioGroup
+              value={emailDialog.emailType}
+              onValueChange={(v: 'pending' | 'confirmed') =>
+                setEmailDialog(s => ({
+                  ...s,
+                  emailType: v,
+                  attachPending: v === 'pending' ? true : s.attachPending,
+                  attachConfirmed: v === 'confirmed' ? true : s.attachConfirmed,
+                }))
+              }
+              className="flex flex-col gap-1"
+            >
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <RadioGroupItem value="pending" id="et-pending" />
+                <span>⏳ Email chờ cọc (có QR + hướng dẫn CK)</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <RadioGroupItem value="confirmed" id="et-confirmed" />
+                <span>✅ Email xác nhận (đã nhận cọc)</span>
+              </label>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label>📎 File PDF đính kèm</Label>
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={emailDialog.attachPending}
+                  onCheckedChange={(c) => setEmailDialog(s => ({ ...s, attachPending: !!c }))}
+                />
+                <span>PDF Tóm tắt — Chờ cọc (có QR)</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={emailDialog.attachConfirmed}
+                  onCheckedChange={(c) => setEmailDialog(s => ({ ...s, attachConfirmed: !!c }))}
+                />
+                <span>PDF Tóm tắt — Đã thanh toán</span>
+              </label>
+              <p className="text-[11px] text-muted-foreground italic">
+                Mặc định đính kèm theo loại email. Có thể tick cả hai.
+              </p>
+            </div>
+          </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setEmailDialog(s => ({ ...s, open: false }))}>Hủy</Button>
+          <Button variant="outline" onClick={closeDialog}>Hủy</Button>
           <Button
             onClick={async () => {
               if (!emailDialog.email.trim() || !emailDialog.invoiceId) return;
               const id = emailDialog.invoiceId;
               const to = emailDialog.email.trim();
-              setEmailDialog({ open: false, invoiceId: null, email: '' });
-              await sendEmail(id, to);
+              const type = emailDialog.emailType;
+              const attachments = [
+                emailDialog.attachPending ? 'pending' : null,
+                emailDialog.attachConfirmed ? 'confirmed' : null,
+              ].filter(Boolean) as ('pending' | 'confirmed')[];
+              closeDialog();
+              await sendEmail(id, to, type, attachments);
             }}
-            disabled={!emailDialog.email.trim() || sendingEmail !== null}
+            disabled={!emailDialog.email.trim() || sendingEmail !== null || (!emailDialog.attachPending && !emailDialog.attachConfirmed)}
           >
-            <Send className="h-4 w-4 mr-2" /> Gửi
+            <Send className="h-4 w-4 mr-2" /> Gửi ngay
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+
 
   // ====== DETAIL VIEW ======
   if (view === 'detail' && detailData) {
@@ -579,20 +734,21 @@ const AdminManualInvoice = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => sendEmail(detailData.id, detailData.guest_email, 'pending')}
-              disabled={sendingEmail === detailData.id || !detailData.guest_email}
-              title={!detailData.guest_email ? 'Khách chưa có email' : ''}
+              onClick={() => loadInvoiceForEdit(detailData.id)}
+            >
+              <Pencil className="h-4 w-4 mr-2" /> Chỉnh sửa
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => openSendDialog(detailData.id, detailData.guest_email, 'pending')}
+              disabled={sendingEmail === detailData.id}
             >
               {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
               📧 Gửi email chờ cọc
             </Button>
             <Button
-              onClick={async () => {
-                const isPaid = detailData.payment_status === 'DEPOSIT_PAID' || detailData.payment_status === 'PAID';
-                if (!isPaid && !confirm('Booking chưa xác nhận thanh toán. Vẫn muốn gửi email xác nhận?')) return;
-                sendEmail(detailData.id, detailData.guest_email, 'confirmed');
-              }}
-              disabled={sendingEmail === detailData.id || !detailData.guest_email}
+              onClick={() => openSendDialog(detailData.id, detailData.guest_email, 'confirmed')}
+              disabled={sendingEmail === detailData.id}
             >
               {sendingEmail === detailData.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
               ✅ Gửi email xác nhận
@@ -821,9 +977,12 @@ const AdminManualInvoice = () => {
   // ====== CREATE VIEW ======
   return (
     <div className="space-y-4 max-w-5xl">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => setView('list')}>← Quay lại danh sách</Button>
-        <p className="text-sm text-muted-foreground">Mã: <strong className="font-mono text-foreground">{code}</strong></p>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <Button variant="ghost" onClick={() => { resetForm(); setView(editingId ? 'detail' : 'list'); }}>← {editingId ? 'Huỷ sửa' : 'Quay lại danh sách'}</Button>
+        <p className="text-sm text-muted-foreground">
+          {editingId && <span className="mr-2 px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-semibold">✏️ Đang chỉnh sửa</span>}
+          Mã: <strong className="font-mono text-foreground">{code}</strong>
+        </p>
       </div>
 
       {/* Voice input */}
