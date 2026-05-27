@@ -260,14 +260,18 @@ serve(async (req) => {
       to: toEmail,
       subject,
       html,
-      attachments: [
-        { filename: pdfName, content: pdfBytes, contentType: "application/pdf" },
-      ],
+      attachments: pdfAttachments,
     });
 
     await appendLog(true);
 
-    return new Response(JSON.stringify({ ok: true, sent_to: toEmail, email_type: variant }), {
+    return new Response(JSON.stringify({
+      ok: true,
+      sent_to: toEmail,
+      email_type: variant,
+      attached_count: pdfAttachments.length,
+      attached: attachVariants,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
