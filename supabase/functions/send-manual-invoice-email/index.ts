@@ -76,7 +76,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { invoice_id, recipient_email, email_type, sent_by } = body;
+    const { invoice_id, recipient_email, email_type, sent_by, attachments } = body;
     if (!invoice_id) throw new Error("invoice_id required");
     invoice_id_for_log = invoice_id;
     sent_by_for_log = sent_by || 'admin:unknown';
@@ -99,22 +99,38 @@ serve(async (req) => {
     const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD");
     if (!SMTP_PASSWORD) throw new Error("SMTP_PASSWORD missing");
 
-    // Build PDF theo variant
-    const pdfRes = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-manual-invoice-pdf`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({ invoice_id, variant }),
-      }
-    );
-    if (!pdfRes.ok) throw new Error(`PDF gen failed: ${await pdfRes.text()}`);
-    const pdfJson = await pdfRes.json();
-    const pdfBytes = Uint8Array.from(atob(pdfJson.pdf_base64), c => c.charCodeAt(0));
-    const pdfName = pdfJson.pdf_name;
+    // Resolve PDF attachment list: explicit `attachments` array, else single `variant`
+    const attachVariants: Array<'pending' | 'confirmed'> = (() => {
+      const raw = Array.isArray(attachments) && attachments.length > 0
+        ? attachments
+        : [variant];
+      const cleaned = raw.filter((v: any) => v === 'pending' || v === 'confirmed');
+      // dedupe while keeping order
+      return Array.from(new Set(cleaned)) as Array<'pending' | 'confirmed'>;
+    })();
+
+    const pdfAttachments: Array<{ filename: string; content: Uint8Array; contentType: string }> = [];
+    for (const v of attachVariants) {
+      const pdfRes = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-manual-invoice-pdf`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ invoice_id, variant: v }),
+        }
+      );
+      if (!pdfRes.ok) throw new Error(`PDF gen failed (${v}): ${await pdfRes.text()}`);
+      const pdfJson = await pdfRes.json();
+      const bytes = Uint8Array.from(atob(pdfJson.pdf_base64), (c: string) => c.charCodeAt(0));
+      pdfAttachments.push({
+        filename: pdfJson.pdf_name || `HoaDon_${v}_${inv.invoice_code}.pdf`,
+        content: bytes,
+        contentType: "application/pdf",
+      });
+    }
 
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com", port: 587, secure: false,
