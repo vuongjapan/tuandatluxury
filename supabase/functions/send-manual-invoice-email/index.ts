@@ -12,6 +12,7 @@ const corsHeaders = {
 };
 
 const SMTP_EMAIL = "tuandatluxuryflc36hotelsamson@gmail.com";
+const ADMIN_EMAIL = "tuandatluxuryflc36hotel@gmail.com";
 const HOTEL_NAME = "Tuấn Đạt Luxury Hotel";
 const HOTEL_ADDRESS = "LK29-20 cạnh cổng FLC Sầm Sơn, Thanh Hóa";
 const HOTEL_PHONES = "098.360.5768 | 036.984.5422 | 038.441.8811";
@@ -258,6 +259,7 @@ serve(async (req) => {
     await transporter.sendMail({
       from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
       to: toEmail,
+      bcc: ADMIN_EMAIL,
       subject,
       html,
       attachments: pdfAttachments,
