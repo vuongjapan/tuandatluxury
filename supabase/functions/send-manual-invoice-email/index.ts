@@ -259,6 +259,7 @@ serve(async (req) => {
     await transporter.sendMail({
       from: `"${HOTEL_NAME}" <${SMTP_EMAIL}>`,
       to: toEmail,
+      bcc: ADMIN_EMAIL,
       subject,
       html,
       attachments: pdfAttachments,
