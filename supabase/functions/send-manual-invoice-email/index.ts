@@ -246,7 +246,7 @@ serve(async (req) => {
     ${paymentBlock}
     ${inv.notes ? `<p style="margin-top:16px;padding:12px;background:#f5f5f5;border-radius:6px;font-size:13px"><strong>Tiện ích / Ghi chú:</strong><br>${inv.notes.replace(/\n/g, '<br>')}</p>` : ""}
     <p style="margin-top:24px;font-size:13px;color:#666">
-      📎 File PDF hóa đơn đã được đính kèm trong email này.<br><br>
+      📎 ${pdfAttachments.length > 1 ? `Đã đính kèm ${pdfAttachments.length} file PDF (chờ cọc + đã nhận cọc)` : 'File PDF hóa đơn đã được đính kèm trong email này'}.<br><br>
       Mọi thắc mắc xin liên hệ:<br>📞 ${HOTEL_PHONES}<br>📍 ${HOTEL_ADDRESS}
     </p>
   </div>
