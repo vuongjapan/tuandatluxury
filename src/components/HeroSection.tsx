@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BookingSearch from '@/components/BookingSearch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import heroImageFallback from '@/assets/hero-hotel.jpg';
@@ -72,7 +73,7 @@ const HeroSection = () => {
   const hasVideo = !!heroVideoDesktop && showVideo;
 
   return (
-    <section id="overview" className="relative min-h-[85vh] h-screen flex flex-col overflow-hidden">
+    <section id="overview" className="relative isolate flex min-h-[100svh] overflow-hidden bg-foreground">
       {/* Background */}
       <div className="absolute inset-0">
         {hasVideo ? (
@@ -123,7 +124,7 @@ const HeroSection = () => {
       <div className="absolute right-8 sm:right-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/40 to-transparent hidden lg:block" />
 
       {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 pt-24">
+      <div className="relative z-10 flex min-h-[100svh] flex-1 flex-col items-center justify-center px-[clamp(1rem,4vw,2rem)] pt-24 pb-[clamp(9rem,22vw,12rem)] text-center">
         <p
           className={`text-primary font-display text-xs sm:text-sm tracking-[0.4em] uppercase mb-5 transition-all duration-1000 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           style={{ transitionDelay: '200ms' }}
@@ -175,7 +176,7 @@ const HeroSection = () => {
 
       {/* Stats bar */}
       <div
-        className={`relative z-10 w-full transition-all duration-800 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        className={`absolute inset-x-0 bottom-0 z-10 transition-all duration-800 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
         style={{ transitionDelay: '1400ms' }}
       >
         <div className="bg-foreground/80 backdrop-blur-md border-t border-primary/20">
@@ -200,8 +201,10 @@ const HeroSection = () => {
         </div>
       </div>
 
+      <BookingSearch embedded />
+
       {/* Scroll indicator */}
-      <div className={`absolute bottom-[72px] sm:bottom-[76px] left-1/2 -translate-x-1/2 z-10 animate-bounce ${visible ? 'opacity-60' : 'opacity-0'}`}>
+      <div className={`absolute bottom-[clamp(5.5rem,14vw,6.25rem)] left-1/2 z-10 -translate-x-1/2 animate-bounce ${visible ? 'opacity-60' : 'opacity-0'}`}>
         <ChevronDown className="h-5 w-5 text-primary/80" />
       </div>
     </section>
