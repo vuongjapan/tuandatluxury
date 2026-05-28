@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, Phone } from 'lucide-react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import BookingSearch from '@/components/BookingSearch';
 import RoomsCarousel from '@/components/RoomsCarousel';
 import PromoBanner from '@/components/PromoBanner';
 import IntroSection from '@/components/IntroSection';
@@ -85,9 +84,6 @@ const Index = () => {
 
       {/* [1] Video Hero */}
       <HeroSection />
-
-      {/* [2] Thanh tìm kiếm / đặt phòng */}
-      <BookingSearch />
 
       {/* [3] Banner Ưu đãi nổi bật */}
       <PromoBanner />

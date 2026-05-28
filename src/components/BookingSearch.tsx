@@ -9,7 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
-const BookingSearch = () => {
+interface BookingSearchProps {
+  embedded?: boolean;
+}
+
+const BookingSearch = ({ embedded = false }: BookingSearchProps) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [checkIn, setCheckIn] = useState<Date>();
@@ -25,76 +29,80 @@ const BookingSearch = () => {
     navigate(`/booking?${params.toString()}`);
   };
 
-  return (
-    <div className="relative z-20 -mt-8 sm:-mt-10 mb-4">
-      <div className="section-container">
-        <div className="max-w-4xl mx-auto bg-card/95 backdrop-blur-lg rounded-2xl border border-border shadow-luxury p-4 sm:p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-            {/* Check-in */}
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                {isVi ? 'Nhận phòng' : 'Check-in'}
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal h-11', !checkIn && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                    {checkIn ? format(checkIn, 'dd/MM/yyyy') : (isVi ? 'Chọn ngày' : 'Select date')}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} disabled={(d) => { const t = new Date(); t.setHours(0,0,0,0); return d < t; }} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Check-out */}
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                {isVi ? 'Trả phòng' : 'Check-out'}
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal h-11', !checkOut && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                    {checkOut ? format(checkOut, 'dd/MM/yyyy') : (isVi ? 'Chọn ngày' : 'Select date')}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} disabled={(d) => { const t = new Date(); t.setHours(0,0,0,0); const min = checkIn ? new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate() + 1) : t; return d < min; }} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Guests */}
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                {isVi ? 'Số khách' : 'Guests'}
-              </label>
-              <Select value={guests} onValueChange={setGuests}>
-                <SelectTrigger className="h-11">
-                  <Users className="mr-2 h-4 w-4 text-primary" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                    <SelectItem key={n} value={String(n)}>
-                      {n} {isVi ? 'khách' : 'guests'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Search */}
-            <Button variant="gold" className="h-11 gap-2 text-sm tracking-wider uppercase font-semibold" onClick={handleSearch}>
-              <Search className="h-4 w-4" />
-              {isVi ? 'Tìm phòng' : 'Search'}
-            </Button>
-          </div>
+  const searchCard = (
+    <div className="mx-auto w-full max-w-[50rem] rounded-lg border border-border bg-card/95 p-[clamp(1rem,2vw,1.5rem)] shadow-luxury backdrop-blur-md">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4 md:items-end">
+        <div>
+          <label className="mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {isVi ? 'Nhận phòng' : 'Check-in'}
+          </label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-11 w-full justify-start text-left font-normal', !checkIn && 'text-muted-foreground')}>
+                <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                {checkIn ? format(checkIn, 'dd/MM/yyyy') : (isVi ? 'Chọn ngày' : 'Select date')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} disabled={(d) => { const t = new Date(); t.setHours(0,0,0,0); return d < t; }} initialFocus />
+            </PopoverContent>
+          </Popover>
         </div>
+
+        <div>
+          <label className="mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {isVi ? 'Trả phòng' : 'Check-out'}
+          </label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-11 w-full justify-start text-left font-normal', !checkOut && 'text-muted-foreground')}>
+                <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                {checkOut ? format(checkOut, 'dd/MM/yyyy') : (isVi ? 'Chọn ngày' : 'Select date')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} disabled={(d) => { const t = new Date(); t.setHours(0,0,0,0); const min = checkIn ? new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate() + 1) : t; return d < min; }} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {isVi ? 'Số khách' : 'Guests'}
+          </label>
+          <Select value={guests} onValueChange={setGuests}>
+            <SelectTrigger className="h-11 w-full">
+              <Users className="mr-2 h-4 w-4 text-primary" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n} {isVi ? 'khách' : 'guests'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button variant="gold" className="h-11 w-full gap-2 text-sm uppercase tracking-[0.15em]" onClick={handleSearch}>
+          <Search className="h-4 w-4" />
+          {isVi ? 'Tìm phòng' : 'Search'}
+        </Button>
       </div>
     </div>
+  );
+
+  return (
+    embedded ? (
+      <div className="absolute bottom-[clamp(1rem,4vw,2rem)] left-1/2 z-20 w-full -translate-x-1/2 px-[clamp(1rem,4vw,2rem)]">
+        {searchCard}
+      </div>
+    ) : (
+      <div className="relative z-20 -mt-[clamp(2rem,6vw,3rem)] mb-[clamp(1rem,3vw,1.5rem)]">
+        <div className="section-container">{searchCard}</div>
+      </div>
+    )
   );
 };
 
