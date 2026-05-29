@@ -30,15 +30,24 @@ const BookingSearch = ({ embedded = false }: BookingSearchProps) => {
   };
 
   const searchCard = (
-    <div className="mx-auto w-full max-w-6xl rounded-lg border border-border bg-card/95 p-[clamp(1rem,2vw,1.5rem)] shadow-luxury backdrop-blur-md">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4 md:items-end">
-        <div>
-          <label className="mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            {isVi ? 'Nhận phòng' : 'Check-in'}
+    <div className="mx-auto w-full max-w-6xl rounded-2xl border border-border bg-card shadow-luxury p-6 sm:p-8">
+      <div className="mb-6">
+        <h2 className="font-display text-xl sm:text-2xl font-semibold flex items-center gap-2">
+          📅 {isVi ? 'Đặt phòng & Kiểm tra giá' : 'Book & Check Price'}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {isVi ? 'Chọn ngày nhận phòng, trả phòng và số lượng khách' : 'Select check-in, check-out dates and number of guests'}
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:items-end">
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+            {isVi ? 'Ngày nhận phòng' : 'Check-in Date'}
           </label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn('h-11 w-full justify-start text-left font-normal', !checkIn && 'text-muted-foreground')}>
+              <Button variant="outline" className={cn('h-12 w-full justify-start text-left font-normal border-primary/20 hover:border-primary/40', !checkIn && 'text-muted-foreground')}>
                 <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                 {checkIn ? format(checkIn, 'dd/MM/yyyy') : (isVi ? 'Chọn ngày' : 'Select date')}
               </Button>
@@ -49,13 +58,13 @@ const BookingSearch = ({ embedded = false }: BookingSearchProps) => {
           </Popover>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            {isVi ? 'Trả phòng' : 'Check-out'}
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+            {isVi ? 'Ngày trả phòng' : 'Check-out Date'}
           </label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn('h-11 w-full justify-start text-left font-normal', !checkOut && 'text-muted-foreground')}>
+              <Button variant="outline" className={cn('h-12 w-full justify-start text-left font-normal border-primary/20 hover:border-primary/40', !checkOut && 'text-muted-foreground')}>
                 <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                 {checkOut ? format(checkOut, 'dd/MM/yyyy') : (isVi ? 'Chọn ngày' : 'Select date')}
               </Button>
@@ -66,17 +75,17 @@ const BookingSearch = ({ embedded = false }: BookingSearchProps) => {
           </Popover>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            {isVi ? 'Số khách' : 'Guests'}
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+            {isVi ? 'Số lượng khách' : 'Guests'}
           </label>
           <Select value={guests} onValueChange={setGuests}>
-            <SelectTrigger className="h-11 w-full">
+            <SelectTrigger className="h-12 w-full border-primary/20 hover:border-primary/40">
               <Users className="mr-2 h-4 w-4 text-primary" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 20].map((n) => (
                 <SelectItem key={n} value={String(n)}>
                   {n} {isVi ? 'khách' : 'guests'}
                 </SelectItem>
@@ -85,24 +94,20 @@ const BookingSearch = ({ embedded = false }: BookingSearchProps) => {
           </Select>
         </div>
 
-        <Button variant="gold" className="h-11 w-full gap-2 text-sm uppercase tracking-[0.15em]" onClick={handleSearch}>
+        <Button variant="gold" className="h-12 w-full gap-2 text-sm uppercase tracking-[0.15em] font-bold shadow-md hover:shadow-lg transition-all" onClick={handleSearch}>
           <Search className="h-4 w-4" />
-          {isVi ? 'Tìm phòng' : 'Search'}
+          {isVi ? 'Kiểm tra giá' : 'Check Price'}
         </Button>
       </div>
     </div>
   );
 
   return (
-    false ? (
-      <div className="absolute bottom-[clamp(1rem,4vw,2rem)] left-1/2 z-20 w-full -translate-x-1/2 px-[clamp(1rem,4vw,2rem)]">
+    <div className="relative z-20 py-12 bg-secondary/30">
+      <div className="section-container">
         {searchCard}
       </div>
-    ) : (
-      <div className="relative z-20 -mt-[clamp(2rem,6vw,3rem)] mb-[clamp(1rem,3vw,1.5rem)]">
-        <div className="section-container">{searchCard}</div>
-      </div>
-    )
+    </div>
   );
 };
 

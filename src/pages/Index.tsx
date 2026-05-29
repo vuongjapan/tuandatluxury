@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, Phone } from 'lucide-react';
+import BookingSearch from "@/components/BookingSearch";
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import RoomsCarousel from '@/components/RoomsCarousel';
@@ -84,6 +85,7 @@ const Index = () => {
 
       {/* [1] Video Hero */}
       <HeroSection />
+      <BookingSearch />
 
       {/* [3] Banner Ưu đãi nổi bật */}
       <PromoBanner />

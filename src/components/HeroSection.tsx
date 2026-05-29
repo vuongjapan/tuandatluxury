@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import BookingSearch from '@/components/BookingSearch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import heroImageFallback from '@/assets/hero-hotel.jpg';
@@ -201,7 +200,6 @@ const HeroSection = () => {
         </div>
       </div>
 
-      <BookingSearch embedded />
 
       {/* Scroll indicator */}
       <div className={`absolute bottom-[clamp(5.5rem,14vw,6.25rem)] left-1/2 z-10 -translate-x-1/2 animate-bounce ${visible ? 'opacity-60' : 'opacity-0'}`}>
