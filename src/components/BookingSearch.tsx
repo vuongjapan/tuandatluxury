@@ -30,7 +30,7 @@ const BookingSearch = ({ embedded = false }: BookingSearchProps) => {
   };
 
   const searchCard = (
-    <div className="mx-auto w-full max-w-[50rem] rounded-lg border border-border bg-card/95 p-[clamp(1rem,2vw,1.5rem)] shadow-luxury backdrop-blur-md">
+    <div className="mx-auto w-full max-w-6xl rounded-lg border border-border bg-card/95 p-[clamp(1rem,2vw,1.5rem)] shadow-luxury backdrop-blur-md">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4 md:items-end">
         <div>
           <label className="mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -94,7 +94,7 @@ const BookingSearch = ({ embedded = false }: BookingSearchProps) => {
   );
 
   return (
-    embedded ? (
+    false ? (
       <div className="absolute bottom-[clamp(1rem,4vw,2rem)] left-1/2 z-20 w-full -translate-x-1/2 px-[clamp(1rem,4vw,2rem)]">
         {searchCard}
       </div>
