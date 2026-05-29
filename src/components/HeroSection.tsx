@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import BookingSearch from '@/components/BookingSearch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import heroImageFallback from '@/assets/hero-hotel.jpg';
@@ -124,7 +123,7 @@ const HeroSection = () => {
       <div className="absolute right-8 sm:right-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/40 to-transparent hidden lg:block" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-[100svh] flex-1 flex-col items-center justify-center px-[clamp(1rem,4vw,2rem)] pt-24 pb-[clamp(9rem,22vw,12rem)] text-center">
+      <div className="relative z-10 flex min-h-[100svh] flex-1 flex-col items-center justify-center px-[clamp(1rem,4vw,2rem)] pt-24 pb-[clamp(6rem,12vw,8rem)] text-center">
         <p
           className={`text-primary font-display text-xs sm:text-sm tracking-[0.4em] uppercase mb-5 transition-all duration-1000 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           style={{ transitionDelay: '200ms' }}
@@ -201,10 +200,9 @@ const HeroSection = () => {
         </div>
       </div>
 
-      <BookingSearch embedded />
 
       {/* Scroll indicator */}
-      <div className={`absolute bottom-[clamp(5.5rem,14vw,6.25rem)] left-1/2 z-10 -translate-x-1/2 animate-bounce ${visible ? 'opacity-60' : 'opacity-0'}`}>
+      <div className={`absolute bottom-[clamp(3rem,7vw,4.5rem)] left-1/2 z-10 -translate-x-1/2 animate-bounce ${visible ? 'opacity-60' : 'opacity-0'}`}>
         <ChevronDown className="h-5 w-5 text-primary/80" />
       </div>
     </section>
