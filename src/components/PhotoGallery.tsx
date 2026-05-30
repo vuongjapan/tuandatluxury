@@ -98,7 +98,7 @@ const PhotoGallery = () => {
   if (loading) {
     return (
       <section id="gallery" className="py-16 sm:py-24 bg-background">
-        <div className="container mx-auto px-4 text-center">
+        <div className="section-container text-center">
           <div className="animate-pulse h-8 bg-muted rounded w-48 mx-auto mb-8" />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[...Array(6)].map((_, i) => (
