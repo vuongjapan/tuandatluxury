@@ -9,9 +9,9 @@ import heroImageFallback from '@/assets/hero-hotel.jpg';
 const HeroSection = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
   const isVi = t('nav.rooms') === 'Hạng phòng';
-  const heroImage = settings.hero_image_url || heroImageFallback;
+  const heroImage = settings.hero_image_url || (loading ? '' : heroImageFallback);
   const heroVideoDesktop = settings.hero_video_url || '';
   const heroVideoMobile = settings.hero_video_mobile_url || heroVideoDesktop;
 
@@ -102,17 +102,21 @@ const HeroSection = () => {
             )}
           </>
         ) : (
-          <img
-            src={heroImage}
-            alt="Tuấn Đạt Luxury Hotel"
-            className="w-full h-full object-cover object-center"
-            loading="eager"
-            {...({ fetchpriority: 'high' } as any)}
-            decoding="async"
-            width={1920}
-            height={1080}
-            style={{ filter: 'contrast(1.05) saturate(1.08)' }}
-          />
+          heroImage ? (
+            <img
+              src={heroImage}
+              alt="Tuấn Đạt Luxury Hotel"
+              className="w-full h-full object-cover object-center"
+              loading="eager"
+              {...({ fetchpriority: 'high' } as any)}
+              decoding="async"
+              width={1920}
+              height={1080}
+              style={{ filter: 'contrast(1.05) saturate(1.08)' }}
+            />
+          ) : (
+            <div className="w-full h-full bg-muted" />
+          )
         )}
         {/* Vinpearl-style overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,10%,0.15)] via-[hsl(220,25%,10%,0.30)] to-[hsl(220,25%,10%,0.65)]" />
