@@ -77,7 +77,7 @@ const RestaurantSection = () => {
   ];
 
   return (
-    <section id="restaurant" className="relative bg-[#0D0D0D] overflow-hidden full-bleed">
+    <section id="restaurant" className="relative overflow-hidden full-bleed bg-foreground">
       {/* HERO */}
       <div className="relative h-[70vh] min-h-[500px]">
         <LazyImage
@@ -92,7 +92,7 @@ const RestaurantSection = () => {
 
         {/* Text overlay */}
         <div className="absolute inset-0 flex items-center">
-          <div className="max-w-6xl mx-auto px-6 sm:px-8 w-full">
+          <div className="section-container w-full">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-px bg-[#C9A84C]" />
               <span className="text-[#C9A84C] text-xs sm:text-sm tracking-[4px] uppercase font-medium">
