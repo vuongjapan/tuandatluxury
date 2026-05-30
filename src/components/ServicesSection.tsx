@@ -150,9 +150,11 @@ const ServicesSection = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const isVi = language === 'vi';
-  const { featured } = useServices();
+  const { featured, isLoading } = useServices();
   const sectionRef = useRef<HTMLElement>(null);
   const [sectionVisible, setSectionVisible] = useState(false);
+  const hasEnoughFeatured = featured.length >= 5;
+  const visibleFeatured = hasEnoughFeatured ? featured.slice(0, 5) : [];
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -179,11 +181,7 @@ const ServicesSection = () => {
     }
   };
 
-  if (featured.length === 0) return null;
-
-  // Split into rows: first row up to 3, next row remaining (centered)
-  const row1 = featured.slice(0, 3);
-  const row2 = featured.slice(3);
+  if (!isLoading && !hasEnoughFeatured) return null;
 
   return (
     <section ref={sectionRef} className="py-20 sm:py-28 bg-background">
@@ -219,11 +217,15 @@ const ServicesSection = () => {
         {/* Mobile: horizontal scroll. Desktop (sm+): grid */}
         <div className="sm:hidden overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
           <div className="flex gap-4 pb-4 w-max">
-            {featured.map((s, idx) => (
-              <div key={s.id} className="snap-start shrink-0 w-[260px]">
-                <ServiceCard s={s} index={idx} sectionVisible={sectionVisible} isVi={isVi} onClick={handleClick} />
-              </div>
-            ))}
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, idx) => (
+                  <div key={`mobile-skeleton-${idx}`} className="snap-start shrink-0 w-[260px] h-64 rounded-xl bg-gray-100 animate-pulse" />
+                ))
+              : visibleFeatured.map((s, idx) => (
+                  <div key={s.id} className="snap-start shrink-0 w-[260px]">
+                    <ServiceCard s={s} index={idx} sectionVisible={sectionVisible} isVi={isVi} onClick={handleClick} />
+                  </div>
+                ))}
           </div>
           <p className="text-xs text-center text-muted-foreground mt-1">{isVi ? '← Vuốt ngang để xem thêm →' : '← Swipe to explore →'}</p>
         </div>
@@ -231,40 +233,21 @@ const ServicesSection = () => {
         {/* Desktop grid */}
         <div className="hidden sm:block">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {row1.map((s, idx) => (
-              <ServiceCard
-                key={s.id}
-                s={s}
-                index={idx}
-                sectionVisible={sectionVisible}
-                isVi={isVi}
-                onClick={handleClick}
-              />
-            ))}
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, idx) => (
+                  <div key={`desktop-skeleton-${idx}`} className="h-64 rounded-xl bg-gray-100 animate-pulse" />
+                ))
+              : visibleFeatured.map((s, idx) => (
+                  <ServiceCard
+                    key={s.id}
+                    s={s}
+                    index={idx}
+                    sectionVisible={sectionVisible}
+                    isVi={isVi}
+                    onClick={handleClick}
+                  />
+                ))}
           </div>
-
-          {row2.length > 0 && (
-            <div
-              className={`mt-6 grid gap-6 max-w-6xl mx-auto ${
-                row2.length === 1
-                  ? 'sm:grid-cols-1 lg:grid-cols-1 lg:max-w-md'
-                  : row2.length === 2
-                  ? 'sm:grid-cols-2 lg:grid-cols-2 lg:max-w-3xl'
-                  : 'sm:grid-cols-2 lg:grid-cols-3'
-              }`}
-            >
-              {row2.map((s, idx) => (
-                <ServiceCard
-                  key={s.id}
-                  s={s}
-                  index={row1.length + idx}
-                  sectionVisible={sectionVisible}
-                  isVi={isVi}
-                  onClick={handleClick}
-                />
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </section>
