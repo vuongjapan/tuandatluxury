@@ -3,6 +3,7 @@ import { Utensils, ChevronDown, CheckCircle2 } from 'lucide-react';
 import DayMealCard, { type DayMealSelection, buildDefaultGroups } from './DayMealCard';
 import type { NightInfo } from '@/hooks/useNightlyMandatoryInfo';
 import { useComboPackages } from '@/hooks/useComboPackages';
+import { usePersonalMealPlans, type PersonalMealPlan } from '@/hooks/usePersonalMealPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import type { FoodItem } from './IndividualFoodSelector';
@@ -15,7 +16,7 @@ interface Props {
   foodByDay: Record<string, DayMealSelection>;
   individualFoodsByDay: Record<string, FoodItem[]>;
   onChange: (date: string, next: DayMealSelection) => void;
-  onOpenIndividual: (date: string) => void;
+  onOpenIndividual: (date: string, meal: 'lunch' | 'dinner') => void;
   onRemoveIndividualItem: (date: string, cartKey: string) => void;
 }
 
@@ -39,6 +40,7 @@ const MealByDaySection = ({
   const { language } = useLanguage();
   const isVi = language === 'vi';
   const { packages, getMenusByPackage, getDishesByMenu, loading } = useComboPackages();
+  const { plans, loading: personalPlansLoading } = usePersonalMealPlans(true);
 
   const activePackages = useMemo(
     () => packages.filter(p => p.is_active).sort((a, b) => a.sort_order - b.sort_order),
@@ -57,18 +59,44 @@ const MealByDaySection = ({
   if (nights.length === 0) return null;
 
   const buildIndividualOption = (date: string, mandatory: boolean) => {
-    const items = individualFoodsByDay[date] || [];
-    const total = sumIndividual(items);
-    const required = mandatory ? Math.max(1, adults) * minPerPerson : 0;
-    const met = mandatory ? total >= required : false;
+    const lunchItems = individualFoodsByDay[`${date}__lunch`] || [];
+    const dinnerItems = individualFoodsByDay[`${date}__dinner`] || [];
+    const total = sumIndividual([...lunchItems, ...dinnerItems]);
+    const requiredPerMeal = mandatory ? Math.max(1, adults) * minPerPerson : 0;
+    const lunchTotal = sumIndividual(lunchItems);
+    const dinnerTotal = sumIndividual(dinnerItems);
+    const met = mandatory ? lunchTotal >= requiredPerMeal && dinnerTotal >= requiredPerMeal : false;
     return {
       total,
-      required,
+      required: requiredPerMeal,
       met,
-      items,
-      onOpenMenu: () => onOpenIndividual(date),
-      onRemoveItem: (cartKey: string) => onRemoveIndividualItem(date, cartKey),
+      perMeal: {
+        lunch: {
+          total: lunchTotal,
+          required: requiredPerMeal,
+          met: mandatory ? lunchTotal >= requiredPerMeal : lunchItems.length > 0,
+          items: lunchItems,
+          onOpenMenu: () => onOpenIndividual(date, 'lunch'),
+          onRemoveItem: (cartKey: string) => onRemoveIndividualItem(`${date}__lunch`, cartKey),
+        },
+        dinner: {
+          total: dinnerTotal,
+          required: requiredPerMeal,
+          met: mandatory ? dinnerTotal >= requiredPerMeal : dinnerItems.length > 0,
+          items: dinnerItems,
+          onOpenMenu: () => onOpenIndividual(date, 'dinner'),
+          onRemoveItem: (cartKey: string) => onRemoveIndividualItem(`${date}__dinner`, cartKey),
+        },
+      },
     };
+  };
+
+  const resolvePersonalPlans = (guestCount: number): PersonalMealPlan[] => {
+    if (guestCount <= 0) return [];
+    if (guestCount >= 4 && guestCount <= 5) {
+      return plans.filter((plan) => plan.is_active && plan.guest_count === 4);
+    }
+    return plans.filter((plan) => plan.is_active && plan.guest_count === guestCount);
   };
 
   const defaultSel = (): DayMealSelection => ({
@@ -85,9 +113,9 @@ const MealByDaySection = ({
         </h3>
       </div>
 
-      {loading ? (
+      {loading || personalPlansLoading ? (
         <div className="bg-card rounded-xl border border-border p-6 text-sm text-muted-foreground">
-          {isVi ? 'Đang tải combo…' : 'Loading combos…'}
+          {isVi ? 'Đang tải lựa chọn bữa ăn…' : 'Loading meal options…'}
         </div>
       ) : (
         <div className="space-y-3">
@@ -133,6 +161,8 @@ const MealByDaySection = ({
                       onChange={next => onChange(n.date, next)}
                       variant="optional"
                       individualOption={buildIndividualOption(n.date, false)}
+                      personalMealPlans={resolvePersonalPlans(defaultGuests)}
+                      personalMealGuestCount={defaultGuests}
                     />
                   ))}
                 </div>
@@ -152,6 +182,8 @@ const MealByDaySection = ({
               onChange={next => onChange(n.date, next)}
               variant="mandatory"
               individualOption={buildIndividualOption(n.date, true)}
+              personalMealPlans={resolvePersonalPlans(defaultGuests)}
+              personalMealGuestCount={defaultGuests}
             />
           ))}
         </div>
