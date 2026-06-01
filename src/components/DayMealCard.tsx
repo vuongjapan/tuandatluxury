@@ -11,7 +11,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ComboDetailPopup from './ComboDetailPopup';
+import PersonalMealPlanPopup from './PersonalMealPlanPopup';
 import type { FoodItem } from './IndividualFoodSelector';
+import type { PersonalMealPlan } from '@/hooks/usePersonalMealPlans';
 
 export type DayMeal = 'lunch' | 'dinner';
 
@@ -26,6 +28,18 @@ export interface DayMealSelection {
   meals: DayMeal[];
   /** New: per-day groups (table groups, 6 pax each). Optional for back-compat; auto-migrated. */
   groups?: DayMealGroup[];
+  personalSelection?: {
+    type: 'personal';
+    mealPlanId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    setCount: number;
+    guestCount: number;
+    planGuestCount: number;
+    items: string[];
+    imageUrl?: string | null;
+  };
   // Legacy fields kept for backward-compat reads — UI no longer writes them.
   comboPackageId?: string;
   comboMenuId?: string;
@@ -52,10 +66,28 @@ interface IndividualPerDay {
   total: number;
   required: number;
   met: boolean;
-  onOpenMenu: () => void;
+  onOpenMenu?: () => void;
   /** Optional: items list to render inline with × remove buttons */
   items?: FoodItem[];
   onRemoveItem?: (cartKey: string) => void;
+  perMeal?: {
+    lunch: {
+      total: number;
+      required: number;
+      met: boolean;
+      items?: FoodItem[];
+      onOpenMenu: () => void;
+      onRemoveItem?: (cartKey: string) => void;
+    };
+    dinner: {
+      total: number;
+      required: number;
+      met: boolean;
+      items?: FoodItem[];
+      onOpenMenu: () => void;
+      onRemoveItem?: (cartKey: string) => void;
+    };
+  };
 }
 
 interface Props {
@@ -68,6 +100,8 @@ interface Props {
   onChange: (next: DayMealSelection) => void;
   variant?: 'mandatory' | 'optional';
   individualOption?: IndividualPerDay;
+  personalMealPlans?: PersonalMealPlan[];
+  personalMealGuestCount?: number;
 }
 
 const ensureGroups = (sel: DayMealSelection, adults: number): DayMealGroup[] => {
