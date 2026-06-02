@@ -46,6 +46,17 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
                 });
               }
             });
+
+          if (sel.personalSelection) {
+            const ps = sel.personalSelection;
+            for (const meal of sel.meals) {
+              const mealLabel = meal === 'lunch' ? (isVi ? 'Trưa' : 'Lunch') : (isVi ? 'Tối' : 'Dinner');
+              comboLines.push({
+                label: `${isVi ? 'Suất riêng' : 'Personal set'}: ${ps.name} · ${mealLabel}`,
+                amount: ps.price,
+              });
+            }
+          }
         }
 
         const bypassed = sel?.bypassed;
