@@ -661,6 +661,29 @@ const Booking = () => {
           dishes_override: ovDishes,
         };
       });
+      // Personal meal plans: 1 line per selected day × meal time
+      for (const n of stayNights) {
+        const sel = foodByDay[n.date];
+        if (!sel || sel.bypassed || sel.meals.length === 0 || !sel.personalSelection) continue;
+        const ps = sel.personalSelection;
+        for (const meal of sel.meals) {
+          combosPayload.push({
+            combo_package_id: undefined as any,
+            combo_menu_id: undefined as any,
+            combo_package_name: ps.name,
+            combo_menu_name: '',
+            combo_name: ps.name,
+            price_vnd: ps.price,
+            quantity: 1,
+            meal_time: meal,
+            meal_multiplier: 1,
+            date: n.date,
+            day_label: n.dayLabel,
+            formatted_date: n.formattedDate,
+            dishes_override: ps.items as any,
+          });
+        }
+      }
       const foodItemsPayload = Object.entries(individualFoodsByDay).flatMap(([date, items]) =>
         items.map(f => {
           const baseId = f.id.includes('__') ? f.id.split('__')[0] : f.id;
