@@ -539,22 +539,31 @@ const Booking = () => {
     () => mandatoryNights.filter(n => {
       const s = foodByDay[n.date];
       if (s?.bypassed) return false;
+
+      // OR-logic: any ONE of these 3 satisfies the mandatory requirement.
+      // 1) À la carte spend for the day meets the minimum.
       const dayItems = individualFoodsByDay[n.date] || [];
       const dayTotal = dayItems.reduce(
         (sum, f) => sum + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity),
         0,
       );
       if (dayTotal >= minRequiredIndividual) return false;
-      if (!s || s.meals.length === 0) return true;
-      const groups = s.groups || [];
-      const validGroups = groups.filter(g => g.comboPackageId && g.quantity > 0);
-      if (validGroups.length === 0) return true;
-      // Each group must meet minimum servings rule
-      if (validGroups.some(g => g.quantity < MIN_PER_GROUP)) return true;
-      // Total servings across groups must cover all guests
-      const totalQty = validGroups.reduce((sum, g) => sum + g.quantity, 0);
-      if (totalQty < guestCount) return true;
-      return false;
+
+      // 2) A personal meal plan is selected with at least one meal time.
+      if (s?.personalSelection && s.meals.length > 0) return false;
+
+      // 3) Group combo selection is valid.
+      if (s && s.meals.length > 0) {
+        const groups = s.groups || [];
+        const validGroups = groups.filter(g => g.comboPackageId && g.quantity > 0);
+        if (validGroups.length > 0
+            && !validGroups.some(g => g.quantity < MIN_PER_GROUP)
+            && validGroups.reduce((sum, g) => sum + g.quantity, 0) >= guestCount) {
+          return false;
+        }
+      }
+
+      return true;
     }),
     [mandatoryNights, foodByDay, individualFoodsByDay, minRequiredIndividual, guestCount],
   );
