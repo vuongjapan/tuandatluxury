@@ -554,17 +554,31 @@ const DayMealCard = ({
           )}
 
 
-          {/* Groups */}
+          {/* Groups (Combo by group) — collapsible OR-option */}
           {value.meals.length > 0 && (
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase block mb-2 flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                {isVi ? 'Combo theo nhóm bàn' : 'Combo per group'}{' '}
-                {mode === 'mandatory' && <span className="text-orange-600">*</span>}
-                <span className="text-[10px] font-normal text-muted-foreground/80 normal-case">
-                  ({isVi ? `mỗi nhóm tối thiểu ${MIN_PER_GROUP} suất` : `min ${MIN_PER_GROUP} servings / group`})
+            <div className="border border-border/70 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowGroupSection(v => !v)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition text-left"
+              >
+                <span className="text-sm font-semibold flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-primary" />
+                  {isVi ? 'Combo theo nhóm bàn' : 'Combo per group'}
+                  <span className="text-[10px] font-normal text-muted-foreground/80 normal-case">
+                    ({isVi ? `mỗi nhóm tối thiểu ${MIN_PER_GROUP} suất` : `min ${MIN_PER_GROUP}/group`})
+                  </span>
+                  {hasGroupSelection && (
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
+                      {isVi ? 'Đã chọn' : 'Selected'}
+                    </span>
+                  )}
                 </span>
-              </label>
+                <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform shrink-0', showGroupSection && 'rotate-180')} />
+              </button>
+              {showGroupSection && (
+            <div className="p-3 border-t border-border/60 bg-card">
+
 
 
               <div className="space-y-2.5">
