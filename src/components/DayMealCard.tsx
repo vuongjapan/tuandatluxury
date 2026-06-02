@@ -139,12 +139,20 @@ const DayMealCard = ({
   const [bypassError, setBypassError] = useState<string | null>(null);
   const [infoPkgId, setInfoPkgId] = useState<string | null>(null);
   const [infoGroupIdx, setInfoGroupIdx] = useState<number | null>(null);
-  const [showIndividual, setShowIndividual] = useState(false);
-  const [showBypass, setShowBypass] = useState(false);
   const [personalPopupPlan, setPersonalPopupPlan] = useState<PersonalMealPlan | null>(null);
-  const [showPersonalSection, setShowPersonalSection] = useState(
-    !!value.personalSelection || (personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5),
-  );
+
+  // Three OR-options. Each can be manually toggled by the user.
+  // Default: open the section that already has data; others stay collapsed.
+  const hasPersonal = !!value.personalSelection;
+  const hasGroupSelection = !!(value.groups && value.groups.some(g => g.comboPackageId));
+  const hasIndividual = !!individualOption && (individualOption.total > 0 || !!individualOption.met);
+
+  const personalAvailable = personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5;
+
+  const [showPersonalSection, setShowPersonalSection] = useState(hasPersonal);
+  const [showGroupSection, setShowGroupSection] = useState(hasGroupSelection || (!hasPersonal && !hasIndividual && !personalAvailable));
+  const [showIndividual, setShowIndividual] = useState(hasIndividual && !hasPersonal && !hasGroupSelection);
+  const [showBypass, setShowBypass] = useState(false);
 
   useEffect(() => {
     if (mode === 'mandatory') setExpanded(true);
@@ -157,6 +165,29 @@ const DayMealCard = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-collapse other options when one becomes satisfied (one-shot per change).
+  useEffect(() => {
+    if (hasPersonal) {
+      setShowGroupSection(false);
+      setShowIndividual(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPersonal]);
+  useEffect(() => {
+    if (hasGroupSelection) {
+      setShowPersonalSection(false);
+      setShowIndividual(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasGroupSelection]);
+  useEffect(() => {
+    if (individualOption?.met) {
+      setShowPersonalSection(false);
+      setShowGroupSection(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [individualOption?.met]);
 
   const set = (patch: Partial<DayMealSelection>) => onChange({ ...value, ...patch });
 
