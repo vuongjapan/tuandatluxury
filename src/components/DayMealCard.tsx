@@ -961,6 +961,13 @@ const DayMealCard = ({
           }
         }}
       />
+
+      <PersonalMealPlanPopup
+        open={!!personalPopupPlan}
+        onClose={() => setPersonalPopupPlan(null)}
+        plan={personalPopupPlan}
+        guestLabel={isVi ? `${personalMealGuestCount} khách` : `${personalMealGuestCount} guests`}
+      />
     </div>
   );
 };
