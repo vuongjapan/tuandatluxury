@@ -788,9 +788,10 @@ const DayMealCard = ({
             <p className="text-xs font-medium text-orange-700 dark:text-orange-300 flex items-center gap-1">
               <AlertTriangle className="h-3.5 w-3.5" />
               {isVi
-                ? 'Vui lòng chọn buổi ăn + combo, đặt món riêng đủ mức, hoặc nhập mã miễn trừ.'
-                : 'Please pick meal + combo, order enough à la carte, or enter a bypass code.'}
+                ? 'Chọn 1 trong 3: Suất ăn theo người · Combo theo nhóm · Đặt món riêng (đủ mức) — hoặc nhập mã miễn trừ.'
+                : 'Pick ONE: Personal plan · Group combo · À la carte (min met) — or enter a bypass code.'}
             </p>
+
           )}
 
           {/* Individual Order per-day (collapsible) */}
