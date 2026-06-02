@@ -226,7 +226,7 @@ const DayMealCard = ({
   const anyGroupTooSmall = validGroups.some(g => g.quantity < MIN_PER_GROUP);
   const groupsCoverGuests = totalGroupQty >= defaultGuests;
   const groupsValid = hasAnyValidGroup && !anyGroupTooSmall && groupsCoverGuests;
-  const isComplete = value.meals.length > 0 && groupsValid;
+  const isComplete = value.meals.length > 0 && (groupsValid || !!value.personalSelection);
   const individualMet = !!individualOption?.met;
   const incomplete = mode === 'mandatory' && !isComplete && !value.bypassed && !individualMet;
 
