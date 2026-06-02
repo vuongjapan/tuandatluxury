@@ -824,8 +824,9 @@ const Booking = () => {
       // Normal days: always allow proceeding (food is optional).
       if (comboValidationError) {
         const nightsList = incompleteMandatoryNights.map(n => `${n.dayLabel} ${n.formattedDate}`).join(', ');
-        const viMsg = `⚠️ Các đêm bắt buộc chưa chọn ăn: ${nightsList || '—'}. Vui lòng chọn buổi ăn + combo cho mỗi ngày trước khi tiếp tục.`;
-        const enMsg = `⚠️ Mandatory nights missing meal selection: ${nightsList || '—'}. Please pick meal time + combo for each day before continuing.`;
+        const viMsg = `⚠️ Các đêm bắt buộc chưa chọn ăn: ${nightsList || '—'}. Chọn 1 trong 3: Suất ăn theo người · Combo theo nhóm · Đặt món riêng (đủ mức).`;
+        const enMsg = `⚠️ Mandatory nights missing meals: ${nightsList || '—'}. Pick ONE: Personal plan, Group combo, or À la carte (min met).`;
+
         toast({ title: pick(viMsg, enMsg), variant: 'destructive' });
         const first = incompleteMandatoryNights[0];
         const el = (first && document.getElementById(`day-meal-${first.date}`))
