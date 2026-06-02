@@ -171,7 +171,7 @@ const Booking = () => {
   const isComboMandatory = !!mandatoryComboRange || hasAnyMandatory;
 
   // Combo packages — used to compute per-day totals & build payload
-  const { packages: comboPkgs, getMenusByPackage: getComboMenus } = useComboPackages();
+  const { packages: comboPkgs, getMenusByPackage: getComboMenus, getDishesByMenu: getComboDishes } = useComboPackages();
   const activeComboPkgs = useMemo(() => comboPkgs.filter(p => p.is_active), [comboPkgs]);
 
   // Keep `foodByDay` in sync with current stay nights: add defaults for new dates,
