@@ -1182,6 +1182,7 @@ const Booking = () => {
                           individualFoodsByDay={individualFoodsByDay}
                           packages={activeComboPkgs}
                           getMenusByPackage={getComboMenus}
+                          getDishesByMenu={getComboDishes}
                         />
                       </>
                     )}
