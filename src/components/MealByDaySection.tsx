@@ -59,35 +59,17 @@ const MealByDaySection = ({
   if (nights.length === 0) return null;
 
   const buildIndividualOption = (date: string, mandatory: boolean) => {
-    const lunchItems = individualFoodsByDay[`${date}__lunch`] || [];
-    const dinnerItems = individualFoodsByDay[`${date}__dinner`] || [];
-    const total = sumIndividual([...lunchItems, ...dinnerItems]);
-    const requiredPerMeal = mandatory ? Math.max(1, adults) * minPerPerson : 0;
-    const lunchTotal = sumIndividual(lunchItems);
-    const dinnerTotal = sumIndividual(dinnerItems);
-    const met = mandatory ? lunchTotal >= requiredPerMeal && dinnerTotal >= requiredPerMeal : false;
+    const items = individualFoodsByDay[date] || [];
+    const total = sumIndividual(items);
+    const required = mandatory ? Math.max(1, adults) * minPerPerson : 0;
+    const met = mandatory ? total >= required : false;
     return {
       total,
-      required: requiredPerMeal,
+      required,
       met,
-      perMeal: {
-        lunch: {
-          total: lunchTotal,
-          required: requiredPerMeal,
-          met: mandatory ? lunchTotal >= requiredPerMeal : lunchItems.length > 0,
-          items: lunchItems,
-          onOpenMenu: () => onOpenIndividual(date, 'lunch'),
-          onRemoveItem: (cartKey: string) => onRemoveIndividualItem(`${date}__lunch`, cartKey),
-        },
-        dinner: {
-          total: dinnerTotal,
-          required: requiredPerMeal,
-          met: mandatory ? dinnerTotal >= requiredPerMeal : dinnerItems.length > 0,
-          items: dinnerItems,
-          onOpenMenu: () => onOpenIndividual(date, 'dinner'),
-          onRemoveItem: (cartKey: string) => onRemoveIndividualItem(`${date}__dinner`, cartKey),
-        },
-      },
+      items,
+      onOpenMenu: () => onOpenIndividual(date, 'lunch'),
+      onRemoveItem: (cartKey: string) => onRemoveIndividualItem(date, cartKey),
     };
   };
 

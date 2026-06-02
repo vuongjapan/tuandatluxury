@@ -121,15 +121,17 @@ const ensureGroups = (sel: DayMealSelection, adults: number): DayMealGroup[] => 
 const DayMealCard = ({
   night, defaultGuests, packages, getMenusByPackage, getDishesByMenu,
   value, onChange, variant, individualOption,
+  personalMealPlans = [], personalMealGuestCount = 0,
 }: Props) => {
-  const { language } = useLanguage();
+  const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const mode: 'mandatory' | 'optional' = variant || (night.mandatory ? 'mandatory' : 'optional');
 
   const hasAnySelection =
     (value.groups && value.groups.some(g => g.comboPackageId)) ||
     value.bypassed ||
-    !!value.comboPackageId;
+    !!value.comboPackageId ||
+    !!value.personalSelection;
   const [expanded, setExpanded] = useState<boolean>(mode === 'mandatory' || hasAnySelection);
 
   const [bypassInput, setBypassInput] = useState('');
@@ -139,6 +141,10 @@ const DayMealCard = ({
   const [infoGroupIdx, setInfoGroupIdx] = useState<number | null>(null);
   const [showIndividual, setShowIndividual] = useState(false);
   const [showBypass, setShowBypass] = useState(false);
+  const [personalPopupPlan, setPersonalPopupPlan] = useState<PersonalMealPlan | null>(null);
+  const [showPersonalSection, setShowPersonalSection] = useState(
+    !!value.personalSelection || (personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5),
+  );
 
   useEffect(() => {
     if (mode === 'mandatory') setExpanded(true);
@@ -220,7 +226,7 @@ const DayMealCard = ({
   const anyGroupTooSmall = validGroups.some(g => g.quantity < MIN_PER_GROUP);
   const groupsCoverGuests = totalGroupQty >= defaultGuests;
   const groupsValid = hasAnyValidGroup && !anyGroupTooSmall && groupsCoverGuests;
-  const isComplete = value.meals.length > 0 && groupsValid;
+  const isComplete = value.meals.length > 0 && (groupsValid || !!value.personalSelection);
   const individualMet = !!individualOption?.met;
   const incomplete = mode === 'mandatory' && !isComplete && !value.bypassed && !individualMet;
 
@@ -405,6 +411,117 @@ const DayMealCard = ({
               })()}
             </div>
           </div>
+
+          {/* Personal Meal Plans (for small groups) */}
+          {value.meals.length > 0 && personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5 && (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/10 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowPersonalSection(v => !v)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-amber-50/70 hover:bg-amber-100/60 dark:bg-amber-950/20 transition text-left"
+              >
+                <span className="text-sm font-semibold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
+                  <Users className="h-3.5 w-3.5" />
+                  {isVi
+                    ? `Suất ăn theo người (${personalMealGuestCount} khách)`
+                    : `Personal meal plans (${personalMealGuestCount} guests)`}
+                  {value.personalSelection && (
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
+                      {isVi ? 'Đã chọn' : 'Selected'}
+                    </span>
+                  )}
+                </span>
+                <ChevronDown className={cn('h-4 w-4 text-amber-700 dark:text-amber-300 transition-transform shrink-0', showPersonalSection && 'rotate-180')} />
+              </button>
+              {showPersonalSection && (
+                <div className="p-3 space-y-2 border-t border-amber-200/70 bg-card">
+                  <p className="text-[11px] text-muted-foreground">
+                    {isVi
+                      ? 'Suất ăn riêng cho nhóm nhỏ — đã định sẵn món, đơn giá theo nguyên suất.'
+                      : 'Pre-set personal meal plans for small groups — fixed menu per set.'}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {personalMealPlans.map(plan => {
+                      const active = value.personalSelection?.mealPlanId === plan.id;
+                      return (
+                        <div
+                          key={plan.id}
+                          className={cn(
+                            'relative rounded-md border p-2 transition-all flex gap-2',
+                            active ? 'border-primary bg-primary/10 ring-1 ring-primary/30' : 'border-border bg-card hover:border-primary/50',
+                          )}
+                        >
+                          {plan.image_url && (
+                            <img src={plan.image_url} alt={plan.name} className="h-14 w-14 rounded object-cover shrink-0" loading="lazy" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-semibold leading-tight truncate">{plan.name}</div>
+                            <div className="text-[11px] text-primary tabular-nums font-semibold">{formatPrice(plan.price)}</div>
+                            <div className="text-[10px] text-muted-foreground truncate">
+                              {plan.items.slice(0, 2).join(' · ')}{plan.items.length > 2 ? '…' : ''}
+                            </div>
+                            <div className="flex gap-1.5 mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setPersonalPopupPlan(plan)}
+                                className="text-[10px] px-1.5 py-0.5 rounded border border-border hover:border-primary text-muted-foreground hover:text-primary transition"
+                              >
+                                {isVi ? 'Xem món' : 'View'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (active) {
+                                    onChange({ ...value, personalSelection: undefined });
+                                  } else {
+                                    onChange({
+                                      ...value,
+                                      personalSelection: {
+                                        type: 'personal',
+                                        mealPlanId: plan.id,
+                                        name: plan.name,
+                                        price: plan.price,
+                                        quantity: 1,
+                                        setCount: 1,
+                                        guestCount: personalMealGuestCount,
+                                        planGuestCount: plan.guest_count,
+                                        items: plan.items,
+                                        imageUrl: plan.image_url,
+                                      },
+                                    });
+                                  }
+                                }}
+                                className={cn(
+                                  'text-[10px] px-1.5 py-0.5 rounded font-semibold transition',
+                                  active
+                                    ? 'bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20'
+                                    : 'bg-primary text-primary-foreground hover:opacity-90',
+                                )}
+                              >
+                                {active ? (isVi ? 'Bỏ chọn' : 'Remove') : (isVi ? 'Chọn' : 'Pick')}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {value.personalSelection && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 rounded-md p-2 text-[11px] text-emerald-800 dark:text-emerald-200 flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {value.personalSelection.name} × {value.meals.length} {isVi ? 'bữa' : 'meal(s)'}
+                      </span>
+                      <span className="font-semibold tabular-nums">
+                        {formatPrice(value.personalSelection.price * Math.max(1, value.meals.length))}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
 
           {/* Groups */}
           {value.meals.length > 0 && (
@@ -843,6 +960,13 @@ const DayMealCard = ({
             updateGroup(targetIdx, { comboPackageId: pkgId, comboMenuId: firstMenu?.id || '' });
           }
         }}
+      />
+
+      <PersonalMealPlanPopup
+        open={!!personalPopupPlan}
+        onClose={() => setPersonalPopupPlan(null)}
+        plan={personalPopupPlan}
+        guestLabel={isVi ? `${personalMealGuestCount} khách` : `${personalMealGuestCount} guests`}
       />
     </div>
   );
