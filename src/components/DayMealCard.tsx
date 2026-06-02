@@ -121,15 +121,17 @@ const ensureGroups = (sel: DayMealSelection, adults: number): DayMealGroup[] => 
 const DayMealCard = ({
   night, defaultGuests, packages, getMenusByPackage, getDishesByMenu,
   value, onChange, variant, individualOption,
+  personalMealPlans = [], personalMealGuestCount = 0,
 }: Props) => {
-  const { language } = useLanguage();
+  const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const mode: 'mandatory' | 'optional' = variant || (night.mandatory ? 'mandatory' : 'optional');
 
   const hasAnySelection =
     (value.groups && value.groups.some(g => g.comboPackageId)) ||
     value.bypassed ||
-    !!value.comboPackageId;
+    !!value.comboPackageId ||
+    !!value.personalSelection;
   const [expanded, setExpanded] = useState<boolean>(mode === 'mandatory' || hasAnySelection);
 
   const [bypassInput, setBypassInput] = useState('');
@@ -139,6 +141,10 @@ const DayMealCard = ({
   const [infoGroupIdx, setInfoGroupIdx] = useState<number | null>(null);
   const [showIndividual, setShowIndividual] = useState(false);
   const [showBypass, setShowBypass] = useState(false);
+  const [personalPopupPlan, setPersonalPopupPlan] = useState<PersonalMealPlan | null>(null);
+  const [showPersonalSection, setShowPersonalSection] = useState(
+    !!value.personalSelection || (personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5),
+  );
 
   useEffect(() => {
     if (mode === 'mandatory') setExpanded(true);
