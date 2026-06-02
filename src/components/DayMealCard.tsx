@@ -139,12 +139,20 @@ const DayMealCard = ({
   const [bypassError, setBypassError] = useState<string | null>(null);
   const [infoPkgId, setInfoPkgId] = useState<string | null>(null);
   const [infoGroupIdx, setInfoGroupIdx] = useState<number | null>(null);
-  const [showIndividual, setShowIndividual] = useState(false);
-  const [showBypass, setShowBypass] = useState(false);
   const [personalPopupPlan, setPersonalPopupPlan] = useState<PersonalMealPlan | null>(null);
-  const [showPersonalSection, setShowPersonalSection] = useState(
-    !!value.personalSelection || (personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5),
-  );
+
+  // Three OR-options. Each can be manually toggled by the user.
+  // Default: open the section that already has data; others stay collapsed.
+  const hasPersonal = !!value.personalSelection;
+  const hasGroupSelection = !!(value.groups && value.groups.some(g => g.comboPackageId));
+  const hasIndividual = !!individualOption && (individualOption.total > 0 || !!individualOption.met);
+
+  const personalAvailable = personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5;
+
+  const [showPersonalSection, setShowPersonalSection] = useState(hasPersonal);
+  const [showGroupSection, setShowGroupSection] = useState(hasGroupSelection || (!hasPersonal && !hasIndividual && !personalAvailable));
+  const [showIndividual, setShowIndividual] = useState(hasIndividual && !hasPersonal && !hasGroupSelection);
+  const [showBypass, setShowBypass] = useState(false);
 
   useEffect(() => {
     if (mode === 'mandatory') setExpanded(true);
@@ -157,6 +165,29 @@ const DayMealCard = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-collapse other options when one becomes satisfied (one-shot per change).
+  useEffect(() => {
+    if (hasPersonal) {
+      setShowGroupSection(false);
+      setShowIndividual(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPersonal]);
+  useEffect(() => {
+    if (hasGroupSelection) {
+      setShowPersonalSection(false);
+      setShowIndividual(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasGroupSelection]);
+  useEffect(() => {
+    if (individualOption?.met) {
+      setShowPersonalSection(false);
+      setShowGroupSection(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [individualOption?.met]);
 
   const set = (patch: Partial<DayMealSelection>) => onChange({ ...value, ...patch });
 
@@ -523,17 +554,31 @@ const DayMealCard = ({
           )}
 
 
-          {/* Groups */}
+          {/* Groups (Combo by group) — collapsible OR-option */}
           {value.meals.length > 0 && (
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase block mb-2 flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                {isVi ? 'Combo theo nhóm bàn' : 'Combo per group'}{' '}
-                {mode === 'mandatory' && <span className="text-orange-600">*</span>}
-                <span className="text-[10px] font-normal text-muted-foreground/80 normal-case">
-                  ({isVi ? `mỗi nhóm tối thiểu ${MIN_PER_GROUP} suất` : `min ${MIN_PER_GROUP} servings / group`})
+            <div className="border border-border/70 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowGroupSection(v => !v)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition text-left"
+              >
+                <span className="text-sm font-semibold flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-primary" />
+                  {isVi ? 'Combo theo nhóm bàn' : 'Combo per group'}
+                  <span className="text-[10px] font-normal text-muted-foreground/80 normal-case">
+                    ({isVi ? `mỗi nhóm tối thiểu ${MIN_PER_GROUP} suất` : `min ${MIN_PER_GROUP}/group`})
+                  </span>
+                  {hasGroupSelection && (
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
+                      {isVi ? 'Đã chọn' : 'Selected'}
+                    </span>
+                  )}
                 </span>
-              </label>
+                <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform shrink-0', showGroupSection && 'rotate-180')} />
+              </button>
+              {showGroupSection && (
+            <div className="p-3 border-t border-border/60 bg-card">
+
 
 
               <div className="space-y-2.5">
@@ -733,16 +778,20 @@ const DayMealCard = ({
                 </div>
               )}
             </div>
+              )}
+            </div>
           )}
+
 
 
           {incomplete && !individualOption?.met && (
             <p className="text-xs font-medium text-orange-700 dark:text-orange-300 flex items-center gap-1">
               <AlertTriangle className="h-3.5 w-3.5" />
               {isVi
-                ? 'Vui lòng chọn buổi ăn + combo, đặt món riêng đủ mức, hoặc nhập mã miễn trừ.'
-                : 'Please pick meal + combo, order enough à la carte, or enter a bypass code.'}
+                ? 'Chọn 1 trong 3: Suất ăn theo người · Combo theo nhóm · Đặt món riêng (đủ mức) — hoặc nhập mã miễn trừ.'
+                : 'Pick ONE: Personal plan · Group combo · À la carte (min met) — or enter a bypass code.'}
             </p>
+
           )}
 
           {/* Individual Order per-day (collapsible) */}
