@@ -277,7 +277,16 @@ const Booking = () => {
     () => foodByDayLines.reduce((s, l) => s + l.subtotal, 0),
     [foodByDayLines],
   );
-  const comboTotal = comboSlotsTotal;
+  const personalSelectionTotal = useMemo(() => {
+    let sum = 0;
+    for (const n of stayNights) {
+      const sel = foodByDay[n.date];
+      if (!sel || sel.bypassed || sel.meals.length === 0 || !sel.personalSelection) continue;
+      sum += sel.personalSelection.price * sel.meals.length;
+    }
+    return sum;
+  }, [stayNights, foodByDay]);
+  const comboTotal = comboSlotsTotal + personalSelectionTotal;
   // Flattened individual food list (across all days) for legacy summaries.
   const allIndividualFoods = useMemo(
     () => Object.values(individualFoodsByDay).flat(),
