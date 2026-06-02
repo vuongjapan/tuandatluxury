@@ -778,7 +778,10 @@ const DayMealCard = ({
                 </div>
               )}
             </div>
+              )}
+            </div>
           )}
+
 
 
           {incomplete && !individualOption?.met && (
