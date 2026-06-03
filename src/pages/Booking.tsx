@@ -545,7 +545,6 @@ const Booking = () => {
       // 1) À la carte — when both meals are selected, EACH meal must meet the per-meal min.
       //    When 0 or 1 meal selected, the day total must meet the single-meal min.
       const dayItems = individualFoodsByDay[n.date] || [];
-      const mealsCount = Math.max(1, s?.meals?.length || 1);
       const perMealMin = minRequiredIndividual;
       const sumItems = (filterFn: (f: FoodItem) => boolean) => dayItems.reduce(
         (sum, f) => sum + (filterFn(f) && f.priceType !== 'negotiable' ? f.price * f.quantity : 0),
