@@ -34,10 +34,6 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
       .map(n => {
         const sel = foodByDay[n.date];
         const ind = individualFoodsByDay[n.date] || [];
-        const indTotal = ind.reduce(
-          (s, f) => s + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity),
-          0,
-        );
 
         type Line = {
           label: string;
