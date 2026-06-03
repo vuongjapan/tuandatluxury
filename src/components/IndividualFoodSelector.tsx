@@ -236,7 +236,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
                 (item as any).price_type === 'negotiable' || item.price_vnd === 0
               ) ? 'negotiable' : 'fixed' as 'fixed' | 'negotiable';
 
-              const cartEntries = items.filter(i => i.id.startsWith(item.id));
+              const cartEntries = mealItems.filter(i => i.id.startsWith(item.id));
               const itemInCart = cartEntries.length > 0;
 
               return (
