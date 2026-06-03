@@ -129,7 +129,7 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
   const grandTotal = useMemo(
     () =>
       rows.reduce(
-        (s, r) => s + r.lines.reduce((a, l) => a + l.amount, 0) + (r.indLine?.total || 0),
+        (s, r) => s + r.lines.reduce((a, l) => a + l.amount, 0) + r.indLines.reduce((a, l) => a + l.total, 0),
         0,
       ),
     [rows],
@@ -145,7 +145,7 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
       </h4>
 
       <div className="space-y-3">
-        {rows.map(({ night, lines, indLine, bypassed }) => (
+        {rows.map(({ night, lines, indLines, bypassed }) => (
           <div
             key={night.date}
             className="pb-3 border-b border-border/60 last:border-0 last:pb-0"
@@ -178,29 +178,33 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
                 </span>
               </div>
             ))}
-            {indLine && (
-              <div className="flex justify-between gap-2 text-sm text-muted-foreground pl-3 py-0.5">
-                <span className="min-w-0 flex items-center gap-1.5">
-                  <span>🍤 {isVi ? 'Món riêng' : 'À la carte'} ({indLine.count} {isVi ? 'món' : 'items'})</span>
-                  <button
-                    type="button"
-                    onClick={() => setDetail({
-                      title: isVi ? 'Món riêng đã đặt' : 'À la carte items',
-                      subtitle: `${night.dayLabel}, ${night.formattedDate}`,
-                      items: indLine.items,
-                      amount: indLine.total,
-                    })}
-                    className="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-primary hover:underline"
-                  >
-                    <Eye className="h-3 w-3" />
-                    {isVi ? 'Xem món' : 'View'}
-                  </button>
-                </span>
-                <span className="font-medium text-foreground tabular-nums">
-                  {indLine.total.toLocaleString('vi-VN')}đ
-                </span>
-              </div>
-            )}
+            {indLines.map((indLine) => {
+              const mealIcon = indLine.meal === 'lunch' ? '🌞' : '🌙';
+              const mealLabel = indLine.meal === 'lunch' ? (isVi ? 'Bữa trưa' : 'Lunch') : (isVi ? 'Bữa tối' : 'Dinner');
+              return (
+                <div key={indLine.meal} className="flex justify-between gap-2 text-sm text-muted-foreground pl-3 py-0.5">
+                  <span className="min-w-0 flex items-center gap-1.5">
+                    <span>{mealIcon} {mealLabel} — {isVi ? 'Món riêng' : 'À la carte'} ({indLine.count} {isVi ? 'món' : 'items'})</span>
+                    <button
+                      type="button"
+                      onClick={() => setDetail({
+                        title: `${mealIcon} ${mealLabel} — ${isVi ? 'Món riêng đã đặt' : 'À la carte items'}`,
+                        subtitle: `${night.dayLabel}, ${night.formattedDate}`,
+                        items: indLine.items,
+                        amount: indLine.total,
+                      })}
+                      className="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-primary hover:underline"
+                    >
+                      <Eye className="h-3 w-3" />
+                      {isVi ? 'Xem món' : 'View'}
+                    </button>
+                  </span>
+                  <span className="font-medium text-foreground tabular-nums">
+                    {indLine.total.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
