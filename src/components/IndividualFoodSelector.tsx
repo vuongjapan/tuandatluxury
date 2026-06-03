@@ -36,7 +36,7 @@ interface Props {
   meal?: 'lunch' | 'dinner';
 }
 
-const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false }: Props) => {
+const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false, meal = 'dinner' }: Props) => {
   const { allItems, loading } = useMenuItems();
   const { formatPrice, language } = useLanguage();
   const isVi = language === 'vi';
