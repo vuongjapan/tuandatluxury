@@ -16,10 +16,11 @@ export interface FoodItem {
   price: number;
   quantity: number;
   category: string;
-  priceLabel?: string; // e.g. "Nhỏ", "Vừa", "Lớn"
-  priceVariantId?: string; // ID of selected price variant
-  /** When "negotiable", this item does NOT contribute to totals — pay at restaurant. */
+  priceLabel?: string;
+  priceVariantId?: string;
   priceType?: 'fixed' | 'negotiable';
+  /** Which meal slot this item belongs to. Defaults to 'dinner' for back-compat. */
+  meal?: 'lunch' | 'dinner';
 }
 
 interface Props {
@@ -27,14 +28,15 @@ interface Props {
   onClose: () => void;
   items: FoodItem[];
   onItemsChange: (items: FoodItem[]) => void;
-  /** When true (mandatory holiday), shows progress bar in dialog footer too */
   isMandatory?: boolean;
   guestCount?: number;
   minPerPerson?: number;
   hasOtherValidSelection?: boolean;
+  /** Which meal slot we are filling — tags items + cart-key so same dish can be added to both. */
+  meal?: 'lunch' | 'dinner';
 }
 
-const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false }: Props) => {
+const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false, meal = 'dinner' }: Props) => {
   const { allItems, loading } = useMenuItems();
   const { formatPrice, language } = useLanguage();
   const isVi = language === 'vi';
@@ -70,14 +72,14 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     return list;
   }, [activeItems, selectedCat, search]);
 
-  // Generate a unique cart key: itemId or itemId__variantId
+  // Cart key includes meal so identical dish can live in both lunch & dinner separately.
   const getCartKey = (menuItemId: string, variantId?: string) => {
-    return variantId ? `${menuItemId}__${variantId}` : menuItemId;
+    const base = variantId ? `${menuItemId}__${variantId}` : menuItemId;
+    return `${base}__${meal}`;
   };
 
   const addItem = (menuItem: any, variant?: MenuItemPrice) => {
     const cartKey = getCartKey(menuItem.id, variant?.id);
-    // Treat any zero-priced item OR explicit 'negotiable' flag as negotiable.
     const isNegotiable = (menuItem as any).price_type === 'negotiable'
       || (variant ? variant.price_vnd === 0 : menuItem.price_vnd === 0);
     const priceType: 'fixed' | 'negotiable' = isNegotiable ? 'negotiable' : 'fixed';
@@ -97,6 +99,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
         priceLabel,
         priceVariantId: variant?.id,
         priceType,
+        meal,
       }]);
     }
   };
@@ -106,10 +109,11 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     onItemsChange(updated);
   };
 
-  // Total only counts FIXED-price items. Negotiable items are paid at the restaurant.
-  const total = items.reduce((s, i) => s + (i.priceType === 'negotiable' ? 0 : i.price * i.quantity), 0);
-  const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-  const negotiableCount = items.filter(i => i.priceType === 'negotiable').reduce((s, i) => s + i.quantity, 0);
+  // Scope totals to the current meal only — items prop may contain items from BOTH meals of the day.
+  const mealItems = items.filter(i => (i.meal || 'dinner') === meal);
+  const total = mealItems.reduce((s, i) => s + (i.priceType === 'negotiable' ? 0 : i.price * i.quantity), 0);
+  const totalItems = mealItems.reduce((s, i) => s + i.quantity, 0);
+  const negotiableCount = mealItems.filter(i => i.priceType === 'negotiable').reduce((s, i) => s + i.quantity, 0);
 
   const catLabels: Record<string, string> = {
     breakfast: isVi ? 'Ăn sáng' : 'Breakfast',
@@ -153,8 +157,11 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           <div className="px-5 pt-5 pb-4 border-b border-border/60 shrink-0">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
-                  {isVi ? 'Lựa chọn riêng' : 'À la carte'}
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary flex items-center gap-1.5">
+                  <span>{meal === 'lunch' ? '🌞' : '🌙'}</span>
+                  {isVi
+                    ? (meal === 'lunch' ? 'Bữa trưa · À la carte' : 'Bữa tối · À la carte')
+                    : (meal === 'lunch' ? 'Lunch · À la carte' : 'Dinner · À la carte')}
                 </p>
                 <h2 className="font-display text-xl font-bold text-foreground tracking-tight mt-1 flex items-center gap-2">
                   {isVi ? 'Đặt món riêng' : 'Order dishes'}
@@ -232,7 +239,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
                 (item as any).price_type === 'negotiable' || item.price_vnd === 0
               ) ? 'negotiable' : 'fixed' as 'fixed' | 'negotiable';
 
-              const cartEntries = items.filter(i => i.id.startsWith(item.id));
+              const cartEntries = mealItems.filter(i => i.id.startsWith(item.id));
               const itemInCart = cartEntries.length > 0;
 
               return (

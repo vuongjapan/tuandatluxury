@@ -20,11 +20,6 @@ interface Props {
   onRemoveIndividualItem: (date: string, cartKey: string) => void;
 }
 
-const sumIndividual = (items: FoodItem[]) =>
-  items.reduce(
-    (s, f) => s + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity),
-    0,
-  );
 
 const MealByDaySection = ({
   nights,
@@ -60,17 +55,58 @@ const MealByDaySection = ({
 
   const buildIndividualOption = (date: string, mandatory: boolean) => {
     const items = individualFoodsByDay[date] || [];
-    const total = sumIndividual(items);
-    const required = mandatory ? Math.max(1, adults) * minPerPerson : 0;
-    const met = mandatory ? total >= required : false;
+    const sel = foodByDay[date];
+    const meals = sel?.meals || [];
+    const perMealRequired = mandatory ? Math.max(1, adults) * minPerPerson : 0;
+    const mealsCount = Math.max(1, meals.length);
+    const sumFor = (filterFn: (f: FoodItem) => boolean) =>
+      items.reduce(
+        (s, f) => s + (filterFn(f) && f.priceType !== 'negotiable' ? f.price * f.quantity : 0),
+        0,
+      );
+    const total = sumFor(() => true);
+    const lunchItems = items.filter(f => (f.meal || 'dinner') === 'lunch');
+    const dinnerItems = items.filter(f => (f.meal || 'dinner') === 'dinner');
+    const lunchTotal = sumFor(f => (f.meal || 'dinner') === 'lunch');
+    const dinnerTotal = sumFor(f => (f.meal || 'dinner') === 'dinner');
+
+    let met = false;
+    if (mandatory) {
+      if (meals.length === 2) {
+        met = lunchTotal >= perMealRequired && dinnerTotal >= perMealRequired;
+      } else {
+        met = total >= perMealRequired;
+      }
+    }
+    const requiredTotal = mandatory ? perMealRequired * mealsCount : 0;
+
     return {
       total,
-      required,
+      required: requiredTotal,
       met,
       items,
-      onOpenMenu: () => onOpenIndividual(date, 'lunch'),
+      onOpenMenu: () => onOpenIndividual(date, meals[0] || 'dinner'),
       onRemoveItem: (cartKey: string) => onRemoveIndividualItem(date, cartKey),
-    };
+      perMeal: {
+        lunch: {
+          total: lunchTotal,
+          required: perMealRequired,
+          met: mandatory ? lunchTotal >= perMealRequired : false,
+          items: lunchItems,
+          onOpenMenu: () => onOpenIndividual(date, 'lunch'),
+          onRemoveItem: (cartKey: string) => onRemoveIndividualItem(date, cartKey),
+        },
+        dinner: {
+          total: dinnerTotal,
+          required: perMealRequired,
+          met: mandatory ? dinnerTotal >= perMealRequired : false,
+          items: dinnerItems,
+          onOpenMenu: () => onOpenIndividual(date, 'dinner'),
+          onRemoveItem: (cartKey: string) => onRemoveIndividualItem(date, cartKey),
+        },
+      },
+      bothMealsSelected: meals.length === 2,
+    } as const;
   };
 
   const resolvePersonalPlans = (guestCount: number): PersonalMealPlan[] => {
