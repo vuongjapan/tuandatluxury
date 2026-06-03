@@ -62,32 +62,27 @@ export const buildDefaultGroups = (adults: number): DayMealGroup[] => {
   }];
 };
 
+interface IndividualPerMeal {
+  total: number;
+  required: number;
+  met: boolean;
+  items?: FoodItem[];
+  onOpenMenu: () => void;
+  onRemoveItem?: (cartKey: string) => void;
+}
+
 interface IndividualPerDay {
   total: number;
   required: number;
   met: boolean;
   onOpenMenu?: () => void;
-  /** Optional: items list to render inline with × remove buttons */
   items?: FoodItem[];
   onRemoveItem?: (cartKey: string) => void;
   perMeal?: {
-    lunch: {
-      total: number;
-      required: number;
-      met: boolean;
-      items?: FoodItem[];
-      onOpenMenu: () => void;
-      onRemoveItem?: (cartKey: string) => void;
-    };
-    dinner: {
-      total: number;
-      required: number;
-      met: boolean;
-      items?: FoodItem[];
-      onOpenMenu: () => void;
-      onRemoveItem?: (cartKey: string) => void;
-    };
+    lunch: IndividualPerMeal;
+    dinner: IndividualPerMeal;
   };
+  bothMealsSelected?: boolean;
 }
 
 interface Props {
