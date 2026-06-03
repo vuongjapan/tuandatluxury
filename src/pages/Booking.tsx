@@ -1171,7 +1171,11 @@ const Booking = () => {
                           foodByDay={foodByDay}
                           individualFoodsByDay={individualFoodsByDay}
                           onChange={(date, next) => setFoodByDay(prev => ({ ...prev, [date]: next }))}
-                          onOpenIndividual={(date) => { setFoodSelectorDate(date); setFoodSelectorOpen(true); }}
+                          onOpenIndividual={(date, meal) => {
+                            setFoodSelectorDate(date);
+                            setFoodSelectorMeal(meal);
+                            setFoodSelectorOpen(true);
+                          }}
                           onRemoveIndividualItem={(date, id) => setIndividualFoodsByDay(prev => ({
                             ...prev,
                             [date]: (prev[date] || []).filter(f => f.id !== id),
@@ -1200,6 +1204,7 @@ const Booking = () => {
                       guestCount={parseInt(adults) || guestCount}
                       minPerPerson={minIndividualPerPerson}
                       hasOtherValidSelection={false}
+                      meal={foodSelectorMeal}
                     />
 
 
