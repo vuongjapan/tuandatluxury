@@ -789,75 +789,105 @@ const DayMealCard = ({
 
           )}
 
-          {/* Individual Order per-day (collapsible) */}
-          {individualOption && (
-            <div className="border border-border/70 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowIndividual(v => !v)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition text-left"
-              >
-                <span className="text-sm font-semibold flex items-center gap-1.5">
-                  <ShoppingBag className="h-3.5 w-3.5 text-primary" />
-                  {isVi ? 'Đặt món riêng (ngày này)' : 'À la carte (this day)'}
-                  {individualOption.met && (
-                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
-                      {isVi ? 'Đủ mức' : 'Met'}
-                    </span>
-                  )}
-                  {!individualOption.met && individualOption.total > 0 && (
-                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full tabular-nums">
-                      {individualOption.total.toLocaleString('vi-VN')}đ
-                    </span>
-                  )}
-                </span>
-                <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform shrink-0', showIndividual && 'rotate-180')} />
-              </button>
+          {/* Individual Order per-day (collapsible) — splits per meal when both selected */}
+          {individualOption && (() => {
+            const bothMeals = !!individualOption.bothMealsSelected && !!individualOption.perMeal;
+            const activeMeals: ('lunch' | 'dinner')[] = bothMeals
+              ? ['lunch', 'dinner']
+              : (value.meals.length === 1 ? [value.meals[0]] : ['dinner']);
 
-              {showIndividual && (
-                <div className="p-3 space-y-2 border-t border-border/60 bg-card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      {mode === 'mandatory' && (
-                        <p className="text-[11px] text-muted-foreground">
-                          {isVi
-                            ? `Tối thiểu ${individualOption.required.toLocaleString('vi-VN')}đ để bỏ qua combo`
-                            : `Min ${individualOption.required.toLocaleString('vi-VN')}đ to skip combo`}
-                        </p>
+            const renderProgress = (slot: IndividualPerMeal) => (
+              <div className="space-y-1 pt-1">
+                <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      'absolute inset-y-0 left-0 transition-all duration-300 rounded-full',
+                      slot.met ? 'bg-emerald-500' : 'bg-primary',
+                    )}
+                    style={{
+                      width: `${Math.min(100, (slot.total / Math.max(1, slot.required)) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px] tabular-nums">
+                  <span className={cn('font-semibold', slot.met ? 'text-emerald-600' : 'text-foreground')}>
+                    {slot.total.toLocaleString('vi-VN')}đ
+                  </span>
+                  <span className="text-muted-foreground">
+                    / {slot.required.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+                {slot.met ? (
+                  <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    {isVi ? 'Đủ điều kiện!' : 'Minimum met!'}
+                  </p>
+                ) : slot.total > 0 ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    {isVi
+                      ? `Cần thêm ${(slot.required - slot.total).toLocaleString('vi-VN')}đ`
+                      : `Need ${(slot.required - slot.total).toLocaleString('vi-VN')}đ more`}
+                  </p>
+                ) : null}
+              </div>
+            );
+
+            const renderMealBlock = (mealKey: 'lunch' | 'dinner') => {
+              const slot: IndividualPerMeal = individualOption.perMeal
+                ? individualOption.perMeal[mealKey]
+                : {
+                    total: individualOption.total,
+                    required: individualOption.required,
+                    met: individualOption.met,
+                    items: individualOption.items,
+                    onOpenMenu: individualOption.onOpenMenu || (() => {}),
+                    onRemoveItem: individualOption.onRemoveItem,
+                  };
+              const Icon = mealKey === 'lunch' ? Sun : Moon;
+              const mealLabel = mealKey === 'lunch' ? (isVi ? 'Bữa trưa' : 'Lunch') : (isVi ? 'Bữa tối' : 'Dinner');
+              return (
+                <div key={mealKey} className={cn(
+                  'rounded-lg border p-3 space-y-2',
+                  slot.met ? 'border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/10' : 'border-border/70 bg-muted/20',
+                )}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold flex items-center gap-1.5">
+                      <Icon className={cn('h-3.5 w-3.5', mealKey === 'lunch' ? 'text-amber-500' : 'text-indigo-500')} />
+                      {isVi ? `Đặt món riêng — ${mealLabel}` : `À la carte — ${mealLabel}`}
+                      {slot.met && (
+                        <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
+                          {isVi ? 'Đủ mức' : 'Met'}
+                        </span>
                       )}
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={individualOption.onOpenMenu}
-                      className="shrink-0"
-                    >
+                    </span>
+                    <Button type="button" size="sm" variant="outline" onClick={slot.onOpenMenu} className="shrink-0 h-7 text-xs">
                       {isVi ? 'Mở menu' : 'Open menu'}
                     </Button>
                   </div>
-
-                  {individualOption.items && individualOption.items.length > 0 && (
+                  {mode === 'mandatory' && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {isVi
+                        ? `Tối thiểu ${slot.required.toLocaleString('vi-VN')}đ cho bữa này`
+                        : `Min ${slot.required.toLocaleString('vi-VN')}đ for this meal`}
+                    </p>
+                  )}
+                  {slot.items && slot.items.length > 0 && (
                     <div className="space-y-1 border-t border-border/50 pt-2">
-                      {individualOption.items.map(f => {
+                      {slot.items.map(f => {
                         const isNeg = f.priceType === 'negotiable' || f.price === 0;
                         return (
-                          <div
-                            key={f.id}
-                            className="flex items-center justify-between gap-2 text-xs py-0.5"
-                          >
+                          <div key={f.id} className="flex items-center justify-between gap-2 text-xs py-0.5">
                             <span className="min-w-0 truncate">
-                              {f.name}
-                              {f.priceLabel ? ` (${f.priceLabel})` : ''} × {f.quantity}
+                              {f.name}{f.priceLabel ? ` (${f.priceLabel})` : ''} × {f.quantity}
                             </span>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="tabular-nums text-muted-foreground">
                                 {isNeg ? (isVi ? 'Thoả thuận' : 'On request') : `${(f.price * f.quantity).toLocaleString('vi-VN')}đ`}
                               </span>
-                              {individualOption.onRemoveItem && (
+                              {slot.onRemoveItem && (
                                 <button
                                   type="button"
-                                  onClick={() => individualOption.onRemoveItem?.(f.id)}
+                                  onClick={() => slot.onRemoveItem?.(f.id)}
                                   className="text-destructive/60 hover:text-destructive p-0.5"
                                   aria-label="remove"
                                 >
@@ -870,51 +900,60 @@ const DayMealCard = ({
                       })}
                     </div>
                   )}
-
-                  {mode === 'mandatory' && (
-                    <div className="space-y-1 pt-1">
-                      <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            'absolute inset-y-0 left-0 transition-all duration-300 rounded-full',
-                            individualOption.met ? 'bg-emerald-500' : 'bg-primary',
-                          )}
-                          style={{
-                            width: `${Math.min(100, (individualOption.total / Math.max(1, individualOption.required)) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] tabular-nums">
-                        <span
-                          className={cn(
-                            'font-semibold',
-                            individualOption.met ? 'text-emerald-600' : 'text-foreground',
-                          )}
-                        >
-                          {individualOption.total.toLocaleString('vi-VN')}đ
-                        </span>
-                        <span className="text-muted-foreground">
-                          / {individualOption.required.toLocaleString('vi-VN')}đ
-                        </span>
-                      </div>
-                      {individualOption.met ? (
-                        <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          {isVi ? 'Đủ điều kiện — không cần chọn combo!' : 'Minimum met — combo not required!'}
-                        </p>
-                      ) : individualOption.total > 0 ? (
-                        <p className="text-[11px] text-muted-foreground">
-                          {isVi
-                            ? `Cần thêm ${(individualOption.required - individualOption.total).toLocaleString('vi-VN')}đ`
-                            : `Need ${(individualOption.required - individualOption.total).toLocaleString('vi-VN')}đ more`}
-                        </p>
-                      ) : null}
-                    </div>
-                  )}
+                  {mode === 'mandatory' && renderProgress(slot)}
                 </div>
-              )}
-            </div>
-          )}
+              );
+            };
+
+            return (
+              <div className="border border-border/70 rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowIndividual(v => !v)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition text-left"
+                >
+                  <span className="text-sm font-semibold flex items-center gap-1.5">
+                    <ShoppingBag className="h-3.5 w-3.5 text-primary" />
+                    {isVi ? 'Đặt món riêng (ngày này)' : 'À la carte (this day)'}
+                    {bothMeals && (
+                      <span className="text-[10px] font-normal text-muted-foreground normal-case">
+                        ({isVi ? '2 bữa riêng biệt' : '2 separate meals'})
+                      </span>
+                    )}
+                    {individualOption.met && (
+                      <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
+                        {isVi ? 'Đủ mức' : 'Met'}
+                      </span>
+                    )}
+                    {!individualOption.met && individualOption.total > 0 && (
+                      <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full tabular-nums">
+                        {individualOption.total.toLocaleString('vi-VN')}đ
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform shrink-0', showIndividual && 'rotate-180')} />
+                </button>
+
+                {showIndividual && (
+                  <div className="p-3 space-y-2 border-t border-border/60 bg-card">
+                    {value.meals.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        {isVi ? 'Chọn buổi ăn (trưa / tối / cả 2) ở trên trước.' : 'Pick a meal time above first.'}
+                      </p>
+                    )}
+                    {activeMeals.map(renderMealBlock)}
+                    {bothMeals && mode === 'mandatory' && (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        {isVi
+                          ? `Cần cả 2 bữa đạt tối thiểu ${individualOption.perMeal!.lunch.required.toLocaleString('vi-VN')}đ để bỏ qua combo (tổng ${individualOption.required.toLocaleString('vi-VN')}đ).`
+                          : `Both meals must each reach ${individualOption.perMeal!.lunch.required.toLocaleString('vi-VN')}đ to skip combo (total ${individualOption.required.toLocaleString('vi-VN')}đ).`}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Bypass code (collapsible) */}
           {mode === 'mandatory' && (
