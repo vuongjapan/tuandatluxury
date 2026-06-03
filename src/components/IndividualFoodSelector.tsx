@@ -72,14 +72,14 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     return list;
   }, [activeItems, selectedCat, search]);
 
-  // Generate a unique cart key: itemId or itemId__variantId
+  // Cart key includes meal so identical dish can live in both lunch & dinner separately.
   const getCartKey = (menuItemId: string, variantId?: string) => {
-    return variantId ? `${menuItemId}__${variantId}` : menuItemId;
+    const base = variantId ? `${menuItemId}__${variantId}` : menuItemId;
+    return `${base}__${meal}`;
   };
 
   const addItem = (menuItem: any, variant?: MenuItemPrice) => {
     const cartKey = getCartKey(menuItem.id, variant?.id);
-    // Treat any zero-priced item OR explicit 'negotiable' flag as negotiable.
     const isNegotiable = (menuItem as any).price_type === 'negotiable'
       || (variant ? variant.price_vnd === 0 : menuItem.price_vnd === 0);
     const priceType: 'fixed' | 'negotiable' = isNegotiable ? 'negotiable' : 'fixed';
@@ -99,6 +99,7 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
         priceLabel,
         priceVariantId: variant?.id,
         priceType,
+        meal,
       }]);
     }
   };
