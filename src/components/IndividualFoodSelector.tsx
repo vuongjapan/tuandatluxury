@@ -157,8 +157,11 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
           <div className="px-5 pt-5 pb-4 border-b border-border/60 shrink-0">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
-                  {isVi ? 'Lựa chọn riêng' : 'À la carte'}
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary flex items-center gap-1.5">
+                  <span>{meal === 'lunch' ? '🌞' : '🌙'}</span>
+                  {isVi
+                    ? (meal === 'lunch' ? 'Bữa trưa · À la carte' : 'Bữa tối · À la carte')
+                    : (meal === 'lunch' ? 'Lunch · À la carte' : 'Dinner · À la carte')}
                 </p>
                 <h2 className="font-display text-xl font-bold text-foreground tracking-tight mt-1 flex items-center gap-2">
                   {isVi ? 'Đặt món riêng' : 'Order dishes'}
