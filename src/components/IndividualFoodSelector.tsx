@@ -109,10 +109,11 @@ const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandato
     onItemsChange(updated);
   };
 
-  // Total only counts FIXED-price items. Negotiable items are paid at the restaurant.
-  const total = items.reduce((s, i) => s + (i.priceType === 'negotiable' ? 0 : i.price * i.quantity), 0);
-  const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-  const negotiableCount = items.filter(i => i.priceType === 'negotiable').reduce((s, i) => s + i.quantity, 0);
+  // Scope totals to the current meal only — items prop may contain items from BOTH meals of the day.
+  const mealItems = items.filter(i => (i.meal || 'dinner') === meal);
+  const total = mealItems.reduce((s, i) => s + (i.priceType === 'negotiable' ? 0 : i.price * i.quantity), 0);
+  const totalItems = mealItems.reduce((s, i) => s + i.quantity, 0);
+  const negotiableCount = mealItems.filter(i => i.priceType === 'negotiable').reduce((s, i) => s + i.quantity, 0);
 
   const catLabels: Record<string, string> = {
     breakfast: isVi ? 'Ăn sáng' : 'Breakfast',
