@@ -90,20 +90,38 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
           }
         }
 
-        const indLine = ind.length > 0 ? {
-          count: ind.length,
-          total: indTotal,
-          items: ind.map(f => `${f.name}${f.priceLabel ? ` (${f.priceLabel})` : ''} × ${f.quantity}${f.priceType === 'negotiable' || f.price === 0 ? ` — ${isVi ? 'Thoả thuận' : 'On request'}` : ` — ${(f.price * f.quantity).toLocaleString('vi-VN')}đ`}`),
-        } : null;
+        // Group à la carte items by meal so we never collapse Lunch + Dinner into one row.
+        const indByMeal: Record<'lunch' | 'dinner', FoodItem[]> = { lunch: [], dinner: [] };
+        for (const f of ind) {
+          const m = (f.meal === 'lunch' ? 'lunch' : 'dinner');
+          indByMeal[m].push(f);
+        }
+        const buildIndLine = (mealKey: 'lunch' | 'dinner') => {
+          const arr = indByMeal[mealKey];
+          if (arr.length === 0) return null;
+          const total = arr.reduce(
+            (s, f) => s + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity),
+            0,
+          );
+          return {
+            meal: mealKey,
+            count: arr.length,
+            total,
+            items: arr.map(f => `${f.name}${f.priceLabel ? ` (${f.priceLabel})` : ''} × ${f.quantity}${f.priceType === 'negotiable' || f.price === 0 ? ` — ${isVi ? 'Thoả thuận' : 'On request'}` : ` — ${(f.price * f.quantity).toLocaleString('vi-VN')}đ`}`),
+          };
+        };
+        const indLines = [buildIndLine('lunch'), buildIndLine('dinner')].filter(Boolean) as {
+          meal: 'lunch' | 'dinner'; count: number; total: number; items: string[];
+        }[];
 
         const bypassed = sel?.bypassed;
-        if (!lines.length && !indLine && !bypassed) return null;
-        return { night: n, lines, indLine, bypassed };
+        if (!lines.length && indLines.length === 0 && !bypassed) return null;
+        return { night: n, lines, indLines, bypassed };
       })
       .filter(Boolean) as {
       night: NightInfo;
       lines: { label: string; amount: number; detail?: DetailPopup }[];
-      indLine: { count: number; total: number; items: string[] } | null;
+      indLines: { meal: 'lunch' | 'dinner'; count: number; total: number; items: string[] }[];
       bypassed: boolean | undefined;
     }[];
   }, [nights, foodByDay, individualFoodsByDay, packages, getMenusByPackage, getDishesByMenu, isVi]);
