@@ -109,6 +109,7 @@ const Booking = () => {
   const [individualFoodsByDay, setIndividualFoodsByDay] = useState<Record<string, FoodItem[]>>({});
   const [foodSelectorOpen, setFoodSelectorOpen] = useState(false);
   const [foodSelectorDate, setFoodSelectorDate] = useState<string | null>(null);
+  const [foodSelectorMeal, setFoodSelectorMeal] = useState<'lunch' | 'dinner'>('dinner');
   const [mealTime, setMealTime] = useState<MealTime>('dinner');
   // Per-day food selection (one entry per stay-night)
   const [foodByDay, setFoodByDay] = useState<Record<string, DayMealSelection>>({});
