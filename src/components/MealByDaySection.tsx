@@ -20,11 +20,6 @@ interface Props {
   onRemoveIndividualItem: (date: string, cartKey: string) => void;
 }
 
-const sumIndividual = (items: FoodItem[]) =>
-  items.reduce(
-    (s, f) => s + (f.priceType === 'negotiable' ? 0 : f.price * f.quantity),
-    0,
-  );
 
 const MealByDaySection = ({
   nights,
