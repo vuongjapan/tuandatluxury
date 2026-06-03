@@ -16,10 +16,11 @@ export interface FoodItem {
   price: number;
   quantity: number;
   category: string;
-  priceLabel?: string; // e.g. "Nhỏ", "Vừa", "Lớn"
-  priceVariantId?: string; // ID of selected price variant
-  /** When "negotiable", this item does NOT contribute to totals — pay at restaurant. */
+  priceLabel?: string;
+  priceVariantId?: string;
   priceType?: 'fixed' | 'negotiable';
+  /** Which meal slot this item belongs to. Defaults to 'dinner' for back-compat. */
+  meal?: 'lunch' | 'dinner';
 }
 
 interface Props {
@@ -27,11 +28,12 @@ interface Props {
   onClose: () => void;
   items: FoodItem[];
   onItemsChange: (items: FoodItem[]) => void;
-  /** When true (mandatory holiday), shows progress bar in dialog footer too */
   isMandatory?: boolean;
   guestCount?: number;
   minPerPerson?: number;
   hasOtherValidSelection?: boolean;
+  /** Which meal slot we are filling — tags items + cart-key so same dish can be added to both. */
+  meal?: 'lunch' | 'dinner';
 }
 
 const IndividualFoodSelector = ({ open, onClose, items, onItemsChange, isMandatory, guestCount = 0, minPerPerson = 300000, hasOtherValidSelection = false }: Props) => {
