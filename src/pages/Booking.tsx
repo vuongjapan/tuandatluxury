@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check, Search, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CalendarIcon, Users, UtensilsCrossed, AlertTriangle, Gift, Building2, Heart, Zap, Percent, Brain, ShoppingBag, UserPlus, ChevronLeft, ChevronRight, Check, Search, Minus, Plus, ArrowRight, ArrowLeft, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ComboSelector, { ComboSelection } from '@/components/ComboSelector';
 import ComboSlotSelector, { ComboSlot } from '@/components/ComboSlotSelector';
@@ -18,6 +18,7 @@ import type { DayMealSelection } from '@/components/DayMealCard';
 import { buildDefaultGroups } from '@/components/DayMealCard';
 import MealSummaryCard from '@/components/MealSummaryCard';
 import MealHelpPopup from '@/components/MealHelpPopup';
+import RoomSelectionHelpPopup from '@/components/RoomSelectionHelpPopup';
 import { useComboPackages } from '@/hooks/useComboPackages';
 
 import { Button } from '@/components/ui/button';
@@ -122,6 +123,8 @@ const Booking = () => {
   const [showExtraServices, setShowExtraServices] = useState(false);
   const [country, setCountry] = useState('');
   const [address, setAddress] = useState('');
+  const [roomHelpOpen, setRoomHelpOpen] = useState(false);
+  
   
 
   useEffect(() => {
@@ -1088,9 +1091,19 @@ const Booking = () => {
 
                     {/* Room list — always visible (auto-show, no need to click "Search") */}
                     <div className="space-y-4">
-                      <h2 className="font-display text-xl font-semibold flex items-center gap-2">
-                        🏨 {pick('Chọn phòng', 'Select Rooms')}
-                      </h2>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                          🏨 {pick('Chọn phòng', 'Select Rooms')}
+                        </h2>
+                        <button
+                          type="button"
+                          onClick={() => setRoomHelpOpen(true)}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                          {pick('Hướng dẫn chọn phòng', 'Room guide')}
+                        </button>
+                      </div>
                       <p className="text-xs text-muted-foreground">{pick('Chọn số lượng phòng mong muốn', 'Select the number of rooms you want')}</p>
 
                       {rooms.map(room => {
@@ -1113,7 +1126,34 @@ const Booking = () => {
                           ⚠️ {pick('Vui lòng chọn ít nhất 1 phòng để tiếp tục', 'Please select at least 1 room')}
                         </div>
                       )}
+
+                      {/* Realtime capacity feedback (adults only) */}
+                      {hasRooms && standardCapacity > 0 && (
+                        extraPersonCount > 0 ? (
+                          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                            <p>
+                              {pick(
+                                `Phòng hiện tại chứa tối đa ${standardCapacity} NL / bạn đang đặt ${guestCount} NL. ${extraPersonCount} khách vượt → phụ thu ${Math.round(extraPersonSurchargePercent * 100)}%`,
+                                `Current rooms fit ${standardCapacity} adults / you are booking ${guestCount}. ${extraPersonCount} extra → +${Math.round(extraPersonSurchargePercent * 100)}%`
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg p-3 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 shrink-0" />
+                            <p>{pick(`Đủ chỗ cho ${guestCount} người lớn`, `Fits ${guestCount} adults`)}</p>
+                          </div>
+                        )
+                      )}
                     </div>
+
+                    <RoomSelectionHelpPopup
+                      open={roomHelpOpen}
+                      onClose={() => setRoomHelpOpen(false)}
+                      feePercent={Math.round(extraPersonSurchargePercent * 100)}
+                      pick={pick}
+                    />
 
                     {/* Group/Corporate promo form */}
                     {isGroupPromo && (
