@@ -72,13 +72,11 @@ const MealByDaySection = ({
 
     let met = false;
     if (mandatory) {
-      if (meals.length === 2) {
-        met = lunchTotal >= perMealRequired && dinnerTotal >= perMealRequired;
-      } else {
-        met = total >= perMealRequired;
-      }
+      // À la carte passes when EITHER lunch OR dinner meets the per-meal min,
+      // regardless of whether the guest selected one or both meals.
+      met = lunchTotal >= perMealRequired || dinnerTotal >= perMealRequired;
     }
-    const requiredTotal = mandatory ? perMealRequired * mealsCount : 0;
+    const requiredTotal = mandatory ? perMealRequired : 0;
 
     return {
       total,

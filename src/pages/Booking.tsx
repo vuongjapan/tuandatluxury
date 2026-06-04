@@ -542,22 +542,17 @@ const Booking = () => {
       if (s?.bypassed) return false;
 
       // OR-logic: any ONE of these 3 satisfies the mandatory requirement.
-      // 1) À la carte — when both meals are selected, EACH meal must meet the per-meal min.
-      //    When 0 or 1 meal selected, the day total must meet the single-meal min.
+      // 1) À la carte — passing just ONE meal (lunch OR dinner) at per-meal min is enough,
+      //    even if the guest selected "both meals". The other meal can be empty / under min.
       const dayItems = individualFoodsByDay[n.date] || [];
       const perMealMin = minRequiredIndividual;
       const sumItems = (filterFn: (f: FoodItem) => boolean) => dayItems.reduce(
         (sum, f) => sum + (filterFn(f) && f.priceType !== 'negotiable' ? f.price * f.quantity : 0),
         0,
       );
-      if (s?.meals?.length === 2) {
-        const lunchTotal = sumItems(f => (f.meal || 'dinner') === 'lunch');
-        const dinnerTotal = sumItems(f => (f.meal || 'dinner') === 'dinner');
-        if (lunchTotal >= perMealMin && dinnerTotal >= perMealMin) return false;
-      } else {
-        const dayTotal = sumItems(() => true);
-        if (dayTotal >= perMealMin) return false;
-      }
+      const lunchTotal = sumItems(f => (f.meal || 'dinner') === 'lunch');
+      const dinnerTotal = sumItems(f => (f.meal || 'dinner') === 'dinner');
+      if (lunchTotal >= perMealMin || dinnerTotal >= perMealMin) return false;
 
       // 2) Personal meal plan selected with at least one meal time.
       if (s?.personalSelection && s.meals.length > 0) return false;
