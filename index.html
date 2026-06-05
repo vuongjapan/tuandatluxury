@@ -42,6 +42,32 @@
     <link rel="preconnect" href="https://storage.googleapis.com" crossorigin />
     <link rel="dns-prefetch" href="https://storage.googleapis.com" />
 
+    <!-- Early hero preload: read cached site_settings from previous visit, inject preload BEFORE bundles parse -->
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem('tdl:site_settings_v1');
+          if (!raw) return;
+          var s = JSON.parse(raw);
+          var head = document.head;
+          function preload(url, as, fp) {
+            if (!url || typeof url !== 'string') return;
+            var l = document.createElement('link');
+            l.rel = 'preload';
+            l.as = as;
+            l.href = url;
+            if (fp) l.setAttribute('fetchpriority', 'high');
+            if (as === 'video') l.setAttribute('type', 'video/mp4');
+            head.appendChild(l);
+          }
+          // Hero image is the LCP candidate when no video, also serves as video poster
+          preload(s.hero_image_url, 'image', true);
+          // Header logo above fold
+          preload(s.header_logo_url, 'image', false);
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",

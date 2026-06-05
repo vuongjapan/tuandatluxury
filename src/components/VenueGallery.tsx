@@ -30,9 +30,23 @@ export default function VenueGallery({ venue }: { venue: 'pool' | 'restaurant' }
     <div className="space-y-6">
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {images.map((img) => (
-            <div key={img.id} className="aspect-[4/3] overflow-hidden rounded-lg bg-secondary">
-              <img src={img.url} alt={img.caption || ''} loading="lazy" className="w-full h-full object-cover hover:scale-[1.04] transition-transform duration-500" />
+          {images.map((img, idx) => (
+            <div key={img.id} className="aspect-[4/3] overflow-hidden rounded-lg bg-secondary animate-[pulse_1.6s_ease-in-out_infinite]">
+              <img
+                src={img.url}
+                alt={img.caption || ''}
+                loading={idx < 3 ? 'eager' : 'lazy'}
+                decoding="async"
+                {...(idx < 3 ? ({ fetchpriority: 'high' } as any) : {})}
+                className="w-full h-full object-cover hover:scale-[1.04] transition-transform duration-500 opacity-0"
+                onLoad={(e) => {
+                  const el = e.currentTarget;
+                  el.classList.remove('opacity-0');
+                  el.style.transition = 'opacity 0.3s ease';
+                  el.style.opacity = '1';
+                  (el.parentElement as HTMLElement | null)?.classList.remove('animate-[pulse_1.6s_ease-in-out_infinite]');
+                }}
+              />
             </div>
           ))}
         </div>
