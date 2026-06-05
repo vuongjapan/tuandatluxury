@@ -77,10 +77,11 @@ export function useSiteSettings() {
   const updateSetting = async (key: string, value: string) => {
     const { error } = await supabase.from('site_settings').upsert({ key, value, updated_at: new Date().toISOString() } as any, { onConflict: 'key' } as any);
     if (!error) {
-      queryClient.setQueryData(['site-settings'], (prev: SiteSettings | undefined) => ({
-        ...(prev || DEFAULTS),
-        [key]: value,
-      }));
+      queryClient.setQueryData(['site-settings'], (prev: SiteSettings | undefined) => {
+        const next = { ...(prev || DEFAULTS), [key]: value } as SiteSettings;
+        writeCache(next);
+        return next;
+      });
     }
     return error;
   };
