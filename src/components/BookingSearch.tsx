@@ -28,7 +28,11 @@ const BookingSearch = () => {
   };
 
   const searchCard = (
-    <div className="mx-auto w-full max-w-5xl rounded-2xl border border-border bg-card shadow-luxury p-[clamp(1rem,2.5vw,1.75rem)]">
+    <div
+      className="rounded-2xl border border-border bg-card shadow-luxury p-[clamp(1rem,2.5vw,1.75rem)]"
+      style={{ width: 'min(90%, 1180px)', marginInline: 'auto' }}
+    >
+
       <div className="mb-5">
         <h2 className="font-display text-xl sm:text-2xl font-semibold flex items-center gap-2 text-foreground">
           📅 {isVi ? 'Đặt phòng & Kiểm tra giá' : 'Book & Check Price'}
