@@ -129,7 +129,7 @@ const Index = () => {
             tagline={isVi ? 'Khám phá' : 'Discover'}
             title={isVi ? 'Khám phá Sầm Sơn' : 'Explore Sầm Sơn'}
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {safeAttractions.slice(0, 6).map((a, idx) => (
               <FadeIn key={a.id} delay={idx * 60}>
                 <button
