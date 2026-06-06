@@ -80,7 +80,7 @@ const Index = () => {
   const visibleRooms = safeRooms;
 
   return (
-    <div className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background w-full overflow-x-hidden">
       <Header />
 
       {/* [1] Video Hero */}
@@ -185,7 +185,7 @@ const Index = () => {
       <Footer />
       <FloatingButtons />
       <PromoPopup />
-    </div>
+    </main>
   );
 };
 
