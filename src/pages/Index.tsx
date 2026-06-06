@@ -85,13 +85,16 @@ const Index = () => {
 
       {/* [1] Video Hero */}
       <HeroSection />
-      <BookingSearch />
 
-      {/* [3] Banner Ưu đãi nổi bật */}
-      <PromoBanner />
+      <div className="w-full bg-background">
+        <BookingSearch />
 
-      {/* [3.5] Giới thiệu — Kỳ Nghỉ Ngập Tràn Niềm Vui */}
-      <IntroSection />
+        {/* [3] Banner Ưu đãi nổi bật */}
+        <PromoBanner />
+
+        {/* [3.5] Giới thiệu — Kỳ Nghỉ Ngập Tràn Niềm Vui */}
+        <IntroSection />
+      </div>
 
       {/* [4] Hạng phòng — carousel */}
       {roomsLoading && safeRooms.length === 0 ? (
