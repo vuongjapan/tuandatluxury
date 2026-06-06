@@ -185,7 +185,7 @@ const Index = () => {
       <Footer />
       <FloatingButtons />
       <PromoPopup />
-    </div>
+    </main>
   );
 };
 
