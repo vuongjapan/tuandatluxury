@@ -232,7 +232,7 @@ const ServicesSection = () => {
 
         {/* Desktop grid */}
         <div className="hidden sm:block">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading
               ? Array.from({ length: 5 }).map((_, idx) => (
                   <div key={`desktop-skeleton-${idx}`} className="h-64 rounded-xl bg-gray-100 animate-pulse" />

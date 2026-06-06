@@ -28,10 +28,7 @@ const BookingSearch = () => {
   };
 
   const searchCard = (
-    <div
-      className="rounded-2xl border border-border bg-card shadow-luxury p-[clamp(1rem,2.5vw,1.75rem)]"
-      style={{ width: 'min(90%, 1180px)', marginInline: 'auto' }}
-    >
+    <div className="w-full rounded-2xl border border-border bg-card shadow-luxury p-[clamp(1rem,2.5vw,1.75rem)]">
 
       <div className="mb-5">
         <h2 className="font-display text-xl sm:text-2xl font-semibold flex items-center gap-2 text-foreground">
@@ -147,7 +144,7 @@ const BookingSearch = () => {
 
   return (
     <section className="relative z-20 bg-background py-[clamp(1rem,3vw,2rem)]">
-      <div className="section-container">
+      <div className="section-container max-w-[860px]">
         {searchCard}
       </div>
     </section>

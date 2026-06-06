@@ -85,13 +85,16 @@ const Index = () => {
 
       {/* [1] Video Hero */}
       <HeroSection />
-      <BookingSearch />
 
-      {/* [3] Banner Ưu đãi nổi bật */}
-      <PromoBanner />
+      <div className="w-full bg-background">
+        <BookingSearch />
 
-      {/* [3.5] Giới thiệu — Kỳ Nghỉ Ngập Tràn Niềm Vui */}
-      <IntroSection />
+        {/* [3] Banner Ưu đãi nổi bật */}
+        <PromoBanner />
+
+        {/* [3.5] Giới thiệu — Kỳ Nghỉ Ngập Tràn Niềm Vui */}
+        <IntroSection />
+      </div>
 
       {/* [4] Hạng phòng — carousel */}
       {roomsLoading && safeRooms.length === 0 ? (
@@ -126,7 +129,7 @@ const Index = () => {
             tagline={isVi ? 'Khám phá' : 'Discover'}
             title={isVi ? 'Khám phá Sầm Sơn' : 'Explore Sầm Sơn'}
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {safeAttractions.slice(0, 6).map((a, idx) => (
               <FadeIn key={a.id} delay={idx * 60}>
                 <button
