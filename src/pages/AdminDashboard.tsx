@@ -55,8 +55,9 @@ import AdminPool from '@/components/admin/AdminPool';
 import AdminRestaurant from '@/components/admin/AdminRestaurant';
 import AdminFoodSection from '@/components/admin/AdminFoodSection';
 import AdminTranslations from '@/components/admin/AdminTranslations';
+import AdminRoomRevenue from '@/components/admin/AdminRoomRevenue';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant' | 'translations';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'room-revenue' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant' | 'translations';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -191,6 +192,7 @@ const AdminDashboard = () => {
         { id: 'manual-invoice', icon: FileText, label: 'Tạo hóa đơn thủ công' },
         { id: 'transport', icon: MapPin, label: 'Đặt xe đưa đón' },
         { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
+        { id: 'room-revenue', icon: Database, label: '📊 Bảng quản lý phòng (Excel)' },
         { id: 'room-popup', icon: Eye, label: 'Popup phòng' },
         { id: 'amenities', icon: Sparkles, label: 'Tiện nghi phòng' },
         { id: 'special-prices', icon: Flame, label: 'Giá đặc biệt' },
@@ -403,6 +405,7 @@ const AdminDashboard = () => {
           {tab === 'live' && <AdminLive />}
           {tab === 'transport' && <AdminTransport />}
           {tab === 'rooms' && <AdminRooms rooms={rooms} onRefresh={fetchData} />}
+          {tab === 'room-revenue' && <AdminRoomRevenue />}
           {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'competitor-research' && <AdminCompetitorResearch />}
