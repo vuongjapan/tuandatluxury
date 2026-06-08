@@ -405,6 +405,7 @@ const AdminDashboard = () => {
           {tab === 'live' && <AdminLive />}
           {tab === 'transport' && <AdminTransport />}
           {tab === 'rooms' && <AdminRooms rooms={rooms} onRefresh={fetchData} />}
+          {tab === 'room-revenue' && <AdminRoomRevenue />}
           {tab === 'room-popup' && <AdminRoomPopup />}
           {tab === 'gallery' && <AdminGallery />}
           {tab === 'competitor-research' && <AdminCompetitorResearch />}
