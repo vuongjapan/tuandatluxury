@@ -192,6 +192,7 @@ const AdminDashboard = () => {
         { id: 'manual-invoice', icon: FileText, label: 'Tạo hóa đơn thủ công' },
         { id: 'transport', icon: MapPin, label: 'Đặt xe đưa đón' },
         { id: 'rooms', icon: BedDouble, label: 'Quản lý phòng' },
+        { id: 'room-revenue', icon: Database, label: '📊 Bảng quản lý phòng (Excel)' },
         { id: 'room-popup', icon: Eye, label: 'Popup phòng' },
         { id: 'amenities', icon: Sparkles, label: 'Tiện nghi phòng' },
         { id: 'special-prices', icon: Flame, label: 'Giá đặc biệt' },
