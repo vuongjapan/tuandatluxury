@@ -537,7 +537,7 @@ const AdminDashboard = () => {
           {tab === 'food-menu' && <AdminFoodMenu />}
           {tab === 'members' && <AdminMembers />}
           {tab === 'customers' && <AdminCustomers />}
-          {tab === 'revenue' && <AdminRevenue bookings={bookings} rooms={rooms} />}
+          {tab === 'revenue' && <AdminRevenue bookings={bookings} rooms={rooms} manualInvoices={manualInvoices} />}
           {tab === 'blog' && <AdminBlog />}
           {tab === 'combos' && <AdminCombo />}
           {tab === 'mandatory-combo' && <AdminMandatoryCombo />}
