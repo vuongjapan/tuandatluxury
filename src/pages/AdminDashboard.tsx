@@ -87,6 +87,7 @@ const AdminDashboard = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [manualInvoices, setManualInvoices] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [trashItems, setTrashItems] = useState<TrashItem[]>(getTrash());
@@ -105,14 +106,15 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     const trashBookingIds = trashItems.filter(t => t.type === 'booking').map(t => t.data.id);
-    const [{ data: b }, { data: r }] = await Promise.all([
+    const [{ data: b }, { data: r }, { data: mi }] = await Promise.all([
       supabase.from('bookings').select('*, rooms(name_vi)').order('created_at', { ascending: false }),
       supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
+      supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }),
     ]);
-    // Filter out bookings that are in trash
     const filteredBookings = (b || []).filter(booking => !trashBookingIds.includes(booking.id));
     setBookings(filteredBookings);
     setRooms(r || []);
+    setManualInvoices(mi || []);
     setLoading(false);
   };
 
