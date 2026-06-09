@@ -171,12 +171,73 @@ const AdminDashboard = () => {
     e.target.value = '';
   };
 
-  // Stats
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
-  const confirmedCount = bookings.filter(b => b.status === 'confirmed' || b.status === 'checked_in').length;
-  const monthRevenue = bookings
-    .filter(b => b.status !== 'cancelled' && new Date(b.created_at).getMonth() === new Date().getMonth())
+  // Stats — gộp cả bookings (online) + manual_invoices (thủ công)
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const isoToday = today.toISOString().slice(0, 10);
+  const thisMonth = today.getMonth();
+  const thisYear = today.getFullYear();
+
+  const validBookings = bookings.filter(b => b.status !== 'cancelled');
+  const validManual = manualInvoices; // manual_invoices không có 'cancelled'
+
+  // Tổng đặt phòng
+  const totalBookingsAll = validBookings.length + validManual.length;
+
+  // Chờ xác nhận / chờ cọc
+  const pendingOnline = bookings.filter(b => b.status === 'pending').length;
+  const pendingManual = manualInvoices.filter(m => (m.payment_status || 'PENDING') === 'PENDING').length;
+  const pendingCount = pendingOnline + pendingManual;
+
+  // Đang hoạt động hôm nay = check_in <= today < check_out
+  const isActiveToday = (ci: string, co: string) => ci && co && ci <= isoToday && isoToday < co;
+  const activeTodayOnline = validBookings.filter(b => isActiveToday(b.check_in, b.check_out)).length;
+  const activeTodayManual = validManual.filter(m => isActiveToday(m.check_in, m.check_out)).length;
+  const confirmedCount = activeTodayOnline + activeTodayManual;
+
+  // Doanh thu tháng
+  const monthRevenueOnline = validBookings
+    .filter(b => { const d = new Date(b.created_at); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
     .reduce((sum, b) => sum + (b.total_price_vnd || 0), 0);
+  const monthRevenueManual = validManual
+    .filter(m => { const d = new Date(m.created_at); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
+    .reduce((sum, m) => sum + (m.total_amount || 0), 0);
+  const monthRevenue = monthRevenueOnline + monthRevenueManual;
+
+  // Upcoming arrivals — gộp 7 ngày tới
+  const upcomingArrivals = (() => {
+    const horizon = new Date(today); horizon.setDate(horizon.getDate() + 7);
+    const isoHorizon = horizon.toISOString().slice(0, 10);
+    type Arr = { id: string; source: 'online' | 'manual'; guest_name: string; phone?: string; room_name: string; room_qty: number; guests: number; check_in: string; payment_status: string; status: string; deposit_paid?: boolean };
+    const arr: Arr[] = [];
+    validBookings.forEach(b => {
+      if (!b.check_in || b.check_in < isoToday || b.check_in > isoHorizon) return;
+      arr.push({
+        id: b.id, source: 'online', guest_name: b.guest_name, phone: b.guest_phone,
+        room_name: b.rooms?.name_vi || b.room_id, room_qty: b.room_quantity || 1, guests: b.guests_count || 0,
+        check_in: b.check_in, payment_status: b.payment_status || 'PENDING', status: b.status,
+        deposit_paid: b.payment_status === 'PARTIAL' || b.payment_status === 'PAID' || b.deposit_manually_confirmed,
+      });
+    });
+    validManual.forEach(m => {
+      if (!m.check_in || m.check_in < isoToday || m.check_in > isoHorizon) return;
+      arr.push({
+        id: m.id, source: 'manual', guest_name: m.guest_name, phone: m.guest_phone,
+        room_name: m.room_name || m.room_id || '—', room_qty: m.room_quantity || 1, guests: m.guests_count || 0,
+        check_in: m.check_in, payment_status: m.payment_status || 'PENDING', status: m.payment_status || 'PENDING',
+        deposit_paid: m.payment_status === 'PARTIAL' || m.payment_status === 'PAID' || !!m.deposit_paid_at,
+      });
+    });
+    arr.sort((a, b) => {
+      if (a.check_in !== b.check_in) return a.check_in.localeCompare(b.check_in);
+      return Number(b.deposit_paid) - Number(a.deposit_paid);
+    });
+    return arr;
+  })();
+
+  const arrivalsByDay = upcomingArrivals.reduce<Record<string, typeof upcomingArrivals>>((acc, x) => {
+    (acc[x.check_in] = acc[x.check_in] || []).push(x);
+    return acc;
+  }, {});
 
   // Sidebar navigation with sections
   const navSections: NavSection[] = [
