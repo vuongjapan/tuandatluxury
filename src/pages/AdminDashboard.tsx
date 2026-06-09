@@ -401,10 +401,10 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: 'Tổng đặt phòng', value: bookings.length, icon: CalendarRange, color: 'text-blue-600' },
-                  { label: 'Chờ xác nhận', value: pendingCount, icon: Clock, color: 'text-yellow-600' },
-                  { label: 'Đang hoạt động', value: confirmedCount, icon: CheckCircle, color: 'text-green-600' },
-                  { label: 'Doanh thu tháng', value: monthRevenue.toLocaleString('vi') + '₫', icon: TrendingUp, color: 'text-primary' },
+                  { label: 'Tổng đặt phòng', value: totalBookingsAll, sub: `🌐 ${validBookings.length} online · ✍️ ${validManual.length} thủ công`, icon: CalendarRange, color: 'text-blue-600' },
+                  { label: 'Chờ xác nhận / cọc', value: pendingCount, sub: `🌐 ${pendingOnline} · ✍️ ${pendingManual}`, icon: Clock, color: 'text-yellow-600' },
+                  { label: 'Đang hoạt động hôm nay', value: confirmedCount, sub: `🌐 ${activeTodayOnline} · ✍️ ${activeTodayManual}`, icon: CheckCircle, color: 'text-green-600' },
+                  { label: 'Doanh thu tháng', value: monthRevenue.toLocaleString('vi') + '₫', sub: `🌐 ${monthRevenueOnline.toLocaleString('vi')}₫ · ✍️ ${monthRevenueManual.toLocaleString('vi')}₫`, icon: TrendingUp, color: 'text-primary' },
                 ].map((stat, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                     className="bg-card rounded-xl border border-border p-4">
@@ -413,6 +413,7 @@ const AdminDashboard = () => {
                       <stat.icon className={`h-4 w-4 ${stat.color}`} />
                     </div>
                     <p className={`text-lg sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 truncate" title={stat.sub}>{stat.sub}</p>
                   </motion.div>
                 ))}
               </div>
@@ -434,6 +435,62 @@ const AdminDashboard = () => {
                     </p>
                   </button>
                 ))}
+              </div>
+
+              {/* Upcoming arrivals — 7 ngày tới */}
+              <div className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-display text-lg font-semibold">📅 Lịch khách đến (7 ngày tới)</h2>
+                  <span className="text-xs text-muted-foreground">{upcomingArrivals.length} khách</span>
+                </div>
+                {upcomingArrivals.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4 text-sm">Chưa có khách đặt trong 7 ngày tới</p>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(arrivalsByDay).map(([day, list]) => {
+                      const d = new Date(day + 'T00:00:00');
+                      const dayLabel = day === isoToday
+                        ? 'Hôm nay'
+                        : day === new Date(today.getTime() + 86400000).toISOString().slice(0, 10)
+                          ? 'Ngày mai'
+                          : format(d, 'EEEE', { locale: vi });
+                      return (
+                        <div key={day}>
+                          <p className="text-sm font-semibold text-primary mb-2">
+                            📅 {dayLabel} — {format(d, 'dd/MM/yyyy')}
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">({list.length} khách)</span>
+                          </p>
+                          <div className="space-y-2 pl-3 border-l-2 border-primary/30">
+                            {list.map(x => {
+                              const isOverdue = !x.deposit_paid && day < isoToday;
+                              const badge = x.deposit_paid
+                                ? { txt: '✅ Đã cọc', cls: 'bg-green-100 text-green-700' }
+                                : isOverdue
+                                  ? { txt: '🔴 Quá hạn', cls: 'bg-red-100 text-red-700' }
+                                  : { txt: '⚠ Chờ cọc', cls: 'bg-orange-100 text-orange-700' };
+                              return (
+                                <div key={x.source + x.id} className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-secondary/50">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium truncate">
+                                      👤 {x.guest_name}
+                                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                        · {x.room_name} × {x.room_qty}
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      SĐT: {x.phone || '—'} · {x.guests} NL · {x.source === 'online' ? '🌐 Online' : '✍️ Thủ công'}
+                                    </p>
+                                  </div>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${badge.cls}`}>{badge.txt}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Recent bookings */}
