@@ -87,6 +87,7 @@ const AdminDashboard = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [manualInvoices, setManualInvoices] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [trashItems, setTrashItems] = useState<TrashItem[]>(getTrash());
@@ -105,14 +106,15 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     const trashBookingIds = trashItems.filter(t => t.type === 'booking').map(t => t.data.id);
-    const [{ data: b }, { data: r }] = await Promise.all([
+    const [{ data: b }, { data: r }, { data: mi }] = await Promise.all([
       supabase.from('bookings').select('*, rooms(name_vi)').order('created_at', { ascending: false }),
       supabase.from('rooms').select('*').eq('is_active', true).order('price_vnd'),
+      supabase.from('manual_invoices').select('*').order('created_at', { ascending: false }),
     ]);
-    // Filter out bookings that are in trash
     const filteredBookings = (b || []).filter(booking => !trashBookingIds.includes(booking.id));
     setBookings(filteredBookings);
     setRooms(r || []);
+    setManualInvoices(mi || []);
     setLoading(false);
   };
 
@@ -169,12 +171,73 @@ const AdminDashboard = () => {
     e.target.value = '';
   };
 
-  // Stats
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
-  const confirmedCount = bookings.filter(b => b.status === 'confirmed' || b.status === 'checked_in').length;
-  const monthRevenue = bookings
-    .filter(b => b.status !== 'cancelled' && new Date(b.created_at).getMonth() === new Date().getMonth())
+  // Stats — gộp cả bookings (online) + manual_invoices (thủ công)
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const isoToday = today.toISOString().slice(0, 10);
+  const thisMonth = today.getMonth();
+  const thisYear = today.getFullYear();
+
+  const validBookings = bookings.filter(b => b.status !== 'cancelled');
+  const validManual = manualInvoices; // manual_invoices không có 'cancelled'
+
+  // Tổng đặt phòng
+  const totalBookingsAll = validBookings.length + validManual.length;
+
+  // Chờ xác nhận / chờ cọc
+  const pendingOnline = bookings.filter(b => b.status === 'pending').length;
+  const pendingManual = manualInvoices.filter(m => (m.payment_status || 'PENDING') === 'PENDING').length;
+  const pendingCount = pendingOnline + pendingManual;
+
+  // Đang hoạt động hôm nay = check_in <= today < check_out
+  const isActiveToday = (ci: string, co: string) => ci && co && ci <= isoToday && isoToday < co;
+  const activeTodayOnline = validBookings.filter(b => isActiveToday(b.check_in, b.check_out)).length;
+  const activeTodayManual = validManual.filter(m => isActiveToday(m.check_in, m.check_out)).length;
+  const confirmedCount = activeTodayOnline + activeTodayManual;
+
+  // Doanh thu tháng
+  const monthRevenueOnline = validBookings
+    .filter(b => { const d = new Date(b.created_at); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
     .reduce((sum, b) => sum + (b.total_price_vnd || 0), 0);
+  const monthRevenueManual = validManual
+    .filter(m => { const d = new Date(m.created_at); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
+    .reduce((sum, m) => sum + (m.total_amount || 0), 0);
+  const monthRevenue = monthRevenueOnline + monthRevenueManual;
+
+  // Upcoming arrivals — gộp 7 ngày tới
+  const upcomingArrivals = (() => {
+    const horizon = new Date(today); horizon.setDate(horizon.getDate() + 7);
+    const isoHorizon = horizon.toISOString().slice(0, 10);
+    type Arr = { id: string; source: 'online' | 'manual'; guest_name: string; phone?: string; room_name: string; room_qty: number; guests: number; check_in: string; payment_status: string; status: string; deposit_paid?: boolean };
+    const arr: Arr[] = [];
+    validBookings.forEach(b => {
+      if (!b.check_in || b.check_in < isoToday || b.check_in > isoHorizon) return;
+      arr.push({
+        id: b.id, source: 'online', guest_name: b.guest_name, phone: b.guest_phone,
+        room_name: b.rooms?.name_vi || b.room_id, room_qty: b.room_quantity || 1, guests: b.guests_count || 0,
+        check_in: b.check_in, payment_status: b.payment_status || 'PENDING', status: b.status,
+        deposit_paid: b.payment_status === 'PARTIAL' || b.payment_status === 'PAID' || b.deposit_manually_confirmed,
+      });
+    });
+    validManual.forEach(m => {
+      if (!m.check_in || m.check_in < isoToday || m.check_in > isoHorizon) return;
+      arr.push({
+        id: m.id, source: 'manual', guest_name: m.guest_name, phone: m.guest_phone,
+        room_name: m.room_name || m.room_id || '—', room_qty: m.room_quantity || 1, guests: m.guests_count || 0,
+        check_in: m.check_in, payment_status: m.payment_status || 'PENDING', status: m.payment_status || 'PENDING',
+        deposit_paid: m.payment_status === 'PARTIAL' || m.payment_status === 'PAID' || !!m.deposit_paid_at,
+      });
+    });
+    arr.sort((a, b) => {
+      if (a.check_in !== b.check_in) return a.check_in.localeCompare(b.check_in);
+      return Number(b.deposit_paid) - Number(a.deposit_paid);
+    });
+    return arr;
+  })();
+
+  const arrivalsByDay = upcomingArrivals.reduce<Record<string, typeof upcomingArrivals>>((acc, x) => {
+    (acc[x.check_in] = acc[x.check_in] || []).push(x);
+    return acc;
+  }, {});
 
   // Sidebar navigation with sections
   const navSections: NavSection[] = [
@@ -338,10 +401,10 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: 'Tổng đặt phòng', value: bookings.length, icon: CalendarRange, color: 'text-blue-600' },
-                  { label: 'Chờ xác nhận', value: pendingCount, icon: Clock, color: 'text-yellow-600' },
-                  { label: 'Đang hoạt động', value: confirmedCount, icon: CheckCircle, color: 'text-green-600' },
-                  { label: 'Doanh thu tháng', value: monthRevenue.toLocaleString('vi') + '₫', icon: TrendingUp, color: 'text-primary' },
+                  { label: 'Tổng đặt phòng', value: totalBookingsAll, sub: `🌐 ${validBookings.length} online · ✍️ ${validManual.length} thủ công`, icon: CalendarRange, color: 'text-blue-600' },
+                  { label: 'Chờ xác nhận / cọc', value: pendingCount, sub: `🌐 ${pendingOnline} · ✍️ ${pendingManual}`, icon: Clock, color: 'text-yellow-600' },
+                  { label: 'Đang hoạt động hôm nay', value: confirmedCount, sub: `🌐 ${activeTodayOnline} · ✍️ ${activeTodayManual}`, icon: CheckCircle, color: 'text-green-600' },
+                  { label: 'Doanh thu tháng', value: monthRevenue.toLocaleString('vi') + '₫', sub: `🌐 ${monthRevenueOnline.toLocaleString('vi')}₫ · ✍️ ${monthRevenueManual.toLocaleString('vi')}₫`, icon: TrendingUp, color: 'text-primary' },
                 ].map((stat, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                     className="bg-card rounded-xl border border-border p-4">
@@ -350,6 +413,7 @@ const AdminDashboard = () => {
                       <stat.icon className={`h-4 w-4 ${stat.color}`} />
                     </div>
                     <p className={`text-lg sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 truncate" title={stat.sub}>{stat.sub}</p>
                   </motion.div>
                 ))}
               </div>
@@ -371,6 +435,62 @@ const AdminDashboard = () => {
                     </p>
                   </button>
                 ))}
+              </div>
+
+              {/* Upcoming arrivals — 7 ngày tới */}
+              <div className="bg-card rounded-xl border border-border p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-display text-lg font-semibold">📅 Lịch khách đến (7 ngày tới)</h2>
+                  <span className="text-xs text-muted-foreground">{upcomingArrivals.length} khách</span>
+                </div>
+                {upcomingArrivals.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4 text-sm">Chưa có khách đặt trong 7 ngày tới</p>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(arrivalsByDay).map(([day, list]) => {
+                      const d = new Date(day + 'T00:00:00');
+                      const dayLabel = day === isoToday
+                        ? 'Hôm nay'
+                        : day === new Date(today.getTime() + 86400000).toISOString().slice(0, 10)
+                          ? 'Ngày mai'
+                          : format(d, 'EEEE', { locale: vi });
+                      return (
+                        <div key={day}>
+                          <p className="text-sm font-semibold text-primary mb-2">
+                            📅 {dayLabel} — {format(d, 'dd/MM/yyyy')}
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">({list.length} khách)</span>
+                          </p>
+                          <div className="space-y-2 pl-3 border-l-2 border-primary/30">
+                            {list.map(x => {
+                              const isOverdue = !x.deposit_paid && day < isoToday;
+                              const badge = x.deposit_paid
+                                ? { txt: '✅ Đã cọc', cls: 'bg-green-100 text-green-700' }
+                                : isOverdue
+                                  ? { txt: '🔴 Quá hạn', cls: 'bg-red-100 text-red-700' }
+                                  : { txt: '⚠ Chờ cọc', cls: 'bg-orange-100 text-orange-700' };
+                              return (
+                                <div key={x.source + x.id} className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-secondary/50">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium truncate">
+                                      👤 {x.guest_name}
+                                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                        · {x.room_name} × {x.room_qty}
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      SĐT: {x.phone || '—'} · {x.guests} NL · {x.source === 'online' ? '🌐 Online' : '✍️ Thủ công'}
+                                    </p>
+                                  </div>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${badge.cls}`}>{badge.txt}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Recent bookings */}
@@ -417,7 +537,7 @@ const AdminDashboard = () => {
           {tab === 'food-menu' && <AdminFoodMenu />}
           {tab === 'members' && <AdminMembers />}
           {tab === 'customers' && <AdminCustomers />}
-          {tab === 'revenue' && <AdminRevenue bookings={bookings} rooms={rooms} />}
+          {tab === 'revenue' && <AdminRevenue bookings={bookings} rooms={rooms} manualInvoices={manualInvoices} />}
           {tab === 'blog' && <AdminBlog />}
           {tab === 'combos' && <AdminCombo />}
           {tab === 'mandatory-combo' && <AdminMandatoryCombo />}
