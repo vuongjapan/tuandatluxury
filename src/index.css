@@ -8,6 +8,9 @@
 html, body, #root {
   background-color: #FAFAF7;
   min-height: 100vh;
+  width: 100%;
+  max-width: none;
+  overflow-x: hidden;
 }
 
 @layer base {
@@ -120,6 +123,7 @@ html, body, #root {
 
   .section-fullwidth,
   .full-bleed {
+    display: block;
     width: 100%;
     max-width: none;
     margin-left: 0;

@@ -143,8 +143,8 @@ const BookingSearch = () => {
   );
 
   return (
-    <section className="relative z-20 bg-background py-[clamp(1rem,3vw,2rem)]">
-      <div className="section-container max-w-[860px]">
+    <section className="relative z-20 w-full bg-background py-[clamp(1rem,3vw,2rem)]">
+      <div className="section-container">
         {searchCard}
       </div>
     </section>
