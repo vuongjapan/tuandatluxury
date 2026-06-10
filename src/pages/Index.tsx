@@ -80,7 +80,7 @@ const Index = () => {
   const visibleRooms = safeRooms;
 
   return (
-    <main className="min-h-screen bg-background w-full overflow-x-hidden">
+    <main className="min-h-screen w-full max-w-none overflow-x-hidden bg-background">
       <Header />
 
       {/* [1] Video Hero */}

@@ -45,7 +45,7 @@ const PromoBanner = () => {
 
   return (
     <section
-      className="w-full relative overflow-hidden animate-[promo-fade_0.5s_ease-out_0.3s_both]"
+      className="section-fullwidth relative overflow-hidden animate-[promo-fade_0.5s_ease-out_0.3s_both]"
       style={{
         background: 'linear-gradient(90deg, #1B3A5C 0%, #0D2137 100%)',
       }}
