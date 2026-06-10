@@ -72,7 +72,7 @@ const HeroSection = () => {
   const hasVideo = !!heroVideoDesktop && showVideo;
 
   return (
-    <section id="overview" className="relative isolate flex min-h-[100svh] overflow-hidden bg-foreground">
+    <section id="overview" className="relative isolate block w-full min-h-[100svh] overflow-hidden bg-foreground">
       {/* Background */}
       <div className="absolute inset-0">
         {hasVideo ? (
@@ -127,7 +127,7 @@ const HeroSection = () => {
       <div className="absolute right-8 sm:right-16 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-primary/40 to-transparent hidden lg:block" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-[100svh] flex-1 flex-col items-center justify-center px-[clamp(1rem,4vw,2rem)] pt-24 pb-[clamp(6rem,12vw,8rem)] text-center">
+      <div className="relative z-10 flex min-h-[100svh] w-full flex-col items-center justify-center px-[clamp(1rem,4vw,2rem)] pt-24 pb-[clamp(6rem,12vw,8rem)] text-center">
         <p
           className={`text-primary font-display text-xs sm:text-sm tracking-[0.4em] uppercase mb-5 transition-all duration-1000 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           style={{ transitionDelay: '200ms' }}
