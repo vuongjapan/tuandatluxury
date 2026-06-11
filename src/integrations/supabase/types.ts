@@ -3938,6 +3938,81 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_tracking: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string
+          device_type: string | null
+          first_seen: string
+          id: string
+          language: string | null
+          last_seen: string
+          os: string | null
+          pages_this_session: Json
+          referrer: string | null
+          referrer_source: string | null
+          screen_resolution: string | null
+          session_id: string
+          source_domain: string
+          timezone: string | null
+          updated_at: string
+          user_agent: string | null
+          visit_count: number
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_type?: string | null
+          first_seen?: string
+          id?: string
+          language?: string | null
+          last_seen?: string
+          os?: string | null
+          pages_this_session?: Json
+          referrer?: string | null
+          referrer_source?: string | null
+          screen_resolution?: string | null
+          session_id: string
+          source_domain: string
+          timezone?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          visit_count?: number
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_type?: string | null
+          first_seen?: string
+          id?: string
+          language?: string | null
+          last_seen?: string
+          os?: string | null
+          pages_this_session?: Json
+          referrer?: string | null
+          referrer_source?: string | null
+          screen_resolution?: string | null
+          session_id?: string
+          source_domain?: string
+          timezone?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          visit_count?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       voucher_codes: {
         Row: {
           applies_to: string
