@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, matchPath } from 'react-router-dom';
 import { trackPageView, type PageType } from '@/hooks/usePageTracking';
-import { initVisitorTracking, trackVisitorPage } from '@/lib/visitorTracking';
-
 
 interface Detected {
   type: PageType;
@@ -69,25 +67,18 @@ function detectPageType(pathname: string, search: string): Detected {
 const PageTracker = () => {
   const { pathname, search } = useLocation();
   const lastTracked = useRef<string>('');
-  const initedRef = useRef(false);
 
   useEffect(() => {
     if (pathname.startsWith('/admin')) return;
-    if (!initedRef.current) {
-      initedRef.current = true;
-      initVisitorTracking();
-    }
     const key = `${pathname}${search}`;
     if (lastTracked.current === key) return;
     lastTracked.current = key;
 
     const { type, label, roomId } = detectPageType(pathname, search);
     trackPageView({ page_type: type, page_label: label, room_id: roomId || null }, pathname);
-    trackVisitorPage(pathname, label);
   }, [pathname, search]);
 
   return null;
 };
 
 export default PageTracker;
-
