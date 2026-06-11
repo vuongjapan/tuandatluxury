@@ -1,769 +1,876 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  BarChart3, Eye, UserPlus, BedDouble, ClipboardList, Loader2, RefreshCw,
-  TrendingUp, TrendingDown, Smartphone, Monitor, Tablet, Lightbulb, Clock,
-  Globe, Download, Filter,
+  Eye, Users, Activity, Repeat, Layers, Clock, Smartphone, Globe,
+  RefreshCw, Download, Search, ChevronRight, X, Monitor, Tablet,
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, Legend,
 } from 'recharts';
+import * as XLSX from 'xlsx';
 
-type RangeKey = 'today' | 'yesterday' | '7d' | '30d';
-type DomainKey = 'all' | 'com' | 'lovable';
+type RangeKey = 'today' | 'yesterday' | '7d' | '30d' | 'month';
+type DomainTab = 'all' | 'com' | 'lovable';
 
-interface PV {
+interface VT {
   id: string;
-  page_type: string;
-  page_label: string | null;
-  page_path: string | null;
-  domain: string | null;
-  full_url: string | null;
-  room_id: string | null;
-  room_name: string | null;
-  visitor_id: string | null;
-  session_id: string | null;
+  visitor_id: string;
+  session_id: string;
+  source_domain: string;
+  first_seen: string;
+  last_seen: string;
+  visit_count: number;
+  pages_this_session: Array<{ page: string; time_spent: number; timestamp: string }>;
+  country: string | null;
+  country_code: string | null;
+  city: string | null;
+  device_type: string | null;
+  browser: string | null;
+  os: string | null;
+  screen_resolution: string | null;
+  referrer: string | null;
   referrer_source: string | null;
-  device: string | null;
-  viewed_at: string;
-  date: string;
+  created_at: string;
 }
 
-const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
-  { key: 'today', label: 'Hôm nay' },
-  { key: 'yesterday', label: 'Hôm qua' },
-  { key: '7d', label: '7 ngày' },
-  { key: '30d', label: '30 ngày' },
-];
+const GOLD = '#C9A84C';
+const BLUE = '#3B82F6';
+const YELLOW = '#EAB308';
 
-const DOMAIN_OPTIONS: { key: DomainKey; label: string; match: (d: string | null) => boolean }[] = [
-  { key: 'all', label: 'Tất cả', match: () => true },
-  { key: 'com', label: 'tuandatluxury.com', match: (d) => !!d && d.includes('tuandatluxury.com') },
-  { key: 'lovable', label: 'lovable.app', match: (d) => !!d && d.includes('lovable.app') },
-];
-
-// Page-type display config
-const PAGE_TYPE_META: Record<string, { label: string; icon: string; order: number }> = {
-  home:           { label: 'Trang chủ',          icon: '🏠', order: 1 },
-  rooms_list:     { label: 'Danh sách phòng',    icon: '🏨', order: 2 },
-  room_detail:    { label: 'Chi tiết phòng',     icon: '🛏', order: 3 },
-  booking_step1:  { label: 'Đặt phòng B1',       icon: '📝', order: 4 },
-  booking_step2:  { label: 'Đặt phòng B2',       icon: '📝', order: 5 },
-  booking_step3:  { label: 'Đặt phòng B3',       icon: '📝', order: 6 },
-  booking_step4:  { label: 'Đặt phòng B4',       icon: '📝', order: 7 },
-  booking_done:   { label: 'Đặt thành công',     icon: '✅', order: 8 },
-  invoice:        { label: 'Xem hóa đơn',        icon: '🧾', order: 9 },
-  account:        { label: 'Trang cá nhân',      icon: '👤', order: 10 },
-  lookup:         { label: 'Tra cứu đơn',        icon: '🔍', order: 11 },
-  about:          { label: 'Giới thiệu',         icon: 'ℹ️', order: 12 },
-  food_order:     { label: 'Đặt món ăn',         icon: '🍽', order: 13 },
-  services:       { label: 'Dịch vụ',            icon: '🛎', order: 14 },
-  promotions:     { label: 'Khuyến mãi',         icon: '🎁', order: 15 },
-  explore:        { label: 'Khám phá',           icon: '🗺', order: 16 },
-  dining:         { label: 'Ẩm thực',            icon: '🥘', order: 17 },
-  blog:           { label: 'Blog',               icon: '📰', order: 18 },
-  reviews:        { label: 'Đánh giá',           icon: '⭐', order: 19 },
-  live:           { label: 'Livestream',         icon: '🎥', order: 20 },
-  transport:      { label: 'Đặt xe',             icon: '🚗', order: 21 },
-  other:          { label: 'Trang khác',         icon: '📄', order: 99 },
-  // Legacy values kept for backwards-compat
-  booking:        { label: 'Đặt phòng (cũ)',     icon: '📝', order: 7 },
-  offers:         { label: 'Khuyến mãi (cũ)',    icon: '🎁', order: 15 },
+const RANGE_LABEL: Record<RangeKey, string> = {
+  today: 'Hôm nay', yesterday: 'Hôm qua', '7d': '7 ngày', '30d': '30 ngày', month: 'Tháng này',
 };
 
-const PIE_COLORS = ['hsl(var(--primary))', '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
-
-function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
-
-function getRange(key: RangeKey): { start: Date; end: Date; prevStart: Date; prevEnd: Date } {
+function getRange(range: RangeKey): { from: Date; to: Date } {
   const now = new Date();
-  const today = startOfDay(now);
-  if (key === 'today') {
-    return { start: today, end: addDays(today, 1), prevStart: addDays(today, -1), prevEnd: today };
+  const to = new Date(now);
+  const from = new Date(now);
+  switch (range) {
+    case 'today': from.setHours(0, 0, 0, 0); break;
+    case 'yesterday':
+      from.setDate(now.getDate() - 1); from.setHours(0, 0, 0, 0);
+      to.setHours(0, 0, 0, 0);
+      break;
+    case '7d': from.setDate(now.getDate() - 7); break;
+    case '30d': from.setDate(now.getDate() - 30); break;
+    case 'month': from.setDate(1); from.setHours(0, 0, 0, 0); break;
   }
-  if (key === 'yesterday') {
-    const y = addDays(today, -1);
-    return { start: y, end: today, prevStart: addDays(y, -1), prevEnd: y };
-  }
-  if (key === '7d') {
-    const start = addDays(today, -6);
-    return { start, end: addDays(today, 1), prevStart: addDays(start, -7), prevEnd: start };
-  }
-  const start = addDays(today, -29);
-  return { start, end: addDays(today, 1), prevStart: addDays(start, -30), prevEnd: start };
+  return { from, to };
 }
 
-function pct(curr: number, prev: number): { val: number; up: boolean } {
-  if (prev === 0) return { val: curr > 0 ? 100 : 0, up: curr >= 0 };
-  const v = ((curr - prev) / prev) * 100;
-  return { val: Math.round(v), up: v >= 0 };
+const fmt = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
+
+function CountUp({ value, duration = 800 }: { value: number; duration?: number }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const from = 0;
+    let raf = 0;
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / duration);
+      setV(Math.round(from + (value - from) * p));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+  return <>{fmt(v)}</>;
 }
 
-function getMeta(type: string) {
-  return PAGE_TYPE_META[type] || { label: type, icon: '📄', order: 99 };
+function countryFlag(code: string | null): string {
+  if (!code || code.length !== 2) return '🌐';
+  const cc = code.toUpperCase();
+  return String.fromCodePoint(...[...cc].map(c => 127397 + c.charCodeAt(0)));
 }
 
-function downloadCsv(filename: string, rows: (string | number)[][]) {
-  const csv = rows.map(r =>
-    r.map(c => {
-      const s = String(c ?? '');
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    }).join(',')
-  ).join('\n');
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+function classifyDomain(host: string | null): DomainTab {
+  if (!host) return 'com';
+  if (host.includes('lovable.app')) return 'lovable';
+  return 'com';
 }
+
+const domainColor: Record<DomainTab, string> = { all: GOLD, com: BLUE, lovable: YELLOW };
+const domainBadge: Record<DomainTab, { label: string; emoji: string }> = {
+  all: { label: 'Tất cả', emoji: '🌐' },
+  com: { label: 'tuandatluxury.com', emoji: '🔵' },
+  lovable: { label: 'tuandatluxury.lovable.app', emoji: '🟡' },
+};
 
 const AdminPageAnalytics = () => {
   const [range, setRange] = useState<RangeKey>('7d');
-  const [domain, setDomain] = useState<DomainKey>('all');
+  const [domain, setDomain] = useState<DomainTab>('all');
+  const [rows, setRows] = useState<VT[]>([]);
   const [loading, setLoading] = useState(true);
-  const [allRows, setAllRows] = useState<PV[]>([]);
-  const [allPrevRows, setAllPrevRows] = useState<PV[]>([]);
-  const [bookingsCurr, setBookingsCurr] = useState(0);
-  const [bookingsPrev, setBookingsPrev] = useState(0);
-  const [roomNames, setRoomNames] = useState<Record<string, string>>({});
-  const [updatedAt, setUpdatedAt] = useState<Date>(new Date());
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [search, setSearch] = useState('');
+  const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
+
+  // For comparison vs previous period
+  const [prevTotals, setPrevTotals] = useState<{ views: number; uniques: number } | null>(null);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    const { start, end, prevStart, prevEnd } = getRange(range);
-    const [currRes, prevRes, bkCurrRes, bkPrevRes, roomsRes] = await Promise.all([
-      supabase.from('page_views').select('*').gte('viewed_at', start.toISOString()).lt('viewed_at', end.toISOString()).order('viewed_at', { ascending: false }).limit(10000),
-      supabase.from('page_views').select('*').gte('viewed_at', prevStart.toISOString()).lt('viewed_at', prevEnd.toISOString()).limit(10000),
-      supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', start.toISOString()).lt('created_at', end.toISOString()),
-      supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', prevStart.toISOString()).lt('created_at', prevEnd.toISOString()),
-      supabase.from('rooms').select('id, name_vi').limit(500),
-    ]);
-    setAllRows((currRes.data || []) as PV[]);
-    setAllPrevRows((prevRes.data || []) as PV[]);
-    setBookingsCurr(bkCurrRes.count || 0);
-    setBookingsPrev(bkPrevRes.count || 0);
-    const map: Record<string, string> = {};
-    (roomsRes.data || []).forEach((r: any) => { map[r.id] = r.name_vi; });
-    setRoomNames(map);
-    setUpdatedAt(new Date());
+    setRefreshing(true);
+    const { from, to } = getRange(range);
+    const { data } = await supabase
+      .from('visitor_tracking')
+      .select('*')
+      .gte('first_seen', from.toISOString())
+      .lte('first_seen', to.toISOString())
+      .order('last_seen', { ascending: false })
+      .limit(5000);
+    setRows((data || []) as any);
+
+    // previous period for comparison
+    const span = to.getTime() - from.getTime();
+    const prevFrom = new Date(from.getTime() - span);
+    const { data: prev } = await supabase
+      .from('visitor_tracking')
+      .select('visitor_id, pages_this_session, source_domain')
+      .gte('first_seen', prevFrom.toISOString())
+      .lt('first_seen', from.toISOString())
+      .limit(5000);
+    const prevRows = (prev || []) as any[];
+    const prevViews = prevRows.reduce((s, r) => s + (r.pages_this_session?.length || 0), 0);
+    const prevUniques = new Set(prevRows.map(r => r.visitor_id)).size;
+    setPrevTotals({ views: prevViews, uniques: prevUniques });
+
+    setLastUpdated(new Date());
     setLoading(false);
+    setRefreshing(false);
   }, [range]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Auto refresh
+  // Realtime subscription for online users
   useEffect(() => {
-    const intervalMs = range === 'today' ? 60_000 : 5 * 60_000;
-    const t = setInterval(fetchData, intervalMs);
-    return () => clearInterval(t);
-  }, [fetchData, range]);
+    const channel = supabase
+      .channel('visitor-tracking-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visitor_tracking' }, () => {
+        // Lightweight refresh of last_seen — refetch list
+        fetchData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchData]);
 
-  // Filter by selected domain
-  const domainMatcher = DOMAIN_OPTIONS.find(d => d.key === domain)!.match;
-  const rows = useMemo(() => allRows.filter(r => domainMatcher(r.domain)), [allRows, domainMatcher]);
-  const prevRows = useMemo(() => allPrevRows.filter(r => domainMatcher(r.domain)), [allPrevRows, domainMatcher]);
+  // Auto refresh every 30s
+  useEffect(() => {
+    const id = setInterval(fetchData, 30_000);
+    return () => clearInterval(id);
+  }, [fetchData]);
 
+  // Filter by domain tab
+  const filtered = useMemo(() => {
+    if (domain === 'all') return rows;
+    return rows.filter(r => classifyDomain(r.source_domain) === domain);
+  }, [rows, domain]);
+
+  // Aggregate stats
   const stats = useMemo(() => {
-    const totalViews = rows.length;
-    const uniqueVisitors = new Set(rows.map(r => r.visitor_id).filter(Boolean)).size;
-    const roomViews = rows.filter(r => r.page_type === 'room_detail').length;
+    const views = filtered.reduce((s, r) => s + (r.pages_this_session?.length || 0), 0);
+    const uniqueVisitors = new Set(filtered.map(r => r.visitor_id)).size;
+    const now = Date.now();
+    const onlineNow = filtered.filter(r => now - new Date(r.last_seen).getTime() < 5 * 60_000).length;
 
-    const prevTotal = prevRows.length;
-    const prevUnique = new Set(prevRows.map(r => r.visitor_id).filter(Boolean)).size;
-    const prevRoomViews = prevRows.filter(r => r.page_type === 'room_detail').length;
-
-    // Conversion: bookings (current period) / unique visitors
-    const conversion = uniqueVisitors > 0 ? (bookingsCurr / uniqueVisitors) * 100 : 0;
-
-    // Avg session duration: max - min viewed_at per session
-    const sessions = new Map<string, { min: number; max: number }>();
-    rows.forEach(r => {
-      if (!r.session_id) return;
-      const t = new Date(r.viewed_at).getTime();
-      const s = sessions.get(r.session_id);
-      if (!s) sessions.set(r.session_id, { min: t, max: t });
-      else { s.min = Math.min(s.min, t); s.max = Math.max(s.max, t); }
+    // returning vs new
+    const visitorMap = new Map<string, VT[]>();
+    filtered.forEach(r => {
+      const a = visitorMap.get(r.visitor_id) || [];
+      a.push(r);
+      visitorMap.set(r.visitor_id, a);
     });
-    const durations = Array.from(sessions.values()).map(s => (s.max - s.min) / 1000);
-    const avgDurSec = durations.length > 0
-      ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
-
-    // Device split
-    let mobile = 0, desktop = 0, tablet = 0;
-    rows.forEach(r => {
-      if (r.device === 'mobile') mobile++;
-      else if (r.device === 'tablet') tablet++;
-      else desktop++;
+    let returning = 0, newOnes = 0;
+    visitorMap.forEach((arr) => {
+      const maxVc = Math.max(...arr.map(r => r.visit_count || 1));
+      if (maxVc > 1) returning++; else newOnes++;
     });
-    const dt = rows.length || 1;
+
+    const avgVisits = uniqueVisitors > 0
+      ? (filtered.reduce((s, r) => s + (r.visit_count || 1), 0) / uniqueVisitors)
+      : 0;
+
+    // Avg session duration from pages_this_session sum
+    const totalSeconds = filtered.reduce((s, r) => {
+      const last = r.pages_this_session?.[r.pages_this_session.length - 1];
+      const dur = (new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 1000;
+      return s + Math.max(0, Math.min(dur, 60 * 60));
+    }, 0);
+    const avgDuration = filtered.length > 0 ? totalSeconds / filtered.length : 0;
+
+    const mobile = filtered.filter(r => r.device_type === 'mobile').length;
+    const desktop = filtered.filter(r => r.device_type === 'desktop').length;
+    const tablet = filtered.filter(r => r.device_type === 'tablet').length;
+    const deviceTotal = mobile + desktop + tablet || 1;
+
+    const countries = new Set(filtered.map(r => r.country_code).filter(Boolean)).size;
 
     return {
-      totalViews, uniqueVisitors, roomViews,
-      diffViews: pct(totalViews, prevTotal),
-      diffUnique: pct(uniqueVisitors, prevUnique),
-      diffRoom: pct(roomViews, prevRoomViews),
-      diffBookings: pct(bookingsCurr, bookingsPrev),
-      conversion,
-      avgDurSec,
-      mobilePct: Math.round((mobile / dt) * 100),
-      desktopPct: Math.round((desktop / dt) * 100),
-      tabletPct: Math.round((tablet / dt) * 100),
+      views, uniqueVisitors, onlineNow, returning, newOnes,
+      avgVisits, avgDuration, mobile, desktop, tablet, deviceTotal, countries,
     };
-  }, [rows, prevRows, bookingsCurr, bookingsPrev]);
+  }, [filtered]);
 
-  // Page-type breakdown
-  const pageTypeBreakdown = useMemo(() => {
-    const map = new Map<string, number>();
-    rows.forEach(r => map.set(r.page_type, (map.get(r.page_type) || 0) + 1));
-    const total = rows.length || 1;
-    return Array.from(map.entries())
-      .map(([type, count]) => ({
-        type,
-        count,
-        pct: Math.round((count / total) * 100),
-        ...getMeta(type),
-      }))
-      .sort((a, b) => b.count - a.count);
-  }, [rows]);
-
-  // Funnel
-  const funnel = useMemo(() => {
-    const homeUniq   = new Set(rows.filter(r => r.page_type === 'home').map(r => r.visitor_id).filter(Boolean)).size;
-    const roomUniq   = new Set(rows.filter(r => r.page_type === 'room_detail' || r.page_type === 'rooms_list').map(r => r.visitor_id).filter(Boolean)).size;
-    const detailUniq = new Set(rows.filter(r => r.page_type === 'room_detail').map(r => r.visitor_id).filter(Boolean)).size;
-    const b1Uniq = new Set(rows.filter(r => r.page_type.startsWith('booking_step') || r.page_type === 'booking').map(r => r.visitor_id).filter(Boolean)).size;
-    const doneUniq = new Set(rows.filter(r => r.page_type === 'booking_done').map(r => r.visitor_id).filter(Boolean)).size;
-    const top = Math.max(homeUniq, roomUniq, b1Uniq, doneUniq, 1);
-    return [
-      { stage: 'Trang chủ',           value: homeUniq,   pct: Math.round((homeUniq / top) * 100) },
-      { stage: 'Xem phòng',           value: roomUniq,   pct: Math.round((roomUniq / top) * 100) },
-      { stage: 'Chi tiết phòng',      value: detailUniq, pct: Math.round((detailUniq / top) * 100) },
-      { stage: 'Vào trang đặt phòng', value: b1Uniq,     pct: Math.round((b1Uniq / top) * 100) },
-      { stage: 'Đặt thành công',      value: doneUniq,   pct: Math.round((doneUniq / top) * 100) },
-    ];
-  }, [rows]);
-
-  // Daily series (split by domain)
-  const dailySeries = useMemo(() => {
-    const { start, end } = getRange(range);
-    const days: { date: string; label: string; com: number; lovable: number; total: number }[] = [];
-    const cursor = new Date(start);
-    while (cursor < end) {
-      const key = cursor.toISOString().slice(0, 10);
-      days.push({
-        date: key,
-        label: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
-        com: 0, lovable: 0, total: 0,
-      });
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    allRows.forEach(r => {
-      const key = r.viewed_at.slice(0, 10);
-      const day = days.find(d => d.date === key);
-      if (!day) return;
-      day.total += 1;
-      if (r.domain?.includes('tuandatluxury.com')) day.com += 1;
-      else if (r.domain?.includes('lovable.app')) day.lovable += 1;
-    });
-    return days;
-  }, [allRows, range]);
-
-  // Domain comparison table
-  const domainCompare = useMemo(() => {
-    const split = { com: [] as PV[], lovable: [] as PV[], other: [] as PV[] };
-    allRows.forEach(r => {
-      if (r.domain?.includes('tuandatluxury.com')) split.com.push(r);
-      else if (r.domain?.includes('lovable.app')) split.lovable.push(r);
-      else split.other.push(r);
-    });
-    const byPageType = (arr: PV[]) => {
-      const m = new Map<string, number>();
-      arr.forEach(r => m.set(r.page_type, (m.get(r.page_type) || 0) + 1));
-      return m;
-    };
-    const comByType = byPageType(split.com);
-    const lovableByType = byPageType(split.lovable);
-    const allTypes = new Set<string>([...comByType.keys(), ...lovableByType.keys()]);
-    const rowsOut = Array.from(allTypes)
-      .map(t => ({ type: t, com: comByType.get(t) || 0, lovable: lovableByType.get(t) || 0, ...getMeta(t) }))
-      .sort((a, b) => (b.com + b.lovable) - (a.com + a.lovable));
-    return {
-      rows: rowsOut,
-      totals: {
-        com: split.com.length,
-        lovable: split.lovable.length,
-        comUnique: new Set(split.com.map(r => r.visitor_id).filter(Boolean)).size,
-        lovableUnique: new Set(split.lovable.map(r => r.visitor_id).filter(Boolean)).size,
-      },
-    };
-  }, [allRows]);
-
-  // Top rooms
-  const topRooms = useMemo(() => {
-    const map = new Map<string, { name: string; count: number }>();
-    rows.filter(r => r.page_type === 'room_detail' && r.room_id).forEach(r => {
-      const id = r.room_id!;
-      const name = r.room_name || roomNames[id] || `Phòng ${id.slice(0, 6)}`;
-      const prev = map.get(id);
-      if (prev) prev.count += 1;
-      else map.set(id, { name, count: 1 });
-    });
-    return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 8);
-  }, [rows, roomNames]);
-
-  // Referrer pie
-  const referrerData = useMemo(() => {
-    const map = new Map<string, number>();
-    rows.forEach(r => {
-      const k = r.referrer_source || 'direct';
-      map.set(k, (map.get(k) || 0) + 1);
-    });
-    const total = rows.length || 1;
-    return Array.from(map.entries())
-      .map(([name, value]) => ({ name, value, pct: Math.round((value / total) * 100) }))
-      .sort((a, b) => b.value - a.value);
-  }, [rows]);
-
-  // Hourly with per-page-type breakdown
-  const hourly = useMemo(() => {
-    if (range !== 'today' && range !== 'yesterday') return [];
-    const arr = Array.from({ length: 24 }, (_, h) => ({
-      hour: h, views: 0, unique: new Set<string>(),
-      home: 0, rooms: 0, room: 0, booking: 0, about: 0,
-    }));
-    rows.forEach(r => {
-      const d = new Date(r.viewed_at);
-      const h = d.getHours();
-      arr[h].views += 1;
-      if (r.visitor_id) arr[h].unique.add(r.visitor_id);
-      if (r.page_type === 'home') arr[h].home += 1;
-      if (r.page_type === 'rooms_list') arr[h].rooms += 1;
-      if (r.page_type === 'room_detail') arr[h].room += 1;
-      if (r.page_type.startsWith('booking')) arr[h].booking += 1;
-      if (r.page_type === 'about') arr[h].about += 1;
-    });
-    return arr.map(a => ({
-      hour: a.hour, views: a.views, unique: a.unique.size,
-      home: a.home, rooms: a.rooms, room: a.room, booking: a.booking, about: a.about,
-    }));
-  }, [rows, range]);
-
-  const peakHours = useMemo(() => {
-    if (!hourly.length) return new Set<number>();
-    const top = [...hourly].sort((a, b) => b.views - a.views).slice(0, 3).map(h => h.hour);
-    return new Set(top);
-  }, [hourly]);
-
-  // Insights
-  const insights = useMemo(() => {
-    const out: string[] = [];
-    if (stats.diffViews.up && stats.diffViews.val >= 10) {
-      out.push(`📈 Lượt xem tăng ${stats.diffViews.val}% so với kỳ trước — chủ yếu từ ${stats.mobilePct >= 50 ? `mobile (${stats.mobilePct}%)` : `desktop (${stats.desktopPct}%)`}.`);
-    } else if (!stats.diffViews.up && Math.abs(stats.diffViews.val) >= 10) {
-      out.push(`📉 Lượt xem giảm ${Math.abs(stats.diffViews.val)}% so với kỳ trước. → Gợi ý: Đẩy mạnh chia sẻ link Zalo/Facebook.`);
-    }
-    // Funnel drop-off
-    const f = funnel;
-    if (f[2].value > 0 && f[3].value > 0) {
-      const drop = Math.round((1 - f[3].value / f[2].value) * 100);
-      if (drop >= 50) out.push(`⚠️ ${drop}% khách rời trang sau khi xem chi tiết phòng — chưa vào đặt phòng. → Gợi ý: Thêm CTA mạnh hoặc ưu đãi cọc thấp.`);
-    }
-    if (f[3].value > 0 && f[4].value > 0) {
-      const drop = Math.round((1 - f[4].value / f[3].value) * 100);
-      if (drop >= 50) out.push(`⚠️ ${drop}% khách bỏ giữa các bước đặt phòng. → Gợi ý: Đơn giản hóa form chọn dịch vụ.`);
-    }
-    if (topRooms.length) {
-      const top = topRooms[0];
-      out.push(`🏆 Phòng "${top.name}" được xem nhiều nhất (${top.count} lượt).`);
-    }
-    if (peakHours.size) {
-      const arr = Array.from(peakHours).sort((a, b) => a - b);
-      out.push(`⏰ Giờ vàng: ${arr.map(h => `${h}:00`).join(', ')}. → Gợi ý: Đăng Facebook/Zalo trước giờ vàng 30 phút.`);
-    }
-    if (domain === 'all' && domainCompare.totals.com + domainCompare.totals.lovable > 0) {
-      const more = domainCompare.totals.com >= domainCompare.totals.lovable ? 'tuandatluxury.com' : 'lovable.app';
-      out.push(`🌐 Domain hiệu quả hơn: ${more} (${Math.max(domainCompare.totals.com, domainCompare.totals.lovable)} lượt).`);
-    }
-    if (out.length === 0) out.push('💡 Chưa có đủ dữ liệu để đưa ra gợi ý chi tiết.');
-    return out;
-  }, [stats, funnel, topRooms, peakHours, domain, domainCompare]);
-
-  // CSV export
-  const exportCsv = () => {
-    const lines: (string | number)[][] = [];
-    const { start, end } = getRange(range);
-    const dateLabel = `${start.toLocaleDateString('vi')}_${addDays(end, -1).toLocaleDateString('vi')}`.replace(/\//g, '-');
-
-    lines.push(['Báo cáo lượt xem', '', '', '']);
-    lines.push(['Khoảng thời gian', RANGE_OPTIONS.find(r => r.key === range)!.label, '', '']);
-    lines.push(['Domain lọc', DOMAIN_OPTIONS.find(d => d.key === domain)!.label, '', '']);
-    lines.push(['Cập nhật lúc', updatedAt.toLocaleString('vi'), '', '']);
-    lines.push([]);
-
-    lines.push(['== TỔNG QUAN ==']);
-    lines.push(['Tổng lượt xem', stats.totalViews]);
-    lines.push(['Khách unique', stats.uniqueVisitors]);
-    lines.push(['Xem phòng', stats.roomViews]);
-    lines.push(['Đặt phòng', bookingsCurr]);
-    lines.push(['Tỷ lệ chuyển đổi (%)', stats.conversion.toFixed(2)]);
-    lines.push([]);
-
-    lines.push(['== LƯỢT XEM THEO TRANG ==']);
-    lines.push(['Trang', 'Lượt xem', 'Tỷ lệ %']);
-    pageTypeBreakdown.forEach(p => lines.push([p.label, p.count, p.pct]));
-    lines.push([]);
-
-    lines.push(['== FUNNEL ĐẶT PHÒNG ==']);
-    lines.push(['Bước', 'Số người unique']);
-    funnel.forEach(f => lines.push([f.stage, f.value]));
-    lines.push([]);
-
-    lines.push(['== SO SÁNH 2 DOMAIN ==']);
-    lines.push(['Trang', 'tuandatluxury.com', 'lovable.app']);
-    domainCompare.rows.forEach(r => lines.push([r.label, r.com, r.lovable]));
-    lines.push(['TỔNG', domainCompare.totals.com, domainCompare.totals.lovable]);
-    lines.push(['Unique', domainCompare.totals.comUnique, domainCompare.totals.lovableUnique]);
-    lines.push([]);
-
-    lines.push(['== TOP PHÒNG ĐƯỢC XEM ==']);
-    lines.push(['Phòng', 'Lượt xem']);
-    topRooms.forEach(r => lines.push([r.name, r.count]));
-    lines.push([]);
-
-    lines.push(['== NGUỒN TRUY CẬP ==']);
-    lines.push(['Nguồn', 'Lượt xem', 'Tỷ lệ %']);
-    referrerData.forEach(r => lines.push([r.name, r.value, r.pct]));
-
-    if (hourly.length) {
-      lines.push([]);
-      lines.push(['== LƯỢT XEM THEO GIỜ ==']);
-      lines.push(['Giờ', 'Tổng', 'Unique', 'Trang chủ', 'DS phòng', 'Chi tiết', 'Đặt phòng', 'Giới thiệu']);
-      hourly.forEach(h => lines.push([
-        `${String(h.hour).padStart(2, '0')}:00`,
-        h.views, h.unique, h.home, h.rooms, h.room, h.booking, h.about,
-      ]));
-    }
-
-    downloadCsv(`bao-cao-luot-xem_${dateLabel}.csv`, lines);
+  const pct = (cur: number, prev: number) => {
+    if (!prev) return cur > 0 ? 100 : 0;
+    return Math.round(((cur - prev) / prev) * 1000) / 10;
   };
 
-  if (loading && !rows.length) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  // Per-domain breakdown for the comparison panel
+  const byDomain = useMemo(() => {
+    const out: Record<DomainTab, { rows: VT[]; views: number; uniques: number; online: number; avgDur: number }> = {
+      all: { rows: [], views: 0, uniques: 0, online: 0, avgDur: 0 },
+      com: { rows: [], views: 0, uniques: 0, online: 0, avgDur: 0 },
+      lovable: { rows: [], views: 0, uniques: 0, online: 0, avgDur: 0 },
+    };
+    const now = Date.now();
+    rows.forEach(r => {
+      const k = classifyDomain(r.source_domain);
+      out[k].rows.push(r);
+    });
+    (['com', 'lovable'] as DomainTab[]).forEach(k => {
+      const arr = out[k].rows;
+      out[k].views = arr.reduce((s, r) => s + (r.pages_this_session?.length || 0), 0);
+      out[k].uniques = new Set(arr.map(r => r.visitor_id)).size;
+      out[k].online = arr.filter(r => now - new Date(r.last_seen).getTime() < 5 * 60_000).length;
+      const totalSec = arr.reduce((s, r) => {
+        const dur = (new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 1000;
+        return s + Math.max(0, Math.min(dur, 3600));
+      }, 0);
+      out[k].avgDur = arr.length ? totalSec / arr.length : 0;
+    });
+    return out;
+  }, [rows]);
+
+  // Overlap (visitors in both domains)
+  const overlap = useMemo(() => {
+    const com = new Set(byDomain.com.rows.map(r => r.visitor_id));
+    const lv = new Set(byDomain.lovable.rows.map(r => r.visitor_id));
+    let both = 0, onlyCom = 0, onlyLv = 0;
+    com.forEach(v => { if (lv.has(v)) both++; else onlyCom++; });
+    lv.forEach(v => { if (!com.has(v)) onlyLv++; });
+    return { both, onlyCom, onlyLv };
+  }, [byDomain]);
+
+  // Daily chart data
+  const dailyData = useMemo(() => {
+    const map = new Map<string, { date: string; views: number; uniques: Set<string>; com: number; lovable: number }>();
+    filtered.forEach(r => {
+      const d = new Date(r.first_seen).toISOString().slice(0, 10);
+      const e = map.get(d) || { date: d, views: 0, uniques: new Set(), com: 0, lovable: 0 };
+      e.views += r.pages_this_session?.length || 0;
+      e.uniques.add(r.visitor_id);
+      if (classifyDomain(r.source_domain) === 'com') e.com += r.pages_this_session?.length || 0;
+      else e.lovable += r.pages_this_session?.length || 0;
+      map.set(d, e);
+    });
+    return Array.from(map.values())
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(e => ({
+        date: e.date.slice(5),
+        views: e.views,
+        uniques: e.uniques.size,
+        com: e.com,
+        lovable: e.lovable,
+      }));
+  }, [filtered]);
+
+  // Countries
+  const countriesData = useMemo(() => {
+    const m = new Map<string, { name: string; code: string; count: number }>();
+    filtered.forEach(r => {
+      if (!r.country) return;
+      const k = r.country_code || r.country;
+      const e = m.get(k) || { name: r.country, code: r.country_code || '', count: 0 };
+      e.count += 1;
+      m.set(k, e);
+    });
+    return Array.from(m.values()).sort((a, b) => b.count - a.count).slice(0, 10);
+  }, [filtered]);
+
+  // Top pages
+  const topPages = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach(r => {
+      (r.pages_this_session || []).forEach(p => {
+        m.set(p.page, (m.get(p.page) || 0) + 1);
+      });
+    });
+    return Array.from(m.entries()).map(([page, count]) => ({ page, count }))
+      .sort((a, b) => b.count - a.count).slice(0, 10);
+  }, [filtered]);
+
+  // Traffic sources
+  const sourcesData = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach(r => {
+      const k = r.referrer_source || 'direct';
+      m.set(k, (m.get(k) || 0) + 1);
+    });
+    const labelMap: Record<string, string> = {
+      direct: 'Direct', organic_search: 'Organic Search',
+      organic_social: 'Organic Social', referral: 'Referral', internal: 'Internal',
+    };
+    return Array.from(m.entries()).map(([k, v]) => ({ name: labelMap[k] || k, count: v }))
+      .sort((a, b) => b.count - a.count);
+  }, [filtered]);
+
+  // Unique visitors aggregated for the table
+  const visitorRows = useMemo(() => {
+    const m = new Map<string, {
+      visitor_id: string; domains: Set<DomainTab>; visit_count: number;
+      first_seen: string; last_seen: string; country: string | null; country_code: string | null;
+      device_type: string | null; browser: string | null;
+    }>();
+    filtered.forEach(r => {
+      const e = m.get(r.visitor_id) || {
+        visitor_id: r.visitor_id,
+        domains: new Set<DomainTab>(),
+        visit_count: 0,
+        first_seen: r.first_seen,
+        last_seen: r.last_seen,
+        country: r.country,
+        country_code: r.country_code,
+        device_type: r.device_type,
+        browser: r.browser,
+      };
+      e.domains.add(classifyDomain(r.source_domain));
+      e.visit_count = Math.max(e.visit_count, r.visit_count || 1);
+      if (r.first_seen < e.first_seen) e.first_seen = r.first_seen;
+      if (r.last_seen > e.last_seen) e.last_seen = r.last_seen;
+      m.set(r.visitor_id, e);
+    });
+    let arr = Array.from(m.values());
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      arr = arr.filter(v =>
+        v.visitor_id.toLowerCase().includes(q) ||
+        (v.country || '').toLowerCase().includes(q) ||
+        (v.device_type || '').toLowerCase().includes(q) ||
+        (v.browser || '').toLowerCase().includes(q)
+      );
+    }
+    arr.sort((a, b) => b.last_seen.localeCompare(a.last_seen));
+    return arr;
+  }, [filtered, search]);
+
+  const visitorPaged = visitorRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(visitorRows.length / PAGE_SIZE));
+
+  const onlineList = useMemo(() => {
+    const now = Date.now();
+    return filtered
+      .filter(r => now - new Date(r.last_seen).getTime() < 5 * 60_000)
+      .sort((a, b) => b.last_seen.localeCompare(a.last_seen))
+      .slice(0, 12);
+  }, [filtered]);
+
+  const selectedDetail = useMemo(() => {
+    if (!selectedVisitor) return null;
+    return rows.filter(r => r.visitor_id === selectedVisitor)
+      .sort((a, b) => a.first_seen.localeCompare(b.first_seen));
+  }, [selectedVisitor, rows]);
+
+  // Export Excel
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const buildSheet = (arr: VT[]) => arr.map(r => ({
+      'Visitor ID': r.visitor_id,
+      'Domain': r.source_domain,
+      'Session': r.session_id,
+      'Lần đầu': new Date(r.first_seen).toLocaleString('vi-VN'),
+      'Lần cuối': new Date(r.last_seen).toLocaleString('vi-VN'),
+      'Số lần vào': r.visit_count,
+      'Quốc gia': r.country || '',
+      'Thiết bị': r.device_type || '',
+      'Trình duyệt': r.browser || '',
+      'Nguồn': r.referrer_source || '',
+      'Số trang xem': r.pages_this_session?.length || 0,
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(buildSheet(byDomain.com.rows)), 'tuandatluxury.com');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(buildSheet(byDomain.lovable.rows)), 'lovable.app');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { Metric: 'Lượt xem', '.com': byDomain.com.views, '.lovable.app': byDomain.lovable.views },
+      { Metric: 'Người dùng duy nhất', '.com': byDomain.com.uniques, '.lovable.app': byDomain.lovable.uniques },
+      { Metric: 'Đang online', '.com': byDomain.com.online, '.lovable.app': byDomain.lovable.online },
+      { Metric: 'TB thời gian (giây)', '.com': Math.round(byDomain.com.avgDur), '.lovable.app': Math.round(byDomain.lovable.avgDur) },
+    ]), 'So sánh tổng hợp');
+    const com = new Set(byDomain.com.rows.map(r => r.visitor_id));
+    const lv = new Set(byDomain.lovable.rows.map(r => r.visitor_id));
+    const both = Array.from(com).filter(v => lv.has(v));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+      both.map(v => ({ 'Visitor ID': v }))
+    ), 'Visitor cả 2 domain');
+    XLSX.writeFile(wb, `ThongKeLuotXem_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <RefreshCw className="h-8 w-8 animate-spin" style={{ color: GOLD }} />
+      </div>
+    );
   }
 
-  const fmtSec = (s: number) => {
-    const m = Math.floor(s / 60);
-    const r = s % 60;
-    return `${m}:${String(r).padStart(2, '0')}`;
-  };
+  const deltaViews = prevTotals ? pct(stats.views, prevTotals.views) : 0;
+  const deltaUniques = prevTotals ? pct(stats.uniqueVisitors, prevTotals.uniques) : 0;
+
+  const cards = [
+    { icon: Eye, label: 'Lượt xem trang', value: stats.views, delta: deltaViews },
+    { icon: Users, label: 'Người dùng duy nhất', value: stats.uniqueVisitors, delta: deltaUniques },
+    { icon: Activity, label: 'Đang online', value: stats.onlineNow, delta: 0, live: true },
+    { icon: Repeat, label: 'Người quay lại', value: stats.returning, sub: `${stats.newOnes} người mới` },
+    { icon: Layers, label: 'TB lần vào / người', value: Math.round(stats.avgVisits * 10) / 10, asFloat: true },
+    { icon: Clock, label: 'TB phiên (phút)', value: Math.round(stats.avgDuration / 60 * 10) / 10, asFloat: true },
+    { icon: Smartphone, label: 'Mobile', value: Math.round(stats.mobile / stats.deviceTotal * 100), asPct: true, sub: `${100 - Math.round(stats.mobile / stats.deviceTotal * 100)}% desktop` },
+    { icon: Globe, label: 'Quốc gia', value: stats.countries },
+  ];
+
+  const maxCountry = countriesData[0]?.count || 1;
+  const maxPage = topPages[0]?.count || 1;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold tracking-tight" style={{ color: GOLD, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}>
+          Thống kê lượt xem
+        </h2>
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <h2 className="font-display text-lg font-semibold">Thống kê lượt xem</h2>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Cập nhật: {updatedAt.toLocaleTimeString('vi')}
+          <span className="text-xs text-muted-foreground">
+            Cập nhật {lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
           </span>
-          <button onClick={fetchData} className="text-xs px-2 py-1 rounded border border-border hover:bg-secondary inline-flex items-center gap-1">
-            <RefreshCw className="h-3 w-3" /> Làm mới
+          <button onClick={fetchData} disabled={refreshing}
+            className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border hover:bg-secondary transition-colors disabled:opacity-50">
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Cập nhật
           </button>
-          <button onClick={exportCsv} className="text-xs px-2 py-1 rounded border border-border hover:bg-secondary inline-flex items-center gap-1">
-            <Download className="h-3 w-3" /> Export CSV
+          <button onClick={exportExcel}
+            className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full text-white shadow transition-all hover:scale-105"
+            style={{ backgroundColor: GOLD }}>
+            <Download className="h-3.5 w-3.5" />
+            Xuất báo cáo
           </button>
         </div>
       </div>
 
-      {/* Domain + range filters */}
-      <div className="bg-card rounded-xl border border-border p-3 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Domain:</span>
-          <div className="flex gap-1">
-            {DOMAIN_OPTIONS.map(d => (
-              <button key={d.key} onClick={() => setDomain(d.key)}
-                className={`text-xs px-2.5 py-1 rounded-full border ${domain === d.key ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-secondary'}`}>
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="h-4 w-px bg-border" />
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Thời gian:</span>
-          <div className="flex gap-1">
-            {RANGE_OPTIONS.map(r => (
-              <button key={r.key} onClick={() => setRange(r.key)}
-                className={`text-xs px-2.5 py-1 rounded-full border ${range === r.key ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-secondary'}`}>
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Domain tabs */}
+      <div className="flex flex-wrap gap-2">
+        {(['all', 'com', 'lovable'] as DomainTab[]).map(k => (
+          <button key={k} onClick={() => setDomain(k)}
+            className={`text-sm px-4 py-2 rounded-full border transition-all duration-300 hover:scale-105 ${
+              domain === k ? 'text-white shadow-md' : 'bg-card text-foreground'
+            }`}
+            style={domain === k ? { backgroundColor: domainColor[k], borderColor: domainColor[k] } : {}}>
+            {domainBadge[k].emoji} {domainBadge[k].label}
+          </button>
+        ))}
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: 'Lượt xem', value: stats.totalViews, icon: Eye, color: 'text-blue-600', diff: stats.diffViews },
-          { label: 'Khách unique', value: stats.uniqueVisitors, icon: UserPlus, color: 'text-emerald-600', diff: stats.diffUnique },
-          { label: 'Xem phòng', value: stats.roomViews, icon: BedDouble, color: 'text-amber-600', diff: stats.diffRoom },
-          { label: 'Đặt phòng', value: bookingsCurr, icon: ClipboardList, color: 'text-primary', diff: stats.diffBookings },
-        ].map((s, i) => (
-          <div key={i} className="bg-card rounded-xl border border-border p-4">
+      {/* Time pills */}
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(RANGE_LABEL) as RangeKey[]).map(k => (
+          <button key={k} onClick={() => setRange(k)}
+            className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+              range === k ? 'text-white' : 'bg-card text-foreground hover:bg-secondary'
+            }`}
+            style={range === k ? { backgroundColor: GOLD, borderColor: GOLD } : {}}>
+            {RANGE_LABEL[k]}
+          </button>
+        ))}
+      </div>
+
+      {/* 8 metric cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {cards.map((c, i) => (
+          <div key={i} className="bg-card rounded-2xl border p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">{s.label}</span>
-              <s.icon className={`h-4 w-4 ${s.color}`} />
+              <span className="text-xs text-muted-foreground">{c.label}</span>
+              <div className="relative">
+                <c.icon className="h-4 w-4" style={{ color: GOLD }} />
+                {c.live && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
+              </div>
             </div>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value.toLocaleString('vi')}</p>
-            <p className={`text-[11px] mt-1 inline-flex items-center gap-1 ${s.diff.up ? 'text-emerald-600' : 'text-red-600'}`}>
-              {s.diff.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              {s.diff.up ? '+' : ''}{s.diff.val}% so với kỳ trước
+            <p className="text-2xl font-bold" style={{ color: GOLD }}>
+              {c.asFloat ? c.value : c.asPct ? `${c.value}%` : <CountUp value={c.value} />}
             </p>
+            {c.delta !== undefined && c.delta !== 0 && (
+              <p className={`text-xs mt-1 ${c.delta >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {c.delta >= 0 ? '↑' : '↓'} {Math.abs(c.delta)}%
+              </p>
+            )}
+            {c.sub && <p className="text-xs text-muted-foreground mt-1">{c.sub}</p>}
           </div>
         ))}
       </div>
 
-      {/* Secondary KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-xs text-muted-foreground">🎯 Tỷ lệ chuyển đổi</p>
-          <p className="text-2xl font-bold text-primary">{stats.conversion.toFixed(1)}%</p>
-          <p className="text-[11px] text-muted-foreground">đặt phòng / unique</p>
+      {/* New vs returning */}
+      <div className="bg-card rounded-2xl border p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Người mới vs Người quay lại</h3>
+          <span className="text-xs text-muted-foreground">{RANGE_LABEL[range]}</span>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-xs text-muted-foreground">⏱ Thời gian TB</p>
-          <p className="text-2xl font-bold text-blue-600">{fmtSec(stats.avgDurSec)}</p>
-          <p className="text-[11px] text-muted-foreground">phút / phiên</p>
+        {(() => {
+          const total = stats.newOnes + stats.returning || 1;
+          const newPct = Math.round(stats.newOnes / total * 100);
+          const retPct = 100 - newPct;
+          return (
+            <>
+              <p className="text-sm mb-3">
+                <strong>{fmt(stats.views)}</strong> lượt xem →{' '}
+                <strong>{fmt(stats.uniqueVisitors)}</strong> người dùng duy nhất →{' '}
+                <strong>{fmt(stats.returning)}</strong> quay lại,{' '}
+                <strong>{fmt(stats.newOnes)}</strong> mới
+              </p>
+              <div className="space-y-2">
+                <div>
+                  <div className="flex justify-between text-xs mb-1"><span>Người mới</span><span>{newPct}%</span></div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full transition-all duration-700" style={{ width: `${newPct}%`, backgroundColor: GOLD }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs mb-1"><span>Quay lại</span><span>{retPct}%</span></div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 transition-all duration-700" style={{ width: `${retPct}%` }} />
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        })()}
+      </div>
+
+      {/* Domain comparison (only when 'all') */}
+      {domain === 'all' && (
+        <div className="bg-card rounded-2xl border p-5 shadow-sm">
+          <h3 className="font-semibold mb-4">So sánh 2 domain</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+            {(['com', 'lovable'] as DomainTab[]).map(k => (
+              <div key={k} className="rounded-xl p-4 border-2" style={{ borderColor: domainColor[k] + '40', backgroundColor: domainColor[k] + '08' }}>
+                <p className="font-semibold text-sm mb-2">{domainBadge[k].emoji} {domainBadge[k].label}</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><Users className="inline h-3 w-3 mr-1" /> {fmt(byDomain[k].uniques)} người</div>
+                  <div><Eye className="inline h-3 w-3 mr-1" /> {fmt(byDomain[k].views)} lượt</div>
+                  <div><Activity className="inline h-3 w-3 mr-1" /> {fmt(byDomain[k].online)} online</div>
+                  <div><Clock className="inline h-3 w-3 mr-1" /> {(byDomain[k].avgDur / 60).toFixed(1)} phút</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-5" style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dailyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" fontSize={11} />
+                <YAxis fontSize={11} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="com" name=".com" fill={BLUE} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="lovable" name=".lovable.app" fill={YELLOW} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center text-sm">
+            <div className="rounded-lg p-3" style={{ backgroundColor: BLUE + '15' }}>
+              <p className="text-xs text-muted-foreground">Chỉ .com</p>
+              <p className="text-xl font-bold" style={{ color: BLUE }}>{fmt(overlap.onlyCom)}</p>
+            </div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: GOLD + '20' }}>
+              <p className="text-xs text-muted-foreground">Vào cả 2</p>
+              <p className="text-xl font-bold" style={{ color: GOLD }}>{fmt(overlap.both)}</p>
+            </div>
+            <div className="rounded-lg p-3" style={{ backgroundColor: YELLOW + '20' }}>
+              <p className="text-xs text-muted-foreground">Chỉ .lovable.app</p>
+              <p className="text-xl font-bold" style={{ color: '#a16207' }}>{fmt(overlap.onlyLv)}</p>
+            </div>
+          </div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-xs text-muted-foreground inline-flex items-center gap-1"><Smartphone className="h-3 w-3" /> Mobile</p>
-          <p className="text-2xl font-bold text-emerald-600">{stats.mobilePct}%</p>
+      )}
+
+      {/* Realtime online now */}
+      <div className="bg-card rounded-2xl border p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            {onlineList.length} người đang online
+          </h3>
+          <span className="text-xs text-muted-foreground">Realtime</span>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-xs text-muted-foreground inline-flex items-center gap-1"><Monitor className="h-3 w-3" /> Desktop</p>
-          <p className="text-2xl font-bold text-amber-600">{stats.desktopPct}%</p>
+        {onlineList.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Chưa có ai online</p>
+        ) : (
+          <div className="space-y-1.5 max-h-64 overflow-y-auto">
+            {onlineList.map(r => {
+              const dk = classifyDomain(r.source_domain);
+              const lastPage = r.pages_this_session?.[r.pages_this_session.length - 1];
+              return (
+                <div key={r.id} className="flex items-center gap-3 text-xs py-1.5 px-2 rounded hover:bg-secondary/50 cursor-pointer transition-colors"
+                  onClick={() => setSelectedVisitor(r.visitor_id)}>
+                  <span className="font-mono text-muted-foreground truncate w-24">{r.visitor_id.slice(0, 10)}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] text-white" style={{ backgroundColor: domainColor[dk] }}>
+                    {domainBadge[dk].emoji}
+                  </span>
+                  <span>{countryFlag(r.country_code)}</span>
+                  <span className="flex-1 truncate text-muted-foreground">{lastPage?.page || '—'}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Daily line chart */}
+      <div className="bg-card rounded-2xl border p-5 shadow-sm">
+        <h3 className="font-semibold mb-3">Lượt xem theo ngày</h3>
+        <div style={{ height: 260 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={dailyData}>
+              <defs>
+                <linearGradient id="gViews" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.4} />
+                  <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gUniq" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={BLUE} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={BLUE} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="date" fontSize={11} />
+              <YAxis fontSize={11} />
+              <Tooltip />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Area type="monotone" dataKey="views" name="Lượt xem" stroke={GOLD} fill="url(#gViews)" strokeWidth={2} />
+              <Area type="monotone" dataKey="uniques" name="Người duy nhất" stroke={BLUE} fill="url(#gUniq)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Page-type breakdown bar list */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="font-semibold mb-3">📍 Lượt xem theo trang</h3>
-        {pageTypeBreakdown.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Chưa có dữ liệu</p>
+      {/* Countries */}
+      <div className="bg-card rounded-2xl border p-5 shadow-sm">
+        <h3 className="font-semibold mb-3">Top quốc gia</h3>
+        {countriesData.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Chưa có dữ liệu quốc gia</p>
         ) : (
-          <div className="space-y-1.5">
-            {pageTypeBreakdown.map(p => (
-              <div key={p.type} className="grid grid-cols-[200px_1fr_auto] items-center gap-3 text-sm">
-                <span className="truncate">{p.icon} {p.label}</span>
-                <div className="bg-secondary rounded-full h-2.5 overflow-hidden">
-                  <div className="bg-primary h-full rounded-full" style={{ width: `${p.pct}%` }} />
+          <div className="space-y-2">
+            {countriesData.map((c, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm">
+                <span className="text-lg w-6">{countryFlag(c.code)}</span>
+                <span className="w-32 truncate">{c.name}</span>
+                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full transition-all duration-700" style={{ width: `${(c.count / maxCountry) * 100}%`, backgroundColor: GOLD }} />
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums w-20 text-right">
-                  <strong className="text-foreground">{p.count}</strong> · {p.pct}%
-                </span>
+                <span className="text-xs font-semibold w-12 text-right">{c.count}</span>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Funnel */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="font-semibold mb-3">🎯 Funnel đặt phòng</h3>
-        <div className="space-y-2">
-          {funnel.map((f, i) => {
-            const next = funnel[i + 1];
-            const dropPct = next && f.value > 0 ? Math.round((next.value / f.value) * 100) : null;
-            return (
-              <div key={f.stage}>
-                <div className="grid grid-cols-[180px_1fr_auto] items-center gap-3 text-sm">
-                  <span className="truncate">{f.stage}</span>
-                  <div className="bg-secondary rounded h-7 overflow-hidden relative">
-                    <div className="bg-primary h-full" style={{ width: `${f.pct}%` }} />
-                    <span className="absolute inset-0 flex items-center px-2 text-xs font-semibold text-foreground">
-                      {f.value} người
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground tabular-nums w-12 text-right">{f.pct}%</span>
-                </div>
-                {dropPct !== null && (
-                  <p className="text-[11px] text-muted-foreground ml-[195px] mt-0.5">↓ {dropPct}% chuyển bước</p>
-                )}
-              </div>
-            );
-          })}
+      {/* Device + Source */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-card rounded-2xl border p-5 shadow-sm">
+          <h3 className="font-semibold mb-3">Thiết bị</h3>
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Mobile', value: stats.mobile },
+                    { name: 'Desktop', value: stats.desktop },
+                    { name: 'Tablet', value: stats.tablet },
+                  ]}
+                  dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                  <Cell fill={GOLD} />
+                  <Cell fill={BLUE} />
+                  <Cell fill="#10b981" />
+                </Pie>
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <p className="text-xs text-primary mt-3 font-semibold">
-          Tỷ lệ chuyển đổi cuối cùng: {funnel[0].value > 0 ? Math.round((funnel[4].value / funnel[0].value) * 100) : 0}%
-        </p>
+
+        <div className="bg-card rounded-2xl border p-5 shadow-sm">
+          <h3 className="font-semibold mb-3">Nguồn truy cập</h3>
+          <div className="space-y-2">
+            {sourcesData.length === 0 && <p className="text-sm text-muted-foreground">Chưa có dữ liệu</p>}
+            {sourcesData.map((s, i) => {
+              const max = sourcesData[0]?.count || 1;
+              return (
+                <div key={i} className="flex items-center gap-3 text-sm">
+                  <span className="w-32 truncate">{s.name}</span>
+                  <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full transition-all duration-700" style={{ width: `${(s.count / max) * 100}%`, backgroundColor: GOLD }} />
+                  </div>
+                  <span className="text-xs font-semibold w-12 text-right">{s.count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Domain comparison */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="font-semibold mb-3 flex items-center gap-2">
-          <Globe className="h-4 w-4" /> So sánh 2 Domain
-        </h3>
+      {/* Top pages */}
+      <div className="bg-card rounded-2xl border p-5 shadow-sm">
+        <h3 className="font-semibold mb-3">Top trang được xem</h3>
+        {topPages.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Chưa có dữ liệu</p>
+        ) : (
+          <div className="space-y-2">
+            {topPages.map((p, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm">
+                <span className="w-8 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                <span className="flex-1 truncate">{p.page}</span>
+                <div className="w-24 sm:w-40 h-2 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full transition-all duration-700" style={{ width: `${(p.count / maxPage) * 100}%`, backgroundColor: GOLD }} />
+                </div>
+                <span className="text-xs font-semibold w-12 text-right">{p.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Visitor table */}
+      <div className="bg-card rounded-2xl border p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 className="font-semibold">Người dùng thực tế ({fmt(visitorRows.length)})</h3>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Tìm mã, quốc gia, thiết bị..."
+              className="text-xs pl-8 pr-3 py-1.5 rounded-full border bg-background w-56" />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-muted-foreground border-b border-border">
-                <th className="py-2 px-2">Trang</th>
-                <th className="py-2 px-2 text-right">tuandatluxury.com</th>
-                <th className="py-2 px-2 text-right">lovable.app</th>
+              <tr className="text-left text-muted-foreground border-b">
+                <th className="py-2 px-2">Mã máy</th>
+                <th className="py-2 px-2">Domain</th>
+                <th className="py-2 px-2">Lần đầu</th>
+                <th className="py-2 px-2 text-center">Số lần</th>
+                <th className="py-2 px-2">Quốc gia</th>
+                <th className="py-2 px-2">Thiết bị</th>
+                <th className="py-2 px-2">Trạng thái</th>
+                <th className="py-2 px-2"></th>
               </tr>
             </thead>
             <tbody>
-              {domainCompare.rows.map(r => (
-                <tr key={r.type} className="border-b border-border/50">
-                  <td className="py-1.5 px-2">{r.icon} {r.label}</td>
-                  <td className="py-1.5 px-2 text-right tabular-nums">{r.com}</td>
-                  <td className="py-1.5 px-2 text-right tabular-nums">{r.lovable}</td>
-                </tr>
-              ))}
-              <tr className="border-t-2 border-border font-bold bg-secondary/30">
-                <td className="py-2 px-2">TỔNG LƯỢT XEM</td>
-                <td className="py-2 px-2 text-right tabular-nums">{domainCompare.totals.com}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{domainCompare.totals.lovable}</td>
-              </tr>
-              <tr className="font-semibold">
-                <td className="py-1.5 px-2">Khách Unique</td>
-                <td className="py-1.5 px-2 text-right tabular-nums">{domainCompare.totals.comUnique}</td>
-                <td className="py-1.5 px-2 text-right tabular-nums">{domainCompare.totals.lovableUnique}</td>
-              </tr>
+              {visitorPaged.map(v => {
+                const now = Date.now();
+                const since = now - new Date(v.last_seen).getTime();
+                const status = since < 5 * 60_000 ? '🟢 Online' : since < 60 * 60_000 ? '🟡 Gần đây' : '⚫ Offline';
+                return (
+                  <tr key={v.visitor_id} className="border-b hover:bg-secondary/30 cursor-pointer"
+                    onClick={() => setSelectedVisitor(v.visitor_id)}>
+                    <td className="py-2 px-2 font-mono truncate max-w-[120px]">{v.visitor_id.slice(0, 14)}</td>
+                    <td className="py-2 px-2">
+                      <div className="flex gap-1">
+                        {Array.from(v.domains).map(d => (
+                          <span key={d} className="text-[10px] px-1.5 py-0.5 rounded-full text-white"
+                            style={{ backgroundColor: domainColor[d] }}>
+                            {domainBadge[d].emoji}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 text-muted-foreground">{new Date(v.first_seen).toLocaleDateString('vi-VN')}</td>
+                    <td className="py-2 px-2 text-center font-semibold" style={{ color: GOLD }}>{v.visit_count}</td>
+                    <td className="py-2 px-2">{countryFlag(v.country_code)} {v.country || '—'}</td>
+                    <td className="py-2 px-2 capitalize">{v.device_type || '—'}</td>
+                    <td className="py-2 px-2 text-xs">{status}</td>
+                    <td className="py-2 px-2 text-right"><ChevronRight className="h-3.5 w-3.5 text-muted-foreground" /></td>
+                  </tr>
+                );
+              })}
+              {visitorPaged.length === 0 && (
+                <tr><td colSpan={8} className="text-center text-muted-foreground py-8">Không có dữ liệu</td></tr>
+              )}
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 mt-3">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="text-xs px-2 py-1 rounded border disabled:opacity-50">‹</button>
+            <span className="text-xs px-3">Trang {page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="text-xs px-2 py-1 rounded border disabled:opacity-50">›</button>
+          </div>
+        )}
       </div>
 
-      {/* Daily line by domain */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="font-semibold mb-3">Lượt xem theo ngày — 2 domain</h3>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={dailySeries}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line type="monotone" dataKey="com" name="tuandatluxury.com" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="lovable" name="lovable.app" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top rooms */}
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="font-semibold mb-3">Top phòng được xem</h3>
-          {topRooms.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Chưa có lượt xem phòng</p>
-          ) : (
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topRooms} layout="vertical" margin={{ left: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={130} />
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        {/* Referrer pie */}
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="font-semibold mb-3">Nguồn truy cập</h3>
-          {referrerData.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Chưa có dữ liệu</p>
-          ) : (
-            <div className="h-72 flex items-center">
-              <ResponsiveContainer width="60%" height="100%">
-                <PieChart>
-                  <Pie data={referrerData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90}>
-                    {referrerData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-1">
-                {referrerData.map((r, i) => (
-                  <div key={r.name} className="flex items-center gap-2 text-xs">
-                    <span className="w-2 h-2 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span className="capitalize flex-1">{r.name}</span>
-                    <span className="font-semibold">{r.pct}%</span>
-                  </div>
-                ))}
+      {/* Detail drawer */}
+      {selectedVisitor && selectedDetail && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-2 sm:p-4" onClick={() => setSelectedVisitor(null)}>
+          <div className="bg-card rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Mã máy</p>
+                <p className="font-mono text-sm break-all">{selectedVisitor}</p>
               </div>
+              <button onClick={() => setSelectedVisitor(null)} className="p-1 hover:bg-secondary rounded">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Hourly with per-page breakdown */}
-      {(range === 'today' || range === 'yesterday') && (
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="font-semibold mb-3">Lượt xem theo giờ — chi tiết</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left text-muted-foreground border-b border-border">
-                  <th className="py-2 px-2">Giờ</th>
-                  <th className="py-2 px-2 text-right">Tổng</th>
-                  <th className="py-2 px-2 text-right">Unique</th>
-                  <th className="py-2 px-2 text-right">🏠 Chủ</th>
-                  <th className="py-2 px-2 text-right">🏨 DS phòng</th>
-                  <th className="py-2 px-2 text-right">🛏 Chi tiết</th>
-                  <th className="py-2 px-2 text-right">📝 Đặt phòng</th>
-                  <th className="py-2 px-2 text-right">ℹ️ Giới thiệu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hourly.map(h => (
-                  <tr key={h.hour} className={`border-b border-border/50 ${peakHours.has(h.hour) ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
-                    <td className="py-1.5 px-2 font-mono">{String(h.hour).padStart(2, '0')}:00</td>
-                    <td className="py-1.5 px-2 text-right font-semibold">{h.views}</td>
-                    <td className="py-1.5 px-2 text-right">{h.unique}</td>
-                    <td className="py-1.5 px-2 text-right">{h.home || '-'}</td>
-                    <td className="py-1.5 px-2 text-right">{h.rooms || '-'}</td>
-                    <td className="py-1.5 px-2 text-right">{h.room || '-'}</td>
-                    <td className="py-1.5 px-2 text-right">{h.booking || '-'}</td>
-                    <td className="py-1.5 px-2 text-right">{h.about || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {(() => {
+              const first = selectedDetail[0];
+              const domains = new Set(selectedDetail.map(r => classifyDomain(r.source_domain)));
+              return (
+                <>
+                  <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                    {Array.from(domains).map(d => (
+                      <span key={d} className="px-2 py-1 rounded-full text-white" style={{ backgroundColor: domainColor[d] }}>
+                        {domainBadge[d].emoji} {domainBadge[d].label}
+                      </span>
+                    ))}
+                    <span className="px-2 py-1 rounded-full bg-secondary">{countryFlag(first.country_code)} {first.country || '—'}</span>
+                    <span className="px-2 py-1 rounded-full bg-secondary capitalize">{first.device_type} · {first.browser}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Lần đầu: {new Date(first.first_seen).toLocaleString('vi-VN')} · Tổng {selectedDetail.length} phiên
+                  </p>
+                  <div className="space-y-3">
+                    {selectedDetail.map((r, i) => (
+                      <div key={r.id} className="border rounded-xl p-3">
+                        <div className="flex items-center justify-between text-xs mb-2">
+                          <span className="font-semibold">Lần {i + 1}: {new Date(r.first_seen).toLocaleString('vi-VN')}</span>
+                          <span className="text-muted-foreground">
+                            ({Math.round((new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 60000)} phút)
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          {(r.pages_this_session || []).map((p, j) => (
+                            <div key={j}>→ {p.page}{p.time_spent ? ` (${p.time_spent}s)` : ''}</div>
+                          ))}
+                          {(!r.pages_this_session || r.pages_this_session.length === 0) && <div>(không có trang)</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
 
-      {/* Insights */}
-      <div className="bg-gradient-to-br from-primary/5 to-amber-50 dark:from-primary/10 dark:to-amber-950/20 rounded-xl border border-primary/20 p-5">
-        <h3 className="font-semibold mb-3 flex items-center gap-2">
-          <Lightbulb className="h-5 w-5 text-amber-500" /> Phân tích & Gợi ý nâng cao
-        </h3>
-        <div className="space-y-2">
-          {insights.map((tip, i) => (
-            <p key={i} className="text-sm leading-relaxed">{tip}</p>
-          ))}
-        </div>
-      </div>
+      {/* Privacy note */}
+      <p className="text-[11px] text-muted-foreground text-center pt-2">
+        Website dùng fingerprinting ẩn danh để phân tích lượt truy cập. Không lưu thông tin cá nhân.
+      </p>
     </div>
   );
 };
