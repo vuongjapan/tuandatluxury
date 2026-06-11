@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, matchPath } from 'react-router-dom';
 import { trackPageView, type PageType } from '@/hooks/usePageTracking';
+import { initVisitorTracking, trackVisitorPage } from '@/lib/visitorTracking';
+
 
 interface Detected {
   type: PageType;
