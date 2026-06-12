@@ -32,6 +32,16 @@ interface PV {
   date: string;
 }
 
+interface VisitorRow {
+  id: string;
+  visitor_id: string;
+  visit_count: number;
+  first_seen: string;
+  last_seen: string;
+  source_domain: string | null;
+  last_path: string | null;
+}
+
 const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
   { key: 'today', label: 'Hôm nay' },
   { key: 'yesterday', label: 'Hôm qua' },
