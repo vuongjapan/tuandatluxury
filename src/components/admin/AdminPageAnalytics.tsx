@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   BarChart3, Eye, UserPlus, BedDouble, ClipboardList, Loader2, RefreshCw,
   TrendingUp, TrendingDown, Smartphone, Monitor, Tablet, Lightbulb, Clock,
-  Globe, Download, Filter,
+  Globe, Download, Filter, Repeat, Wifi,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -28,6 +30,16 @@ interface PV {
   device: string | null;
   viewed_at: string;
   date: string;
+}
+
+interface VisitorRow {
+  id: string;
+  visitor_id: string;
+  visit_count: number;
+  first_seen: string;
+  last_seen: string;
+  source_domain: string | null;
+  last_path: string | null;
 }
 
 const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
@@ -131,16 +143,19 @@ const AdminPageAnalytics = () => {
   const [bookingsPrev, setBookingsPrev] = useState(0);
   const [roomNames, setRoomNames] = useState<Record<string, string>>({});
   const [updatedAt, setUpdatedAt] = useState<Date>(new Date());
+  const [visitorRows, setVisitorRows] = useState<VisitorRow[]>([]);
+  const [now, setNow] = useState(Date.now());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     const { start, end, prevStart, prevEnd } = getRange(range);
-    const [currRes, prevRes, bkCurrRes, bkPrevRes, roomsRes] = await Promise.all([
+    const [currRes, prevRes, bkCurrRes, bkPrevRes, roomsRes, visitorsRes] = await Promise.all([
       supabase.from('page_views').select('*').gte('viewed_at', start.toISOString()).lt('viewed_at', end.toISOString()).order('viewed_at', { ascending: false }).limit(10000),
       supabase.from('page_views').select('*').gte('viewed_at', prevStart.toISOString()).lt('viewed_at', prevEnd.toISOString()).limit(10000),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', start.toISOString()).lt('created_at', end.toISOString()),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', prevStart.toISOString()).lt('created_at', prevEnd.toISOString()),
       supabase.from('rooms').select('id, name_vi').limit(500),
+      supabase.from('visitors').select('id, visitor_id, visit_count, first_seen, last_seen, source_domain, last_path').gte('last_seen', start.toISOString()).lt('last_seen', end.toISOString()).order('last_seen', { ascending: false }).limit(2000),
     ]);
     setAllRows((currRes.data || []) as PV[]);
     setAllPrevRows((prevRes.data || []) as PV[]);
@@ -149,6 +164,7 @@ const AdminPageAnalytics = () => {
     const map: Record<string, string> = {};
     (roomsRes.data || []).forEach((r: any) => { map[r.id] = r.name_vi; });
     setRoomNames(map);
+    setVisitorRows((visitorsRes.data || []) as VisitorRow[]);
     setUpdatedAt(new Date());
     setLoading(false);
   }, [range]);
@@ -161,6 +177,12 @@ const AdminPageAnalytics = () => {
     const t = setInterval(fetchData, intervalMs);
     return () => clearInterval(t);
   }, [fetchData, range]);
+
+  // Keep "now" ticking for online indicator
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(t);
+  }, []);
 
   // Filter by selected domain
   const domainMatcher = DOMAIN_OPTIONS.find(d => d.key === domain)!.match;
@@ -358,6 +380,29 @@ const AdminPageAnalytics = () => {
     return new Set(top);
   }, [hourly]);
 
+  // Visitor filtering by domain (intersect with page_views visitor_ids)
+  const domainVisitorIds = useMemo(() => new Set(rows.map(r => r.visitor_id).filter(Boolean)), [rows]);
+  const filteredVisitors = useMemo(() => {
+    if (domain === 'all') return visitorRows;
+    return visitorRows.filter(v => domainVisitorIds.has(v.visitor_id));
+  }, [visitorRows, domainVisitorIds, domain]);
+
+  const visitorStats = useMemo(() => {
+    const { start, end } = getRange(range);
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+    const twoMinAgo = now - 2 * 60 * 1000;
+    let newCount = 0, returningCount = 0, onlineCount = 0;
+    filteredVisitors.forEach(v => {
+      const first = new Date(v.first_seen).getTime();
+      const last = new Date(v.last_seen).getTime();
+      if (first >= startMs && first < endMs) newCount++;
+      else if (first < startMs && last >= startMs && last < endMs) returningCount++;
+      if (last >= twoMinAgo) onlineCount++;
+    });
+    return { newCount, returningCount, onlineCount };
+  }, [filteredVisitors, range, now]);
+
   // Insights
   const insights = useMemo(() => {
     const out: string[] = [];
@@ -553,6 +598,79 @@ const AdminPageAnalytics = () => {
         <div className="bg-card rounded-xl border border-border p-4">
           <p className="text-xs text-muted-foreground inline-flex items-center gap-1"><Monitor className="h-3 w-3" /> Desktop</p>
           <p className="text-2xl font-bold text-amber-600">{stats.desktopPct}%</p>
+        </div>
+      </div>
+
+      {/* Visitor stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-card rounded-xl border border-emerald-200 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-700 opacity-80">
+            <UserPlus className="h-5 w-5" /> Khách mới {range === 'today' ? 'hôm nay' : range === 'yesterday' ? 'hôm qua' : 'trong kỳ'}
+          </div>
+          <div className="text-3xl font-bold text-emerald-700 mt-2">{visitorStats.newCount}</div>
+        </div>
+        <div className="bg-card rounded-xl border border-blue-200 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-blue-700 opacity-80">
+            <Repeat className="h-5 w-5" /> Khách cũ quay lại {range === 'today' ? 'hôm nay' : range === 'yesterday' ? 'hôm qua' : 'trong kỳ'}
+          </div>
+          <div className="text-3xl font-bold text-blue-700 mt-2">{visitorStats.returningCount}</div>
+        </div>
+        <div className="bg-card rounded-xl border border-amber-200 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-amber-700 opacity-80">
+            <Wifi className="h-5 w-5" /> Đang online
+          </div>
+          <div className="text-3xl font-bold text-amber-700 mt-2">{visitorStats.onlineCount}</div>
+        </div>
+      </div>
+
+      {/* Visitor detail table */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="text-left px-4 py-3">Mã máy</th>
+                <th className="text-left px-4 py-3">Mới / Cũ</th>
+                <th className="text-right px-4 py-3">Số lần vào</th>
+                <th className="text-left px-4 py-3">Lần cuối vào</th>
+                <th className="text-left px-4 py-3">Đang online?</th>
+                <th className="text-left px-4 py-3">Nguồn</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredVisitors.map(v => {
+                const isNew = v.visit_count <= 1;
+                const isOnline = new Date(v.last_seen).getTime() >= now - 2 * 60 * 1000;
+                return (
+                  <tr key={v.id} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-4 py-2 font-mono text-xs">{v.visitor_id.slice(0, 14)}…</td>
+                    <td className="px-4 py-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${isNew ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {isNew ? 'Mới' : 'Cũ'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-right font-semibold">{v.visit_count}</td>
+                    <td className="px-4 py-2 text-muted-foreground">
+                      {format(new Date(v.last_seen), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                    </td>
+                    <td className="px-4 py-2">
+                      {isOnline ? (
+                        <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Online
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground text-xs">{v.source_domain || '(trực tiếp)'}</td>
+                  </tr>
+                );
+              })}
+              {filteredVisitors.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-10 text-muted-foreground">Chưa có dữ liệu khách truy cập.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
