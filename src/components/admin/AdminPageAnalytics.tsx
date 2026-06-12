@@ -176,6 +176,12 @@ const AdminPageAnalytics = () => {
     return () => clearInterval(t);
   }, [fetchData, range]);
 
+  // Keep "now" ticking for online indicator
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(t);
+  }, []);
+
   // Filter by selected domain
   const domainMatcher = DOMAIN_OPTIONS.find(d => d.key === domain)!.match;
   const rows = useMemo(() => allRows.filter(r => domainMatcher(r.domain)), [allRows, domainMatcher]);
