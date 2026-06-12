@@ -56,7 +56,7 @@ import AdminRestaurant from '@/components/admin/AdminRestaurant';
 import AdminFoodSection from '@/components/admin/AdminFoodSection';
 import AdminTranslations from '@/components/admin/AdminTranslations';
 import AdminRoomRevenue from '@/components/admin/AdminRoomRevenue';
-import AdminVisitors from '@/components/admin/AdminVisitors';
+
 
 type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'room-revenue' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'visitors' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant' | 'translations';
 
