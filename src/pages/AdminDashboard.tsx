@@ -551,7 +551,6 @@ const AdminDashboard = () => {
           {tab === 'settings' && <AdminSettings onBackup={handleBackup} onRestore={handleRestore} />}
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
           {tab === 'page-analytics' && <AdminPageAnalytics />}
-          {tab === 'visitors' && <AdminVisitors />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'discount-config' && <AdminDiscountConfig />}
           {tab === 'about-images' && <AdminAboutImages />}
