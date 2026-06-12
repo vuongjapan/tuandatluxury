@@ -12,6 +12,9 @@ import PageTracker from "./components/PageTracker";
 import MobileBottomNav from "./components/MobileBottomNav";
 import TranslatingIndicator from "./components/TranslatingIndicator";
 import AutoTranslateRoot from "./components/AutoTranslateRoot";
+import { useVisitorTracker } from "./hooks/useVisitorTracker";
+
+const VisitorTracker = () => { useVisitorTracker(); return null; };
 
 // Lazy load all non-homepage routes
 const MemberAuth = lazy(() => import("./pages/MemberAuth"));
@@ -109,6 +112,7 @@ const App = () => {
               <BrowserRouter>
                 <ScrollToHash />
                 <PageTracker />
+                <VisitorTracker />
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                     <Route path="/" element={<Index />} />

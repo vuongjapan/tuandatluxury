@@ -4013,6 +4013,45 @@ export type Database = {
         }
         Relationships: []
       }
+      visitors: {
+        Row: {
+          created_at: string
+          first_seen: string
+          id: string
+          last_path: string | null
+          last_seen: string
+          source_domain: string | null
+          updated_at: string
+          user_agent: string | null
+          visit_count: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_seen?: string
+          id?: string
+          last_path?: string | null
+          last_seen?: string
+          source_domain?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          visit_count?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          first_seen?: string
+          id?: string
+          last_path?: string | null
+          last_seen?: string
+          source_domain?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          visit_count?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       voucher_codes: {
         Row: {
           applies_to: string
