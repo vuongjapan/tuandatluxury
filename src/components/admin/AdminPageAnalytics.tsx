@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   BarChart3, Eye, UserPlus, BedDouble, ClipboardList, Loader2, RefreshCw,
   TrendingUp, TrendingDown, Smartphone, Monitor, Tablet, Lightbulb, Clock,
-  Globe, Download, Filter,
+  Globe, Download, Filter, Repeat, Wifi,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
