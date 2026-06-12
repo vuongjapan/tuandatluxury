@@ -302,7 +302,6 @@ const AdminDashboard = () => {
         { id: 'chatbot', icon: MessageSquare, label: '🤖 Chatbot Chị Linh' },
         { id: 'competitor-research', icon: Search, label: '🔍 Nghiên cứu đối thủ' },
         { id: 'page-analytics', icon: BarChart3, label: '📊 Thống kê lượt xem' },
-        { id: 'visitors', icon: Users, label: '👥 Khách mới / khách cũ' },
       ],
     },
     {
