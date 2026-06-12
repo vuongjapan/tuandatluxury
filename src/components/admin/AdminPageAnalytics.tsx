@@ -143,6 +143,8 @@ const AdminPageAnalytics = () => {
   const [bookingsPrev, setBookingsPrev] = useState(0);
   const [roomNames, setRoomNames] = useState<Record<string, string>>({});
   const [updatedAt, setUpdatedAt] = useState<Date>(new Date());
+  const [visitorRows, setVisitorRows] = useState<VisitorRow[]>([]);
+  const [now, setNow] = useState(Date.now());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
