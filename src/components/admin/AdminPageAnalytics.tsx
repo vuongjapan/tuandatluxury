@@ -380,6 +380,29 @@ const AdminPageAnalytics = () => {
     return new Set(top);
   }, [hourly]);
 
+  // Visitor filtering by domain (intersect with page_views visitor_ids)
+  const domainVisitorIds = useMemo(() => new Set(rows.map(r => r.visitor_id).filter(Boolean)), [rows]);
+  const filteredVisitors = useMemo(() => {
+    if (domain === 'all') return visitorRows;
+    return visitorRows.filter(v => domainVisitorIds.has(v.visitor_id));
+  }, [visitorRows, domainVisitorIds, domain]);
+
+  const visitorStats = useMemo(() => {
+    const { start, end } = getRange(range);
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+    const twoMinAgo = now - 2 * 60 * 1000;
+    let newCount = 0, returningCount = 0, onlineCount = 0;
+    filteredVisitors.forEach(v => {
+      const first = new Date(v.first_seen).getTime();
+      const last = new Date(v.last_seen).getTime();
+      if (first >= startMs && first < endMs) newCount++;
+      else if (first < startMs && last >= startMs && last < endMs) returningCount++;
+      if (last >= twoMinAgo) onlineCount++;
+    });
+    return { newCount, returningCount, onlineCount };
+  }, [filteredVisitors, range, now]);
+
   // Insights
   const insights = useMemo(() => {
     const out: string[] = [];
