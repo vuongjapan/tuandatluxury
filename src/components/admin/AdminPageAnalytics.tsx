@@ -601,6 +601,79 @@ const AdminPageAnalytics = () => {
         </div>
       </div>
 
+      {/* Visitor stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-card rounded-xl border border-emerald-200 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-700 opacity-80">
+            <UserPlus className="h-5 w-5" /> Khách mới {range === 'today' ? 'hôm nay' : range === 'yesterday' ? 'hôm qua' : 'trong kỳ'}
+          </div>
+          <div className="text-3xl font-bold text-emerald-700 mt-2">{visitorStats.newCount}</div>
+        </div>
+        <div className="bg-card rounded-xl border border-blue-200 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-blue-700 opacity-80">
+            <Repeat className="h-5 w-5" /> Khách cũ quay lại {range === 'today' ? 'hôm nay' : range === 'yesterday' ? 'hôm qua' : 'trong kỳ'}
+          </div>
+          <div className="text-3xl font-bold text-blue-700 mt-2">{visitorStats.returningCount}</div>
+        </div>
+        <div className="bg-card rounded-xl border border-amber-200 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-amber-700 opacity-80">
+            <Wifi className="h-5 w-5" /> Đang online
+          </div>
+          <div className="text-3xl font-bold text-amber-700 mt-2">{visitorStats.onlineCount}</div>
+        </div>
+      </div>
+
+      {/* Visitor detail table */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="text-left px-4 py-3">Mã máy</th>
+                <th className="text-left px-4 py-3">Mới / Cũ</th>
+                <th className="text-right px-4 py-3">Số lần vào</th>
+                <th className="text-left px-4 py-3">Lần cuối vào</th>
+                <th className="text-left px-4 py-3">Đang online?</th>
+                <th className="text-left px-4 py-3">Nguồn</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredVisitors.map(v => {
+                const isNew = v.visit_count <= 1;
+                const isOnline = new Date(v.last_seen).getTime() >= now - 2 * 60 * 1000;
+                return (
+                  <tr key={v.id} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-4 py-2 font-mono text-xs">{v.visitor_id.slice(0, 14)}…</td>
+                    <td className="px-4 py-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${isNew ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {isNew ? 'Mới' : 'Cũ'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-right font-semibold">{v.visit_count}</td>
+                    <td className="px-4 py-2 text-muted-foreground">
+                      {format(new Date(v.last_seen), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                    </td>
+                    <td className="px-4 py-2">
+                      {isOnline ? (
+                        <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Online
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground text-xs">{v.source_domain || '(trực tiếp)'}</td>
+                  </tr>
+                );
+              })}
+              {filteredVisitors.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-10 text-muted-foreground">Chưa có dữ liệu khách truy cập.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Page-type breakdown bar list */}
       <div className="bg-card rounded-xl border border-border p-5">
         <h3 className="font-semibold mb-3">📍 Lượt xem theo trang</h3>
