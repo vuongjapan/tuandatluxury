@@ -56,8 +56,9 @@ import AdminRestaurant from '@/components/admin/AdminRestaurant';
 import AdminFoodSection from '@/components/admin/AdminFoodSection';
 import AdminTranslations from '@/components/admin/AdminTranslations';
 import AdminRoomRevenue from '@/components/admin/AdminRoomRevenue';
+import AdminVisitors from '@/components/admin/AdminVisitors';
 
-type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'room-revenue' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant' | 'translations';
+type Tab = 'dashboard' | 'bookings' | 'manual-invoice' | 'transport' | 'rooms' | 'room-popup' | 'room-revenue' | 'gallery' | 'food-menu' | 'combos' | 'mandatory-combo' | 'personal-meal-plans' | 'offers' | 'promotion-system' | 'promo-banners' | 'promo-popups' | 'services' | 'intro-section' | 'food-section' | 'members' | 'customers' | 'revenue' | 'blog' | 'special-prices' | 'cuisine-media' | 'amenities' | 'web-discount' | 'vouchers' | 'settings' | 'trash' | 'competitor-research' | 'page-analytics' | 'visitors' | 'reviews' | 'discount-config' | 'about-images' | 'exchange-rates' | 'live' | 'chatbot' | 'pool' | 'restaurant' | 'translations';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -301,6 +302,7 @@ const AdminDashboard = () => {
         { id: 'chatbot', icon: MessageSquare, label: '🤖 Chatbot Chị Linh' },
         { id: 'competitor-research', icon: Search, label: '🔍 Nghiên cứu đối thủ' },
         { id: 'page-analytics', icon: BarChart3, label: '📊 Thống kê lượt xem' },
+        { id: 'visitors', icon: Users, label: '👥 Khách mới / khách cũ' },
       ],
     },
     {
@@ -550,6 +552,7 @@ const AdminDashboard = () => {
           {tab === 'settings' && <AdminSettings onBackup={handleBackup} onRestore={handleRestore} />}
           {tab === 'trash' && <AdminTrash trashItems={trashItems} setTrashItems={setTrashItems} onRefresh={fetchData} />}
           {tab === 'page-analytics' && <AdminPageAnalytics />}
+          {tab === 'visitors' && <AdminVisitors />}
           {tab === 'reviews' && <AdminReviews />}
           {tab === 'discount-config' && <AdminDiscountConfig />}
           {tab === 'about-images' && <AdminAboutImages />}
