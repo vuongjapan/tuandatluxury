@@ -149,12 +149,13 @@ const AdminPageAnalytics = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const { start, end, prevStart, prevEnd } = getRange(range);
-    const [currRes, prevRes, bkCurrRes, bkPrevRes, roomsRes] = await Promise.all([
+    const [currRes, prevRes, bkCurrRes, bkPrevRes, roomsRes, visitorsRes] = await Promise.all([
       supabase.from('page_views').select('*').gte('viewed_at', start.toISOString()).lt('viewed_at', end.toISOString()).order('viewed_at', { ascending: false }).limit(10000),
       supabase.from('page_views').select('*').gte('viewed_at', prevStart.toISOString()).lt('viewed_at', prevEnd.toISOString()).limit(10000),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', start.toISOString()).lt('created_at', end.toISOString()),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', prevStart.toISOString()).lt('created_at', prevEnd.toISOString()),
       supabase.from('rooms').select('id, name_vi').limit(500),
+      supabase.from('visitors').select('id, visitor_id, visit_count, first_seen, last_seen, source_domain, last_path').gte('last_seen', start.toISOString()).lt('last_seen', end.toISOString()).order('last_seen', { ascending: false }).limit(2000),
     ]);
     setAllRows((currRes.data || []) as PV[]);
     setAllPrevRows((prevRes.data || []) as PV[]);
