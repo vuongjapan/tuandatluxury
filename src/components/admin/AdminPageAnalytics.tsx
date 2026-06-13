@@ -40,6 +40,17 @@ interface VisitorRow {
   last_seen: string;
   source_domain: string | null;
   last_path: string | null;
+  country: string | null;
+  country_code: string | null;
+  region: string | null;
+  city: string | null;
+}
+
+// Convert ISO country code → emoji flag
+function flagEmoji(code: string | null | undefined): string {
+  if (!code || code.length !== 2) return '🌐';
+  const cc = code.toUpperCase();
+  return String.fromCodePoint(...cc.split('').map(c => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
 const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
@@ -155,7 +166,8 @@ const AdminPageAnalytics = () => {
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', start.toISOString()).lt('created_at', end.toISOString()),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', prevStart.toISOString()).lt('created_at', prevEnd.toISOString()),
       supabase.from('rooms').select('id, name_vi').limit(500),
-      supabase.from('visitors').select('id, visitor_id, visit_count, first_seen, last_seen, source_domain, last_path').gte('last_seen', start.toISOString()).lt('last_seen', end.toISOString()).order('last_seen', { ascending: false }).limit(2000),
+      // Fetch ALL visitors so we can classify any visitor_id appearing in page_views as new/returning by its visit_count
+      supabase.from('visitors' as any).select('id, visitor_id, visit_count, first_seen, last_seen, source_domain, last_path, country, country_code, region, city').order('last_seen', { ascending: false }).limit(5000),
     ]);
     setAllRows((currRes.data || []) as PV[]);
     setAllPrevRows((prevRes.data || []) as PV[]);
@@ -164,7 +176,7 @@ const AdminPageAnalytics = () => {
     const map: Record<string, string> = {};
     (roomsRes.data || []).forEach((r: any) => { map[r.id] = r.name_vi; });
     setRoomNames(map);
-    setVisitorRows((visitorsRes.data || []) as VisitorRow[]);
+    setVisitorRows((visitorsRes.data || []) as unknown as VisitorRow[]);
     setUpdatedAt(new Date());
     setLoading(false);
   }, [range]);
@@ -380,28 +392,79 @@ const AdminPageAnalytics = () => {
     return new Set(top);
   }, [hourly]);
 
-  // Visitor filtering by domain (intersect with page_views visitor_ids)
-  const domainVisitorIds = useMemo(() => new Set(rows.map(r => r.visitor_id).filter(Boolean)), [rows]);
+  // Visitor lookup map by visitor_id (single source of truth for new/returning classification)
+  const visitorMap = useMemo(() => {
+    const m = new Map<string, VisitorRow>();
+    visitorRows.forEach(v => m.set(v.visitor_id, v));
+    return m;
+  }, [visitorRows]);
+
+  // Visitors active in selected period (= had at least one page_view in `rows`)
+  const activeVisitors = useMemo(() => {
+    const ids = new Set(rows.map(r => r.visitor_id).filter(Boolean) as string[]);
+    return Array.from(ids)
+      .map(id => visitorMap.get(id))
+      .filter((v): v is VisitorRow => !!v);
+  }, [rows, visitorMap]);
+
+  // Visitor table source — domain-aware
   const filteredVisitors = useMemo(() => {
     if (domain === 'all') return visitorRows;
-    return visitorRows.filter(v => domainVisitorIds.has(v.visitor_id));
-  }, [visitorRows, domainVisitorIds, domain]);
+    const ids = new Set(rows.map(r => r.visitor_id).filter(Boolean) as string[]);
+    return visitorRows.filter(v => ids.has(v.visitor_id));
+  }, [visitorRows, rows, domain]);
+
+  // Split views & uniques by new/returning using visit_count from visitors table
+  const newReturning = useMemo(() => {
+    let newViews = 0, returningViews = 0, unknownViews = 0;
+    rows.forEach(r => {
+      const v = r.visitor_id ? visitorMap.get(r.visitor_id) : undefined;
+      if (!v) unknownViews++;
+      else if (v.visit_count <= 1) newViews++;
+      else returningViews++;
+    });
+    const newUsers = activeVisitors.filter(v => v.visit_count <= 1).length;
+    const returningUsers = activeVisitors.filter(v => v.visit_count > 1).length;
+    return { newViews, returningViews, unknownViews, newUsers, returningUsers };
+  }, [rows, visitorMap, activeVisitors]);
 
   const visitorStats = useMemo(() => {
-    const { start, end } = getRange(range);
-    const startMs = start.getTime();
-    const endMs = end.getTime();
     const twoMinAgo = now - 2 * 60 * 1000;
-    let newCount = 0, returningCount = 0, onlineCount = 0;
-    filteredVisitors.forEach(v => {
-      const first = new Date(v.first_seen).getTime();
-      const last = new Date(v.last_seen).getTime();
-      if (first >= startMs && first < endMs) newCount++;
-      else if (first < startMs && last >= startMs && last < endMs) returningCount++;
-      if (last >= twoMinAgo) onlineCount++;
+    const onlineCount = filteredVisitors.filter(v => new Date(v.last_seen).getTime() >= twoMinAgo).length;
+    return {
+      newCount: newReturning.newUsers,
+      returningCount: newReturning.returningUsers,
+      onlineCount,
+    };
+  }, [filteredVisitors, newReturning, now]);
+
+  // Location aggregation (based on visitors active in selected period)
+  const locationStats = useMemo(() => {
+    const total = activeVisitors.length || 1;
+    const vnMap = new Map<string, number>();
+    const otherMap = new Map<string, { code: string | null; count: number }>();
+    let unknown = 0;
+    activeVisitors.forEach(v => {
+      const code = (v.country_code || '').toUpperCase();
+      if (!v.country) { unknown++; return; }
+      if (code === 'VN') {
+        const region = v.region || 'Khác';
+        vnMap.set(region, (vnMap.get(region) || 0) + 1);
+      } else {
+        const key = v.country;
+        const prev = otherMap.get(key);
+        if (prev) prev.count += 1;
+        else otherMap.set(key, { code: v.country_code, count: 1 });
+      }
     });
-    return { newCount, returningCount, onlineCount };
-  }, [filteredVisitors, range, now]);
+    const vn = Array.from(vnMap.entries())
+      .map(([region, count]) => ({ region, count, pct: Math.round((count / total) * 100) }))
+      .sort((a, b) => b.count - a.count);
+    const intl = Array.from(otherMap.entries())
+      .map(([country, v]) => ({ country, code: v.code, count: v.count, pct: Math.round((v.count / total) * 100) }))
+      .sort((a, b) => b.count - a.count);
+    return { vn, intl, total: activeVisitors.length, unknown };
+  }, [activeVisitors]);
 
   // Insights
   const insights = useMemo(() => {
@@ -560,10 +623,22 @@ const AdminPageAnalytics = () => {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Lượt xem', value: stats.totalViews, icon: Eye, color: 'text-blue-600', diff: stats.diffViews },
-          { label: 'Khách unique', value: stats.uniqueVisitors, icon: UserPlus, color: 'text-emerald-600', diff: stats.diffUnique },
-          { label: 'Xem phòng', value: stats.roomViews, icon: BedDouble, color: 'text-amber-600', diff: stats.diffRoom },
-          { label: 'Đặt phòng', value: bookingsCurr, icon: ClipboardList, color: 'text-primary', diff: stats.diffBookings },
+          {
+            label: 'Lượt xem', value: stats.totalViews, icon: Eye, color: 'text-blue-600', diff: stats.diffViews,
+            sub: [
+              { txt: `Khách mới: ${newReturning.newViews.toLocaleString('vi')} lượt`, c: 'text-emerald-600' },
+              { txt: `Khách cũ: ${newReturning.returningViews.toLocaleString('vi')} lượt`, c: 'text-blue-600' },
+            ],
+          },
+          {
+            label: 'Khách unique', value: stats.uniqueVisitors, icon: UserPlus, color: 'text-emerald-600', diff: stats.diffUnique,
+            sub: [
+              { txt: `Khách mới: ${newReturning.newUsers.toLocaleString('vi')} người`, c: 'text-emerald-600' },
+              { txt: `Khách cũ: ${newReturning.returningUsers.toLocaleString('vi')} người`, c: 'text-blue-600' },
+            ],
+          },
+          { label: 'Xem phòng', value: stats.roomViews, icon: BedDouble, color: 'text-amber-600', diff: stats.diffRoom, sub: null },
+          { label: 'Đặt phòng', value: bookingsCurr, icon: ClipboardList, color: 'text-primary', diff: stats.diffBookings, sub: null },
         ].map((s, i) => (
           <div key={i} className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center justify-between mb-2">
@@ -571,6 +646,13 @@ const AdminPageAnalytics = () => {
               <s.icon className={`h-4 w-4 ${s.color}`} />
             </div>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value.toLocaleString('vi')}</p>
+            {s.sub && (
+              <div className="mt-1.5 space-y-0.5">
+                {s.sub.map((row, j) => (
+                  <p key={j} className={`text-[10.5px] leading-tight ${row.c}`}>↳ {row.txt}</p>
+                ))}
+              </div>
+            )}
             <p className={`text-[11px] mt-1 inline-flex items-center gap-1 ${s.diff.up ? 'text-emerald-600' : 'text-red-600'}`}>
               {s.diff.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {s.diff.up ? '+' : ''}{s.diff.val}% so với kỳ trước
@@ -629,12 +711,14 @@ const AdminPageAnalytics = () => {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-3">Mã máy</th>
-                <th className="text-left px-4 py-3">Mới / Cũ</th>
-                <th className="text-right px-4 py-3">Số lần vào</th>
-                <th className="text-left px-4 py-3">Lần cuối vào</th>
-                <th className="text-left px-4 py-3">Đang online?</th>
-                <th className="text-left px-4 py-3">Nguồn</th>
+                <th className="text-left px-3 py-3">Mã máy</th>
+                <th className="text-left px-3 py-3">Mới / Cũ</th>
+                <th className="text-left px-3 py-3">Quốc gia</th>
+                <th className="text-left px-3 py-3">Tỉnh/Thành</th>
+                <th className="text-left px-3 py-3">Thành phố</th>
+                <th className="text-right px-3 py-3">Số lần vào</th>
+                <th className="text-left px-3 py-3">Lần cuối</th>
+                <th className="text-left px-3 py-3">Online?</th>
               </tr>
             </thead>
             <tbody>
@@ -643,35 +727,99 @@ const AdminPageAnalytics = () => {
                 const isOnline = new Date(v.last_seen).getTime() >= now - 2 * 60 * 1000;
                 return (
                   <tr key={v.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-4 py-2 font-mono text-xs">{v.visitor_id.slice(0, 14)}…</td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2 font-mono text-xs">{v.visitor_id.slice(0, 12)}…</td>
+                    <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${isNew ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                         {isNew ? 'Mới' : 'Cũ'}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-right font-semibold">{v.visit_count}</td>
-                    <td className="px-4 py-2 text-muted-foreground">
-                      {format(new Date(v.last_seen), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                    <td className="px-3 py-2 text-xs">
+                      <span className="mr-1">{flagEmoji(v.country_code)}</span>
+                      {v.country || <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{v.region || '—'}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{v.city || '—'}</td>
+                    <td className="px-3 py-2 text-right font-semibold">{v.visit_count}</td>
+                    <td className="px-3 py-2 text-muted-foreground text-xs">
+                      {format(new Date(v.last_seen), 'dd/MM HH:mm', { locale: vi })}
+                    </td>
+                    <td className="px-3 py-2">
                       {isOnline ? (
-                        <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
                           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Online
                         </span>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-muted-foreground text-xs">{v.source_domain || '(trực tiếp)'}</td>
                   </tr>
                 );
               })}
               {filteredVisitors.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-10 text-muted-foreground">Chưa có dữ liệu khách truy cập.</td></tr>
+                <tr><td colSpan={8} className="text-center py-10 text-muted-foreground">Chưa có dữ liệu khách truy cập.</td></tr>
               )}
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Vị trí truy cập */}
+      <div className="bg-card rounded-xl border border-border p-5">
+        <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <Globe className="h-4 w-4" /> Vị trí truy cập
+          <span className="text-xs font-normal text-muted-foreground">
+            ({locationStats.total} khách trong kỳ
+            {locationStats.unknown > 0 ? ` · ${locationStats.unknown} chưa xác định` : ''})
+          </span>
+        </h3>
+        {locationStats.vn.length === 0 && locationStats.intl.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">
+            Chưa có dữ liệu vị trí. (Khách cần truy cập lại để hệ thống ghi nhận vị trí qua IP.)
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">🇻🇳 Việt Nam — theo tỉnh</p>
+              {locationStats.vn.length === 0 ? (
+                <p className="text-xs text-muted-foreground">—</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {locationStats.vn.map(r => (
+                    <div key={r.region} className="grid grid-cols-[140px_1fr_auto] items-center gap-2 text-sm">
+                      <span className="truncate">🇻🇳 {r.region}</span>
+                      <div className="bg-secondary rounded-full h-2 overflow-hidden">
+                        <div className="bg-red-500 h-full" style={{ width: `${r.pct}%` }} />
+                      </div>
+                      <span className="text-xs text-muted-foreground tabular-nums w-24 text-right">
+                        <strong className="text-foreground">{r.count}</strong> người · {r.pct}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">🌍 Quốc tế</p>
+              {locationStats.intl.length === 0 ? (
+                <p className="text-xs text-muted-foreground">—</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {locationStats.intl.map(r => (
+                    <div key={r.country} className="grid grid-cols-[140px_1fr_auto] items-center gap-2 text-sm">
+                      <span className="truncate">{flagEmoji(r.code)} {r.country}</span>
+                      <div className="bg-secondary rounded-full h-2 overflow-hidden">
+                        <div className="bg-blue-500 h-full" style={{ width: `${r.pct}%` }} />
+                      </div>
+                      <span className="text-xs text-muted-foreground tabular-nums w-24 text-right">
+                        <strong className="text-foreground">{r.count}</strong> người · {r.pct}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Page-type breakdown bar list */}
