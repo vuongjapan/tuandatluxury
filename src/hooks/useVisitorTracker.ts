@@ -4,12 +4,48 @@ import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'tdl_visitor_id';
 const SESSION_KEY = 'tdl_visitor_session_bumped';
+const GEO_KEY = 'tdl_visitor_geo'; // cache geo lookup per session
 
 let fpPromise: Promise<any> | null = null;
 const getFp = () => {
   if (!fpPromise) fpPromise = FingerprintJS.load();
   return fpPromise;
 };
+
+interface Geo {
+  country?: string | null;
+  country_code?: string | null;
+  region?: string | null;
+  city?: string | null;
+}
+
+async function fetchGeo(): Promise<Geo> {
+  try {
+    const cached = sessionStorage.getItem(GEO_KEY);
+    if (cached) return JSON.parse(cached) as Geo;
+  } catch { /* ignore */ }
+
+  // ipwho.is — free, HTTPS, no API key, returns country/region/city
+  try {
+    const res = await fetch('https://ipwho.is/?fields=success,country,country_code,region,city', {
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const j = await res.json();
+      if (j && j.success !== false) {
+        const geo: Geo = {
+          country: j.country || null,
+          country_code: j.country_code || null,
+          region: j.region || null,
+          city: j.city || null,
+        };
+        try { sessionStorage.setItem(GEO_KEY, JSON.stringify(geo)); } catch { /* ignore */ }
+        return geo;
+      }
+    }
+  } catch { /* ignore network errors */ }
+  return {};
+}
 
 async function recordVisit() {
   try {
@@ -24,8 +60,8 @@ async function recordVisit() {
     const path = window.location.pathname + window.location.search;
     const ua = navigator.userAgent;
     const source = document.referrer ? new URL(document.referrer).hostname : null;
+    const geo = await fetchGeo();
 
-    // Bump only once per browser session
     const alreadyBumped = sessionStorage.getItem(SESSION_KEY) === visitorId;
 
     const { data: existing } = await supabase
@@ -41,6 +77,10 @@ async function recordVisit() {
         source_domain: source,
         last_path: path,
         user_agent: ua,
+        country: geo.country ?? null,
+        country_code: geo.country_code ?? null,
+        region: geo.region ?? null,
+        city: geo.city ?? null,
       });
     } else {
       await supabase
@@ -51,6 +91,10 @@ async function recordVisit() {
           last_path: path,
           user_agent: ua,
           source_domain: source ?? undefined,
+          country: geo.country ?? undefined,
+          country_code: geo.country_code ?? undefined,
+          region: geo.region ?? undefined,
+          city: geo.city ?? undefined,
         })
         .eq('visitor_id', visitorId);
     }
