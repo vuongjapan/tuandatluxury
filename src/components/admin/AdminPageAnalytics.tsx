@@ -176,7 +176,7 @@ const AdminPageAnalytics = () => {
     const map: Record<string, string> = {};
     (roomsRes.data || []).forEach((r: any) => { map[r.id] = r.name_vi; });
     setRoomNames(map);
-    setVisitorRows((visitorsRes.data || []) as VisitorRow[]);
+    setVisitorRows((visitorsRes.data || []) as unknown as VisitorRow[]);
     setUpdatedAt(new Date());
     setLoading(false);
   }, [range]);
