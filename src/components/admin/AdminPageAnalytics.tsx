@@ -40,6 +40,17 @@ interface VisitorRow {
   last_seen: string;
   source_domain: string | null;
   last_path: string | null;
+  country: string | null;
+  country_code: string | null;
+  region: string | null;
+  city: string | null;
+}
+
+// Convert ISO country code → emoji flag
+function flagEmoji(code: string | null | undefined): string {
+  if (!code || code.length !== 2) return '🌐';
+  const cc = code.toUpperCase();
+  return String.fromCodePoint(...cc.split('').map(c => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
 const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
@@ -155,7 +166,8 @@ const AdminPageAnalytics = () => {
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', start.toISOString()).lt('created_at', end.toISOString()),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', prevStart.toISOString()).lt('created_at', prevEnd.toISOString()),
       supabase.from('rooms').select('id, name_vi').limit(500),
-      supabase.from('visitors').select('id, visitor_id, visit_count, first_seen, last_seen, source_domain, last_path').gte('last_seen', start.toISOString()).lt('last_seen', end.toISOString()).order('last_seen', { ascending: false }).limit(2000),
+      // Fetch ALL visitors so we can classify any visitor_id appearing in page_views as new/returning by its visit_count
+      supabase.from('visitors' as any).select('id, visitor_id, visit_count, first_seen, last_seen, source_domain, last_path, country, country_code, region, city').order('last_seen', { ascending: false }).limit(5000),
     ]);
     setAllRows((currRes.data || []) as PV[]);
     setAllPrevRows((prevRes.data || []) as PV[]);
