@@ -392,28 +392,79 @@ const AdminPageAnalytics = () => {
     return new Set(top);
   }, [hourly]);
 
-  // Visitor filtering by domain (intersect with page_views visitor_ids)
-  const domainVisitorIds = useMemo(() => new Set(rows.map(r => r.visitor_id).filter(Boolean)), [rows]);
+  // Visitor lookup map by visitor_id (single source of truth for new/returning classification)
+  const visitorMap = useMemo(() => {
+    const m = new Map<string, VisitorRow>();
+    visitorRows.forEach(v => m.set(v.visitor_id, v));
+    return m;
+  }, [visitorRows]);
+
+  // Visitors active in selected period (= had at least one page_view in `rows`)
+  const activeVisitors = useMemo(() => {
+    const ids = new Set(rows.map(r => r.visitor_id).filter(Boolean) as string[]);
+    return Array.from(ids)
+      .map(id => visitorMap.get(id))
+      .filter((v): v is VisitorRow => !!v);
+  }, [rows, visitorMap]);
+
+  // Visitor table source — domain-aware
   const filteredVisitors = useMemo(() => {
     if (domain === 'all') return visitorRows;
-    return visitorRows.filter(v => domainVisitorIds.has(v.visitor_id));
-  }, [visitorRows, domainVisitorIds, domain]);
+    const ids = new Set(rows.map(r => r.visitor_id).filter(Boolean) as string[]);
+    return visitorRows.filter(v => ids.has(v.visitor_id));
+  }, [visitorRows, rows, domain]);
+
+  // Split views & uniques by new/returning using visit_count from visitors table
+  const newReturning = useMemo(() => {
+    let newViews = 0, returningViews = 0, unknownViews = 0;
+    rows.forEach(r => {
+      const v = r.visitor_id ? visitorMap.get(r.visitor_id) : undefined;
+      if (!v) unknownViews++;
+      else if (v.visit_count <= 1) newViews++;
+      else returningViews++;
+    });
+    const newUsers = activeVisitors.filter(v => v.visit_count <= 1).length;
+    const returningUsers = activeVisitors.filter(v => v.visit_count > 1).length;
+    return { newViews, returningViews, unknownViews, newUsers, returningUsers };
+  }, [rows, visitorMap, activeVisitors]);
 
   const visitorStats = useMemo(() => {
-    const { start, end } = getRange(range);
-    const startMs = start.getTime();
-    const endMs = end.getTime();
     const twoMinAgo = now - 2 * 60 * 1000;
-    let newCount = 0, returningCount = 0, onlineCount = 0;
-    filteredVisitors.forEach(v => {
-      const first = new Date(v.first_seen).getTime();
-      const last = new Date(v.last_seen).getTime();
-      if (first >= startMs && first < endMs) newCount++;
-      else if (first < startMs && last >= startMs && last < endMs) returningCount++;
-      if (last >= twoMinAgo) onlineCount++;
+    const onlineCount = filteredVisitors.filter(v => new Date(v.last_seen).getTime() >= twoMinAgo).length;
+    return {
+      newCount: newReturning.newUsers,
+      returningCount: newReturning.returningUsers,
+      onlineCount,
+    };
+  }, [filteredVisitors, newReturning, now]);
+
+  // Location aggregation (based on visitors active in selected period)
+  const locationStats = useMemo(() => {
+    const total = activeVisitors.length || 1;
+    const vnMap = new Map<string, number>();
+    const otherMap = new Map<string, { code: string | null; count: number }>();
+    let unknown = 0;
+    activeVisitors.forEach(v => {
+      const code = (v.country_code || '').toUpperCase();
+      if (!v.country) { unknown++; return; }
+      if (code === 'VN') {
+        const region = v.region || 'Khác';
+        vnMap.set(region, (vnMap.get(region) || 0) + 1);
+      } else {
+        const key = v.country;
+        const prev = otherMap.get(key);
+        if (prev) prev.count += 1;
+        else otherMap.set(key, { code: v.country_code, count: 1 });
+      }
     });
-    return { newCount, returningCount, onlineCount };
-  }, [filteredVisitors, range, now]);
+    const vn = Array.from(vnMap.entries())
+      .map(([region, count]) => ({ region, count, pct: Math.round((count / total) * 100) }))
+      .sort((a, b) => b.count - a.count);
+    const intl = Array.from(otherMap.entries())
+      .map(([country, v]) => ({ country, code: v.code, count: v.count, pct: Math.round((v.count / total) * 100) }))
+      .sort((a, b) => b.count - a.count);
+    return { vn, intl, total: activeVisitors.length, unknown };
+  }, [activeVisitors]);
 
   // Insights
   const insights = useMemo(() => {
