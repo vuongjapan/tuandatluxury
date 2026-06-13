@@ -4015,11 +4015,15 @@ export type Database = {
       }
       visitors: {
         Row: {
+          city: string | null
+          country: string | null
+          country_code: string | null
           created_at: string
           first_seen: string
           id: string
           last_path: string | null
           last_seen: string
+          region: string | null
           source_domain: string | null
           updated_at: string
           user_agent: string | null
@@ -4027,11 +4031,15 @@ export type Database = {
           visitor_id: string
         }
         Insert: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           first_seen?: string
           id?: string
           last_path?: string | null
           last_seen?: string
+          region?: string | null
           source_domain?: string | null
           updated_at?: string
           user_agent?: string | null
@@ -4039,11 +4047,15 @@ export type Database = {
           visitor_id: string
         }
         Update: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           first_seen?: string
           id?: string
           last_path?: string | null
           last_seen?: string
+          region?: string | null
           source_domain?: string | null
           updated_at?: string
           user_agent?: string | null
