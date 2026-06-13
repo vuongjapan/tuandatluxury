@@ -623,10 +623,22 @@ const AdminPageAnalytics = () => {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Lượt xem', value: stats.totalViews, icon: Eye, color: 'text-blue-600', diff: stats.diffViews },
-          { label: 'Khách unique', value: stats.uniqueVisitors, icon: UserPlus, color: 'text-emerald-600', diff: stats.diffUnique },
-          { label: 'Xem phòng', value: stats.roomViews, icon: BedDouble, color: 'text-amber-600', diff: stats.diffRoom },
-          { label: 'Đặt phòng', value: bookingsCurr, icon: ClipboardList, color: 'text-primary', diff: stats.diffBookings },
+          {
+            label: 'Lượt xem', value: stats.totalViews, icon: Eye, color: 'text-blue-600', diff: stats.diffViews,
+            sub: [
+              { txt: `Khách mới: ${newReturning.newViews.toLocaleString('vi')} lượt`, c: 'text-emerald-600' },
+              { txt: `Khách cũ: ${newReturning.returningViews.toLocaleString('vi')} lượt`, c: 'text-blue-600' },
+            ],
+          },
+          {
+            label: 'Khách unique', value: stats.uniqueVisitors, icon: UserPlus, color: 'text-emerald-600', diff: stats.diffUnique,
+            sub: [
+              { txt: `Khách mới: ${newReturning.newUsers.toLocaleString('vi')} người`, c: 'text-emerald-600' },
+              { txt: `Khách cũ: ${newReturning.returningUsers.toLocaleString('vi')} người`, c: 'text-blue-600' },
+            ],
+          },
+          { label: 'Xem phòng', value: stats.roomViews, icon: BedDouble, color: 'text-amber-600', diff: stats.diffRoom, sub: null },
+          { label: 'Đặt phòng', value: bookingsCurr, icon: ClipboardList, color: 'text-primary', diff: stats.diffBookings, sub: null },
         ].map((s, i) => (
           <div key={i} className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center justify-between mb-2">
@@ -634,6 +646,13 @@ const AdminPageAnalytics = () => {
               <s.icon className={`h-4 w-4 ${s.color}`} />
             </div>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value.toLocaleString('vi')}</p>
+            {s.sub && (
+              <div className="mt-1.5 space-y-0.5">
+                {s.sub.map((row, j) => (
+                  <p key={j} className={`text-[10.5px] leading-tight ${row.c}`}>↳ {row.txt}</p>
+                ))}
+              </div>
+            )}
             <p className={`text-[11px] mt-1 inline-flex items-center gap-1 ${s.diff.up ? 'text-emerald-600' : 'text-red-600'}`}>
               {s.diff.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {s.diff.up ? '+' : ''}{s.diff.val}% so với kỳ trước
