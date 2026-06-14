@@ -166,17 +166,73 @@ const AdminPageAnalytics = () => {
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', start.toISOString()).lt('created_at', end.toISOString()),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', prevStart.toISOString()).lt('created_at', prevEnd.toISOString()),
       supabase.from('rooms').select('id, name_vi').limit(500),
-      // Fetch ALL visitors so we can classify any visitor_id appearing in page_views as new/returning by its visit_count
       supabase.from('visitors' as any).select('id, visitor_id, visit_count, first_seen, last_seen, source_domain, last_path, country, country_code, region, city').order('last_seen', { ascending: false }).limit(5000),
     ]);
-    setAllRows((currRes.data || []) as PV[]);
+
+    const currData = (currRes.data || []) as PV[];
+    setAllRows(currData);
     setAllPrevRows((prevRes.data || []) as PV[]);
     setBookingsCurr(bkCurrRes.count || 0);
     setBookingsPrev(bkPrevRes.count || 0);
     const map: Record<string, string> = {};
     (roomsRes.data || []).forEach((r: any) => { map[r.id] = r.name_vi; });
     setRoomNames(map);
-    setVisitorRows((visitorsRes.data || []) as unknown as VisitorRow[]);
+
+    // ── Single source of truth ──
+    // Synthesize visitor rows directly from page_views for every visitor_id active in
+    // the current period. Visit count = distinct session_ids across all time.
+    // This guarantees Khách mới/cũ stay in sync with Lượt xem & Khách unique.
+    const activeIds = Array.from(new Set(currData.map(r => r.visitor_id).filter(Boolean) as string[]));
+    const histAgg = new Map<string, { first: string; last: string; sessions: Set<string>; domain: string | null; path: string | null }>();
+    if (activeIds.length > 0) {
+      const chunkSize = 100;
+      const chunks: string[][] = [];
+      for (let i = 0; i < activeIds.length; i += chunkSize) chunks.push(activeIds.slice(i, i + chunkSize));
+      const histResults = await Promise.all(chunks.map(c =>
+        supabase.from('page_views')
+          .select('visitor_id, viewed_at, session_id, domain, page_path')
+          .in('visitor_id', c)
+          .limit(20000)
+      ));
+      histResults.forEach(hr => {
+        (hr.data || []).forEach((h: any) => {
+          const id = h.visitor_id as string;
+          let rec = histAgg.get(id);
+          if (!rec) {
+            rec = { first: h.viewed_at, last: h.viewed_at, sessions: new Set(), domain: h.domain || null, path: h.page_path || null };
+            histAgg.set(id, rec);
+          }
+          if (h.viewed_at < rec.first) rec.first = h.viewed_at;
+          if (h.viewed_at > rec.last) { rec.last = h.viewed_at; rec.domain = h.domain || rec.domain; rec.path = h.page_path || rec.path; }
+          if (h.session_id) rec.sessions.add(h.session_id);
+        });
+      });
+    }
+
+    // Overlay geo info from visitors table where available
+    const realByVid = new Map<string, any>();
+    (visitorsRes.data || []).forEach((v: any) => realByVid.set(v.visitor_id, v));
+
+    const merged: VisitorRow[] = activeIds.map(id => {
+      const agg = histAgg.get(id);
+      const real = realByVid.get(id);
+      const visitCount = agg ? Math.max(agg.sessions.size, 1) : (real?.visit_count ?? 1);
+      return {
+        id: real?.id || id,
+        visitor_id: id,
+        visit_count: visitCount,
+        first_seen: agg?.first || real?.first_seen || new Date().toISOString(),
+        last_seen: agg?.last || real?.last_seen || new Date().toISOString(),
+        source_domain: real?.source_domain || agg?.domain || null,
+        last_path: real?.last_path || agg?.path || null,
+        country: real?.country || null,
+        country_code: real?.country_code || null,
+        region: real?.region || null,
+        city: real?.city || null,
+      };
+    });
+
+    setVisitorRows(merged);
     setUpdatedAt(new Date());
     setLoading(false);
   }, [range]);
