@@ -829,6 +829,10 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
     bold: true, valueColor: [0.55, 0.41, 0.08], size: 13,
   });
 
+  // Guest note
+  const guestNote2 = extractGuestNote(booking.guest_notes);
+  if (guestNote2) ctx = drawGuestNote(ctx, guestNote2);
+
   // Map + footer flow with content
   ctx = drawMapSection(ctx);
   ctx = drawFooter(ctx);
