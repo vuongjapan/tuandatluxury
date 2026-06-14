@@ -597,6 +597,10 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     drawText(ctx, `Số tiền: ${fmt(deposit)}`, { size: 10, bold: true });
     ctx.y -= 16;
   }
+  // Guest note
+  const guestNote1 = extractGuestNote(booking.guest_notes);
+  if (guestNote1) ctx = drawGuestNote(ctx, guestNote1);
+
   // Flow-based map + footer (replaces old fixed-position blocks)
   ctx = drawCompactMap(ctx);
   ctx = drawFooter(ctx);
