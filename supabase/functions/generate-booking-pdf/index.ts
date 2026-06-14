@@ -340,6 +340,19 @@ function parseChildren(notes?: string | null): number {
   return m ? parseInt(m[1], 10) : 0;
 }
 
+// Extract free-text note from guest_notes, stripping the children-count line
+function extractGuestNote(notes?: string | null): string | null {
+  if (!notes) return null;
+  // Remove the structured children line like "[Khách: 2 người lớn · 1 trẻ em]"
+  // Also handles "Khách: X người lớn" without brackets
+  const cleaned = String(notes)
+    .replace(/\[?Khách:\s*\d+\s*người lớn[^\]]*\]?/gi, '')
+    .replace(/·\s*\d+\s*tr[ẻe]\s*em/gi, '')
+    .replace(/\n+/g, '\n')
+    .trim();
+  return cleaned.length > 0 ? cleaned : null;
+}
+
 // =========================================
 // PDF 1: SUMMARY
 // =========================================
