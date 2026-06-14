@@ -297,6 +297,33 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
   return ctx;
 }
 
+function drawGuestNote(ctx: DrawCtx, note: string): DrawCtx {
+  const lines = note.split('\n');
+  const lineHeight = 14;
+  const titleHeight = 22;
+  const padding = 10;
+  const totalHeight = titleHeight + lines.length * lineHeight + padding * 2;
+
+  ctx = ensureSpace(ctx, totalHeight + 8);
+  const boxTop = ctx.y;
+  ctx = drawBox(ctx, totalHeight, [0.98, 0.97, 0.92], [0.85, 0.74, 0.5]);
+
+  ctx.page.drawText('📝 Ghi chú của khách:', {
+    x: ctx.margin, y: boxTop, size: 11, font: ctx.fontBold, color: rgb(0.55, 0.41, 0.08),
+  });
+
+  let textY = boxTop - titleHeight + 4;
+  for (const line of lines) {
+    ctx.page.drawText(line.trim(), {
+      x: ctx.margin, y: textY, size: 10, font: ctx.font, color: rgb(0.25, 0.25, 0.25),
+    });
+    textY -= lineHeight;
+  }
+
+  ctx.y = boxTop - totalHeight - 8;
+  return ctx;
+}
+
 // Compact one-line map button — flows right after content, never overlaps.
 function drawCompactMap(ctx: DrawCtx): DrawCtx {
   const boxH = 44;
