@@ -4171,11 +4171,26 @@ export type Database = {
         Args: { _email: string; _phone: string; _user_id: string }
         Returns: number
       }
+      track_visitor: {
+        Args: {
+          p_bump?: boolean
+          p_city?: string
+          p_country?: string
+          p_country_code?: string
+          p_path?: string
+          p_region?: string
+          p_source_domain?: string
+          p_user_agent?: string
+          p_visitor_id: string
+        }
+        Returns: undefined
+      }
       use_meal_bypass_code: {
         Args: { p_code: string; p_date: string }
         Returns: Json
       }
       validate_voucher_code: { Args: { p_code: string }; Returns: Json }
+      visitor_heartbeat: { Args: { p_visitor_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
