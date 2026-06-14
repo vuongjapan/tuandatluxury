@@ -56,6 +56,7 @@ async function recordVisit() {
       visitorId = r.visitorId;
       localStorage.setItem(STORAGE_KEY, visitorId);
     }
+    if (!visitorId || visitorId.length < 8) return;
 
     const path = window.location.pathname + window.location.search;
     const ua = navigator.userAgent;
@@ -64,40 +65,17 @@ async function recordVisit() {
 
     const alreadyBumped = sessionStorage.getItem(SESSION_KEY) === visitorId;
 
-    const { data: existing } = await supabase
-      .from('visitors' as any)
-      .select('id, visit_count')
-      .eq('visitor_id', visitorId)
-      .maybeSingle();
-
-    if (!existing) {
-      await supabase.from('visitors' as any).insert({
-        visitor_id: visitorId,
-        visit_count: 1,
-        source_domain: source,
-        last_path: path,
-        user_agent: ua,
-        country: geo.country ?? null,
-        country_code: geo.country_code ?? null,
-        region: geo.region ?? null,
-        city: geo.city ?? null,
-      });
-    } else {
-      await supabase
-        .from('visitors' as any)
-        .update({
-          visit_count: alreadyBumped ? (existing as any).visit_count : (existing as any).visit_count + 1,
-          last_seen: new Date().toISOString(),
-          last_path: path,
-          user_agent: ua,
-          source_domain: source ?? undefined,
-          country: geo.country ?? undefined,
-          country_code: geo.country_code ?? undefined,
-          region: geo.region ?? undefined,
-          city: geo.city ?? undefined,
-        })
-        .eq('visitor_id', visitorId);
-    }
+    await supabase.rpc('track_visitor' as any, {
+      p_visitor_id: visitorId,
+      p_path: path,
+      p_user_agent: ua,
+      p_source_domain: source,
+      p_country: geo.country ?? null,
+      p_country_code: geo.country_code ?? null,
+      p_region: geo.region ?? null,
+      p_city: geo.city ?? null,
+      p_bump: !alreadyBumped,
+    });
 
     sessionStorage.setItem(SESSION_KEY, visitorId);
   } catch (e) {
@@ -108,11 +86,8 @@ async function recordVisit() {
 /** Heartbeat: ping last_seen every 30s so "đang online" stays accurate. */
 async function heartbeat() {
   const visitorId = localStorage.getItem(STORAGE_KEY);
-  if (!visitorId) return;
-  await supabase
-    .from('visitors' as any)
-    .update({ last_seen: new Date().toISOString() })
-    .eq('visitor_id', visitorId);
+  if (!visitorId || visitorId.length < 8) return;
+  await supabase.rpc('visitor_heartbeat' as any, { p_visitor_id: visitorId });
 }
 
 export function useVisitorTracker() {
