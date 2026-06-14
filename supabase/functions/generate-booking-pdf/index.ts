@@ -297,6 +297,33 @@ function drawMapSection(ctx: DrawCtx): DrawCtx {
   return ctx;
 }
 
+function drawGuestNote(ctx: DrawCtx, note: string): DrawCtx {
+  const lines = note.split('\n');
+  const lineHeight = 14;
+  const titleHeight = 22;
+  const padding = 10;
+  const totalHeight = titleHeight + lines.length * lineHeight + padding * 2;
+
+  ctx = ensureSpace(ctx, totalHeight + 8);
+  const boxTop = ctx.y;
+  ctx = drawBox(ctx, totalHeight, [0.98, 0.97, 0.92], [0.85, 0.74, 0.5]);
+
+  ctx.page.drawText('📝 Ghi chú của khách:', {
+    x: ctx.margin, y: boxTop, size: 11, font: ctx.fontBold, color: rgb(0.55, 0.41, 0.08),
+  });
+
+  let textY = boxTop - titleHeight + 4;
+  for (const line of lines) {
+    ctx.page.drawText(line.trim(), {
+      x: ctx.margin, y: textY, size: 10, font: ctx.font, color: rgb(0.25, 0.25, 0.25),
+    });
+    textY -= lineHeight;
+  }
+
+  ctx.y = boxTop - totalHeight - 8;
+  return ctx;
+}
+
 // Compact one-line map button — flows right after content, never overlaps.
 function drawCompactMap(ctx: DrawCtx): DrawCtx {
   const boxH = 44;
@@ -338,6 +365,19 @@ function parseChildren(notes?: string | null): number {
   if (!notes) return 0;
   const m = String(notes).match(/(\d+)\s*tr[ẻe]\s*em/i);
   return m ? parseInt(m[1], 10) : 0;
+}
+
+// Extract free-text note from guest_notes, stripping the children-count line
+function extractGuestNote(notes?: string | null): string | null {
+  if (!notes) return null;
+  // Remove the structured children line like "[Khách: 2 người lớn · 1 trẻ em]"
+  // Also handles "Khách: X người lớn" without brackets
+  const cleaned = String(notes)
+    .replace(/\[?Khách:\s*\d+\s*người lớn[^\]]*\]?/gi, '')
+    .replace(/·\s*\d+\s*tr[ẻe]\s*em/gi, '')
+    .replace(/\n+/g, '\n')
+    .trim();
+  return cleaned.length > 0 ? cleaned : null;
 }
 
 // =========================================
@@ -557,6 +597,10 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
     drawText(ctx, `Số tiền: ${fmt(deposit)}`, { size: 10, bold: true });
     ctx.y -= 16;
   }
+  // Guest note
+  const guestNote1 = extractGuestNote(booking.guest_notes);
+  if (guestNote1) ctx = drawGuestNote(ctx, guestNote1);
+
   // Flow-based map + footer (replaces old fixed-position blocks)
   ctx = drawCompactMap(ctx);
   ctx = drawFooter(ctx);
@@ -784,6 +828,10 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
   ctx = drawRow(ctx, "TỔNG CỘNG:", fmt(booking.total_price_vnd), {
     bold: true, valueColor: [0.55, 0.41, 0.08], size: 13,
   });
+
+  // Guest note
+  const guestNote2 = extractGuestNote(booking.guest_notes);
+  if (guestNote2) ctx = drawGuestNote(ctx, guestNote2);
 
   // Map + footer flow with content
   ctx = drawMapSection(ctx);
