@@ -4,7 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Users, Crown, Star } from 'lucide-react';
+import { Search, Users, Crown, Star, Award } from 'lucide-react';
+import { useDiscountConfig, getVipTierInfo } from '@/hooks/useDiscountConfig';
 
 interface Member {
   user_id: string;
@@ -12,7 +13,7 @@ interface Member {
   phone: string | null;
   email: string;
   booking_count: number;
-  tier: 'normal' | 'vip' | 'super_vip';
+  tier: 'normal' | 'vip1' | 'vip2' | 'vip3';
   total_spent: number;
   last_booking: string | null;
   registered: boolean;
@@ -20,35 +21,42 @@ interface Member {
 }
 
 const TIER_LABELS: Record<string, string> = {
-  normal: 'Thành viên',
-  vip: 'VIP',
-  super_vip: 'Siêu VIP',
+  normal: '⚪ Thành viên',
+  vip1: '🥉 VIP Hạng 1',
+  vip2: '🥈 VIP Hạng 2',
+  vip3: '🥇 VIP Hạng 3',
 };
 
 const TIER_COLORS: Record<string, string> = {
   normal: 'bg-muted text-muted-foreground',
-  vip: 'bg-primary/20 text-primary',
-  super_vip: 'bg-amber-100 text-amber-800',
+  vip1: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200',
+  vip2: 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100',
+  vip3: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
 };
 
 const TIER_ICONS: Record<string, any> = {
   normal: Users,
-  vip: Star,
-  super_vip: Crown,
+  vip1: Award,
+  vip2: Star,
+  vip3: Crown,
 };
-
-function getTier(count: number): string {
-  if (count >= 10) return 'super_vip';
-  if (count >= 3) return 'vip';
-  return 'normal';
-}
 
 const AdminMembers = () => {
   const { toast } = useToast();
+  const { config: vipCfg } = useDiscountConfig();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterTier, setFilterTier] = useState<string>('all');
+
+  const getTierKey = (count: number): Member['tier'] => {
+    const info = getVipTierInfo(vipCfg, count);
+    if (info.tier === 3) return 'vip3';
+    if (info.tier === 2) return 'vip2';
+    if (info.tier === 1) return 'vip1';
+    return 'normal';
+  };
+
 
   const fetchMembers = async () => {
     setLoading(true);
