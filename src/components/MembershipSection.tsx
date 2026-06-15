@@ -50,21 +50,25 @@ const MembershipSection = () => {
                   <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <span>
                     {isVi
-                      ? <>Đặt từ <b>{config.vip_tier1_bookings}</b> lần: Giảm <b className="text-primary">{config.vip_tier1_discount}%</b> tiền phòng</>
-                      : <>From <b>{config.vip_tier1_bookings}</b> bookings: <b className="text-primary">{config.vip_tier1_discount}%</b> off room</>}
+                      ? <>🥉 <b>VIP Hạng 1</b> (từ <b>{config.vip_tier1_bookings}</b> lần): giảm <b className="text-primary">{config.vip_tier1_discount}%</b> tiền phòng</>
+                      : <>🥉 <b>VIP Tier 1</b> (from <b>{config.vip_tier1_bookings}</b> bookings): <b className="text-primary">{config.vip_tier1_discount}%</b> off room</>}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <span>
                     {isVi
-                      ? <>Đặt từ <b>{config.vip_tier2_bookings}</b> lần: Giảm <b className="text-primary">{config.vip_tier2_discount}%</b> tiền phòng</>
-                      : <>From <b>{config.vip_tier2_bookings}</b> bookings: <b className="text-primary">{config.vip_tier2_discount}%</b> off room</>}
+                      ? <>🥈 <b>VIP Hạng 2</b> (từ <b>{config.vip_tier2_bookings}</b> lần): giảm <b className="text-primary">{config.vip_tier2_discount}%</b> tiền phòng</>
+                      : <>🥈 <b>VIP Tier 2</b> (from <b>{config.vip_tier2_bookings}</b> bookings): <b className="text-primary">{config.vip_tier2_discount}%</b> off room</>}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <span>{isVi ? 'Ưu tiên phòng đẹp · Check-in sớm' : 'Priority room selection · Early check-in'}</span>
+                  <span>
+                    {isVi
+                      ? <>🥇 <b>VIP Hạng 3</b> (từ <b>{config.vip_tier3_bookings}</b> lần): giảm <b className="text-primary">{config.vip_tier3_discount}%</b> tiền phòng</>
+                      : <>🥇 <b>VIP Tier 3</b> (from <b>{config.vip_tier3_bookings}</b> bookings): <b className="text-primary">{config.vip_tier3_discount}%</b> off room</>}
+                  </span>
                 </li>
               </ul>
               <p className="text-xs text-muted-foreground mb-4 italic">
