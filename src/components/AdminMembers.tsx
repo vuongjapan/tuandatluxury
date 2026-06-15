@@ -4,7 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Users, Crown, Star } from 'lucide-react';
+import { Search, Users, Crown, Star, Award } from 'lucide-react';
+import { useDiscountConfig, getVipTierInfo } from '@/hooks/useDiscountConfig';
 
 interface Member {
   user_id: string;
@@ -12,7 +13,7 @@ interface Member {
   phone: string | null;
   email: string;
   booking_count: number;
-  tier: 'normal' | 'vip' | 'super_vip';
+  tier: 'normal' | 'vip1' | 'vip2' | 'vip3';
   total_spent: number;
   last_booking: string | null;
   registered: boolean;
@@ -20,35 +21,42 @@ interface Member {
 }
 
 const TIER_LABELS: Record<string, string> = {
-  normal: 'Thành viên',
-  vip: 'VIP',
-  super_vip: 'Siêu VIP',
+  normal: '⚪ Thành viên',
+  vip1: '🥉 VIP Hạng 1',
+  vip2: '🥈 VIP Hạng 2',
+  vip3: '🥇 VIP Hạng 3',
 };
 
 const TIER_COLORS: Record<string, string> = {
   normal: 'bg-muted text-muted-foreground',
-  vip: 'bg-primary/20 text-primary',
-  super_vip: 'bg-amber-100 text-amber-800',
+  vip1: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200',
+  vip2: 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100',
+  vip3: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
 };
 
 const TIER_ICONS: Record<string, any> = {
   normal: Users,
-  vip: Star,
-  super_vip: Crown,
+  vip1: Award,
+  vip2: Star,
+  vip3: Crown,
 };
-
-function getTier(count: number): string {
-  if (count >= 10) return 'super_vip';
-  if (count >= 3) return 'vip';
-  return 'normal';
-}
 
 const AdminMembers = () => {
   const { toast } = useToast();
+  const { config: vipCfg } = useDiscountConfig();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterTier, setFilterTier] = useState<string>('all');
+
+  const getTierKey = (count: number): Member['tier'] => {
+    const info = getVipTierInfo(vipCfg, count);
+    if (info.tier === 3) return 'vip3';
+    if (info.tier === 2) return 'vip2';
+    if (info.tier === 1) return 'vip1';
+    return 'normal';
+  };
+
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -106,7 +114,7 @@ const AdminMembers = () => {
           phone: p.phone || stats?.phone || null,
           email,
           booking_count: bookingCount,
-          tier: getTier(bookingCount) as any,
+          tier: getTierKey(bookingCount),
           total_spent: stats?.totalSpent || 0,
           last_booking: stats?.lastBooking || null,
           registered: true,
@@ -123,7 +131,7 @@ const AdminMembers = () => {
             phone: stats.phone,
             email,
             booking_count: stats.bookingCount,
-            tier: getTier(stats.bookingCount) as any,
+            tier: getTierKey(stats.bookingCount),
             total_spent: stats.totalSpent,
             last_booking: stats.lastBooking,
             registered: false,
@@ -160,20 +168,22 @@ const AdminMembers = () => {
     total: members.length,
     registered: members.filter(m => m.registered).length,
     normal: members.filter(m => m.tier === 'normal').length,
-    vip: members.filter(m => m.tier === 'vip').length,
-    super_vip: members.filter(m => m.tier === 'super_vip').length,
+    vip1: members.filter(m => m.tier === 'vip1').length,
+    vip2: members.filter(m => m.tier === 'vip2').length,
+    vip3: members.filter(m => m.tier === 'vip3').length,
   };
 
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {[
           { label: 'Tổng khách hàng', value: stats.total, icon: Users, color: 'text-blue-600' },
           { label: 'Đã đăng ký', value: stats.registered, icon: Users, color: 'text-green-600' },
           { label: 'Thành viên', value: stats.normal, icon: Users, color: 'text-muted-foreground' },
-          { label: 'VIP', value: stats.vip, icon: Star, color: 'text-primary' },
-          { label: 'Siêu VIP', value: stats.super_vip, icon: Crown, color: 'text-amber-600' },
+          { label: '🥉 VIP H1', value: stats.vip1, icon: Award, color: 'text-orange-600' },
+          { label: '🥈 VIP H2', value: stats.vip2, icon: Star, color: 'text-slate-600' },
+          { label: '🥇 VIP H3', value: stats.vip3, icon: Crown, color: 'text-amber-600' },
         ].map((stat, i) => (
           <div key={i} className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center justify-between mb-2">
@@ -198,7 +208,7 @@ const AdminMembers = () => {
             />
           </div>
           <div className="flex gap-2 flex-wrap">
-            {['all', 'normal', 'vip', 'super_vip'].map(tier => (
+            {['all', 'normal', 'vip1', 'vip2', 'vip3'].map(tier => (
               <Button
                 key={tier}
                 variant={filterTier === tier ? 'default' : 'outline'}
@@ -269,8 +279,8 @@ const AdminMembers = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        💡 Hạng thành viên tự động xác định: Thường (0-2 đặt phòng), VIP (3-9), Siêu VIP (10+).
-        Giảm giá tự động: Thường 5%, VIP 10%, Siêu VIP 15%.
+        💡 Hạng VIP & % giảm giá lấy động từ trang <strong>Ưu đãi VIP & Đoàn</strong>.
+        Hiện tại: 🥉 H1 ≥ {vipCfg.vip_tier1_bookings} ({vipCfg.vip_tier1_discount}%) · 🥈 H2 ≥ {vipCfg.vip_tier2_bookings} ({vipCfg.vip_tier2_discount}%) · 🥇 H3 ≥ {vipCfg.vip_tier3_bookings} ({vipCfg.vip_tier3_discount}%). Chỉ áp dụng tiền phòng.
       </p>
     </div>
   );

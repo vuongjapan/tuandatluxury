@@ -38,7 +38,7 @@ import { useRooms } from '@/hooks/useRooms';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useDining } from '@/hooks/useDining';
 import { useMandatoryComboDates } from '@/hooks/useMandatoryComboDates';
-import { useDiscountConfig, useUserBookingCount, getVipDiscountPercent } from '@/hooks/useDiscountConfig';
+import { useDiscountConfig, useUserBookingCount, getVipDiscountPercent, getVipTierInfo } from '@/hooks/useDiscountConfig';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -385,10 +385,11 @@ const Booking = () => {
   const promoDiscountPercent = 0;
 
   // VIP discount: applies to ROOM ONLY, based on the user's confirmed booking history.
-  const memberDiscountPercent = useMemo(
-    () => (user ? getVipDiscountPercent(discountConfig, userBookingCount) : 0),
+  const vipTierInfo = useMemo(
+    () => (user ? getVipTierInfo(discountConfig, userBookingCount) : { tier: 0 as const, percent: 0, label: 'Thành viên' }),
     [user, discountConfig, userBookingCount]
   );
+  const memberDiscountPercent = vipTierInfo.percent;
   const memberDiscountAmount = useMemo(
     () => (memberDiscountPercent > 0 ? Math.round(roomTotal * memberDiscountPercent / 100) : 0),
     [memberDiscountPercent, roomTotal]
@@ -957,7 +958,7 @@ const Booking = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mb-6 bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
               <p className="text-sm text-foreground">
-                🏅 {pick(`Ưu đãi VIP: -${memberDiscountPercent}% tiền phòng (đã đặt ${userBookingCount} lần)`, `VIP discount: -${memberDiscountPercent}% on room (${userBookingCount} bookings)`)}
+                🏅 {pick(`${vipTierInfo.label}: giảm ${memberDiscountPercent}% tiền phòng (${userBookingCount} lần đặt)`, `${vipTierInfo.label}: -${memberDiscountPercent}% on room (${userBookingCount} bookings)`)}
               </p>
             </motion.div>
           )}
@@ -1487,7 +1488,7 @@ const Booking = () => {
                             {appliedPromotions.map((p, i) => (
                               <div key={i} className="flex justify-between text-primary"><span>{p.name}</span><span>-{formatPrice(p.amount)}</span></div>
                             ))}
-                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🏅 {pick('Ưu đãi VIP', 'VIP')} ({memberDiscountPercent}% {pick('tiền phòng', 'on room')})</span><span>-{formatPrice(memberDiscountAmount)}</span></div>}
+                            {memberDiscountPercent > 0 && <div className="flex justify-between text-primary"><span>🏅 {pick(`Ưu đãi ${vipTierInfo.label} -${memberDiscountPercent}% tiền phòng`, `${vipTierInfo.label} -${memberDiscountPercent}% on room`)}</span><span>-{formatPrice(memberDiscountAmount)}</span></div>}
                             {discountCodeAmount > 0 && appliedDiscountCodes.length > 0 && (
                               <div className="flex justify-between text-primary">
                                 <span>🎟️ {appliedDiscountCodes.length === 1 ? `Mã ${appliedDiscountCodes[0].code}` : `${appliedDiscountCodes.length} ${pick('mã', 'codes')}: ${appliedDiscountCodes.map(c => c.code).join(', ')}`}</span>

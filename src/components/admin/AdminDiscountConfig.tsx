@@ -51,6 +51,8 @@ const AdminDiscountConfig = () => {
       vip_tier1_discount: form.vip_tier1_discount,
       vip_tier2_bookings: form.vip_tier2_bookings,
       vip_tier2_discount: form.vip_tier2_discount,
+      vip_tier3_bookings: form.vip_tier3_bookings,
+      vip_tier3_discount: form.vip_tier3_discount,
       group_min_people: form.group_min_people,
       group_discount_min: form.group_discount_min,
       group_discount_max: form.group_discount_max,
@@ -62,7 +64,7 @@ const AdminDiscountConfig = () => {
       toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
     } else {
       qc.invalidateQueries({ queryKey: ['discount-config'] });
-      toast({ title: 'Đã lưu', description: 'Web và email tự cập nhật ngay' });
+      toast({ title: 'Đã lưu', description: 'Web, email và PDF tự cập nhật ngay' });
     }
   };
 
@@ -76,36 +78,44 @@ const AdminDiscountConfig = () => {
       </div>
 
       {/* VIP */}
-      <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <h3 className="font-semibold flex items-center gap-2">
-          <Award className="h-4 w-4 text-primary" /> Thành viên VIP
+          <Award className="h-4 w-4 text-primary" /> Ưu đãi VIP (3 hạng)
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30">
-          <div>
-            <Label>Hạng 1 — Số lần đặt</Label>
-            <Input type="number" min={1} value={form.vip_tier1_bookings} onChange={setNum('vip_tier1_bookings')} />
-          </div>
-          <div>
-            <Label>Hạng 1 — Giảm % tiền phòng</Label>
-            <Input type="number" min={0} max={100} value={form.vip_tier1_discount} onChange={setNum('vip_tier1_discount')} />
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="px-3 py-2 text-left font-semibold">Hạng</th>
+                <th className="px-3 py-2 text-left font-semibold">Số lần đặt (từ)</th>
+                <th className="px-3 py-2 text-left font-semibold">Giảm % tiền phòng</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              <tr>
+                <td className="px-3 py-2 font-medium">🥉 Hạng 1</td>
+                <td className="px-3 py-2"><Input type="number" min={1} value={form.vip_tier1_bookings} onChange={setNum('vip_tier1_bookings')} className="w-24" /></td>
+                <td className="px-3 py-2"><Input type="number" min={0} max={100} value={form.vip_tier1_discount} onChange={setNum('vip_tier1_discount')} className="w-24" /></td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 font-medium">🥈 Hạng 2</td>
+                <td className="px-3 py-2"><Input type="number" min={1} value={form.vip_tier2_bookings} onChange={setNum('vip_tier2_bookings')} className="w-24" /></td>
+                <td className="px-3 py-2"><Input type="number" min={0} max={100} value={form.vip_tier2_discount} onChange={setNum('vip_tier2_discount')} className="w-24" /></td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 font-medium">🥇 Hạng 3</td>
+                <td className="px-3 py-2"><Input type="number" min={1} value={form.vip_tier3_bookings} onChange={setNum('vip_tier3_bookings')} className="w-24" /></td>
+                <td className="px-3 py-2"><Input type="number" min={0} max={100} value={form.vip_tier3_discount} onChange={setNum('vip_tier3_discount')} className="w-24" /></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30">
-          <div>
-            <Label>Hạng 2 — Số lần đặt</Label>
-            <Input type="number" min={1} value={form.vip_tier2_bookings} onChange={setNum('vip_tier2_bookings')} />
-          </div>
-          <div>
-            <Label>Hạng 2 — Giảm % tiền phòng</Label>
-            <Input type="number" min={0} max={100} value={form.vip_tier2_discount} onChange={setNum('vip_tier2_discount')} />
-          </div>
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+          <p><strong>ⓘ Lưu ý:</strong> Chỉ áp dụng cho <strong>tiền phòng</strong>, không áp dụng tiền ăn/combo/dịch vụ.</p>
+          <p>Khi khách đủ điều kiện nhiều hạng, hệ thống tự áp dụng <strong>hạng cao nhất</strong>.</p>
         </div>
-
-        <p className="text-xs text-muted-foreground italic">
-          ⓘ Giảm chỉ áp dụng cho tiền phòng, không áp dụng đồ ăn.
-        </p>
       </div>
 
       {/* Group */}

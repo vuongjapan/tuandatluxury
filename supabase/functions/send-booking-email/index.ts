@@ -735,6 +735,26 @@ serve(async (req) => {
     // Welcome member email
     if (body.type === 'welcome_member') {
       const { member_name, member_email, member_phone } = body;
+
+      // Fetch VIP tier config so the email auto-reflects admin changes (no hardcode)
+      const vipCfg = { tier1_from: 2, tier1_pct: 5, tier2_from: 3, tier2_pct: 8, tier3_from: 5, tier3_pct: 10 };
+      try {
+        const sbUrl = Deno.env.get('SUPABASE_URL');
+        const sbKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        if (sbUrl && sbKey) {
+          const sb = createClient(sbUrl, sbKey);
+          const { data: cfg } = await sb.from('discount_config').select('vip_tier1_bookings,vip_tier1_discount,vip_tier2_bookings,vip_tier2_discount,vip_tier3_bookings,vip_tier3_discount').limit(1).maybeSingle();
+          if (cfg) {
+            vipCfg.tier1_from = cfg.vip_tier1_bookings;
+            vipCfg.tier1_pct = cfg.vip_tier1_discount;
+            vipCfg.tier2_from = cfg.vip_tier2_bookings;
+            vipCfg.tier2_pct = cfg.vip_tier2_discount;
+            vipCfg.tier3_from = cfg.vip_tier3_bookings;
+            vipCfg.tier3_pct = cfg.vip_tier3_discount;
+          }
+        }
+      } catch (e) { console.warn('vip config fetch failed', e); }
+
       const welcomeHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -760,12 +780,13 @@ serve(async (req) => {
       </table>
     </div>
     <div style="background:#FEF3C7;border-radius:10px;padding:16px;margin-bottom:20px;">
-      <h3 style="font-size:14px;font-weight:600;color:#92400E;margin:0 0 12px;text-align:center;">🎁 Ưu đãi thành viên</h3>
+      <h3 style="font-size:14px;font-weight:600;color:#92400E;margin:0 0 12px;text-align:center;">🏅 Ưu đãi thành viên VIP</h3>
       <table style="width:100%;font-size:13px;line-height:2;">
-        <tr><td style="color:#92400E;">🎖 Thường (0-2 lần đặt):</td><td style="font-weight:600;">Giảm 5%</td></tr>
-        <tr><td style="color:#92400E;">⭐ VIP (3-9 lần đặt):</td><td style="font-weight:600;">Giảm 10%</td></tr>
-        <tr><td style="color:#92400E;">👑 Siêu VIP (10+ lần đặt):</td><td style="font-weight:600;">Giảm 15%</td></tr>
+        <tr><td style="color:#92400E;">🥉 VIP Hạng 1 (từ ${vipCfg.tier1_from} lần):</td><td style="font-weight:600;">Giảm ${vipCfg.tier1_pct}% tiền phòng</td></tr>
+        <tr><td style="color:#92400E;">🥈 VIP Hạng 2 (từ ${vipCfg.tier2_from} lần):</td><td style="font-weight:600;">Giảm ${vipCfg.tier2_pct}% tiền phòng</td></tr>
+        <tr><td style="color:#92400E;">🥇 VIP Hạng 3 (từ ${vipCfg.tier3_from} lần):</td><td style="font-weight:600;">Giảm ${vipCfg.tier3_pct}% tiền phòng</td></tr>
       </table>
+      <p style="font-size:11px;color:#78350F;font-style:italic;text-align:center;margin:8px 0 0;">* Chỉ áp dụng tiền phòng, không áp dụng tiền ăn/dịch vụ.</p>
     </div>
     <p style="font-size:13px;color:#555;line-height:1.6;text-align:center;">Hãy đăng nhập và đặt phòng để tích lũy ưu đãi nhé!</p>
     <div style="border-top:1px solid #eee;margin-top:20px;padding-top:16px;font-size:12px;color:#999;line-height:1.6;text-align:center;">
