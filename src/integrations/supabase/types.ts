@@ -1191,6 +1191,8 @@ export type Database = {
           vip_tier1_discount: number
           vip_tier2_bookings: number
           vip_tier2_discount: number
+          vip_tier3_bookings: number
+          vip_tier3_discount: number
         }
         Insert: {
           group_discount_max?: number
@@ -1205,6 +1207,8 @@ export type Database = {
           vip_tier1_discount?: number
           vip_tier2_bookings?: number
           vip_tier2_discount?: number
+          vip_tier3_bookings?: number
+          vip_tier3_discount?: number
         }
         Update: {
           group_discount_max?: number
@@ -1219,6 +1223,8 @@ export type Database = {
           vip_tier1_discount?: number
           vip_tier2_bookings?: number
           vip_tier2_discount?: number
+          vip_tier3_bookings?: number
+          vip_tier3_discount?: number
         }
         Relationships: []
       }
