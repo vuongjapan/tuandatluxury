@@ -467,7 +467,10 @@ async function buildSummaryPdf(data: any): Promise<Uint8Array> {
       });
     }
     if ((booking.member_discount_amount || 0) > 0) {
-      ctx = drawRow(ctx, `  • Ưu đãi thành viên (${booking.member_discount_percent || 0}%):`, `-${fmt(booking.member_discount_amount)}`, {
+      const pct = booking.member_discount_percent || 0;
+      const vc = data.vipCfg || {};
+      const tierLabel = pct === vc.tier3_pct ? ' Hạng 3' : pct === vc.tier2_pct ? ' Hạng 2' : pct === vc.tier1_pct ? ' Hạng 1' : '';
+      ctx = drawRow(ctx, `  • Ưu đãi VIP${tierLabel} (-${pct}% tiền phòng):`, `-${fmt(booking.member_discount_amount)}`, {
         size: 9, valueColor: [0.06, 0.6, 0.4],
       });
     }
@@ -775,7 +778,10 @@ async function buildDetailPdf(data: any): Promise<Uint8Array> {
       });
     }
     if ((booking.member_discount_amount || 0) > 0) {
-      ctx = drawRow(ctx, `  • Ưu đãi thành viên (${booking.member_discount_percent || 0}%):`, `-${fmt(booking.member_discount_amount)}`, {
+      const pct = booking.member_discount_percent || 0;
+      const vc = data.vipCfg || {};
+      const tierLabel = pct === vc.tier3_pct ? ' Hạng 3' : pct === vc.tier2_pct ? ' Hạng 2' : pct === vc.tier1_pct ? ' Hạng 1' : '';
+      ctx = drawRow(ctx, `  • Ưu đãi VIP${tierLabel} (-${pct}% tiền phòng):`, `-${fmt(booking.member_discount_amount)}`, {
         size: 9, valueColor: [0.06, 0.6, 0.4],
       });
     }
@@ -843,12 +849,22 @@ serve(async (req) => {
       .from("booking_food_items").select("*").eq("booking_id", booking.id);
 
     const isPaid = is_paid !== undefined ? is_paid : (booking.payment_status === "PAID" || booking.payment_status === "DEPOSIT_PAID");
+
+    // VIP config — used to label VIP discount lines with tier name dynamically
+    const { data: vipRow } = await supabase.from('discount_config').select('vip_tier1_discount,vip_tier2_discount,vip_tier3_discount').limit(1).maybeSingle();
+    const vipCfg = vipRow ? {
+      tier1_pct: vipRow.vip_tier1_discount,
+      tier2_pct: vipRow.vip_tier2_discount,
+      tier3_pct: vipRow.vip_tier3_discount,
+    } : null;
+
     const data = {
       booking,
       roomName: booking.rooms?.name_vi || booking.room_id,
       combos: combosWithDishes,
       foodItems: foodItems || [],
       isPaid,
+      vipCfg,
     };
 
     const [pdf1, pdf2] = await Promise.all([buildSummaryPdf(data), buildDetailPdf(data)]);
