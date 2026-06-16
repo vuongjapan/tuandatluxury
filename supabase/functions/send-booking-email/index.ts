@@ -217,7 +217,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   if (hasDiscount) {
     let rows = '';
     if (memberDiscount > 0) {
-      rows += `<tr><td style="padding:4px 8px;background:#f0fdf4;border-radius:4px;font-size:12px;">⭐ Giảm giá thành viên (${booking.member_discount_percent || 0}%)</td><td style="text-align:right;padding:4px 8px;font-weight:700;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
+      rows += `<tr><td style="padding:4px 8px;background:#f0fdf4;border-radius:4px;font-size:12px;">🏅 Ưu đãi ${vipTierLabel} (-${booking.member_discount_percent || 0}% tiền phòng)</td><td style="text-align:right;padding:4px 8px;font-weight:700;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
     }
     if (promotionDiscount > 0) {
       rows += `<tr><td style="padding:4px 8px;background:#fef3c7;border-radius:4px;font-size:12px;">🎁 ${booking.promotion_name || 'Ưu đãi'} (${booking.promotion_discount_percent || 0}%)</td><td style="text-align:right;padding:4px 8px;font-weight:700;color:#8B6914;font-size:12px;">-${fmt(promotionDiscount)}</td></tr>`;
