@@ -415,7 +415,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   if (hasDiscount) {
     costRows += `<tr><td style="color:#888;padding:6px 0;border-top:1px solid #eee;font-weight:600;">Tổng trước giảm:</td><td style="text-align:right;padding:6px 0;border-top:1px solid #eee;font-weight:500;text-decoration:line-through;color:#999;">${fmt(originalPrice)}</td></tr>`;
     if (memberDiscount > 0) {
-      discountRows += `<tr><td style="color:#16a34a;padding:3px 0;font-size:12px;">⭐ Giảm thành viên (${booking.member_discount_percent || 0}%):</td><td style="text-align:right;padding:3px 0;font-weight:500;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
+      discountRows += `<tr><td style="color:#16a34a;padding:3px 0;font-size:12px;">🏅 Ưu đãi ${vipTierLabel} (-${booking.member_discount_percent || 0}% tiền phòng):</td><td style="text-align:right;padding:3px 0;font-weight:500;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
     }
     if (promotionDiscount > 0) {
       discountRows += `<tr><td style="color:#16a34a;padding:3px 0;font-size:12px;">🎁 ${booking.promotion_name || 'Khuyến mãi'} (${booking.promotion_discount_percent || 0}%):</td><td style="text-align:right;padding:3px 0;font-weight:500;color:#16a34a;font-size:12px;">-${fmt(promotionDiscount)}</td></tr>`;
