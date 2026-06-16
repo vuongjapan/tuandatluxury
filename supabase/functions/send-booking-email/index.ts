@@ -205,6 +205,8 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   const discountCodeAmt = booking.discount_code_amount || 0;
   const totalDiscount = promotionDiscount + memberDiscount + discountCodeAmt;
   const hasDiscount = totalDiscount > 0 || booking.discount_code;
+  const vipCfg = data.vipCfg || DEFAULT_VIP_CFG;
+  const vipTierLabel = vipTierLabelFromPercent(booking.member_discount_percent || 0, vipCfg);
 
   const statusBg = isPaid ? '#ECFDF5' : '#FEF3C7';
   const statusColor = isPaid ? '#059669' : '#D97706';
