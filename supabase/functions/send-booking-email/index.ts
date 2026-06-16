@@ -893,6 +893,7 @@ serve(async (req) => {
 
     // Default: new booking email
     const { booking, room_name, invoice_number, combos_with_dishes, food_items } = body;
+    const vipCfgDefault = await loadVipCfg();
     const emailHtml = buildBookingInvoiceHtml({
       booking,
       roomName: room_name,
@@ -900,6 +901,7 @@ serve(async (req) => {
       combos: combos_with_dishes || [],
       foodItems: food_items || [],
       isPaid: false,
+      vipCfg: vipCfgDefault,
     });
     const attachments = await fetchBookingPdfs(booking.id, booking.booking_code, false);
 
