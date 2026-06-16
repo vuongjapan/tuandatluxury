@@ -47,6 +47,39 @@ interface FoodItemData {
   quantity: number;
 }
 
+interface VipCfg {
+  tier1_from: number; tier1_pct: number;
+  tier2_from: number; tier2_pct: number;
+  tier3_from: number; tier3_pct: number;
+}
+const DEFAULT_VIP_CFG: VipCfg = { tier1_from: 2, tier1_pct: 5, tier2_from: 3, tier2_pct: 8, tier3_from: 5, tier3_pct: 10 };
+
+function vipTierLabelFromPercent(pct: number, cfg: VipCfg): string {
+  if (!pct || pct <= 0) return 'Thành viên';
+  if (pct === cfg.tier3_pct) return 'VIP Hạng 3';
+  if (pct === cfg.tier2_pct) return 'VIP Hạng 2';
+  if (pct === cfg.tier1_pct) return 'VIP Hạng 1';
+  return 'VIP';
+}
+
+async function loadVipCfg(): Promise<VipCfg> {
+  try {
+    const sbUrl = Deno.env.get('SUPABASE_URL');
+    const sbKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!sbUrl || !sbKey) return { ...DEFAULT_VIP_CFG };
+    const sb = createClient(sbUrl, sbKey);
+    const { data: cfg } = await sb.from('discount_config')
+      .select('vip_tier1_bookings,vip_tier1_discount,vip_tier2_bookings,vip_tier2_discount,vip_tier3_bookings,vip_tier3_discount')
+      .limit(1).maybeSingle();
+    if (!cfg) return { ...DEFAULT_VIP_CFG };
+    return {
+      tier1_from: cfg.vip_tier1_bookings, tier1_pct: cfg.vip_tier1_discount,
+      tier2_from: cfg.vip_tier2_bookings, tier2_pct: cfg.vip_tier2_discount,
+      tier3_from: cfg.vip_tier3_bookings, tier3_pct: cfg.vip_tier3_discount,
+    };
+  } catch (e) { console.warn('vip cfg fetch failed', e); return { ...DEFAULT_VIP_CFG }; }
+}
+
 interface EmailData {
   booking: any;
   roomName: string;
@@ -54,6 +87,7 @@ interface EmailData {
   combos: ComboWithDishes[];
   foodItems: FoodItemData[];
   isPaid?: boolean;
+  vipCfg?: VipCfg;
 }
 
 interface RoomBreakdownItem {
