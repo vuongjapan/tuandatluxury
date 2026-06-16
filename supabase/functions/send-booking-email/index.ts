@@ -510,7 +510,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;margin-bottom:20px;">
       <p style="font-weight:600;font-size:14px;margin:0 0 8px;">Tổng khuyến mãi</p>
       <table style="width:100%;font-size:12px;line-height:1.7;">
-        ${memberDiscount > 0 ? `<tr><td>Giảm thành viên (${booking.member_discount_percent || 0}%)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(memberDiscount)}</td></tr>` : ''}
+        ${memberDiscount > 0 ? `<tr><td>🏅 Ưu đãi ${vipTierLabel} (-${booking.member_discount_percent || 0}% tiền phòng)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(memberDiscount)}</td></tr>` : ''}
         ${promotionDiscount > 0 ? `<tr><td>${booking.promotion_name || 'Ưu đãi'} (${booking.promotion_discount_percent || 0}%)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(promotionDiscount)}</td></tr>` : ''}
         ${booking.discount_code ? `<tr><td>Mã <strong>${booking.discount_code}</strong>${booking.discount_code_type === 'percent' ? ` (${booking.discount_code_value}%)` : ''}</td><td style="text-align:right;font-weight:700;color:#16a34a;">${discountCodeAmt > 0 ? `-${fmt(discountCodeAmt)}` : 'Đã áp dụng'}</td></tr>` : ''}
         ${totalDiscount > 0 ? `<tr><td style="font-weight:700;border-top:1px solid #86efac;padding-top:6px;">Tổng tiết kiệm:</td><td style="text-align:right;font-weight:700;color:#16a34a;font-size:14px;border-top:1px solid #86efac;padding-top:6px;">${fmt(totalDiscount)}</td></tr>` : ''}
