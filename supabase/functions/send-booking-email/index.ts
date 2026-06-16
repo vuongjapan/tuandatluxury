@@ -47,6 +47,39 @@ interface FoodItemData {
   quantity: number;
 }
 
+interface VipCfg {
+  tier1_from: number; tier1_pct: number;
+  tier2_from: number; tier2_pct: number;
+  tier3_from: number; tier3_pct: number;
+}
+const DEFAULT_VIP_CFG: VipCfg = { tier1_from: 2, tier1_pct: 5, tier2_from: 3, tier2_pct: 8, tier3_from: 5, tier3_pct: 10 };
+
+function vipTierLabelFromPercent(pct: number, cfg: VipCfg): string {
+  if (!pct || pct <= 0) return 'Thành viên';
+  if (pct === cfg.tier3_pct) return 'VIP Hạng 3';
+  if (pct === cfg.tier2_pct) return 'VIP Hạng 2';
+  if (pct === cfg.tier1_pct) return 'VIP Hạng 1';
+  return 'VIP';
+}
+
+async function loadVipCfg(): Promise<VipCfg> {
+  try {
+    const sbUrl = Deno.env.get('SUPABASE_URL');
+    const sbKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!sbUrl || !sbKey) return { ...DEFAULT_VIP_CFG };
+    const sb = createClient(sbUrl, sbKey);
+    const { data: cfg } = await sb.from('discount_config')
+      .select('vip_tier1_bookings,vip_tier1_discount,vip_tier2_bookings,vip_tier2_discount,vip_tier3_bookings,vip_tier3_discount')
+      .limit(1).maybeSingle();
+    if (!cfg) return { ...DEFAULT_VIP_CFG };
+    return {
+      tier1_from: cfg.vip_tier1_bookings, tier1_pct: cfg.vip_tier1_discount,
+      tier2_from: cfg.vip_tier2_bookings, tier2_pct: cfg.vip_tier2_discount,
+      tier3_from: cfg.vip_tier3_bookings, tier3_pct: cfg.vip_tier3_discount,
+    };
+  } catch (e) { console.warn('vip cfg fetch failed', e); return { ...DEFAULT_VIP_CFG }; }
+}
+
 interface EmailData {
   booking: any;
   roomName: string;
@@ -54,6 +87,7 @@ interface EmailData {
   combos: ComboWithDishes[];
   foodItems: FoodItemData[];
   isPaid?: boolean;
+  vipCfg?: VipCfg;
 }
 
 interface RoomBreakdownItem {
@@ -171,6 +205,8 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   const discountCodeAmt = booking.discount_code_amount || 0;
   const totalDiscount = promotionDiscount + memberDiscount + discountCodeAmt;
   const hasDiscount = totalDiscount > 0 || booking.discount_code;
+  const vipCfg = data.vipCfg || DEFAULT_VIP_CFG;
+  const vipTierLabel = vipTierLabelFromPercent(booking.member_discount_percent || 0, vipCfg);
 
   const statusBg = isPaid ? '#ECFDF5' : '#FEF3C7';
   const statusColor = isPaid ? '#059669' : '#D97706';
@@ -181,7 +217,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   if (hasDiscount) {
     let rows = '';
     if (memberDiscount > 0) {
-      rows += `<tr><td style="padding:4px 8px;background:#f0fdf4;border-radius:4px;font-size:12px;">⭐ Giảm giá thành viên (${booking.member_discount_percent || 0}%)</td><td style="text-align:right;padding:4px 8px;font-weight:700;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
+      rows += `<tr><td style="padding:4px 8px;background:#f0fdf4;border-radius:4px;font-size:12px;">🏅 Ưu đãi ${vipTierLabel} (-${booking.member_discount_percent || 0}% tiền phòng)</td><td style="text-align:right;padding:4px 8px;font-weight:700;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
     }
     if (promotionDiscount > 0) {
       rows += `<tr><td style="padding:4px 8px;background:#fef3c7;border-radius:4px;font-size:12px;">🎁 ${booking.promotion_name || 'Ưu đãi'} (${booking.promotion_discount_percent || 0}%)</td><td style="text-align:right;padding:4px 8px;font-weight:700;color:#8B6914;font-size:12px;">-${fmt(promotionDiscount)}</td></tr>`;
@@ -379,7 +415,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
   if (hasDiscount) {
     costRows += `<tr><td style="color:#888;padding:6px 0;border-top:1px solid #eee;font-weight:600;">Tổng trước giảm:</td><td style="text-align:right;padding:6px 0;border-top:1px solid #eee;font-weight:500;text-decoration:line-through;color:#999;">${fmt(originalPrice)}</td></tr>`;
     if (memberDiscount > 0) {
-      discountRows += `<tr><td style="color:#16a34a;padding:3px 0;font-size:12px;">⭐ Giảm thành viên (${booking.member_discount_percent || 0}%):</td><td style="text-align:right;padding:3px 0;font-weight:500;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
+      discountRows += `<tr><td style="color:#16a34a;padding:3px 0;font-size:12px;">🏅 Ưu đãi ${vipTierLabel} (-${booking.member_discount_percent || 0}% tiền phòng):</td><td style="text-align:right;padding:3px 0;font-weight:500;color:#16a34a;font-size:12px;">-${fmt(memberDiscount)}</td></tr>`;
     }
     if (promotionDiscount > 0) {
       discountRows += `<tr><td style="color:#16a34a;padding:3px 0;font-size:12px;">🎁 ${booking.promotion_name || 'Khuyến mãi'} (${booking.promotion_discount_percent || 0}%):</td><td style="text-align:right;padding:3px 0;font-weight:500;color:#16a34a;font-size:12px;">-${fmt(promotionDiscount)}</td></tr>`;
@@ -474,7 +510,7 @@ function buildBookingInvoiceHtml(data: EmailData): string {
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;margin-bottom:20px;">
       <p style="font-weight:600;font-size:14px;margin:0 0 8px;">Tổng khuyến mãi</p>
       <table style="width:100%;font-size:12px;line-height:1.7;">
-        ${memberDiscount > 0 ? `<tr><td>Giảm thành viên (${booking.member_discount_percent || 0}%)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(memberDiscount)}</td></tr>` : ''}
+        ${memberDiscount > 0 ? `<tr><td>🏅 Ưu đãi ${vipTierLabel} (-${booking.member_discount_percent || 0}% tiền phòng)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(memberDiscount)}</td></tr>` : ''}
         ${promotionDiscount > 0 ? `<tr><td>${booking.promotion_name || 'Ưu đãi'} (${booking.promotion_discount_percent || 0}%)</td><td style="text-align:right;font-weight:700;color:#16a34a;">-${fmt(promotionDiscount)}</td></tr>` : ''}
         ${booking.discount_code ? `<tr><td>Mã <strong>${booking.discount_code}</strong>${booking.discount_code_type === 'percent' ? ` (${booking.discount_code_value}%)` : ''}</td><td style="text-align:right;font-weight:700;color:#16a34a;">${discountCodeAmt > 0 ? `-${fmt(discountCodeAmt)}` : 'Đã áp dụng'}</td></tr>` : ''}
         ${totalDiscount > 0 ? `<tr><td style="font-weight:700;border-top:1px solid #86efac;padding-top:6px;">Tổng tiết kiệm:</td><td style="text-align:right;font-weight:700;color:#16a34a;font-size:14px;border-top:1px solid #86efac;padding-top:6px;">${fmt(totalDiscount)}</td></tr>` : ''}
@@ -822,6 +858,7 @@ serve(async (req) => {
     // Deposit paid email for booking
     if (body.type === 'deposit_paid') {
       const { booking, room_name, invoice_number, combos_with_dishes, food_items } = body;
+      const vipCfg = await loadVipCfg();
       const emailHtml = buildBookingInvoiceHtml({
         booking,
         roomName: room_name,
@@ -829,6 +866,7 @@ serve(async (req) => {
         combos: combos_with_dishes || [],
         foodItems: food_items || [],
         isPaid: true,
+        vipCfg,
       });
       const attachments = await fetchBookingPdfs(booking.id, booking.booking_code, true);
       if (booking.guest_email) {
@@ -855,6 +893,7 @@ serve(async (req) => {
 
     // Default: new booking email
     const { booking, room_name, invoice_number, combos_with_dishes, food_items } = body;
+    const vipCfgDefault = await loadVipCfg();
     const emailHtml = buildBookingInvoiceHtml({
       booking,
       roomName: room_name,
@@ -862,6 +901,7 @@ serve(async (req) => {
       combos: combos_with_dishes || [],
       foodItems: food_items || [],
       isPaid: false,
+      vipCfg: vipCfgDefault,
     });
     const attachments = await fetchBookingPdfs(booking.id, booking.booking_code, false);
 
