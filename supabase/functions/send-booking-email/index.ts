@@ -858,6 +858,7 @@ serve(async (req) => {
     // Deposit paid email for booking
     if (body.type === 'deposit_paid') {
       const { booking, room_name, invoice_number, combos_with_dishes, food_items } = body;
+      const vipCfg = await loadVipCfg();
       const emailHtml = buildBookingInvoiceHtml({
         booking,
         roomName: room_name,
@@ -865,6 +866,7 @@ serve(async (req) => {
         combos: combos_with_dishes || [],
         foodItems: food_items || [],
         isPaid: true,
+        vipCfg,
       });
       const attachments = await fetchBookingPdfs(booking.id, booking.booking_code, true);
       if (booking.guest_email) {
