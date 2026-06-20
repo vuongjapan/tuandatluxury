@@ -53,10 +53,12 @@ const ApplyVoucher = lazy(() => import("./pages/ApplyVoucher"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 1000, // 30s – keep data fresh
-      gcTime: 5 * 60 * 1000, // garbage collect after 5 min
+      // Most content (rooms, services, offers, combos) changes rarely → keep cached longer.
+      // Per-query overrides (e.g. live pricing/availability) still apply.
+      staleTime: 10 * 60 * 1000, // 10 min – avoid refetching static-ish data on every nav
+      gcTime: 60 * 60 * 1000, // keep in memory for 1 hour
       retry: 1,
-      refetchOnWindowFocus: true, // refetch when tab regains focus
+      refetchOnWindowFocus: false, // don't thrash the network on tab focus
     },
   },
 });

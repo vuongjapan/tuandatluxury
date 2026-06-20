@@ -1,66 +1,74 @@
-import { useState, memo, ImgHTMLAttributes } from 'react';
+import { useState, memo, ImgHTMLAttributes, useRef } from 'react';
 import { withImageVersion } from '@/lib/imageVersion';
+import { optimizeImageUrl, disableImageTransforms } from '@/lib/optimizeImage';
 import { cn } from '@/lib/utils';
 
 interface SmartImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'onLoad' | 'onError'> {
   src: string | null | undefined;
   alt: string;
-  /** Container className (wraps the img + skeleton overlay). */
   wrapperClassName?: string;
-  /** Object-fit class for the img (default: object-cover). */
   fit?: 'cover' | 'contain';
   /** Skip cache-busting (e.g. for static bundled assets). */
   skipVersion?: boolean;
   /** Eager-load critical above-the-fold images. */
   eager?: boolean;
+  /** Target render width in CSS px – used for Supabase image transform. */
+  width?: number;
+  /** Transform quality (default 75). */
+  quality?: number;
 }
 
 /**
- * Image with skeleton-loading placeholder, fade-in on load,
- * lazy-loading by default, and cache-bust versioning.
+ * Image with skeleton-loading placeholder, fade-in on load, lazy-loading by
+ * default, Supabase storage image transforms, and cache-bust versioning.
  *
- * Memoized to avoid unnecessary re-renders in long lists.
+ * On error: retry once with the original (non-transformed) URL before showing
+ * a placeholder. If transforms appear unsupported, future calls skip them.
  */
 const SmartImage = memo(function SmartImage({
   src, alt, wrapperClassName, className, fit = 'cover',
-  skipVersion = false, eager = false, ...rest
+  skipVersion = false, eager = false, width, quality, ...rest
 }: SmartImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  const fallbackTried = useRef(false);
 
-  const finalSrc = errored
+  const baseSrc = skipVersion ? (src || '/placeholder.svg') : withImageVersion(src);
+  const initialSrc = errored
     ? '/placeholder.svg'
-    : (skipVersion ? (src || '/placeholder.svg') : withImageVersion(src));
+    : (width ? optimizeImageUrl(baseSrc, { width, quality }) : baseSrc);
 
   return (
     <div className={cn('relative overflow-hidden bg-muted', wrapperClassName)}>
       {!loaded && (
         <>
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-br from-muted via-secondary to-muted"
-          />
-          {/* Shimmer sweep */}
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-muted via-secondary to-muted" />
           <div
             aria-hidden
             className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"
-            style={{ animationName: 'shimmer' }}
           />
         </>
       )}
       <style>{`@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
       <img
         {...rest}
-        src={finalSrc}
+        src={initialSrc}
         alt={alt}
         loading={eager ? 'eager' : 'lazy'}
         decoding="async"
         fetchPriority={eager ? 'high' : 'auto' as any}
         onLoad={() => setLoaded(true)}
         onError={(e) => {
+          const img = e.currentTarget as HTMLImageElement;
+          // Retry once with the original URL (transforms may be disabled on plan).
+          if (!fallbackTried.current && width && baseSrc && img.src !== baseSrc) {
+            fallbackTried.current = true;
+            disableImageTransforms();
+            img.src = baseSrc;
+            return;
+          }
           setErrored(true);
           setLoaded(true);
-          (e.currentTarget as HTMLImageElement).style.background = 'hsl(var(--muted))';
         }}
         className={cn(
           'w-full h-full transition-all duration-700 ease-out',
