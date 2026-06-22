@@ -210,13 +210,19 @@ const AdminDashboard = () => {
     const isoHorizon = horizon.toISOString().slice(0, 10);
     type Arr = { id: string; source: 'online' | 'manual'; guest_name: string; phone?: string; room_name: string; room_qty: number; guests: number; check_in: string; payment_status: string; status: string; deposit_paid?: boolean };
     const arr: Arr[] = [];
+    // Nguồn duy nhất xác định "đã cọc": payment_status ∈ {PARTIAL, DEPOSIT_PAID, PAID}
+    // hoặc admin xác nhận thủ công (deposit_manually_confirmed / deposit_paid_at)
+    const isDepositPaid = (ps?: string, manual?: boolean, paidAt?: string | null) => {
+      const s = (ps || '').toUpperCase();
+      return s === 'PARTIAL' || s === 'DEPOSIT_PAID' || s === 'PAID' || !!manual || !!paidAt;
+    };
     validBookings.forEach(b => {
       if (!b.check_in || b.check_in < isoToday || b.check_in > isoHorizon) return;
       arr.push({
         id: b.id, source: 'online', guest_name: b.guest_name, phone: b.guest_phone,
         room_name: b.rooms?.name_vi || b.room_id, room_qty: b.room_quantity || 1, guests: b.guests_count || 0,
         check_in: b.check_in, payment_status: b.payment_status || 'PENDING', status: b.status,
-        deposit_paid: b.payment_status === 'PARTIAL' || b.payment_status === 'PAID' || b.deposit_manually_confirmed,
+        deposit_paid: isDepositPaid(b.payment_status, b.deposit_manually_confirmed, b.deposit_paid_at),
       });
     });
     validManual.forEach(m => {
@@ -225,7 +231,7 @@ const AdminDashboard = () => {
         id: m.id, source: 'manual', guest_name: m.guest_name, phone: m.guest_phone,
         room_name: m.room_name || m.room_id || '—', room_qty: m.room_quantity || 1, guests: m.guests_count || 0,
         check_in: m.check_in, payment_status: m.payment_status || 'PENDING', status: m.payment_status || 'PENDING',
-        deposit_paid: m.payment_status === 'PARTIAL' || m.payment_status === 'PAID' || !!m.deposit_paid_at,
+        deposit_paid: isDepositPaid(m.payment_status, false, m.deposit_paid_at),
       });
     });
     arr.sort((a, b) => {
