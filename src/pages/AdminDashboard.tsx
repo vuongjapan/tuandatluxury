@@ -104,6 +104,26 @@ const AdminDashboard = () => {
     fetchData();
   }, [authLoading, authUser, isAdmin]);
 
+  // Realtime: auto-update badge "Đã cọc / Chờ cọc" khi sepay webhook cập nhật payment_status
+  useEffect(() => {
+    if (!authUser || !isAdmin) return;
+    const ch = supabase
+      .channel('admin-dashboard-bookings')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bookings' }, (payload) => {
+        const row: any = payload.new;
+        setBookings(prev => prev.map(b => b.id === row.id ? { ...b, ...row } : b));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings' }, () => {
+        fetchData();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'manual_invoices' }, (payload) => {
+        const row: any = payload.new;
+        setManualInvoices(prev => prev.map(m => m.id === row.id ? { ...m, ...row } : m));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [authUser, isAdmin]);
+
   const fetchData = async () => {
     setLoading(true);
     const trashBookingIds = trashItems.filter(t => t.type === 'booking').map(t => t.data.id);
