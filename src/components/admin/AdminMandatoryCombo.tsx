@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Save, Pencil, AlertTriangle, KeyRound, CalendarRange } from 'lucide-react';
+import { Plus, Trash2, Save, Pencil, AlertTriangle, KeyRound, CalendarRange, Utensils } from 'lucide-react';
 import AdminMealBypassCodes from './AdminMealBypassCodes';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 type EditState = Partial<MandatoryComboDate> & { _new?: boolean };
 
