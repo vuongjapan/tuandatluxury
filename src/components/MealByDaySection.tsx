@@ -37,6 +37,8 @@ const MealByDaySection = ({
   const isVi = language === 'vi';
   const { packages, getMenusByPackage, getDishesByMenu, loading } = useComboPackages();
   const { plans, loading: personalPlansLoading } = usePersonalMealPlans(true);
+  const { settings } = useSiteSettings();
+  const forceBothMeals = String(settings.force_2_meals_weekend || 'false') === 'true';
 
   const activePackages = useMemo(
     () => packages.filter(p => p.is_active).sort((a, b) => a.sort_order - b.sort_order),
