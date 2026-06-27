@@ -246,33 +246,40 @@ const Booking = () => {
       const sel = foodByDay[n.date];
       if (!sel || sel.bypassed || sel.meals.length === 0) continue;
       const groups = sel.groups || [];
-      // merge groups with same pkg+menu
-      const merged = new Map<string, { pkg: typeof activeComboPkgs[number]; menu: any; quantity: number }>();
-      for (const g of groups) {
-        if (!g.comboPackageId || g.quantity <= 0) continue;
+      // Merge groups by (meal × pkg+menu). Untagged groups apply to every selected meal;
+      // meal-tagged groups apply only to that specific meal.
+      const merged = new Map<string, { pkg: typeof activeComboPkgs[number]; menu: any; quantity: number; meal: 'lunch' | 'dinner' }>();
+      const addLine = (meal: 'lunch' | 'dinner', g: typeof groups[number]) => {
         const pkg = activeComboPkgs.find(p => p.id === g.comboPackageId);
-        if (!pkg) continue;
+        if (!pkg) return;
         const menu = getComboMenus(pkg.id).find(m => m.id === g.comboMenuId);
-        const key = `${pkg.id}|${menu?.id || ''}`;
+        const key = `${meal}|${pkg.id}|${menu?.id || ''}`;
         const ex = merged.get(key);
         if (ex) ex.quantity += g.quantity;
-        else merged.set(key, { pkg, menu, quantity: g.quantity });
-      }
-      for (const entry of merged.values()) {
-        for (const meal of sel.meals) {
-          out.push({
-            date: n.date,
-            dayLabel: n.dayLabel,
-            formattedDate: n.formattedDate,
-            meal,
-            pkg: entry.pkg,
-            menu: entry.menu,
-            quantity: entry.quantity,
-            subtotal: entry.pkg.price_per_person * entry.quantity,
-          });
+        else merged.set(key, { pkg, menu, quantity: g.quantity, meal });
+      };
+      for (const g of groups) {
+        if (!g.comboPackageId || g.quantity <= 0) continue;
+        if (g.meal === 'lunch' || g.meal === 'dinner') {
+          if (sel.meals.includes(g.meal)) addLine(g.meal, g);
+        } else {
+          for (const m of sel.meals) addLine(m, g);
         }
       }
+      for (const entry of merged.values()) {
+        out.push({
+          date: n.date,
+          dayLabel: n.dayLabel,
+          formattedDate: n.formattedDate,
+          meal: entry.meal,
+          pkg: entry.pkg,
+          menu: entry.menu,
+          quantity: entry.quantity,
+          subtotal: entry.pkg.price_per_person * entry.quantity,
+        });
+      }
     }
+
     return out;
   }, [stayNights, foodByDay, activeComboPkgs, getComboMenus]);
 

@@ -52,7 +52,12 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
               const menuLabel = menu ? (isVi ? menu.name_vi : menu.name_en || menu.name_vi) : '';
               const dishes = (menu && getDishesByMenu) ? getDishesByMenu(menu.id) : [];
               const dishNames = dishes.map(d => (isVi ? d.name_vi : d.name_en || d.name_vi));
-              for (const meal of sel.meals) {
+              // Meal-tagged groups emit one line for that meal; untagged loop all sel.meals.
+              const mealsForGroup: ('lunch' | 'dinner')[] =
+                g.meal === 'lunch' || g.meal === 'dinner'
+                  ? (sel.meals.includes(g.meal) ? [g.meal] : [])
+                  : sel.meals;
+              for (const meal of mealsForGroup) {
                 const mealLabel = meal === 'lunch' ? (isVi ? 'Trưa' : 'Lunch') : isVi ? 'Tối' : 'Dinner';
                 lines.push({
                   label: `${isVi ? `Nhóm ${idx + 1}` : `Group ${idx + 1}`}: ${pkg.name}${menuLabel ? ` · ${menuLabel}` : ''} × ${g.quantity} ${isVi ? 'suất' : 'pax'} · ${mealLabel}`,
@@ -66,6 +71,7 @@ const MealSummaryCard = ({ nights, foodByDay, individualFoodsByDay, packages, ge
                 });
               }
             });
+
 
           if (sel.personalSelection) {
             const ps = sel.personalSelection;
