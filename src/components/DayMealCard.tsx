@@ -22,7 +22,13 @@ export interface DayMealGroup {
   comboPackageId: string;
   comboMenuId: string;
   quantity: number;
+  /** When set, this group applies ONLY to the given meal (lunch or dinner)
+   *  and its subtotal is NOT multiplied by meals.length. Used when admin
+   *  forces both meals on weekend mandatory days so customers can pick
+   *  different combos for lunch vs dinner. */
+  meal?: DayMeal;
 }
+
 
 export interface DayMealSelection {
   meals: DayMeal[];
