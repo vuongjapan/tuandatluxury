@@ -259,20 +259,53 @@ const DayMealCard = ({
   const groupSubtotal = (g: DayMealGroup) => {
     const pkg = packages.find(p => p.id === g.comboPackageId);
     if (!pkg) return 0;
-    return pkg.price_per_person * g.quantity * Math.max(1, value.meals.length);
+    // Meal-tagged groups (lockBothMeals path) are already per-meal — do NOT × meals.length.
+    const mult = g.meal ? 1 : Math.max(1, value.meals.length);
+    return pkg.price_per_person * g.quantity * mult;
   };
 
   const totalGroupSubtotal = groups.reduce((s, g) => s + groupSubtotal(g), 0);
 
-  const hasAnyValidGroup = groups.some(g => g.comboPackageId && g.quantity > 0);
-  const validGroups = groups.filter(g => g.comboPackageId && g.quantity > 0);
-  const totalGroupQty = validGroups.reduce((s, g) => s + g.quantity, 0);
-  const anyGroupTooSmall = validGroups.some(g => g.quantity < MIN_PER_GROUP);
-  const groupsCoverGuests = totalGroupQty >= defaultGuests;
-  const groupsValid = hasAnyValidGroup && !anyGroupTooSmall && groupsCoverGuests;
+  // Section helpers — when meal is given, restrict to groups tagged with that meal.
+  const sectionGroupsFor = (meal?: DayMeal) =>
+    meal ? groups.filter(g => g.meal === meal) : groups.filter(g => !g.meal);
+
+  const sectionValidity = (meal?: DayMeal) => {
+    const subset = sectionGroupsFor(meal);
+    const valid = subset.filter(g => g.comboPackageId && g.quantity > 0);
+    const qty = valid.reduce((s, g) => s + g.quantity, 0);
+    return {
+      subset,
+      valid,
+      qty,
+      hasAny: valid.length > 0,
+      anyTooSmall: valid.some(g => g.quantity < MIN_PER_GROUP),
+      cover: qty >= defaultGuests,
+    };
+  };
+
+  const legacyVal = sectionValidity(undefined);
+  const lunchVal = sectionValidity('lunch');
+  const dinnerVal = sectionValidity('dinner');
+
+  // Backward-compat exposed for existing JSX further down.
+  const hasAnyValidGroup = legacyVal.hasAny;
+  const validGroups = legacyVal.valid;
+  const totalGroupQty = legacyVal.qty;
+  const anyGroupTooSmall = legacyVal.anyTooSmall;
+  const groupsCoverGuests = legacyVal.cover;
+
+  const sectionOK = (v: ReturnType<typeof sectionValidity>) =>
+    v.hasAny && !v.anyTooSmall && v.cover;
+
+  const groupsValid = lockBothMeals
+    ? sectionOK(lunchVal) && sectionOK(dinnerVal)
+    : sectionOK(legacyVal);
+
   const isComplete = value.meals.length > 0 && (groupsValid || !!value.personalSelection);
   const individualMet = !!individualOption?.met;
   const incomplete = mode === 'mandatory' && !isComplete && !value.bypassed && !individualMet;
+
 
 
   const handleApplyBypass = async () => {
