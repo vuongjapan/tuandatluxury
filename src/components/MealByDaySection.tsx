@@ -75,9 +75,13 @@ const MealByDaySection = ({
 
     let met = false;
     if (mandatory) {
-      // À la carte passes when EITHER lunch OR dinner meets the per-meal min,
-      // regardless of whether the guest selected one or both meals.
-      met = lunchTotal >= perMealRequired || dinnerTotal >= perMealRequired;
+      if (forceBothMeals) {
+        // When forcing both meals: à la carte must cover BOTH lunch AND dinner.
+        met = lunchTotal >= perMealRequired && dinnerTotal >= perMealRequired;
+      } else {
+        // À la carte passes when EITHER lunch OR dinner meets the per-meal min.
+        met = lunchTotal >= perMealRequired || dinnerTotal >= perMealRequired;
+      }
     }
     const requiredTotal = mandatory ? perMealRequired : 0;
 
