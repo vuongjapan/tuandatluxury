@@ -97,6 +97,8 @@ interface Props {
   individualOption?: IndividualPerDay;
   personalMealPlans?: PersonalMealPlan[];
   personalMealGuestCount?: number;
+  /** When true and variant === 'mandatory': force both lunch + dinner (no single-meal pills). */
+  forceBothMeals?: boolean;
 }
 
 const ensureGroups = (sel: DayMealSelection, adults: number): DayMealGroup[] => {
@@ -117,10 +119,12 @@ const DayMealCard = ({
   night, defaultGuests, packages, getMenusByPackage, getDishesByMenu,
   value, onChange, variant, individualOption,
   personalMealPlans = [], personalMealGuestCount = 0,
+  forceBothMeals = false,
 }: Props) => {
   const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const mode: 'mandatory' | 'optional' = variant || (night.mandatory ? 'mandatory' : 'optional');
+  const lockBothMeals = forceBothMeals && mode === 'mandatory';
 
   const hasAnySelection =
     (value.groups && value.groups.some(g => g.comboPackageId)) ||
@@ -152,6 +156,14 @@ const DayMealCard = ({
   useEffect(() => {
     if (mode === 'mandatory') setExpanded(true);
   }, [mode]);
+
+  // Force both meals when admin enabled the "2 meals/day" rule on mandatory days.
+  useEffect(() => {
+    if (lockBothMeals && !value.bypassed && value.meals.length !== 2) {
+      onChange({ ...value, meals: ['lunch', 'dinner'] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockBothMeals, value.bypassed]);
 
   // Migrate legacy state to groups on first render if needed.
   useEffect(() => {
@@ -377,66 +389,83 @@ const DayMealCard = ({
               {isVi ? 'Chọn buổi ăn' : 'Choose meal time'}{' '}
               {mode === 'mandatory' && <span className="text-orange-600">*</span>}
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { key: 'lunch' as DayMeal, label: isVi ? 'Bữa trưa' : 'Lunch', sub: '11:30–14:00', icon: Sun },
-                { key: 'dinner' as DayMeal, label: isVi ? 'Bữa tối' : 'Dinner', sub: '17:30–21:30', icon: Moon },
-              ]).map(opt => {
-                const active = value.meals.includes(opt.key) && value.meals.length === 1;
-                const Icon = opt.icon;
-                return (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => pick(opt.key)}
-                    className={cn(
-                      'rounded-lg border p-2 flex flex-col items-start gap-0.5 transition-all',
-                      active
-                        ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
-                        : 'border-border hover:border-primary/50 bg-card',
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Icon
-                        className={cn('h-3.5 w-3.5', active ? 'text-primary' : 'text-muted-foreground')}
-                      />
-                      <span className={cn('text-xs font-semibold', active ? 'text-primary' : 'text-foreground')}>
-                        {opt.label}
+            {lockBothMeals ? (
+              <div className="rounded-lg border-2 border-orange-300 bg-orange-50/70 dark:bg-orange-950/20 p-3 flex items-start gap-2.5">
+                <Clock className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+                <div className="text-xs sm:text-sm">
+                  <p className="font-semibold text-orange-800 dark:text-orange-200">
+                    🍽 {isVi ? 'Cuối tuần: bắt buộc đặt cả 2 bữa' : 'Weekend: both meals required'}
+                  </p>
+                  <p className="text-orange-700/90 dark:text-orange-300/90 mt-0.5">
+                    {isVi
+                      ? 'Bữa trưa 11:30–14:00 + Bữa tối 17:30–21:30. Combo / suất ăn tính × 2 bữa.'
+                      : 'Lunch 11:30–14:00 + Dinner 17:30–21:30. Combo charged × 2 meals.'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: 'lunch' as DayMeal, label: isVi ? 'Bữa trưa' : 'Lunch', sub: '11:30–14:00', icon: Sun },
+                  { key: 'dinner' as DayMeal, label: isVi ? 'Bữa tối' : 'Dinner', sub: '17:30–21:30', icon: Moon },
+                ]).map(opt => {
+                  const active = value.meals.includes(opt.key) && value.meals.length === 1;
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => pick(opt.key)}
+                      className={cn(
+                        'rounded-lg border p-2 flex flex-col items-start gap-0.5 transition-all',
+                        active
+                          ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                          : 'border-border hover:border-primary/50 bg-card',
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Icon
+                          className={cn('h-3.5 w-3.5', active ? 'text-primary' : 'text-muted-foreground')}
+                        />
+                        <span className={cn('text-xs font-semibold', active ? 'text-primary' : 'text-foreground')}>
+                          {opt.label}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">{opt.sub}</span>
+                    </button>
+                  );
+                })}
+                {(() => {
+                  const active = value.meals.length === 2;
+                  return (
+                    <button
+                      type="button"
+                      onClick={toggleBoth}
+                      className={cn(
+                        'rounded-lg border p-2 flex flex-col items-start gap-0.5 transition-all',
+                        active
+                          ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                          : 'border-border hover:border-primary/50 bg-card',
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Clock
+                          className={cn('h-3.5 w-3.5', active ? 'text-primary' : 'text-muted-foreground')}
+                        />
+                        <span className={cn('text-xs font-semibold', active ? 'text-primary' : 'text-foreground')}>
+                          {isVi ? 'Cả 2 bữa' : 'Both meals'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {isVi ? '× 2 giá' : '× 2 price'}
                       </span>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">{opt.sub}</span>
-                  </button>
-                );
-              })}
-              {(() => {
-                const active = value.meals.length === 2;
-                return (
-                  <button
-                    type="button"
-                    onClick={toggleBoth}
-                    className={cn(
-                      'rounded-lg border p-2 flex flex-col items-start gap-0.5 transition-all',
-                      active
-                        ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
-                        : 'border-border hover:border-primary/50 bg-card',
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Clock
-                        className={cn('h-3.5 w-3.5', active ? 'text-primary' : 'text-muted-foreground')}
-                      />
-                      <span className={cn('text-xs font-semibold', active ? 'text-primary' : 'text-foreground')}>
-                        {isVi ? 'Cả 2 bữa' : 'Both meals'}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {isVi ? '× 2 giá' : '× 2 price'}
-                    </span>
-                  </button>
-                );
-              })()}
-            </div>
+                    </button>
+                  );
+                })()}
+              </div>
+            )}
           </div>
+
 
           {/* Personal Meal Plans (for small groups) */}
           {value.meals.length > 0 && personalMealPlans.length > 0 && personalMealGuestCount > 0 && personalMealGuestCount <= 5 && (

@@ -5,6 +5,7 @@ import type { NightInfo } from '@/hooks/useNightlyMandatoryInfo';
 import { useComboPackages } from '@/hooks/useComboPackages';
 import { usePersonalMealPlans, type PersonalMealPlan } from '@/hooks/usePersonalMealPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
 import type { FoodItem } from './IndividualFoodSelector';
 
@@ -36,6 +37,8 @@ const MealByDaySection = ({
   const isVi = language === 'vi';
   const { packages, getMenusByPackage, getDishesByMenu, loading } = useComboPackages();
   const { plans, loading: personalPlansLoading } = usePersonalMealPlans(true);
+  const { settings } = useSiteSettings();
+  const forceBothMeals = String(settings.force_2_meals_weekend || 'false') === 'true';
 
   const activePackages = useMemo(
     () => packages.filter(p => p.is_active).sort((a, b) => a.sort_order - b.sort_order),
@@ -72,9 +75,13 @@ const MealByDaySection = ({
 
     let met = false;
     if (mandatory) {
-      // À la carte passes when EITHER lunch OR dinner meets the per-meal min,
-      // regardless of whether the guest selected one or both meals.
-      met = lunchTotal >= perMealRequired || dinnerTotal >= perMealRequired;
+      if (forceBothMeals) {
+        // When forcing both meals: à la carte must cover BOTH lunch AND dinner.
+        met = lunchTotal >= perMealRequired && dinnerTotal >= perMealRequired;
+      } else {
+        // À la carte passes when EITHER lunch OR dinner meets the per-meal min.
+        met = lunchTotal >= perMealRequired || dinnerTotal >= perMealRequired;
+      }
     }
     const requiredTotal = mandatory ? perMealRequired : 0;
 
@@ -197,6 +204,7 @@ const MealByDaySection = ({
               value={foodByDay[n.date] || defaultSel()}
               onChange={next => onChange(n.date, next)}
               variant="mandatory"
+              forceBothMeals={forceBothMeals}
               individualOption={buildIndividualOption(n.date, true)}
               personalMealPlans={resolvePersonalPlans(defaultGuests)}
               personalMealGuestCount={defaultGuests}
