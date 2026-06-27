@@ -97,6 +97,8 @@ interface Props {
   individualOption?: IndividualPerDay;
   personalMealPlans?: PersonalMealPlan[];
   personalMealGuestCount?: number;
+  /** When true and variant === 'mandatory': force both lunch + dinner (no single-meal pills). */
+  forceBothMeals?: boolean;
 }
 
 const ensureGroups = (sel: DayMealSelection, adults: number): DayMealGroup[] => {
