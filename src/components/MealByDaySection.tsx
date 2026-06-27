@@ -5,6 +5,7 @@ import type { NightInfo } from '@/hooks/useNightlyMandatoryInfo';
 import { useComboPackages } from '@/hooks/useComboPackages';
 import { usePersonalMealPlans, type PersonalMealPlan } from '@/hooks/usePersonalMealPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
 import type { FoodItem } from './IndividualFoodSelector';
 
