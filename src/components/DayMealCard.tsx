@@ -894,8 +894,17 @@ const DayMealCard = ({
           )}
 
 
-          {/* Groups (Combo by group) — collapsible OR-option */}
-          {value.meals.length > 0 && (
+          {/* Dual-section path: weekend mandatory both meals — render lunch + dinner separately */}
+          {value.meals.length > 0 && lockBothMeals && (
+            <div className="space-y-3">
+              {renderGroupSectionForMeal('lunch')}
+              {renderGroupSectionForMeal('dinner')}
+            </div>
+          )}
+
+          {/* Groups (Combo by group) — collapsible OR-option (legacy single section) */}
+          {value.meals.length > 0 && !lockBothMeals && (
+
             <div className="border border-border/70 rounded-lg overflow-hidden">
               <button
                 type="button"
