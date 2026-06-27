@@ -820,7 +820,7 @@ const DayMealCard = ({
 
                 <button
                   type="button"
-                  onClick={addGroup}
+                  onClick={() => addGroup()}
                   className="w-full border-2 border-dashed border-border hover:border-primary rounded-lg py-2 text-xs font-medium text-muted-foreground hover:text-primary transition"
                 >
                   + {isVi ? 'Thêm nhóm bàn' : 'Add a group'}
