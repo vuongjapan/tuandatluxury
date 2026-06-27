@@ -26,9 +26,20 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const AdminMandatoryCombo = () => {
   const { ranges, loading, fetchAll } = useMandatoryComboDates();
   const { toast } = useToast();
+  const { settings, updateSetting } = useSiteSettings();
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<'rules' | 'bypass'>('rules');
+  const force2Meals = String(settings.force_2_meals_weekend || 'false') === 'true';
+  const [savingForce, setSavingForce] = useState(false);
+
+  const toggleForce2 = async (next: boolean) => {
+    setSavingForce(true);
+    const err = await updateSetting('force_2_meals_weekend', next ? 'true' : 'false');
+    setSavingForce(false);
+    if (err) toast({ title: 'Lỗi lưu', description: err.message, variant: 'destructive' });
+    else toast({ title: next ? 'Đã BẬT chế độ bắt 2 bữa/ngày ✓' : 'Đã TẮT chế độ bắt 2 bữa/ngày ✓' });
+  };
 
   const startNew = () => {
     setEditing({
