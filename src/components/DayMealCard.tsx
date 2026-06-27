@@ -157,6 +157,14 @@ const DayMealCard = ({
     if (mode === 'mandatory') setExpanded(true);
   }, [mode]);
 
+  // Force both meals when admin enabled the "2 meals/day" rule on mandatory days.
+  useEffect(() => {
+    if (lockBothMeals && !value.bypassed && value.meals.length !== 2) {
+      onChange({ ...value, meals: ['lunch', 'dinner'] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockBothMeals, value.bypassed]);
+
   // Migrate legacy state to groups on first render if needed.
   useEffect(() => {
     if (!value.groups) {
