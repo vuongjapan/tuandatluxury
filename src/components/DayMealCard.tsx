@@ -119,10 +119,12 @@ const DayMealCard = ({
   night, defaultGuests, packages, getMenusByPackage, getDishesByMenu,
   value, onChange, variant, individualOption,
   personalMealPlans = [], personalMealGuestCount = 0,
+  forceBothMeals = false,
 }: Props) => {
   const { language, formatPrice } = useLanguage();
   const isVi = language === 'vi';
   const mode: 'mandatory' | 'optional' = variant || (night.mandatory ? 'mandatory' : 'optional');
+  const lockBothMeals = forceBothMeals && mode === 'mandatory';
 
   const hasAnySelection =
     (value.groups && value.groups.some(g => g.comboPackageId)) ||
