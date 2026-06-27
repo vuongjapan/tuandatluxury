@@ -223,38 +223,45 @@ const DayMealCard = ({
   const removeGroup = (idx: number) => {
     // Allow full removal when the individual-food fallback is already met.
     const individualMet = !!individualOption?.met;
-    if (groups.length <= 1) {
-      if (individualMet) {
-        // Customer can fully drop combos and rely on individual-only food.
-        set({ groups: [] });
+    const target = groups[idx];
+    const mealTag = target?.meal;
+    // Count siblings in the same section (same meal tag, or untagged).
+    const siblings = mealTag ? groups.filter(g => g.meal === mealTag) : groups.filter(g => !g.meal);
+    if (siblings.length <= 1) {
+      if (individualMet && !mealTag) {
+        set({ groups: groups.filter((_, i) => i !== idx) });
         return;
       }
-      // Reset the only group instead of removing it
+      // Reset the only group in this section instead of removing it.
       const reset: DayMealGroup = {
-        id: `g-${Date.now()}-r`,
+        id: `g-${Date.now()}-r${mealTag ? `-${mealTag}` : ''}`,
         comboPackageId: '',
         comboMenuId: '',
         quantity: defaultGuests,
+        ...(mealTag ? { meal: mealTag } : {}),
       };
-      set({ groups: [reset] });
+      set({ groups: groups.map((g, i) => (i === idx ? reset : g)) });
       return;
     }
     set({ groups: groups.filter((_, i) => i !== idx) });
   };
 
-  const addGroup = () => {
+  const addGroup = (meal?: DayMeal) => {
     set({
       groups: [
         ...groups,
         {
-          id: `g-${Date.now()}-add`,
+          id: `g-${Date.now()}-add${meal ? `-${meal}` : ''}`,
           comboPackageId: '',
           comboMenuId: '',
           quantity: MIN_PER_GROUP,
+          ...(meal ? { meal } : {}),
         },
       ],
     });
   };
+
+
 
   const groupSubtotal = (g: DayMealGroup) => {
     const pkg = packages.find(p => p.id === g.comboPackageId);
