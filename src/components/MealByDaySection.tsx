@@ -204,6 +204,7 @@ const MealByDaySection = ({
               value={foodByDay[n.date] || defaultSel()}
               onChange={next => onChange(n.date, next)}
               variant="mandatory"
+              forceBothMeals={forceBothMeals}
               individualOption={buildIndividualOption(n.date, true)}
               personalMealPlans={resolvePersonalPlans(defaultGuests)}
               personalMealGuestCount={defaultGuests}
