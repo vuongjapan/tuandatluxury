@@ -170,6 +170,46 @@ const AdminMandatoryCombo = () => {
 
       {tab === 'bypass' ? <AdminMealBypassCodes /> : (
       <div className="space-y-6">
+      {/* Force 2 meals/day on weekend toggle */}
+      <div className="bg-card border-2 border-amber-300 dark:border-amber-700/60 rounded-xl p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+              <Utensils className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-bold text-base">🍽 Chế độ bắt ăn cuối tuần</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Bắt buộc ăn <strong>2 bữa/ngày</strong> (Bữa trưa + Bữa tối) vào các ngày khớp quy tắc bắt buộc bên dưới.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`text-xs font-bold ${force2Meals ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+              {force2Meals ? 'BẬT' : 'TẮT'}
+            </span>
+            <Switch checked={force2Meals} disabled={savingForce} onCheckedChange={toggleForce2} />
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 p-3">
+            <p className="font-semibold text-emerald-700 dark:text-emerald-300 mb-1">Khi BẬT</p>
+            <ul className="space-y-0.5 text-muted-foreground list-disc list-inside">
+              <li>Ngày bắt buộc: ép chọn <strong>CẢ 2 bữa</strong> (trưa + tối)</li>
+              <li>Ẩn nút chọn 1 bữa lẻ</li>
+              <li>Tính tiền combo × 2 bữa</li>
+            </ul>
+          </div>
+          <div className="rounded-lg bg-muted/40 border border-border p-3">
+            <p className="font-semibold mb-1">Khi TẮT</p>
+            <ul className="space-y-0.5 text-muted-foreground list-disc list-inside">
+              <li>Khách tự chọn 1 hoặc 2 bữa</li>
+              <li>Giữ nguyên hành vi hiện tại</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-destructive/10 border-l-4 border-destructive rounded-lg p-4 flex items-start gap-3">
         <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
         <div className="text-sm">
